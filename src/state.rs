@@ -1,13 +1,13 @@
-use schemars::JsonSchema;
+use cw_storage_plus::Map;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Addr;
-use cw_storage_plus::Item;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct State {
-    pub count: i32,
-    pub owner: Addr,
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+pub struct DataRequest {
+    pub value: String,
 }
 
-pub const STATE: Item<State> = Item::new("state");
+/// Upon posting a data request, it is added to this map with a unique auto-incrementing ID
+pub const DATA_REQUESTS_POOL: Map<&u128, DataRequest> = Map::new("data_requests_pool");
+
+/// Once resolved, data requests are moved to this map and removed from the pool
+pub const DATA_RESULTS: Map<&u128, DataRequest> = Map::new("data_results");
