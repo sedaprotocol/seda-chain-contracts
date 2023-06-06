@@ -5,6 +5,8 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::DATA_REQUESTS_COUNT;
+use crate::state::{DataRequest, DATA_REQUESTS_POOL};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-template";
@@ -24,12 +26,37 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    info: MessageInfo,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    match msg {
+        ExecuteMsg::PostDataRequest { value } => execute::post_data_request(deps, info, value),
+    }
+}
+
+pub mod execute {
+
+    use super::*;
+
+    pub fn post_data_request(
+        deps: DepsMut,
+        _info: MessageInfo,
+        value: String,
+    ) -> Result<Response, ContractError> {
+        // save the data request
+        let count = DATA_REQUESTS_COUNT.load(deps.storage)?;
+        DATA_REQUESTS_POOL.save(deps.storage, count, &DataRequest { value })?;
+
+        // increment the data request count
+        DATA_REQUESTS_COUNT.update(deps.storage, |mut count| -> Result<_, ContractError> {
+            count += 1;
+            Ok(count)
+        })?;
+
+        Ok(Response::new().add_attribute("action", "post_data_request"))
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
