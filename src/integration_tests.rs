@@ -56,4 +56,20 @@ mod tests {
 
         (app, cw_template_contract)
     }
+
+    mod data_requests {
+        use super::*;
+        use crate::msg::ExecuteMsg;
+
+        #[test]
+        fn count() {
+            let (mut app, cw_template_contract) = proper_instantiate();
+
+            let msg = ExecuteMsg::PostDataRequest {
+                value: "hello world".to_string(),
+            };
+            let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+        }
+    }
 }

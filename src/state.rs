@@ -1,7 +1,8 @@
 use cw_storage_plus::{Item, Map};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequest {
     pub value: String,
 }

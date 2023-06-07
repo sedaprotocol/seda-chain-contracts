@@ -1,10 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, GetDataRequestResponse, InstantiateMsg, QueryMsg};
 use crate::state::DATA_REQUESTS_COUNT;
 use crate::state::{DataRequest, DATA_REQUESTS_POOL};
 
@@ -20,7 +20,7 @@ pub fn instantiate(
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
+    DATA_REQUESTS_COUNT.save(deps.storage, &0)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
@@ -60,15 +60,26 @@ pub mod execute {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetDataRequest { dr_id } => to_binary(&query::get_data_request(deps, dr_id)?),
+    }
+}
+
+pub mod query {
+    use super::*;
+
+    pub fn get_data_request(deps: Deps, dr_id: u128) -> StdResult<GetDataRequestResponse> {
+        let dr = DATA_REQUESTS_POOL.may_load(deps.storage, dr_id)?;
+        Ok(GetDataRequestResponse { value: dr })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, from_binary};
 
     #[test]
     fn proper_initialization() {
@@ -80,5 +91,56 @@ mod tests {
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         assert_eq!(0, res.messages.len());
+    }
+
+    #[test]
+    fn post_data_request() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {};
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // data request with id 0 does not yet exist
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest { dr_id: 0 },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(None, value.value);
+
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // should be able to fetch data request with id 0
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest { dr_id: 0 },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            Some(DataRequest {
+                value: "hello world".to_string()
+            }),
+            value.value
+        );
+
+        // data request with id 1 does not yet exist
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest { dr_id: 1 },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(None, value.value);
     }
 }
