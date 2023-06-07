@@ -7,6 +7,7 @@ pub struct InstantiateMsg {}
 #[cw_serde]
 pub enum ExecuteMsg {
     PostDataRequest { value: String },
+    PostDataResult { dr_id: u128 },
 }
 
 #[cw_serde]
@@ -14,9 +15,16 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(GetDataRequestResponse)]
     GetDataRequest { dr_id: u128 },
+    #[returns(GetDataResultResponse)]
+    GetDataResult { dr_id: u128 },
 }
 
 #[cw_serde]
 pub struct GetDataRequestResponse {
+    pub value: Option<DataRequest>,
+}
+
+#[cw_serde]
+pub struct GetDataResultResponse {
     pub value: Option<DataRequest>,
 }
