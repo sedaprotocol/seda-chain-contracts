@@ -5,8 +5,7 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, GetDataRequestResponse, InstantiateMsg, QueryMsg};
-use crate::state::DATA_REQUESTS_COUNT;
-use crate::state::{DataRequest, DATA_REQUESTS_POOL};
+use crate::state::{DataRequest, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-template";
@@ -46,16 +45,18 @@ pub mod execute {
         value: String,
     ) -> Result<Response, ContractError> {
         // save the data request
-        let count = DATA_REQUESTS_COUNT.load(deps.storage)?;
-        DATA_REQUESTS_POOL.save(deps.storage, count, &DataRequest { value })?;
+        let dr_id = DATA_REQUESTS_COUNT.load(deps.storage)?;
+        DATA_REQUESTS_POOL.save(deps.storage, dr_id, &DataRequest { value })?;
 
         // increment the data request count
-        DATA_REQUESTS_COUNT.update(deps.storage, |mut count| -> Result<_, ContractError> {
-            count += 1;
-            Ok(count)
+        DATA_REQUESTS_COUNT.update(deps.storage, |mut new_dr_id| -> Result<_, ContractError> {
+            new_dr_id += 1;
+            Ok(new_dr_id)
         })?;
 
-        Ok(Response::new().add_attribute("action", "post_data_request"))
+        Ok(Response::new()
+            .add_attribute("action", "post_data_request")
+            .add_attribute("dr_id", dr_id.to_string()))
     }
 }
 
