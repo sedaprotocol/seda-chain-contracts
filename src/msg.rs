@@ -15,6 +15,11 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(GetDataRequestResponse)]
     GetDataRequest { dr_id: u128 },
+    #[returns(GetDataRequestsResponse)]
+    GetDataRequests {
+        start_dr_id: Option<u128>,
+        limit: Option<u32>,
+    },
     #[returns(GetDataResultResponse)]
     GetDataResult { dr_id: u128 },
 }
@@ -22,6 +27,11 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct GetDataRequestResponse {
     pub value: Option<DataRequest>,
+}
+
+#[cw_serde]
+pub struct GetDataRequestsResponse {
+    pub value: Vec<DataRequest>,
 }
 
 #[cw_serde]
