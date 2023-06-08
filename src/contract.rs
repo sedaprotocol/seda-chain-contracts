@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -132,10 +132,10 @@ pub mod query {
             Some(Bound::ExclusiveRaw(dr_count.into())),
             Order::Ascending,
         ) {
+            requests.push(dr?.1);
             if requests.len() == limit as usize {
                 break;
             }
-            requests.push(dr?.1);
         }
 
         Ok(GetDataRequestsResponse { value: requests })
