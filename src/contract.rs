@@ -1,13 +1,16 @@
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{
     ExecuteMsg, GetDataRequestResponse, GetDataResultResponse, InstantiateMsg, QueryMsg,
 };
-use crate::state::{DataRequest, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
+use crate::state::{
+    DataRequest, DataResult, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-template";
@@ -34,7 +37,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::PostDataRequest { value } => execute::post_data_request(deps, info, value),
-        ExecuteMsg::PostDataResult { dr_id } => execute::post_data_result(deps, info, dr_id),
+        ExecuteMsg::PostDataResult { dr_id, result } => {
+            execute::post_data_result(deps, info, dr_id, result)
+        }
     }
 }
 
@@ -68,15 +73,23 @@ pub mod execute {
         deps: DepsMut,
         _info: MessageInfo,
         dr_id: u128,
+        result: String,
     ) -> Result<Response, ContractError> {
         // find the data request from the pool (if it exists, otherwise error)
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
+        let dr_result = DataResult {
+            value: dr.value,
+            result: result.clone(),
+        };
 
         // save the data result then remove it from the pool
-        DATA_RESULTS.save(deps.storage, dr_id, &dr)?;
+        DATA_RESULTS.save(deps.storage, dr_id, &dr_result)?;
         DATA_REQUESTS_POOL.remove(deps.storage, dr_id);
 
-        Ok(Response::new().add_attribute("action", "post_data_result"))
+        Ok(Response::new()
+            .add_attribute("action", "post_data_result")
+            .add_attribute("dr_id", dr_id.to_string())
+            .add_attribute("result", result))
     }
 }
 
@@ -181,7 +194,10 @@ mod tests {
 
         // can't post a data result for a data request that doesn't exist
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataResult { dr_id: 0 as u128 };
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: 0 as u128,
+            result: "dr 0 result".to_string(),
+        };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert!(res.is_err());
 
@@ -204,7 +220,10 @@ mod tests {
 
         // someone posts a data result
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataResult { dr_id: 0 as u128 };
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: 0 as u128,
+            result: "dr 0 result".to_string(),
+        };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // should be able to fetch data result with id 0
@@ -216,8 +235,9 @@ mod tests {
         .unwrap();
         let value: GetDataResultResponse = from_binary(&res).unwrap();
         assert_eq!(
-            Some(DataRequest {
-                value: "hello world".to_string()
+            Some(DataResult {
+                value: "hello world".to_string(),
+                result: "dr 0 result".to_string()
             }),
             value.value
         );

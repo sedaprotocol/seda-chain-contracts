@@ -1,4 +1,4 @@
-use crate::state::DataRequest;
+use crate::state::{DataRequest, DataResult};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
 #[cw_serde]
@@ -7,7 +7,7 @@ pub struct InstantiateMsg {}
 #[cw_serde]
 pub enum ExecuteMsg {
     PostDataRequest { value: String },
-    PostDataResult { dr_id: u128 },
+    PostDataResult { dr_id: u128, result: String },
 }
 
 #[cw_serde]
@@ -26,5 +26,5 @@ pub struct GetDataRequestResponse {
 
 #[cw_serde]
 pub struct GetDataResultResponse {
-    pub value: Option<DataRequest>,
+    pub value: Option<DataResult>,
 }
