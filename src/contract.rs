@@ -98,8 +98,8 @@ pub mod execute {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetDataRequest { dr_id } => to_binary(&query::get_data_request(deps, dr_id)?),
-        QueryMsg::GetDataRequests { start_dr_id, limit } => {
-            to_binary(&query::get_data_requests(deps, start_dr_id, limit)?)
+        QueryMsg::GetDataRequests { position, limit } => {
+            to_binary(&query::get_data_requests(deps, position, limit)?)
         }
         QueryMsg::GetDataResult { dr_id } => to_binary(&query::get_data_result(deps, dr_id)?),
     }
@@ -117,18 +117,18 @@ pub mod query {
 
     pub fn get_data_requests(
         deps: Deps,
-        start_dr_id: Option<u128>,
+        position: Option<u128>,
         limit: Option<u32>,
     ) -> StdResult<GetDataRequestsResponse> {
         let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?.to_be_bytes();
-        let start_dr_id = start_dr_id.unwrap_or(0).to_be_bytes();
+        let position = position.unwrap_or(0).to_be_bytes();
         let limit = limit.unwrap_or(u32::MAX);
 
-        // starting from start_dr_id, iterate forwards until we reach the limit or the end of the data requests
+        // starting from position, iterate forwards until we reach the limit or the end of the data requests
         let mut requests = vec![];
         for dr in DATA_REQUESTS_POOL.range(
             deps.storage,
-            Some(Bound::InclusiveRaw(start_dr_id.into())),
+            Some(Bound::InclusiveRaw(position.into())),
             Some(Bound::ExclusiveRaw(dr_count.into())),
             Order::Ascending,
         ) {
@@ -303,7 +303,7 @@ mod tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequests {
-                start_dr_id: None,
+                position: None,
                 limit: None,
             },
         )
@@ -331,7 +331,7 @@ mod tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequests {
-                start_dr_id: None,
+                position: None,
                 limit: Some(2),
             },
         )
@@ -356,7 +356,7 @@ mod tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequests {
-                start_dr_id: Some(1),
+                position: Some(1),
                 limit: Some(1),
             },
         )
@@ -376,7 +376,7 @@ mod tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequests {
-                start_dr_id: Some(1),
+                position: Some(1),
                 limit: None,
             },
         )

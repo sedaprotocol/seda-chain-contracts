@@ -17,7 +17,7 @@ pub enum QueryMsg {
     GetDataRequest { dr_id: u128 },
     #[returns(GetDataRequestsResponse)]
     GetDataRequests {
-        start_dr_id: Option<u128>,
+        position: Option<u128>,
         limit: Option<u32>,
     },
     #[returns(GetDataResultResponse)]
