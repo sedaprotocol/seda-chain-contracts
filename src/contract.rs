@@ -6,11 +6,12 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{
-    ExecuteMsg, GetDataRequestResponse, GetDataRequestsResponse, GetDataResultResponse,
-    InstantiateMsg, QueryMsg,
+    ExecuteMsg, GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsResponse,
+    GetDataResultResponse, InstantiateMsg, QueryMsg,
 };
 use crate::state::{
-    DataRequest, DataResult, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS,
+    DataRequest, DataRequestExecutor, DataResult, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL,
+    DATA_RESULTS, INACTIVE_DATA_REQUEST_EXECUTORS,
 };
 
 // version info for migration info
@@ -40,6 +41,13 @@ pub fn execute(
         ExecuteMsg::PostDataRequest { value } => execute::post_data_request(deps, info, value),
         ExecuteMsg::PostDataResult { dr_id, result } => {
             execute::post_data_result(deps, info, dr_id, result)
+        }
+        ExecuteMsg::RegisterDataRequestExecutor {
+            bn254_public_key,
+            multi_address,
+        } => execute::register_data_request_executor(deps, info, bn254_public_key, multi_address),
+        ExecuteMsg::UnregisterDataRequestExecutor {} => {
+            execute::unregister_data_request_executor(deps, info)
         }
     }
 }
@@ -92,6 +100,39 @@ pub mod execute {
             .add_attribute("dr_id", dr_id.to_string())
             .add_attribute("result", result))
     }
+
+    pub fn register_data_request_executor(
+        deps: DepsMut,
+        info: MessageInfo,
+        bn254_public_key: String,
+        multi_address: String,
+    ) -> Result<Response, ContractError> {
+        // TODO: require token deposit
+        // TODO: verify bn254_public_key using signature
+
+        let executor = DataRequestExecutor {
+            bn254_public_key: bn254_public_key.clone(),
+            multi_address: multi_address.clone(),
+        };
+        INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+
+        Ok(Response::new()
+            .add_attribute("action", "register_data_request_executor")
+            .add_attribute("executor", info.sender)
+            .add_attribute("bn254_public_key", bn254_public_key)
+            .add_attribute("multi_address", multi_address))
+    }
+
+    pub fn unregister_data_request_executor(
+        deps: DepsMut,
+        info: MessageInfo,
+    ) -> Result<Response, ContractError> {
+        INACTIVE_DATA_REQUEST_EXECUTORS.remove(deps.storage, info.sender.clone());
+
+        Ok(Response::new()
+            .add_attribute("action", "unregister_data_request_executor")
+            .add_attribute("executor", info.sender))
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -102,10 +143,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::get_data_requests(deps, position, limit)?)
         }
         QueryMsg::GetDataResult { dr_id } => to_binary(&query::get_data_result(deps, dr_id)?),
+        QueryMsg::GetDataRequestExecutor { executor } => {
+            to_binary(&query::get_data_request_executor(deps, executor)?)
+        }
     }
 }
 
 pub mod query {
+    use cosmwasm_std::Addr;
     use cw_storage_plus::Bound;
 
     use super::*;
@@ -145,13 +190,21 @@ pub mod query {
         let dr = DATA_RESULTS.may_load(deps.storage, dr_id)?;
         Ok(GetDataResultResponse { value: dr })
     }
+
+    pub fn get_data_request_executor(
+        deps: Deps,
+        executor: Addr,
+    ) -> StdResult<GetDataRequestExecutorResponse> {
+        let executor = INACTIVE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
+        Ok(GetDataRequestExecutorResponse { value: executor })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_binary};
+    use cosmwasm_std::{coins, from_binary, Addr};
 
     #[test]
     fn proper_initialization() {
@@ -395,5 +448,108 @@ mod tests {
             },
             response
         );
+    }
+
+    #[test]
+    fn register_data_request_executor() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {};
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // fetching data request executor for an address that doesn't exist should return None
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestExecutor {
+                executor: Addr::unchecked("anyone"),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        assert_eq!(value, GetDataRequestExecutorResponse { value: None });
+
+        // someone registers a data request executor
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            bn254_public_key: "key".to_string(),
+            multi_address: "address".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // should be able to fetch the data request executor
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestExecutor {
+                executor: Addr::unchecked("anyone"),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            value,
+            GetDataRequestExecutorResponse {
+                value: Some(DataRequestExecutor {
+                    bn254_public_key: "key".to_string(),
+                    multi_address: "address".to_string()
+                })
+            }
+        );
+    }
+
+    #[test]
+    fn unregister_data_request_executor() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {};
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // someone registers a data request executor
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            bn254_public_key: "key".to_string(),
+            multi_address: "address".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // should be able to fetch the data request executor
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestExecutor {
+                executor: Addr::unchecked("anyone"),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            value,
+            GetDataRequestExecutorResponse {
+                value: Some(DataRequestExecutor {
+                    bn254_public_key: "key".to_string(),
+                    multi_address: "address".to_string()
+                })
+            }
+        );
+
+        // unregister the data request executor
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::UnregisterDataRequestExecutor {};
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // fetching data request executor after unregistering should return None
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestExecutor {
+                executor: Addr::unchecked("anyone"),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        assert_eq!(value, GetDataRequestExecutorResponse { value: None });
     }
 }

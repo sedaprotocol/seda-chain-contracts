@@ -1,13 +1,24 @@
-use crate::state::{DataRequest, DataResult};
+use crate::state::{DataRequest, DataRequestExecutor, DataResult};
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
 
 #[cw_serde]
 pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest { value: String },
-    PostDataResult { dr_id: u128, result: String },
+    PostDataRequest {
+        value: String,
+    },
+    PostDataResult {
+        dr_id: u128,
+        result: String,
+    },
+    RegisterDataRequestExecutor {
+        bn254_public_key: String,
+        multi_address: String,
+    },
+    UnregisterDataRequestExecutor {},
 }
 
 #[cw_serde]
@@ -22,6 +33,8 @@ pub enum QueryMsg {
     },
     #[returns(GetDataResultResponse)]
     GetDataResult { dr_id: u128 },
+    #[returns(GetDataRequestExecutorResponse)]
+    GetDataRequestExecutor { executor: Addr },
 }
 
 #[cw_serde]
@@ -37,4 +50,9 @@ pub struct GetDataRequestsResponse {
 #[cw_serde]
 pub struct GetDataResultResponse {
     pub value: Option<DataResult>,
+}
+
+#[cw_serde]
+pub struct GetDataRequestExecutorResponse {
+    pub value: Option<DataRequestExecutor>,
 }
