@@ -5,11 +5,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequest {
+    pub dr_id: u128,
     pub value: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataResult {
+    pub dr_id: u128,
     pub value: String,
     pub result: String,
 }

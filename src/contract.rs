@@ -65,7 +65,7 @@ pub mod execute {
     ) -> Result<Response, ContractError> {
         // save the data request
         let dr_id = DATA_REQUESTS_COUNT.load(deps.storage)?;
-        DATA_REQUESTS_POOL.save(deps.storage, dr_id, &DataRequest { value })?;
+        DATA_REQUESTS_POOL.save(deps.storage, dr_id, &DataRequest { value, dr_id })?;
 
         // increment the data request count
         DATA_REQUESTS_COUNT.update(deps.storage, |mut new_dr_id| -> Result<_, ContractError> {
@@ -87,6 +87,7 @@ pub mod execute {
         // find the data request from the pool (if it exists, otherwise error)
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         let dr_result = DataResult {
+            dr_id: dr.dr_id,
             value: dr.value,
             result: result.clone(),
         };
@@ -253,6 +254,7 @@ mod tests {
         let value: GetDataRequestResponse = from_binary(&res).unwrap();
         assert_eq!(
             Some(DataRequest {
+                dr_id: 0 as u128,
                 value: "hello world".to_string()
             }),
             value.value
@@ -321,6 +323,7 @@ mod tests {
         let value: GetDataResultResponse = from_binary(&res).unwrap();
         assert_eq!(
             Some(DataResult {
+                dr_id: 0 as u128,
                 value: "hello world".to_string(),
                 result: "dr 0 result".to_string()
             }),
@@ -366,12 +369,15 @@ mod tests {
             GetDataRequestsResponse {
                 value: vec![
                     DataRequest {
+                        dr_id: 0 as u128,
                         value: "0".to_string()
                     },
                     DataRequest {
+                        dr_id: 1 as u128,
                         value: "1".to_string()
                     },
                     DataRequest {
+                        dr_id: 2 as u128,
                         value: "2".to_string()
                     },
                 ]
@@ -394,9 +400,11 @@ mod tests {
             GetDataRequestsResponse {
                 value: vec![
                     DataRequest {
+                        dr_id: 0 as u128,
                         value: "0".to_string()
                     },
                     DataRequest {
+                        dr_id: 1 as u128,
                         value: "1".to_string()
                     },
                 ]
@@ -418,6 +426,7 @@ mod tests {
         assert_eq!(
             GetDataRequestsResponse {
                 value: vec![DataRequest {
+                    dr_id: 1 as u128,
                     value: "1".to_string()
                 },]
             },
@@ -439,9 +448,11 @@ mod tests {
             GetDataRequestsResponse {
                 value: vec![
                     DataRequest {
+                        dr_id: 1 as u128,
                         value: "1".to_string()
                     },
                     DataRequest {
+                        dr_id: 2 as u128,
                         value: "2".to_string()
                     },
                 ]
