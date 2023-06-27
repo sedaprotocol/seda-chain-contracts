@@ -3,7 +3,9 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub token: String,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -19,6 +21,10 @@ pub enum ExecuteMsg {
         multi_address: String,
     },
     UnregisterDataRequestExecutor {},
+    Stake,
+    Unstake {
+        amount: u128,
+    },
 }
 
 #[cw_serde]

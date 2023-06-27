@@ -20,6 +20,7 @@ pub struct DataResult {
 pub struct DataRequestExecutor {
     pub bn254_public_key: String,
     pub multi_address: String,
+    pub staked_tokens: u128,
 }
 
 /// Upon posting a data request, it is added to this map with a unique auto-incrementing ID
@@ -34,3 +35,6 @@ pub const DATA_REQUESTS_COUNT: Item<u128> = Item::new("data_requests_count");
 /// A map of data request executors (of address to info) that have not yet been marked as active
 pub const INACTIVE_DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
     Map::new("inactive_data_request_executors");
+
+/// Address of the token used for data request executor staking
+pub const TOKEN: Item<String> = Item::new("token");
