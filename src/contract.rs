@@ -4,6 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 
+use crate::consts::MINIMUM_STAKE_TO_REGISTER;
 use crate::error::ContractError;
 use crate::msg::{
     ExecuteMsg, GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsResponse,
@@ -114,13 +115,25 @@ pub mod execute {
         bn254_public_key: String,
         multi_address: String,
     ) -> Result<Response, ContractError> {
-        // TODO: require token deposit
+        // require token deposit
+        let token = TOKEN.load(deps.storage)?;
+        let amount: Option<u128> = info
+            .funds
+            .iter()
+            .find(|coin| coin.denom == token)
+            .map(|coin| coin.amount.u128());
+        let amount = amount.ok_or(ContractError::InsufficientFunds)?;
+
+        if amount < MINIMUM_STAKE_TO_REGISTER {
+            return Err(ContractError::InsufficientFunds);
+        }
+
         // TODO: verify bn254_public_key using signature
 
         let executor = DataRequestExecutor {
             bn254_public_key: bn254_public_key.clone(),
             multi_address: multi_address.clone(),
-            tokens_staked: 0,
+            tokens_staked: amount,
             tokens_pending_withdrawal: 0,
         };
         INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
@@ -136,6 +149,12 @@ pub mod execute {
         deps: DepsMut,
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
+        // require that the executor has no staked or tokens pending withdrawal
+        let executor = INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        if executor.tokens_staked > 0 || executor.tokens_pending_withdrawal > 0 {
+            return Err(ContractError::ExecutorHasTokens);
+        }
+
         INACTIVE_DATA_REQUEST_EXECUTORS.remove(deps.storage, info.sender.clone());
 
         Ok(Response::new()
@@ -157,8 +176,7 @@ pub mod execute {
             .find(|coin| coin.denom == token)
             .map(|coin| coin.amount.u128());
 
-        // assert that the sender has enough tokens
-        // TODO: set to non-zero minimum
+        // assert that amount is non-zero
         let amount = amount.ok_or(ContractError::InsufficientFunds)?;
 
         // update staked tokens for executor
@@ -179,7 +197,7 @@ pub mod execute {
         info: MessageInfo,
         amount: u128,
     ) -> Result<Response, ContractError> {
-        // error if amount is greater than pending tokens
+        // error if amount is greater than staked tokens
         let mut executor =
             INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
         if amount > executor.tokens_staked {
@@ -191,6 +209,7 @@ pub mod execute {
         executor.tokens_pending_withdrawal += amount;
         INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
+        // TODO: emit when pending tokens can be withdrawn
         Ok(Response::new()
             .add_attribute("action", "unstake")
             .add_attribute("executor", info.sender)
@@ -610,7 +629,7 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    tokens_staked: 0,
+                    tokens_staked: 2,
                     tokens_pending_withdrawal: 0
                 })
             }
@@ -651,11 +670,19 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    tokens_staked: 0,
+                    tokens_staked: 2,
                     tokens_pending_withdrawal: 0
                 })
             }
         );
+
+        // unstake and withdraw all tokens
+        let info = mock_info("anyone", &coins(0, "token"));
+        let msg = ExecuteMsg::Unstake { amount: 2 };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let info = mock_info("anyone", &coins(0, "token"));
+        let msg = ExecuteMsg::Withdraw { amount: 2 };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // unregister the data request executor
         let info = mock_info("anyone", &coins(2, "token"));
@@ -676,7 +703,7 @@ mod tests {
     }
 
     #[test]
-    fn deposit_and_stake() {
+    fn deposit_stake_withdraw() {
         let mut deps = mock_dependencies();
 
         let msg = InstantiateMsg {
@@ -685,20 +712,24 @@ mod tests {
         let info = mock_info("creator", &coins(0, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
+        // cant register without depositing tokens
+        let info = mock_info("anyone", &coins(0, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            bn254_public_key: "key".to_string(),
+            multi_address: "address".to_string(),
+        };
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds);
+
         // register a data request executor
-        let info = mock_info("anyone", &coins(2, "token"));
+        let info = mock_info("anyone", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
             bn254_public_key: "key".to_string(),
             multi_address: "address".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // the data request executor stakes 2 tokens
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::DepositAndStake;
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // data request executor's stake should be 2
+        // data request executor's stake should be 1
         let res = query(
             deps.as_ref(),
             mock_env(),
@@ -714,7 +745,34 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    tokens_staked: 2,
+                    tokens_staked: 1,
+                    tokens_pending_withdrawal: 0
+                })
+            }
+        );
+
+        // the data request executor stakes 2 more tokens
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::DepositAndStake;
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // data request executor's stake should be 3
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestExecutor {
+                executor: Addr::unchecked("anyone"),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            value,
+            GetDataRequestExecutorResponse {
+                value: Some(DataRequestExecutor {
+                    bn254_public_key: "key".to_string(),
+                    multi_address: "address".to_string(),
+                    tokens_staked: 3,
                     tokens_pending_withdrawal: 0
                 })
             }
@@ -741,7 +799,7 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    tokens_staked: 1,
+                    tokens_staked: 2,
                     tokens_pending_withdrawal: 1
                 })
             }
@@ -768,7 +826,7 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    tokens_staked: 1,
+                    tokens_staked: 2,
                     tokens_pending_withdrawal: 0
                 })
             }
