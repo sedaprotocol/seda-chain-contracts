@@ -20,7 +20,8 @@ pub struct DataResult {
 pub struct DataRequestExecutor {
     pub bn254_public_key: String,
     pub multi_address: String,
-    pub staked_tokens: u128,
+    pub tokens_staked: u128,
+    pub tokens_pending_withdrawal: u128,
 }
 
 /// Upon posting a data request, it is added to this map with a unique auto-incrementing ID

@@ -21,8 +21,11 @@ pub enum ExecuteMsg {
         multi_address: String,
     },
     UnregisterDataRequestExecutor {},
-    Stake,
+    DepositAndStake,
     Unstake {
+        amount: u128,
+    },
+    Withdraw {
         amount: u128,
     },
 }

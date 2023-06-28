@@ -50,8 +50,9 @@ pub fn execute(
         ExecuteMsg::UnregisterDataRequestExecutor {} => {
             execute::unregister_data_request_executor(deps, info)
         }
-        ExecuteMsg::Stake => execute::stake(deps, env, info),
+        ExecuteMsg::DepositAndStake => execute::deposit_and_stake(deps, env, info),
         ExecuteMsg::Unstake { amount } => execute::unstake(deps, env, info, amount),
+        ExecuteMsg::Withdraw { amount } => execute::withdraw(deps, env, info, amount),
     }
 }
 
@@ -119,7 +120,8 @@ pub mod execute {
         let executor = DataRequestExecutor {
             bn254_public_key: bn254_public_key.clone(),
             multi_address: multi_address.clone(),
-            staked_tokens: 0,
+            tokens_staked: 0,
+            tokens_pending_withdrawal: 0,
         };
         INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
@@ -141,7 +143,11 @@ pub mod execute {
             .add_attribute("executor", info.sender))
     }
 
-    pub fn stake(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn deposit_and_stake(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+    ) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
 
         // get amount of tokens from sender
@@ -158,7 +164,7 @@ pub mod execute {
         // update staked tokens for executor
         let mut executor =
             INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.clone().sender)?;
-        executor.staked_tokens += amount;
+        executor.tokens_staked += amount;
         INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.clone().sender, &executor)?;
 
         Ok(Response::new()
@@ -169,21 +175,46 @@ pub mod execute {
 
     pub fn unstake(
         deps: DepsMut,
-        env: Env,
+        _env: Env,
         info: MessageInfo,
         amount: u128,
     ) -> Result<Response, ContractError> {
-        let token = TOKEN.load(deps.storage)?;
-
-        // error if amount is greater than staked tokens
+        // error if amount is greater than pending tokens
         let mut executor =
             INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
-        if amount > executor.staked_tokens {
+        if amount > executor.tokens_staked {
             return Err(ContractError::InsufficientFunds);
         }
 
         // update the executor
-        executor.staked_tokens -= amount;
+        executor.tokens_staked -= amount;
+        executor.tokens_pending_withdrawal += amount;
+        INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+
+        Ok(Response::new()
+            .add_attribute("action", "unstake")
+            .add_attribute("executor", info.sender)
+            .add_attribute("amount", amount.to_string()))
+    }
+
+    pub fn withdraw(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        amount: u128,
+    ) -> Result<Response, ContractError> {
+        // TODO: add delay after calling unstake
+        let token = TOKEN.load(deps.storage)?;
+
+        // error if amount is greater than pending tokens
+        let mut executor =
+            INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        if amount > executor.tokens_pending_withdrawal {
+            return Err(ContractError::InsufficientFunds);
+        }
+
+        // update the executor
+        executor.tokens_pending_withdrawal -= amount;
         INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
         // send the tokens back to the executor
@@ -194,7 +225,7 @@ pub mod execute {
 
         Ok(Response::new()
             .add_message(bank_msg)
-            .add_attribute("action", "unstake")
+            .add_attribute("action", "withdraw")
             .add_attribute("executor", info.sender)
             .add_attribute("amount", amount.to_string()))
     }
@@ -579,7 +610,8 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    staked_tokens: 0
+                    tokens_staked: 0,
+                    tokens_pending_withdrawal: 0
                 })
             }
         );
@@ -619,7 +651,8 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    staked_tokens: 0
+                    tokens_staked: 0,
+                    tokens_pending_withdrawal: 0
                 })
             }
         );
@@ -643,7 +676,7 @@ mod tests {
     }
 
     #[test]
-    fn stake() {
+    fn deposit_and_stake() {
         let mut deps = mock_dependencies();
 
         let msg = InstantiateMsg {
@@ -662,7 +695,7 @@ mod tests {
 
         // the data request executor stakes 2 tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Stake;
+        let msg = ExecuteMsg::DepositAndStake;
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // data request executor's stake should be 2
@@ -681,7 +714,8 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    staked_tokens: 2
+                    tokens_staked: 2,
+                    tokens_pending_withdrawal: 0
                 })
             }
         );
@@ -691,7 +725,7 @@ mod tests {
         let msg = ExecuteMsg::Unstake { amount: 1 };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // data request executor's stake should be 1
+        // data request executor's stake should be 1 and pending 1
         let res = query(
             deps.as_ref(),
             mock_env(),
@@ -707,7 +741,35 @@ mod tests {
                 value: Some(DataRequestExecutor {
                     bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
-                    staked_tokens: 1
+                    tokens_staked: 1,
+                    tokens_pending_withdrawal: 1
+                })
+            }
+        );
+
+        // the data request executor withdraws 1
+        let info = mock_info("anyone", &coins(0, "token"));
+        let msg = ExecuteMsg::Withdraw { amount: 1 };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // data request executor's stake should be 1 and pending 0
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestExecutor {
+                executor: Addr::unchecked("anyone"),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            value,
+            GetDataRequestExecutorResponse {
+                value: Some(DataRequestExecutor {
+                    bn254_public_key: "key".to_string(),
+                    multi_address: "address".to_string(),
+                    tokens_staked: 1,
+                    tokens_pending_withdrawal: 0
                 })
             }
         );
