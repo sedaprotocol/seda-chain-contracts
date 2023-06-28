@@ -122,10 +122,13 @@ pub mod execute {
             .iter()
             .find(|coin| coin.denom == token)
             .map(|coin| coin.amount.u128());
-        let amount = amount.ok_or(ContractError::InsufficientFunds)?;
+        let amount = amount.ok_or(ContractError::NoFunds)?;
 
         if amount < MINIMUM_STAKE_TO_REGISTER {
-            return Err(ContractError::InsufficientFunds);
+            return Err(ContractError::InsufficientFunds(
+                MINIMUM_STAKE_TO_REGISTER,
+                amount,
+            ));
         }
 
         // TODO: verify bn254_public_key using signature
@@ -177,7 +180,7 @@ pub mod execute {
             .map(|coin| coin.amount.u128());
 
         // assert that amount is non-zero
-        let amount = amount.ok_or(ContractError::InsufficientFunds)?;
+        let amount = amount.ok_or(ContractError::NoFunds)?;
 
         // update staked tokens for executor
         let mut executor =
@@ -201,7 +204,10 @@ pub mod execute {
         let mut executor =
             INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
         if amount > executor.tokens_staked {
-            return Err(ContractError::InsufficientFunds);
+            return Err(ContractError::InsufficientFunds(
+                executor.tokens_staked,
+                amount,
+            ));
         }
 
         // update the executor
@@ -229,7 +235,10 @@ pub mod execute {
         let mut executor =
             INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
         if amount > executor.tokens_pending_withdrawal {
-            return Err(ContractError::InsufficientFunds);
+            return Err(ContractError::InsufficientFunds(
+                executor.tokens_pending_withdrawal,
+                amount,
+            ));
         }
 
         // update the executor
@@ -719,7 +728,7 @@ mod tests {
             multi_address: "address".to_string(),
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
-        assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds);
+        assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds(1, 0));
 
         // register a data request executor
         let info = mock_info("anyone", &coins(1, "token"));
