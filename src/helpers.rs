@@ -1,8 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg};
+use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, StdResult, WasmMsg};
 
+use crate::error::ContractError;
 use crate::msg::ExecuteMsg;
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
@@ -24,4 +25,12 @@ impl CwTemplateContract {
         }
         .into())
     }
+}
+
+pub fn get_attached_funds(funds: &[Coin], token: String) -> Result<u128, ContractError> {
+    let amount: Option<u128> = funds
+        .iter()
+        .find(|coin| coin.denom == token)
+        .map(|coin| coin.amount.u128());
+    amount.ok_or(ContractError::NoFunds)
 }

@@ -6,6 +6,7 @@ use cw2::set_contract_version;
 
 use crate::consts::MINIMUM_STAKE_TO_REGISTER;
 use crate::error::ContractError;
+use crate::helpers::get_attached_funds;
 use crate::msg::{
     ExecuteMsg, GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsResponse,
     GetDataResultResponse, InstantiateMsg, QueryMsg,
@@ -115,12 +116,7 @@ pub mod execute {
     ) -> Result<Response, ContractError> {
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
-        let amount: Option<u128> = info
-            .funds
-            .iter()
-            .find(|coin| coin.denom == token)
-            .map(|coin| coin.amount.u128());
-        let amount = amount.ok_or(ContractError::NoFunds)?;
+        let amount = get_attached_funds(&info.funds, token)?;
 
         if amount < MINIMUM_STAKE_TO_REGISTER {
             return Err(ContractError::InsufficientFunds(
@@ -139,10 +135,7 @@ pub mod execute {
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")
             .add_attribute("executor", info.sender)
-            .add_attribute(
-                "p2p_multi_address",
-                p2p_multi_address.unwrap_or("".to_string()),
-            ))
+            .add_attribute("p2p_multi_address", p2p_multi_address.unwrap_or_default()))
     }
 
     pub fn unregister_data_request_executor(
@@ -168,16 +161,7 @@ pub mod execute {
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
-
-        // get amount of tokens from sender
-        let amount: Option<u128> = info
-            .funds
-            .iter()
-            .find(|coin| coin.denom == token)
-            .map(|coin| coin.amount.u128());
-
-        // assert that amount is non-zero
-        let amount = amount.ok_or(ContractError::NoFunds)?;
+        let amount = get_attached_funds(&info.funds, token)?;
 
         // update staked tokens for executor
         let mut executor =
