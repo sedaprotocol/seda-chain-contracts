@@ -18,7 +18,7 @@ pub struct DataResult {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequestExecutor {
-    pub multi_address: String,
+    pub p2p_multi_address: Option<String>,
     pub tokens_staked: u128,
     pub tokens_pending_withdrawal: u128,
 }

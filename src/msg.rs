@@ -11,7 +11,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     PostDataRequest { value: String },
     PostDataResult { dr_id: u128, result: String },
-    RegisterDataRequestExecutor { multi_address: String },
+    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
     Unstake { amount: u128 },
