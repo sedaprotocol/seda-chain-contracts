@@ -3,12 +3,14 @@ use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+/// Represents a data request at creation time
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequest {
     pub dr_id: u128,
     pub value: String,
 }
 
+/// An resolved data request with an attached result
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataResult {
     pub dr_id: u128,
@@ -16,6 +18,7 @@ pub struct DataResult {
     pub result: String,
 }
 
+/// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequestExecutor {
     pub p2p_multi_address: Option<String>,

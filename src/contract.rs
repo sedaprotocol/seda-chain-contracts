@@ -65,6 +65,7 @@ pub mod execute {
 
     use super::*;
 
+    /// Posts a data request to the pool
     pub fn post_data_request(
         deps: DepsMut,
         _info: MessageInfo,
@@ -85,6 +86,8 @@ pub mod execute {
             .add_attribute("dr_id", dr_id.to_string()))
     }
 
+    /// Posts a data result of a data request with an attached result.
+    /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn post_data_result(
         deps: DepsMut,
         _info: MessageInfo,
@@ -109,6 +112,7 @@ pub mod execute {
             .add_attribute("result", result))
     }
 
+    /// Registers a data request executor with an optional p2p multi address, requiring a token deposit.
     pub fn register_data_request_executor(
         deps: DepsMut,
         info: MessageInfo,
@@ -138,6 +142,7 @@ pub mod execute {
             .add_attribute("p2p_multi_address", p2p_multi_address.unwrap_or_default()))
     }
 
+    /// Unregisters a data request executor, with the requirement that no tokens are staked or pending withdrawal.
     pub fn unregister_data_request_executor(
         deps: DepsMut,
         info: MessageInfo,
@@ -155,6 +160,7 @@ pub mod execute {
             .add_attribute("executor", info.sender))
     }
 
+    /// Deposits and stakes tokens for a data request executor.
     pub fn deposit_and_stake(
         deps: DepsMut,
         _env: Env,
@@ -175,6 +181,7 @@ pub mod execute {
             .add_attribute("amount", amount.to_string()))
     }
 
+    /// Unstakes tokens to be withdrawn after a delay.
     pub fn unstake(
         deps: DepsMut,
         _env: Env,
@@ -203,6 +210,7 @@ pub mod execute {
             .add_attribute("amount", amount.to_string()))
     }
 
+    /// Sends tokens back to the executor that are marked as pending withdrawal.
     pub fn withdraw(
         deps: DepsMut,
         env: Env,
@@ -260,11 +268,13 @@ pub mod query {
 
     use super::*;
 
+    /// Returns a data request from the pool with the given id, if it exists.
     pub fn get_data_request(deps: Deps, dr_id: u128) -> StdResult<GetDataRequestResponse> {
         let dr = DATA_REQUESTS_POOL.may_load(deps.storage, dr_id)?;
         Ok(GetDataRequestResponse { value: dr })
     }
 
+    /// Returns a list of data requests from the pool, starting from the given position and limited by the given limit.
     pub fn get_data_requests(
         deps: Deps,
         position: Option<u128>,
@@ -291,11 +301,13 @@ pub mod query {
         Ok(GetDataRequestsResponse { value: requests })
     }
 
+    /// Returns a data result from the results with the given id, if it exists.
     pub fn get_data_result(deps: Deps, dr_id: u128) -> StdResult<GetDataResultResponse> {
         let dr = DATA_RESULTS.may_load(deps.storage, dr_id)?;
         Ok(GetDataResultResponse { value: dr })
     }
 
+    /// Returns a data request executor from the inactive executors with the given address, if it exists.
     pub fn get_data_request_executor(
         deps: Deps,
         executor: Addr,
