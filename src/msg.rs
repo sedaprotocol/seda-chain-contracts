@@ -9,25 +9,13 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest {
-        value: String,
-    },
-    PostDataResult {
-        dr_id: u128,
-        result: String,
-    },
-    RegisterDataRequestExecutor {
-        bn254_public_key: String,
-        multi_address: String,
-    },
+    PostDataRequest { value: String },
+    PostDataResult { dr_id: u128, result: String },
+    RegisterDataRequestExecutor { multi_address: String },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
-    Unstake {
-        amount: u128,
-    },
-    Withdraw {
-        amount: u128,
-    },
+    Unstake { amount: u128 },
+    Withdraw { amount: u128 },
 }
 
 #[cw_serde]

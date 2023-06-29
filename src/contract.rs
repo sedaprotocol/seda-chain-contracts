@@ -44,10 +44,9 @@ pub fn execute(
         ExecuteMsg::PostDataResult { dr_id, result } => {
             execute::post_data_result(deps, info, dr_id, result)
         }
-        ExecuteMsg::RegisterDataRequestExecutor {
-            bn254_public_key,
-            multi_address,
-        } => execute::register_data_request_executor(deps, info, bn254_public_key, multi_address),
+        ExecuteMsg::RegisterDataRequestExecutor { multi_address } => {
+            execute::register_data_request_executor(deps, info, multi_address)
+        }
         ExecuteMsg::UnregisterDataRequestExecutor {} => {
             execute::unregister_data_request_executor(deps, info)
         }
@@ -112,7 +111,6 @@ pub mod execute {
     pub fn register_data_request_executor(
         deps: DepsMut,
         info: MessageInfo,
-        bn254_public_key: String,
         multi_address: String,
     ) -> Result<Response, ContractError> {
         // require token deposit
@@ -131,10 +129,7 @@ pub mod execute {
             ));
         }
 
-        // TODO: verify bn254_public_key using signature
-
         let executor = DataRequestExecutor {
-            bn254_public_key: bn254_public_key.clone(),
             multi_address: multi_address.clone(),
             tokens_staked: amount,
             tokens_pending_withdrawal: 0,
@@ -144,7 +139,6 @@ pub mod execute {
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")
             .add_attribute("executor", info.sender)
-            .add_attribute("bn254_public_key", bn254_public_key)
             .add_attribute("multi_address", multi_address))
     }
 
@@ -617,7 +611,6 @@ mod tests {
         // someone registers a data request executor
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            bn254_public_key: "key".to_string(),
             multi_address: "address".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -636,7 +629,6 @@ mod tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 0
@@ -658,7 +650,6 @@ mod tests {
         // someone registers a data request executor
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            bn254_public_key: "key".to_string(),
             multi_address: "address".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -677,7 +668,6 @@ mod tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 0
@@ -724,7 +714,6 @@ mod tests {
         // cant register without depositing tokens
         let info = mock_info("anyone", &coins(0, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            bn254_public_key: "key".to_string(),
             multi_address: "address".to_string(),
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
@@ -733,7 +722,6 @@ mod tests {
         // register a data request executor
         let info = mock_info("anyone", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            bn254_public_key: "key".to_string(),
             multi_address: "address".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -752,7 +740,6 @@ mod tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
                     tokens_staked: 1,
                     tokens_pending_withdrawal: 0
@@ -779,7 +766,6 @@ mod tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
                     tokens_staked: 3,
                     tokens_pending_withdrawal: 0
@@ -806,7 +792,6 @@ mod tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 1
@@ -833,7 +818,6 @@ mod tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    bn254_public_key: "key".to_string(),
                     multi_address: "address".to_string(),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 0
