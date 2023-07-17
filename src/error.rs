@@ -1,3 +1,4 @@
+use crate::types::Hash;
 use cosmwasm_std::StdError;
 use thiserror::Error;
 
@@ -11,4 +12,8 @@ pub enum ContractError {
     InsufficientFunds(u128, u128),
     #[error("Executor has staked tokens or tokens pending withdrawal")]
     ExecutorHasTokens,
+    #[error("Invalid data request id, expected: {0}, actual: {1}")]
+    InvalidDataRequestId(Hash, Hash),
+    #[error("Data request already exists")]
+    DataRequestAlreadyExists,
 }

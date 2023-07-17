@@ -62,6 +62,9 @@ fn post_data_request() {
     let (mut app, cw_template_contract) = proper_instantiate();
 
     let msg = ExecuteMsg::PostDataRequest {
+        dr_id: "hash".to_string(),
+        nonce: 0 as u128,
+        chain_id: 0 as u128,
         value: "hello world".to_string(),
     };
     let cosmos_msg = cw_template_contract.call(msg).unwrap();

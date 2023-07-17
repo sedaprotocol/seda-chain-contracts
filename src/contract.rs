@@ -37,9 +37,12 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::PostDataRequest { value } => {
-            data_requests::post_data_request(deps, info, value)
-        }
+        ExecuteMsg::PostDataRequest {
+            dr_id,
+            value,
+            nonce,
+            chain_id,
+        } => data_requests::post_data_request(deps, info, dr_id, value, nonce, chain_id),
         ExecuteMsg::PostDataResult { dr_id, result } => {
             data_request_results::post_data_result(deps, info, dr_id, result)
         }

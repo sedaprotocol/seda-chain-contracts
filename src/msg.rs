@@ -1,4 +1,5 @@
 use crate::state::{DataRequest, DataRequestExecutor, DataResult};
+use crate::types::Hash;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -9,27 +10,41 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest { value: String },
-    PostDataResult { dr_id: u128, result: String },
-    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
+    PostDataRequest {
+        dr_id: Hash,
+        value: String,
+        nonce: u128,
+        chain_id: u128,
+    },
+    PostDataResult {
+        dr_id: Hash,
+        result: String,
+    },
+    RegisterDataRequestExecutor {
+        p2p_multi_address: Option<String>,
+    },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
-    Unstake { amount: u128 },
-    Withdraw { amount: u128 },
+    Unstake {
+        amount: u128,
+    },
+    Withdraw {
+        amount: u128,
+    },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(GetDataRequestResponse)]
-    GetDataRequest { dr_id: u128 },
+    GetDataRequest { dr_id: Hash },
     #[returns(GetDataRequestsResponse)]
     GetDataRequests {
         position: Option<u128>,
         limit: Option<u32>,
     },
     #[returns(GetDataResultResponse)]
-    GetDataResult { dr_id: u128 },
+    GetDataResult { dr_id: Hash },
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
 }
