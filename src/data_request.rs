@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
-use tiny_keccak::Sha3;
+use ethers::utils::keccak256;
 
 use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL};
 
@@ -12,7 +12,6 @@ use crate::ContractError;
 
 pub mod data_requests {
     use cw_storage_plus::Bound;
-    use tiny_keccak::Hasher;
 
     use crate::state::DATA_REQUESTS_BY_NONCE;
 
@@ -36,20 +35,28 @@ pub mod data_requests {
         }
 
         // reconstruct the data request id hash
-        // TODO: make sure this matches EVM hashing
-        let mut sha3 = Sha3::v256();
-        let mut reconstructed_dr_id = [0u8; 32];
-        sha3.update(&nonce.to_ne_bytes());
-        sha3.update(value.as_bytes());
-        sha3.update(&chain_id.to_ne_bytes());
-        sha3.finalize(&mut reconstructed_dr_id);
+        // TODO: make generic, remove ethers dependency
+        let encoded_params = ethers::abi::encode(&[
+            ethers::abi::Token::Uint(nonce.into()),
+            ethers::abi::Token::String(value.clone()),
+            ethers::abi::Token::Uint(chain_id.into()),
+        ]);
+        let reconstructed_dr_id = format!("0x{}", hex::encode(keccak256(encoded_params)));
 
         // check if the reconstructed dr_id matches the given dr_id
-        if &reconstructed_dr_id[..] != &dr_id.clone().into_bytes()[..] {
+        if reconstructed_dr_id != dr_id {
             return Err(ContractError::InvalidDataRequestId(
-                String::from_utf8_lossy(&reconstructed_dr_id).to_string(),
                 dr_id,
+                reconstructed_dr_id,
             ));
+        }
+
+        // check if the dr_id is already in the pool
+        if DATA_REQUESTS_POOL
+            .may_load(deps.storage, dr_id.clone())?
+            .is_some()
+        {
+            return Err(ContractError::DataRequestAlreadyExists);
         }
 
         // save the data request
@@ -74,7 +81,7 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            .add_attribute("dr_id", dr_id.to_string()))
+            .add_attribute("dr_id", dr_id))
     }
 
     /// Returns a data request from the pool with the given id, if it exists.
@@ -111,202 +118,249 @@ pub mod data_requests {
     }
 }
 
-// #[cfg(test)]
-// mod dr_tests {
-//     use super::*;
-//     use crate::contract::execute;
-//     use crate::contract::query;
-//     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-//     use cosmwasm_std::{coins, from_binary};
+#[cfg(test)]
+mod dr_tests {
+    use super::*;
+    use crate::contract::execute;
+    use crate::contract::query;
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, from_binary};
 
-//     use crate::contract::instantiate;
-//     use crate::msg::GetDataRequestResponse;
-//     use crate::msg::InstantiateMsg;
-//     use crate::msg::{ExecuteMsg, QueryMsg};
+    use crate::contract::instantiate;
+    use crate::msg::GetDataRequestResponse;
+    use crate::msg::InstantiateMsg;
+    use crate::msg::{ExecuteMsg, QueryMsg};
 
-//     #[test]
-//     fn post_data_request() {
-//         let mut deps = mock_dependencies();
+    #[test]
+    fn post_data_request() {
+        let mut deps = mock_dependencies();
 
-//         let msg = InstantiateMsg {
-//             token: "token".to_string(),
-//         };
-//         let info = mock_info("creator", &coins(2, "token"));
-//         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // data request with id 0 does not yet exist
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequest { dr_id: 0 },
-//         )
-//         .unwrap();
-//         let value: GetDataRequestResponse = from_binary(&res).unwrap();
-//         assert_eq!(None, value.value);
+        // data request with id 0x66... does not yet exist
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest {
+                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                    .to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(None, value.value);
 
-//         // someone posts a data request
-//         let info = mock_info("anyone", &coins(2, "token"));
-//         let msg = ExecuteMsg::PostDataRequest {
-//             value: "hello world".to_string(),
-//         };
-//         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337 as u128,
+            nonce: 1 as u128,
+            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // should be able to fetch data request with id 0
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequest { dr_id: 0 },
-//         )
-//         .unwrap();
-//         let value: GetDataRequestResponse = from_binary(&res).unwrap();
-//         assert_eq!(
-//             Some(DataRequest {
-//                 dr_id: 0 as u128,
-//                 value: "hello world".to_string()
-//             }),
-//             value.value
-//         );
+        // should be able to fetch data request with id 0x66...
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest {
+                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                    .to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            Some(DataRequest {
+                value: "hello world".to_string(),
+                chain_id: 31337 as u128,
+                nonce: 1 as u128,
+                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                    .to_string(),
+            }),
+            value.value
+        );
 
-//         // data request with id 1 does not yet exist
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequest { dr_id: 1 },
-//         )
-//         .unwrap();
-//         let value: GetDataRequestResponse = from_binary(&res).unwrap();
-//         assert_eq!(None, value.value);
-//     }
+        // nonexistent data request does not yet exist
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest {
+                dr_id: "nonexistent".to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(None, value.value);
+    }
 
-//     #[test]
-//     fn get_data_requests() {
-//         let mut deps = mock_dependencies();
+    #[test]
+    fn get_data_requests() {
+        let mut deps = mock_dependencies();
 
-//         let msg = InstantiateMsg {
-//             token: "token".to_string(),
-//         };
-//         let info = mock_info("creator", &coins(2, "token"));
-//         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // someone posts three data requests
-//         let info = mock_info("anyone", &coins(2, "token"));
-//         let msg = ExecuteMsg::PostDataRequest {
-//             value: "0".to_string(),
-//         };
-//         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-//         let msg = ExecuteMsg::PostDataRequest {
-//             value: "1".to_string(),
-//         };
-//         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-//         let msg = ExecuteMsg::PostDataRequest {
-//             value: "2".to_string(),
-//         };
-//         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // someone posts three data requests
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "1".to_string(),
+            nonce: 1 as u128,
+            chain_id: 31337 as u128,
+            dr_id: "0x3855afc167b4429c3b05600cc16ef5f30d5ee7fb5c56805ab295488abd270014".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "2".to_string(),
+            nonce: 1 as u128,
+            chain_id: 31337 as u128,
+            dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "3".to_string(),
+            nonce: 1 as u128,
+            chain_id: 31337 as u128,
+            dr_id: "0x95b51ee8670e9ab36daa83281c7531e13d0a2f6b0992c5e55d8622d379562d87".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // fetch all three data requests
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequests {
-//                 position: None,
-//                 limit: None,
-//             },
-//         )
-//         .unwrap();
-//         let response: GetDataRequestsResponse = from_binary(&res).unwrap();
-//         assert_eq!(
-//             GetDataRequestsResponse {
-//                 value: vec![
-//                     DataRequest {
-//                         dr_id: 0 as u128,
-//                         value: "0".to_string()
-//                     },
-//                     DataRequest {
-//                         dr_id: 1 as u128,
-//                         value: "1".to_string()
-//                     },
-//                     DataRequest {
-//                         dr_id: 2 as u128,
-//                         value: "2".to_string()
-//                     },
-//                 ]
-//             },
-//             response
-//         );
+        // fetch all three data requests
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequests {
+                position: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsResponse {
+                value: vec![
+                    DataRequest {
+                        value: "1".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x3855afc167b4429c3b05600cc16ef5f30d5ee7fb5c56805ab295488abd270014"
+                            .to_string()
+                    },
+                    DataRequest {
+                        value: "2".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                            .to_string()
+                    },
+                    DataRequest {
+                        value: "3".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x95b51ee8670e9ab36daa83281c7531e13d0a2f6b0992c5e55d8622d379562d87"
+                            .to_string()
+                    },
+                ]
+            },
+            response
+        );
 
-//         // fetch data requests with limit of 2
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequests {
-//                 position: None,
-//                 limit: Some(2),
-//             },
-//         )
-//         .unwrap();
-//         let response: GetDataRequestsResponse = from_binary(&res).unwrap();
-//         assert_eq!(
-//             GetDataRequestsResponse {
-//                 value: vec![
-//                     DataRequest {
-//                         dr_id: 0 as u128,
-//                         value: "0".to_string()
-//                     },
-//                     DataRequest {
-//                         dr_id: 1 as u128,
-//                         value: "1".to_string()
-//                     },
-//                 ]
-//             },
-//             response
-//         );
+        // fetch data requests with limit of 2
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequests {
+                position: None,
+                limit: Some(2),
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsResponse {
+                value: vec![
+                    DataRequest {
+                        value: "1".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x3855afc167b4429c3b05600cc16ef5f30d5ee7fb5c56805ab295488abd270014"
+                            .to_string()
+                    },
+                    DataRequest {
+                        value: "2".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                            .to_string()
+                    },
+                ]
+            },
+            response
+        );
 
-//         // fetch a single data request
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequests {
-//                 position: Some(1),
-//                 limit: Some(1),
-//             },
-//         )
-//         .unwrap();
-//         let response: GetDataRequestsResponse = from_binary(&res).unwrap();
-//         assert_eq!(
-//             GetDataRequestsResponse {
-//                 value: vec![DataRequest {
-//                     dr_id: 1 as u128,
-//                     value: "1".to_string()
-//                 },]
-//             },
-//             response
-//         );
+        // fetch a single data request
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequests {
+                position: Some(1),
+                limit: Some(1),
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsResponse {
+                value: vec![DataRequest {
+                    value: "2".to_string(),
+                    nonce: 1 as u128,
+                    chain_id: 31337 as u128,
+                    dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                        .to_string()
+                },]
+            },
+            response
+        );
 
-//         // fetch all data requests starting from id 1
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataRequests {
-//                 position: Some(1),
-//                 limit: None,
-//             },
-//         )
-//         .unwrap();
-//         let response: GetDataRequestsResponse = from_binary(&res).unwrap();
-//         assert_eq!(
-//             GetDataRequestsResponse {
-//                 value: vec![
-//                     DataRequest {
-//                         dr_id: 1 as u128,
-//                         value: "1".to_string()
-//                     },
-//                     DataRequest {
-//                         dr_id: 2 as u128,
-//                         value: "2".to_string()
-//                     },
-//                 ]
-//             },
-//             response
-//         );
-//     }
-// }
+        // fetch all data requests starting from id 1
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequests {
+                position: Some(1),
+                limit: None,
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsResponse {
+                value: vec![
+                    DataRequest {
+                        value: "2".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                            .to_string()
+                    },
+                    DataRequest {
+                        value: "3".to_string(),
+                        nonce: 1 as u128,
+                        chain_id: 31337 as u128,
+                        dr_id: "0x95b51ee8670e9ab36daa83281c7531e13d0a2f6b0992c5e55d8622d379562d87"
+                            .to_string()
+                    },
+                ]
+            },
+            response
+        );
+    }
+}

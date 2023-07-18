@@ -35,7 +35,7 @@ pub mod data_request_results {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_result")
-            .add_attribute("dr_id", dr_id.to_string())
+            .add_attribute("dr_id", dr_id)
             .add_attribute("result", result))
     }
 
@@ -46,78 +46,89 @@ pub mod data_request_results {
     }
 }
 
-// #[cfg(test)]
-// mod dr_result_tests {
-//     use super::*;
-//     use crate::contract::execute;
-//     use crate::contract::query;
-//     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-//     use cosmwasm_std::{coins, from_binary};
+#[cfg(test)]
+mod dr_result_tests {
+    use super::*;
+    use crate::contract::execute;
+    use crate::contract::query;
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, from_binary};
 
-//     use crate::contract::instantiate;
-//     use crate::msg::GetDataRequestResponse;
-//     use crate::msg::InstantiateMsg;
-//     use crate::msg::{ExecuteMsg, QueryMsg};
+    use crate::contract::instantiate;
+    use crate::msg::GetDataRequestResponse;
+    use crate::msg::InstantiateMsg;
+    use crate::msg::{ExecuteMsg, QueryMsg};
 
-//     #[test]
-//     fn post_data_result() {
-//         let mut deps = mock_dependencies();
+    #[test]
+    fn post_data_result() {
+        let mut deps = mock_dependencies();
 
-//         let msg = InstantiateMsg {
-//             token: "token".to_string(),
-//         };
-//         let info = mock_info("creator", &coins(2, "token"));
-//         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // can't post a data result for a data request that doesn't exist
-//         let info = mock_info("anyone", &coins(2, "token"));
-//         let msg = ExecuteMsg::PostDataResult {
-//             dr_id: 0 as u128,
-//             result: "dr 0 result".to_string(),
-//         };
-//         let res = execute(deps.as_mut(), mock_env(), info, msg);
-//         assert!(res.is_err());
+        // can't post a data result for a data request that doesn't exist
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+            result: "dr 0 result".to_string(),
+        };
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert!(res.is_err());
 
-//         // someone posts a data request
-//         let info = mock_info("anyone", &coins(2, "token"));
-//         let msg = ExecuteMsg::PostDataRequest {
-//             value: "hello world".to_string(),
-//         };
-//         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337 as u128,
+            nonce: 1 as u128,
+            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // data result with id 0 does not yet exist
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataResult { dr_id: 0 },
-//         )
-//         .unwrap();
-//         let value: GetDataRequestResponse = from_binary(&res).unwrap();
-//         assert_eq!(None, value.value);
+        // data result with id 0x66... does not yet exist
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataResult {
+                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                    .to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(None, value.value);
 
-//         // someone posts a data result
-//         let info = mock_info("anyone", &coins(2, "token"));
-//         let msg = ExecuteMsg::PostDataResult {
-//             dr_id: 0 as u128,
-//             result: "dr 0 result".to_string(),
-//         };
-//         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // someone posts a data result
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+            result: "dr 0 result".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//         // should be able to fetch data result with id 0
-//         let res = query(
-//             deps.as_ref(),
-//             mock_env(),
-//             QueryMsg::GetDataResult { dr_id: 0 },
-//         )
-//         .unwrap();
-//         let value: GetDataResultResponse = from_binary(&res).unwrap();
-//         assert_eq!(
-//             Some(DataResult {
-//                 dr_id: 0 as u128,
-//                 value: "hello world".to_string(),
-//                 result: "dr 0 result".to_string()
-//             }),
-//             value.value
-//         );
-//     }
-// }
+        // should be able to fetch data result with id 0x66...
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataResult {
+                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                    .to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataResultResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            Some(DataResult {
+                value: "hello world".to_string(),
+                nonce: 1 as u128,
+                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                    .to_string(),
+                result: "dr 0 result".to_string()
+            }),
+            value.value
+        );
+    }
+}
