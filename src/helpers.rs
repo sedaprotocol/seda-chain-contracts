@@ -2,6 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, StdResult, WasmMsg};
+use sha3::{Digest, Keccak256};
 
 use crate::error::ContractError;
 use crate::msg::ExecuteMsg;
@@ -33,4 +34,16 @@ pub fn get_attached_funds(funds: &[Coin], token: String) -> Result<u128, Contrac
         .find(|coin| coin.denom == token)
         .map(|coin| coin.amount.u128());
     amount.ok_or(ContractError::NoFunds)
+}
+
+pub fn pad_to_32_bytes(value: u128) -> [u8; 32] {
+    let mut bytes = [0u8; 32];
+    let small_bytes = &value.to_be_bytes();
+    bytes[(32 - small_bytes.len())..].copy_from_slice(small_bytes);
+    bytes
+}
+
+pub fn hash_update(hasher: &mut Keccak256, value: u128) {
+    let bytes = pad_to_32_bytes(value);
+    hasher.update(bytes);
 }

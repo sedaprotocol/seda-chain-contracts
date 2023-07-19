@@ -1,9 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
-use tiny_keccak::{Hasher, Keccak};
+use sha3::{Digest, Keccak256};
 
 use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL};
 
+use crate::helpers::hash_update;
 use crate::msg::{GetDataRequestResponse, GetDataRequestsResponse};
 use crate::state::DataRequest;
 use crate::types::Hash;
@@ -35,21 +36,11 @@ pub mod data_requests {
         }
 
         // reconstruct the data request id hash
-        // TODO: move some logic to helper functions
-        let mut hasher = Keccak::v256();
-        // pad nonce to 32 bytes
-        let mut nonce_bytes = [0u8; 32];
-        let nonce_small_bytes = &nonce.to_be_bytes();
-        nonce_bytes[(32 - nonce_small_bytes.len())..].copy_from_slice(nonce_small_bytes);
-        hasher.update(&nonce_bytes);
+        let mut hasher = Keccak256::new();
+        hash_update(&mut hasher, nonce);
         hasher.update(value.as_bytes());
-        // pad chain_id to 32 bytes
-        let mut chain_id_bytes = [0u8; 32];
-        let chain_id_small_bytes = &chain_id.to_be_bytes();
-        chain_id_bytes[(32 - chain_id_small_bytes.len())..].copy_from_slice(chain_id_small_bytes);
-        hasher.update(&chain_id_bytes);
-        let mut reconstructed_dr_id_bytes = [0u8; 32];
-        hasher.finalize(&mut reconstructed_dr_id_bytes);
+        hash_update(&mut hasher, chain_id);
+        let reconstructed_dr_id_bytes = hasher.finalize();
         let reconstructed_dr_id = format!("0x{}", hex::encode(reconstructed_dr_id_bytes));
 
         // check if the reconstructed dr_id matches the given dr_id
