@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
-use ethers::utils::keccak256;
+use tiny_keccak::{Hasher, Keccak};
 
 use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL};
 
@@ -35,13 +35,22 @@ pub mod data_requests {
         }
 
         // reconstruct the data request id hash
-        // TODO: make generic, remove ethers dependency
-        let encoded_params = ethers::abi::encode(&[
-            ethers::abi::Token::Uint(nonce.into()),
-            ethers::abi::Token::String(value.clone()),
-            ethers::abi::Token::Uint(chain_id.into()),
-        ]);
-        let reconstructed_dr_id = format!("0x{}", hex::encode(keccak256(encoded_params)));
+        // TODO: move some logic to helper functions
+        let mut hasher = Keccak::v256();
+        // pad nonce to 32 bytes
+        let mut nonce_bytes = [0u8; 32];
+        let nonce_small_bytes = &nonce.to_be_bytes();
+        nonce_bytes[(32 - nonce_small_bytes.len())..].copy_from_slice(nonce_small_bytes);
+        hasher.update(&nonce_bytes);
+        hasher.update(value.as_bytes());
+        // pad chain_id to 32 bytes
+        let mut chain_id_bytes = [0u8; 32];
+        let chain_id_small_bytes = &chain_id.to_be_bytes();
+        chain_id_bytes[(32 - chain_id_small_bytes.len())..].copy_from_slice(chain_id_small_bytes);
+        hasher.update(&chain_id_bytes);
+        let mut reconstructed_dr_id_bytes = [0u8; 32];
+        hasher.finalize(&mut reconstructed_dr_id_bytes);
+        let reconstructed_dr_id = format!("0x{}", hex::encode(reconstructed_dr_id_bytes));
 
         // check if the reconstructed dr_id matches the given dr_id
         if reconstructed_dr_id != dr_id {
@@ -146,7 +155,7 @@ mod dr_tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequest {
-                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             },
         )
@@ -160,7 +169,7 @@ mod dr_tests {
             value: "hello world".to_string(),
             chain_id: 31337 as u128,
             nonce: 1 as u128,
-            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -169,7 +178,7 @@ mod dr_tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequest {
-                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             },
         )
@@ -180,7 +189,7 @@ mod dr_tests {
                 value: "hello world".to_string(),
                 chain_id: 31337 as u128,
                 nonce: 1 as u128,
-                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             }),
             value.value
@@ -215,21 +224,21 @@ mod dr_tests {
             value: "1".to_string(),
             nonce: 1 as u128,
             chain_id: 31337 as u128,
-            dr_id: "0x3855afc167b4429c3b05600cc16ef5f30d5ee7fb5c56805ab295488abd270014".to_string(),
+            dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let msg = ExecuteMsg::PostDataRequest {
             value: "2".to_string(),
             nonce: 1 as u128,
             chain_id: 31337 as u128,
-            dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a".to_string(),
+            dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let msg = ExecuteMsg::PostDataRequest {
             value: "3".to_string(),
             nonce: 1 as u128,
             chain_id: 31337 as u128,
-            dr_id: "0x95b51ee8670e9ab36daa83281c7531e13d0a2f6b0992c5e55d8622d379562d87".to_string(),
+            dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -251,21 +260,21 @@ mod dr_tests {
                         value: "1".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x3855afc167b4429c3b05600cc16ef5f30d5ee7fb5c56805ab295488abd270014"
+                        dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd"
                             .to_string()
                     },
                     DataRequest {
                         value: "2".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                        dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                             .to_string()
                     },
                     DataRequest {
                         value: "3".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x95b51ee8670e9ab36daa83281c7531e13d0a2f6b0992c5e55d8622d379562d87"
+                        dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a"
                             .to_string()
                     },
                 ]
@@ -291,14 +300,14 @@ mod dr_tests {
                         value: "1".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x3855afc167b4429c3b05600cc16ef5f30d5ee7fb5c56805ab295488abd270014"
+                        dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd"
                             .to_string()
                     },
                     DataRequest {
                         value: "2".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                        dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                             .to_string()
                     },
                 ]
@@ -323,7 +332,7 @@ mod dr_tests {
                     value: "2".to_string(),
                     nonce: 1 as u128,
                     chain_id: 31337 as u128,
-                    dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                    dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                         .to_string()
                 },]
             },
@@ -348,14 +357,14 @@ mod dr_tests {
                         value: "2".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x20aabf330be2a6a2510c4880c3f0e28e7e8cec33f38e05094f6ec7070ea4297a"
+                        dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                             .to_string()
                     },
                     DataRequest {
                         value: "3".to_string(),
                         nonce: 1 as u128,
                         chain_id: 31337 as u128,
-                        dr_id: "0x95b51ee8670e9ab36daa83281c7531e13d0a2f6b0992c5e55d8622d379562d87"
+                        dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a"
                             .to_string()
                     },
                 ]

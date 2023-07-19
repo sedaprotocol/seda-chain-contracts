@@ -62,7 +62,7 @@ fn post_data_request() {
     let (mut app, cw_template_contract) = proper_instantiate();
 
     let msg = ExecuteMsg::PostDataRequest {
-        dr_id: "0x65060e7ee7c6cfa988cf98eb85e2e3641f48ecdacfd0a9e134219436ed228ee0".to_string(),
+        dr_id: "0x899e5a9b45bf4a4ffb24c5b11b8cbcd7808182addd3c3ac21ee0a5d321e7ff81".to_string(), // expected
         nonce: 1 as u128,
         chain_id: 31337 as u128,
         value: "test".to_string(),

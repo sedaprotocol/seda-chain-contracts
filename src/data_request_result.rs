@@ -72,7 +72,7 @@ mod dr_result_tests {
         // can't post a data result for a data request that doesn't exist
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataResult {
-            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
             result: "dr 0 result".to_string(),
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
@@ -84,7 +84,7 @@ mod dr_result_tests {
             value: "hello world".to_string(),
             chain_id: 31337 as u128,
             nonce: 1 as u128,
-            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -93,7 +93,7 @@ mod dr_result_tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataResult {
-                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             },
         )
@@ -104,7 +104,7 @@ mod dr_result_tests {
         // someone posts a data result
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataResult {
-            dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063".to_string(),
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
             result: "dr 0 result".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -114,7 +114,7 @@ mod dr_result_tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataResult {
-                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             },
         )
@@ -124,7 +124,7 @@ mod dr_result_tests {
             Some(DataResult {
                 value: "hello world".to_string(),
                 nonce: 1 as u128,
-                dr_id: "0x6602112640959ba080ae4cc0861e56fc70d5261cffddc1f016091aebc60f4063"
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
                 result: "dr 0 result".to_string()
             }),
