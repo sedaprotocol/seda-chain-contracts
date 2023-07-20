@@ -46,8 +46,8 @@ pub mod data_requests {
         // check if the reconstructed dr_id matches the given dr_id
         if reconstructed_dr_id != dr_id {
             return Err(ContractError::InvalidDataRequestId(
-                dr_id,
                 reconstructed_dr_id,
+                dr_id,
             ));
         }
 
