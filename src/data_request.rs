@@ -2,7 +2,7 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 use sha3::{Digest, Keccak256};
 
-use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL};
+use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 
 use crate::helpers::hash_update;
 use crate::msg::{GetDataRequestResponse, GetDataRequestsResponse};
@@ -18,6 +18,20 @@ pub mod data_requests {
 
     use super::*;
 
+    /// Internal function to return whether a data request or result exists with the given id.
+    fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
+        DATA_REQUESTS_POOL
+            .may_load(deps.storage, dr_id.clone())
+            .ok()
+            .flatten()
+            .is_some()
+            || DATA_RESULTS
+                .may_load(deps.storage, dr_id)
+                .ok()
+                .flatten()
+                .is_some()
+    }
+
     /// Posts a data request to the pool
     pub fn post_data_request(
         deps: DepsMut,
@@ -28,10 +42,7 @@ pub mod data_requests {
         chain_id: u128,
     ) -> Result<Response, ContractError> {
         // require the data request id to be unique
-        if DATA_REQUESTS_POOL
-            .may_load(deps.storage, dr_id.clone())?
-            .is_some()
-        {
+        if data_request_or_result_exists(deps.as_ref(), dr_id.clone()) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
@@ -49,14 +60,6 @@ pub mod data_requests {
                 reconstructed_dr_id,
                 dr_id,
             ));
-        }
-
-        // check if the dr_id is already in the pool
-        if DATA_REQUESTS_POOL
-            .may_load(deps.storage, dr_id.clone())?
-            .is_some()
-        {
-            return Err(ContractError::DataRequestAlreadyExists);
         }
 
         // save the data request
@@ -362,5 +365,45 @@ mod dr_tests {
             },
             response
         );
+    }
+
+    #[test]
+    fn no_duplicate_dr_ids() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337 as u128,
+            nonce: 1 as u128,
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // someone posts a data result
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+            result: "dr 0 result".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // can't create a data request with the same id as a data result
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337 as u128,
+            nonce: 1 as u128,
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+        };
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert!(res.is_err());
     }
 }
