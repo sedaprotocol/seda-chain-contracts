@@ -63,8 +63,8 @@ fn post_data_request() {
 
     let msg = ExecuteMsg::PostDataRequest {
         dr_id: "0x899e5a9b45bf4a4ffb24c5b11b8cbcd7808182addd3c3ac21ee0a5d321e7ff81".to_string(), // expected
-        nonce: 1 as u128,
-        chain_id: 31337 as u128,
+        nonce: 1,
+        chain_id: 31337,
         value: "test".to_string(),
     };
     let cosmos_msg = cw_template_contract.call(msg).unwrap();
