@@ -20,6 +20,7 @@ pub struct DataResult {
     pub nonce: u128,
     pub value: String,
     pub result: String,
+    pub chain_id: u128,
 }
 
 /// A data request executor with staking info and optional p2p multi address

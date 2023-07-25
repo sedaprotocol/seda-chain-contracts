@@ -27,6 +27,7 @@ pub mod data_request_results {
             nonce: dr.nonce,
             value: dr.value,
             result: result.clone(),
+            chain_id: dr.chain_id,
         };
 
         // save the data result then remove it from the pool
@@ -82,8 +83,8 @@ mod dr_result_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             value: "hello world".to_string(),
-            chain_id: 31337 as u128,
-            nonce: 1 as u128,
+            chain_id: 31337,
+            nonce: 1,
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -123,10 +124,11 @@ mod dr_result_tests {
         assert_eq!(
             Some(DataResult {
                 value: "hello world".to_string(),
-                nonce: 1 as u128,
+                nonce: 1,
                 dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
-                result: "dr 0 result".to_string()
+                result: "dr 0 result".to_string(),
+                chain_id: 31337,
             }),
             value.value
         );

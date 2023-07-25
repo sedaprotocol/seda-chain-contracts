@@ -161,8 +161,8 @@ mod dr_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             value: "hello world".to_string(),
-            chain_id: 31337 as u128,
-            nonce: 1 as u128,
+            chain_id: 31337,
+            nonce: 1,
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -181,8 +181,8 @@ mod dr_tests {
         assert_eq!(
             Some(DataRequest {
                 value: "hello world".to_string(),
-                chain_id: 31337 as u128,
-                nonce: 1 as u128,
+                chain_id: 31337,
+                nonce: 1,
                 dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             }),
@@ -216,22 +216,22 @@ mod dr_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             value: "1".to_string(),
-            nonce: 1 as u128,
-            chain_id: 31337 as u128,
+            nonce: 1,
+            chain_id: 31337,
             dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let msg = ExecuteMsg::PostDataRequest {
             value: "2".to_string(),
-            nonce: 1 as u128,
-            chain_id: 31337 as u128,
+            nonce: 1,
+            chain_id: 31337,
             dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let msg = ExecuteMsg::PostDataRequest {
             value: "3".to_string(),
-            nonce: 1 as u128,
-            chain_id: 31337 as u128,
+            nonce: 1,
+            chain_id: 31337,
             dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -252,22 +252,22 @@ mod dr_tests {
                 value: vec![
                     DataRequest {
                         value: "1".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd"
                             .to_string()
                     },
                     DataRequest {
                         value: "2".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                             .to_string()
                     },
                     DataRequest {
                         value: "3".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a"
                             .to_string()
                     },
@@ -292,15 +292,15 @@ mod dr_tests {
                 value: vec![
                     DataRequest {
                         value: "1".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd"
                             .to_string()
                     },
                     DataRequest {
                         value: "2".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                             .to_string()
                     },
@@ -324,8 +324,8 @@ mod dr_tests {
             GetDataRequestsResponse {
                 value: vec![DataRequest {
                     value: "2".to_string(),
-                    nonce: 1 as u128,
-                    chain_id: 31337 as u128,
+                    nonce: 1,
+                    chain_id: 31337,
                     dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                         .to_string()
                 },]
@@ -349,15 +349,15 @@ mod dr_tests {
                 value: vec![
                     DataRequest {
                         value: "2".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
                             .to_string()
                     },
                     DataRequest {
                         value: "3".to_string(),
-                        nonce: 1 as u128,
-                        chain_id: 31337 as u128,
+                        nonce: 1,
+                        chain_id: 31337,
                         dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a"
                             .to_string()
                     },
@@ -381,8 +381,8 @@ mod dr_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             value: "hello world".to_string(),
-            chain_id: 31337 as u128,
-            nonce: 1 as u128,
+            chain_id: 31337,
+            nonce: 1,
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -399,8 +399,8 @@ mod dr_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             value: "hello world".to_string(),
-            chain_id: 31337 as u128,
-            nonce: 1 as u128,
+            chain_id: 31337,
+            nonce: 1,
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
