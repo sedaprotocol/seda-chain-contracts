@@ -35,7 +35,7 @@ pub struct DataRequestExecutor {
 pub const DATA_REQUESTS_POOL: Map<Hash, DataRequest> = Map::new("data_requests_pool");
 
 /// A map of data requests in the pool by nonce
-pub const DATA_REQUESTS_BY_NONCE: Map<u128, Hash> = Map::new("data_requests_by_nonce");
+pub const DATA_REQUESTS_BY_NONCE: Map<u128, Hash> = Map::new("DATA_REQUESTS_BY_NONCE");
 
 /// Once resolved, data requests are moved to this map and removed from the pool
 pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results");

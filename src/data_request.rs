@@ -5,7 +5,7 @@ use sha3::{Digest, Keccak256};
 use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 
 use crate::helpers::hash_update;
-use crate::msg::{GetDataRequestResponse, GetDataRequestsResponse};
+use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use crate::state::DataRequest;
 use crate::types::Hash;
 
@@ -94,11 +94,11 @@ pub mod data_requests {
     }
 
     /// Returns a list of data requests from the pool, starting from the given position and limited by the given limit.
-    pub fn get_data_requests(
+    pub fn get_data_requests_from_pool(
         deps: Deps,
         position: Option<u128>,
         limit: Option<u32>,
-    ) -> StdResult<GetDataRequestsResponse> {
+    ) -> StdResult<GetDataRequestsFromPoolResponse> {
         let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?.to_be_bytes();
         let position = position.unwrap_or(0).to_be_bytes();
         let limit = limit.unwrap_or(u32::MAX);
@@ -111,13 +111,18 @@ pub mod data_requests {
             Some(Bound::ExclusiveRaw(dr_count.into())),
             Order::Ascending,
         ) {
-            requests.push(DATA_REQUESTS_POOL.load(deps.storage, dr?.1)?);
+            let dr_pending = DATA_REQUESTS_POOL.may_load(deps.storage, dr?.1)?;
+            // skip if the data request is no longer in the pool
+            if dr_pending.is_none() {
+                continue;
+            }
+            requests.push(dr_pending.unwrap());
             if requests.len() == limit as usize {
                 break;
             }
         }
 
-        Ok(GetDataRequestsResponse { value: requests })
+        Ok(GetDataRequestsFromPoolResponse { value: requests })
     }
 }
 
@@ -240,15 +245,15 @@ mod dr_tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataRequests {
+            QueryMsg::GetDataRequestsFromPool {
                 position: None,
                 limit: None,
             },
         )
         .unwrap();
-        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
         assert_eq!(
-            GetDataRequestsResponse {
+            GetDataRequestsFromPoolResponse {
                 value: vec![
                     DataRequest {
                         value: "1".to_string(),
@@ -280,15 +285,15 @@ mod dr_tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataRequests {
+            QueryMsg::GetDataRequestsFromPool {
                 position: None,
                 limit: Some(2),
             },
         )
         .unwrap();
-        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
         assert_eq!(
-            GetDataRequestsResponse {
+            GetDataRequestsFromPoolResponse {
                 value: vec![
                     DataRequest {
                         value: "1".to_string(),
@@ -313,15 +318,15 @@ mod dr_tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataRequests {
+            QueryMsg::GetDataRequestsFromPool {
                 position: Some(1),
                 limit: Some(1),
             },
         )
         .unwrap();
-        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
         assert_eq!(
-            GetDataRequestsResponse {
+            GetDataRequestsFromPoolResponse {
                 value: vec![DataRequest {
                     value: "2".to_string(),
                     nonce: 1,
@@ -337,15 +342,15 @@ mod dr_tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataRequests {
+            QueryMsg::GetDataRequestsFromPool {
                 position: Some(1),
                 limit: None,
             },
         )
         .unwrap();
-        let response: GetDataRequestsResponse = from_binary(&res).unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
         assert_eq!(
-            GetDataRequestsResponse {
+            GetDataRequestsFromPoolResponse {
                 value: vec![
                     DataRequest {
                         value: "2".to_string(),

@@ -56,9 +56,9 @@ mod dr_result_tests {
     use cosmwasm_std::{coins, from_binary};
 
     use crate::contract::instantiate;
-    use crate::msg::GetDataRequestResponse;
     use crate::msg::InstantiateMsg;
     use crate::msg::{ExecuteMsg, QueryMsg};
+    use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 
     #[test]
     fn post_data_result() {
@@ -88,6 +88,18 @@ mod dr_result_tests {
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // can fetch it via `get_data_requests_from_pool`
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestsFromPool {
+                position: None,
+                limit: None,
+            },
+        );
+        let value: GetDataRequestsFromPoolResponse = from_binary(&res.unwrap()).unwrap();
+        assert_eq!(value.value.len(), 1);
 
         // data result with id 0x66... does not yet exist
         let res = query(
@@ -132,5 +144,17 @@ mod dr_result_tests {
             }),
             value.value
         );
+
+        // can no longer fetch the first via `get_data_requests_from_pool`, only the second
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestsFromPool {
+                position: None,
+                limit: None,
+            },
+        );
+        let value: GetDataRequestsFromPoolResponse = from_binary(&res.unwrap()).unwrap();
+        assert_eq!(value.value.len(), 0);
     }
 }

@@ -64,9 +64,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetDataRequest { dr_id } => {
             to_binary(&data_requests::get_data_request(deps, dr_id)?)
         }
-        QueryMsg::GetDataRequests { position, limit } => {
-            to_binary(&data_requests::get_data_requests(deps, position, limit)?)
-        }
+        QueryMsg::GetDataRequestsFromPool { position, limit } => to_binary(
+            &data_requests::get_data_requests_from_pool(deps, position, limit)?,
+        ),
         QueryMsg::GetDataResult { dr_id } => {
             to_binary(&data_request_results::get_data_result(deps, dr_id)?)
         }

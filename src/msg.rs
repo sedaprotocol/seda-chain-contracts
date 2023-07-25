@@ -38,8 +38,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(GetDataRequestResponse)]
     GetDataRequest { dr_id: Hash },
-    #[returns(GetDataRequestsResponse)]
-    GetDataRequests {
+    #[returns(GetDataRequestsFromPoolResponse)]
+    GetDataRequestsFromPool {
         position: Option<u128>,
         limit: Option<u32>,
     },
@@ -55,7 +55,7 @@ pub struct GetDataRequestResponse {
 }
 
 #[cw_serde]
-pub struct GetDataRequestsResponse {
+pub struct GetDataRequestsFromPoolResponse {
     pub value: Vec<DataRequest>,
 }
 
