@@ -86,7 +86,7 @@ jobs:
           echo "txhash=$TXHASH" >> $GITHUB_ENV
 
       - name: Wait for the transaction to be included in a block
-        run: sleep 6
+        run: sleep 12
 
       - name: Find the code ID
         env:
@@ -113,7 +113,7 @@ jobs:
           echo "txhash=$TXHASH" >> $GITHUB_ENV
 
       - name: Wait for the transaction to be included in a block
-        run: sleep 6
+        run: sleep 12
 
       - name: Find the contract address
         env:
