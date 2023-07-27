@@ -24,6 +24,8 @@ jobs:
           done
           echo "is_allowed=false" >> $GITHUB_OUTPUT
   deploys:
+    needs: check_actor
+    if: ${{ needs.check_actor.outputs.is_allowed == 'true' }}
     name: Deploy
     runs-on: ubuntu-latest
     steps:
