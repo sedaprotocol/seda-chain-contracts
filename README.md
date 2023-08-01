@@ -67,3 +67,7 @@ This produces an `artifacts` directory with a `cw_seda_subchain.wasm`, as well a
 This project utilizes [`cargo-crev`](https://github.com/crev-dev/cargo-crev), a language and ecosystem agnostic, distributed code review system. For use, [see the Getting Started guide](https://github.com/crev-dev/cargo-crev/blob/master/cargo-crev/src/doc/getting_started.md).
 
 Additionally, one may use [`cosmwasm-verify`](https://github.com/CosmWasm/cosmwasm-verify) to reproduce the build for verification. See the repository link for use.
+
+## License
+
+Contents of this repository are open source under [MIT License](LICENSE).
