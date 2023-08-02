@@ -49,3 +49,7 @@ pub const INACTIVE_DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
 
 /// Address of the token used for data request executor staking
 pub const TOKEN: Item<String> = Item::new("token");
+
+/// A map of data request executors (of address to info) that are eligible for committee inclusion
+pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
+    Map::new("eligible_data_request_executors");

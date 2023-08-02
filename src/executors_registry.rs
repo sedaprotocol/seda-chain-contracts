@@ -1,10 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use crate::state::INACTIVE_DATA_REQUEST_EXECUTORS;
-
 use crate::consts::MINIMUM_STAKE_TO_REGISTER;
 use crate::helpers::get_attached_funds;
+use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
+use crate::state::INACTIVE_DATA_REQUEST_EXECUTORS;
 use crate::state::TOKEN;
 
 use crate::msg::GetDataRequestExecutorResponse;
@@ -13,6 +13,8 @@ use crate::ContractError;
 
 pub mod data_request_executors {
     use cosmwasm_std::Addr;
+
+    use crate::consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY;
 
     use super::*;
 
@@ -40,6 +42,9 @@ pub mod data_request_executors {
         };
         INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
+        if amount >= MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY {
+            ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+        }
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")
             .add_attribute("executor", info.sender)
