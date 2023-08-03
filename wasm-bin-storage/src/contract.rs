@@ -1,10 +1,14 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
-use cosmwasm_std::{Binary, DepsMut, MessageInfo, Response, Env, Deps, StdResult};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 
-use crate::{error::ContractError, state::{BinaryStruct, BINARIES, Config, CONFIG}, msg::{InstantiateMsg, ExecuteMsg, QueryMsg}};
+use crate::{
+    error::ContractError,
+    msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    state::{BinaryStruct, Config, BINARIES, CONFIG},
+};
 
 // version info
 const CONTRACT_NAME: &str = "seda-bin-storage";
@@ -65,29 +69,18 @@ pub fn delete_binary(
     _info: MessageInfo,
     key: &str,
 ) -> Result<Response, ContractError> {
-    BINARIES.remove(deps.storage, &key);
+    BINARIES.remove(deps.storage, key);
 
     Ok(Response::new()
         .add_attribute("method", "delete_binary")
         .add_attribute("deleted_binary_key", key))
 }
 
-// Anyone can query it.
 pub fn query_binary(deps: Deps, key: &str) -> StdResult<BinaryStruct> {
     let binary = BINARIES.load(deps.storage, key)?;
     Ok(binary)
 }
 
-// Awkward this function is the same as above. It's fine it's just to see if this concept works.
-pub fn read_binary(
-    deps: &DepsMut,
-    key: &str,
-) -> Result<BinaryStruct, ContractError> {
-    let binary_struct = BINARIES.load(deps.storage, key)?;
-    Ok(binary_struct)
-}
-
-// Should only we be able to store non wasm binaries??
 pub fn store_binary(
     deps: DepsMut,
     _info: MessageInfo,
@@ -100,12 +93,12 @@ pub fn store_binary(
         description,
     };
 
-    if read_binary(&deps, key).is_err() {
+    if BINARIES.load(deps.storage, key).is_err() {
         BINARIES.save(deps.storage, key, &binary_struct)?;
-        
+
         Ok(Response::new()
-        .add_attribute("method", "store_binary")
-        .add_attribute("new_binary_key", key))
+            .add_attribute("method", "store_binary")
+            .add_attribute("new_binary_key", key))
     } else {
         Err(ContractError::Conflict(key.to_string()))
     }

@@ -1,8 +1,10 @@
 // TODO more tests
-// TODO separate file for tests
-use crate::contract::{store_binary, read_binary};
-use cosmwasm_std::testing::{mock_dependencies,  mock_info};
-use cosmwasm_std::{coins, Binary, Response};
+// use crate::contract::{store_binary, query_binary};
+use crate::contract::{execute, query};
+use crate::msg::{ExecuteMsg, QueryMsg};
+use crate::state::BinaryStruct;
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::{coins, from_binary, Binary, Response};
 
 #[test]
 fn store_and_read_binary() {
@@ -15,7 +17,12 @@ fn store_and_read_binary() {
     let info = mock_info("sender", &coins(2, "token"));
 
     // Call the StoreBinary handler
-    let res = store_binary(deps.as_mut(), info.clone(), &key, data.clone(), description.clone()).unwrap();
+    let msg = ExecuteMsg::NewEntry {
+        key: key.clone(),
+        binary: data.clone(),
+        description: description.clone(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone()).unwrap();
     assert_eq!(
         res,
         Response::new()
@@ -24,11 +31,12 @@ fn store_and_read_binary() {
     );
 
     // Test that a bin with the same name would fail.
-    let duplicate = store_binary(deps.as_mut(), info, &key, data.clone(), description.clone());
+    let duplicate = execute(deps.as_mut(), mock_env(), info, msg);
     assert!(duplicate.is_err());
 
     // Now query the data back
-    let res = read_binary(&deps.as_mut(), &key).unwrap();
-    assert_eq!(res.binary, data);
-    assert_eq!(res.description, description);
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::QueryEntry { key }).unwrap();
+    let value: BinaryStruct = from_binary(&res).unwrap();
+    assert_eq!(value.binary, data);
+    assert_eq!(value.description, description);
 }
