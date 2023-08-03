@@ -6,7 +6,7 @@ pub struct InstantiateMsg {}
 #[cw_serde]
 pub enum ExecuteMsg {
     NewEntry {
-        binary: cosmwasm_std::Binary,
+        binary: Vec<u8>,
         description: String,
     },
     DeleteEntry {

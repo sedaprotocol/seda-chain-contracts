@@ -51,10 +51,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Bi
     }
 }
 
+/// Stores a binary along with a description and returns a key to retrieve it
 pub fn store_binary(
     deps: DepsMut,
     _info: MessageInfo,
-    binary: Binary,
+    binary: Vec<u8>,
     description: String,
 ) -> Result<Response, ContractError> {
     let binary_struct = BinaryStruct {
@@ -79,6 +80,7 @@ pub fn store_binary(
         .add_attribute("new_binary_key", key.to_string()))
 }
 
+/// Deletes a binary (without any checks)
 pub fn delete_binary(
     deps: DepsMut,
     _info: MessageInfo,
@@ -91,6 +93,7 @@ pub fn delete_binary(
         .add_attribute("deleted_binary_key", key.to_string()))
 }
 
+/// Queries a binary and its description by key
 pub fn query_binary(deps: Deps, key: &u128) -> StdResult<BinaryStruct> {
     let binary = BINARIES.load(deps.storage, key)?;
     Ok(binary)

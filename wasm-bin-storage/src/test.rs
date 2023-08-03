@@ -1,10 +1,8 @@
-// TODO more tests
-// use crate::contract::{store_binary, query_binary};
 use crate::contract::{execute, instantiate, query};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::BinaryStruct;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, Binary, Response};
+use cosmwasm_std::{coins, from_binary, Response};
 
 #[test]
 fn store_and_read_binary() {
@@ -17,12 +15,12 @@ fn store_and_read_binary() {
 
     // Define the binary data
     let key = 0;
-    let data = Binary::from("myData".as_bytes());
+    let data = "myData".as_bytes();
     let description = "my data binary".to_string();
 
     // Call the StoreBinary handler
     let msg = ExecuteMsg::NewEntry {
-        binary: data.clone(),
+        binary: data.to_vec(),
         description: description.clone(),
     };
     let res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone()).unwrap();

@@ -3,8 +3,7 @@ use cw_storage_plus::{Item, Map};
 
 #[cw_serde]
 pub struct BinaryStruct {
-    // TODO unsure if this type is good for binaries or we should use a base Vec<u8>
-    pub binary: cosmwasm_std::Binary,
+    pub binary: Vec<u8>,
     pub description: String,
 }
 
