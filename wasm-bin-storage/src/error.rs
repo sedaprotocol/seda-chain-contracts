@@ -5,7 +5,4 @@ use thiserror::Error;
 pub enum ContractError {
     #[error(transparent)]
     Std(#[from] StdError),
-
-    #[error("Binary with the name `{0}` already exists.")]
-    Conflict(String),
 }

@@ -7,7 +7,7 @@ use cw2::set_contract_version;
 use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{BinaryStruct, Config, BINARIES, CONFIG},
+    state::{BinaryStruct, BINARIES, BINARIES_COUNT},
 };
 
 // version info
@@ -18,24 +18,14 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
-    msg: InstantiateMsg,
+    _info: MessageInfo,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let owner = msg
-        .owner
-        .and_then(|addr_string| deps.api.addr_validate(addr_string.as_str()).ok())
-        .unwrap_or(info.sender);
+    BINARIES_COUNT.save(deps.storage, &0)?;
 
-    let config = Config {
-        owner: owner.clone(),
-    };
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("owner", owner))
+    Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -47,10 +37,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::NewEntry {
-            key,
             binary,
             description,
-        } => store_binary(deps, info, &key, binary, description),
+        } => store_binary(deps, info, binary, description),
         ExecuteMsg::DeleteEntry { key } => delete_binary(deps, info, &key),
     }
 }
@@ -62,29 +51,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Bi
     }
 }
 
-// Should we add the owner to the binary and only the can delete it?
-// Or even a list of owners.
-pub fn delete_binary(
-    deps: DepsMut,
-    _info: MessageInfo,
-    key: &str,
-) -> Result<Response, ContractError> {
-    BINARIES.remove(deps.storage, key);
-
-    Ok(Response::new()
-        .add_attribute("method", "delete_binary")
-        .add_attribute("deleted_binary_key", key))
-}
-
-pub fn query_binary(deps: Deps, key: &str) -> StdResult<BinaryStruct> {
-    let binary = BINARIES.load(deps.storage, key)?;
-    Ok(binary)
-}
-
 pub fn store_binary(
     deps: DepsMut,
     _info: MessageInfo,
-    key: &str,
     binary: Binary,
     description: String,
 ) -> Result<Response, ContractError> {
@@ -92,14 +61,37 @@ pub fn store_binary(
         binary,
         description,
     };
+    // save the binary with a key of the current binaries count
+    let key = BINARIES_COUNT.load(deps.storage)?;
+    BINARIES.save(deps.storage, &key, &binary_struct)?;
 
-    if BINARIES.load(deps.storage, key).is_err() {
-        BINARIES.save(deps.storage, key, &binary_struct)?;
+    // increment the binaries count
+    BINARIES_COUNT.update(
+        deps.storage,
+        |mut new_binaries_count| -> Result<_, ContractError> {
+            new_binaries_count += 1;
+            Ok(new_binaries_count)
+        },
+    )?;
 
-        Ok(Response::new()
-            .add_attribute("method", "store_binary")
-            .add_attribute("new_binary_key", key))
-    } else {
-        Err(ContractError::Conflict(key.to_string()))
-    }
+    Ok(Response::new()
+        .add_attribute("method", "store_binary")
+        .add_attribute("new_binary_key", key.to_string()))
+}
+
+pub fn delete_binary(
+    deps: DepsMut,
+    _info: MessageInfo,
+    key: &u128,
+) -> Result<Response, ContractError> {
+    BINARIES.remove(deps.storage, key);
+
+    Ok(Response::new()
+        .add_attribute("method", "delete_binary")
+        .add_attribute("deleted_binary_key", key.to_string()))
+}
+
+pub fn query_binary(deps: Deps, key: &u128) -> StdResult<BinaryStruct> {
+    let binary = BINARIES.load(deps.storage, key)?;
+    Ok(binary)
 }
