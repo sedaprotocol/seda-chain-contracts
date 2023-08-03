@@ -44,12 +44,12 @@ pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results");
 pub const DATA_REQUESTS_COUNT: Item<u128> = Item::new("data_requests_count");
 
 /// A map of data request executors (of address to info) that have not yet been marked as active
-pub const INACTIVE_DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
-    Map::new("inactive_data_request_executors");
+pub const DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
+    Map::new("data_request_executors");
 
 /// Address of the token used for data request executor staking
 pub const TOKEN: Item<String> = Item::new("token");
 
 /// A map of data request executors (of address to info) that are eligible for committee inclusion
-pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
+pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
     Map::new("eligible_data_request_executors");

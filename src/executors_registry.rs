@@ -3,8 +3,7 @@ use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use crate::consts::MINIMUM_STAKE_TO_REGISTER;
 use crate::helpers::get_attached_funds;
-use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
-use crate::state::INACTIVE_DATA_REQUEST_EXECUTORS;
+use crate::state::DATA_REQUEST_EXECUTORS;
 use crate::state::TOKEN;
 
 use crate::msg::GetDataRequestExecutorResponse;
@@ -14,7 +13,7 @@ use crate::ContractError;
 pub mod data_request_executors {
     use cosmwasm_std::Addr;
 
-    use crate::consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY;
+    use crate::utils::apply_validator_eligibility;
 
     use super::*;
 
@@ -40,11 +39,10 @@ pub mod data_request_executors {
             tokens_staked: amount,
             tokens_pending_withdrawal: 0,
         };
-        INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
-        if amount >= MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
-        }
+        apply_validator_eligibility(deps, info.sender.clone(), amount)?;
+
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")
             .add_attribute("executor", info.sender)
@@ -57,12 +55,12 @@ pub mod data_request_executors {
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
         // require that the executor has no staked or tokens pending withdrawal
-        let executor = INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
         if executor.tokens_staked > 0 || executor.tokens_pending_withdrawal > 0 {
             return Err(ContractError::ExecutorHasTokens);
         }
 
-        INACTIVE_DATA_REQUEST_EXECUTORS.remove(deps.storage, info.sender.clone());
+        DATA_REQUEST_EXECUTORS.remove(deps.storage, info.sender.clone());
 
         Ok(Response::new()
             .add_attribute("action", "unregister_data_request_executor")
@@ -74,7 +72,7 @@ pub mod data_request_executors {
         deps: Deps,
         executor: Addr,
     ) -> StdResult<GetDataRequestExecutorResponse> {
-        let executor = INACTIVE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
+        let executor = DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
         Ok(GetDataRequestExecutorResponse { value: executor })
     }
 }

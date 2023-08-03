@@ -1,8 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
-use crate::state::INACTIVE_DATA_REQUEST_EXECUTORS;
+use crate::state::DATA_REQUEST_EXECUTORS;
 
 use crate::error::ContractError;
 use crate::helpers::get_attached_funds;
@@ -12,7 +11,7 @@ use crate::state::TOKEN;
 pub mod staking {
     use cosmwasm_std::{coins, BankMsg};
 
-    use crate::consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY;
+    use crate::utils::apply_validator_eligibility;
 
     use super::*;
 
@@ -26,14 +25,11 @@ pub mod staking {
         let amount = get_attached_funds(&info.funds, token)?;
 
         // update staked tokens for executor
-        let mut executor =
-            INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.clone().sender)?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.clone().sender)?;
         executor.tokens_staked += amount;
-        INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.clone().sender, &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, info.clone().sender, &executor)?;
 
-        if executor.tokens_staked >= MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.clone().sender, &executor)?;
-        }
+        apply_validator_eligibility(deps, info.sender.clone(), executor.tokens_staked)?;
 
         Ok(Response::new()
             .add_attribute("action", "stake")
@@ -49,8 +45,7 @@ pub mod staking {
         amount: u128,
     ) -> Result<Response, ContractError> {
         // error if amount is greater than staked tokens
-        let mut executor =
-            INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
         if amount > executor.tokens_staked {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_staked,
@@ -61,13 +56,9 @@ pub mod staking {
         // update the executor
         executor.tokens_staked -= amount;
         executor.tokens_pending_withdrawal += amount;
-        INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
-        if executor.tokens_staked < MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, info.clone().sender);
-        } else {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.clone().sender, &executor)?;
-        }
+        apply_validator_eligibility(deps, info.sender.clone(), executor.tokens_staked)?;
 
         // TODO: emit when pending tokens can be withdrawn
         Ok(Response::new()
@@ -87,8 +78,7 @@ pub mod staking {
         let token = TOKEN.load(deps.storage)?;
 
         // error if amount is greater than pending tokens
-        let mut executor =
-            INACTIVE_DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
         if amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_pending_withdrawal,
@@ -98,11 +88,7 @@ pub mod staking {
 
         // update the executor
         executor.tokens_pending_withdrawal -= amount;
-        INACTIVE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
-
-        if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, info.sender.clone()) {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
-        }
+        DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
@@ -128,9 +114,9 @@ mod staking_tests {
     use crate::msg::InstantiateMsg;
     use crate::msg::{ExecuteMsg, QueryMsg};
     use crate::state::DataRequestExecutor;
+    use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary, Addr};
-
     #[test]
     fn deposit_stake_withdraw() {
         let mut deps = mock_dependencies();
@@ -156,10 +142,10 @@ mod staking_tests {
         };
 
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS
+        let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
-        assert_eq!(executor.tokens_staked, 1);
+        assert!(executor_is_eligible);
         // data request executor's stake should be 1
         let res = query(
             deps.as_ref(),
@@ -185,10 +171,10 @@ mod staking_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::DepositAndStake;
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS
+        let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
-        assert_eq!(executor.tokens_staked, 3);
+        assert!(executor_is_eligible);
         // data request executor's stake should be 3
         let res = query(
             deps.as_ref(),
@@ -214,10 +200,10 @@ mod staking_tests {
         let info = mock_info("anyone", &coins(0, "token"));
         let msg = ExecuteMsg::Unstake { amount: 1 };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS
+        let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
-        assert_eq!(executor.tokens_staked, 2);
+        assert!(executor_is_eligible);
         // data request executor's stake should be 1 and pending 1
         let res = query(
             deps.as_ref(),
@@ -243,10 +229,10 @@ mod staking_tests {
         let info = mock_info("anyone", &coins(0, "token"));
         let msg = ExecuteMsg::Withdraw { amount: 1 };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS
+        let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
-        assert_eq!(executor.tokens_pending_withdrawal, 0);
+        assert!(executor_is_eligible);
 
         // data request executor's stake should be 1 and pending 0
         let res = query(
@@ -275,8 +261,8 @@ mod staking_tests {
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         // assert executer is no longer eligible for committe inclusion
-        let executor_exists: bool =
+        let executor_is_eligible =
             ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, info.sender.clone());
-        assert_eq!(executor_exists, false);
+        assert!(!executor_is_eligible);
     }
 }
