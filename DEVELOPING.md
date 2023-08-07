@@ -3,7 +3,7 @@
 ## Compiling and running tests
 
 ```sh
-# this will produce a wasm build in ./target/wasm32-unknown-unknown/release/seda_chain_contracts.wasm
+# this will produce wasm builds in ./target/wasm32-unknown-unknown/release
 cargo wasm
 
 # this runs unit tests with helpful backtraces
