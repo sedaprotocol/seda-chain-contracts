@@ -131,6 +131,7 @@ mod dr_tests {
     use super::*;
     use crate::contract::execute;
     use crate::contract::query;
+    use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
 
@@ -381,6 +382,18 @@ mod dr_tests {
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // register dr executor
+        let info = mock_info("anyone", &coins(1, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            p2p_multi_address: Some("address".to_string()),
+        };
+
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
+            .load(&deps.storage, info.sender.clone())
+            .unwrap();
+        assert!(executor_is_eligible);
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));

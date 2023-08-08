@@ -19,3 +19,8 @@ pub fn apply_validator_eligibility(
     }
     Ok(())
 }
+
+pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, ContractError> {
+    let is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.load(deps.storage, dr_executor)?;
+    Ok(is_eligible)
+}

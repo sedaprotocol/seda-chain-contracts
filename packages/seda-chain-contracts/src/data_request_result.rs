@@ -10,16 +10,19 @@ use crate::ContractError;
 
 pub mod data_request_results {
 
+    use crate::utils::check_eligibility;
+
     use super::*;
 
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn post_data_result(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         dr_id: Hash,
         result: String,
     ) -> Result<Response, ContractError> {
+        assert!(check_eligibility(&deps, info.sender)?);
         // find the data request from the pool (if it exists, otherwise error)
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id.clone())?;
         let dr_result = DataResult {
@@ -52,6 +55,7 @@ mod dr_result_tests {
     use super::*;
     use crate::contract::execute;
     use crate::contract::query;
+    use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
 
@@ -69,6 +73,17 @@ mod dr_result_tests {
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // register dr executor
+        let info = mock_info("anyone", &coins(1, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            p2p_multi_address: Some("address".to_string()),
+        };
+
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
+            .load(&deps.storage, info.sender.clone())
+            .unwrap();
+        assert!(executor_is_eligible);
 
         // can't post a data result for a data request that doesn't exist
         let info = mock_info("anyone", &coins(2, "token"));
