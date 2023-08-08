@@ -819,7 +819,9 @@ dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
  "cw2",
+ "hex",
  "serde",
+ "sha3",
  "thiserror",
 ]
 

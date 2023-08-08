@@ -10,7 +10,7 @@ pub enum ExecuteMsg {
         description: String,
     },
     DeleteEntry {
-        key: u128,
+        key: String,
     },
 }
 
@@ -18,5 +18,5 @@ pub enum ExecuteMsg {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(crate::state::BinaryStruct)]
-    QueryEntry { key: u128 },
+    QueryEntry { key: String },
 }

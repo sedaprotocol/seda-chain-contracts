@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Map;
 
 #[cw_serde]
 pub struct BinaryStruct {
@@ -7,5 +7,4 @@ pub struct BinaryStruct {
     pub description: String,
 }
 
-pub const BINARIES: Map<&u128, BinaryStruct> = Map::new("binaries");
-pub const BINARIES_COUNT: Item<u128> = Item::new("binaries_count");
+pub const BINARIES: Map<&String, BinaryStruct> = Map::new("binaries");

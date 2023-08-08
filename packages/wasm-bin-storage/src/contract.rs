@@ -3,11 +3,12 @@ use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
+use sha3::{Digest, Keccak256};
 
 use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{BinaryStruct, BINARIES, BINARIES_COUNT},
+    state::{BinaryStruct, BINARIES},
 };
 
 // version info
@@ -22,8 +23,6 @@ pub fn instantiate(
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    BINARIES_COUNT.save(deps.storage, &0)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -59,42 +58,38 @@ pub fn store_binary(
     description: String,
 ) -> Result<Response, ContractError> {
     let binary_struct = BinaryStruct {
-        binary,
+        binary: binary.clone(),
         description,
     };
-    // save the binary with a key of the current binaries count
-    let key = BINARIES_COUNT.load(deps.storage)?;
-    BINARIES.save(deps.storage, &key, &binary_struct)?;
 
-    // increment the binaries count
-    BINARIES_COUNT.update(
-        deps.storage,
-        |mut new_binaries_count| -> Result<_, ContractError> {
-            new_binaries_count += 1;
-            Ok(new_binaries_count)
-        },
-    )?;
+    // calculate the hash of the binary
+    let mut hasher = Keccak256::new();
+    hasher.update(&binary);
+    let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
+
+    // save the binary
+    BINARIES.save(deps.storage, &binary_hash, &binary_struct)?;
 
     Ok(Response::new()
         .add_attribute("method", "store_binary")
-        .add_attribute("new_binary_key", key.to_string()))
+        .add_attribute("new_binary_key", binary_hash))
 }
 
 /// Deletes a binary (without any checks)
 pub fn delete_binary(
     deps: DepsMut,
     _info: MessageInfo,
-    key: &u128,
+    key: &String,
 ) -> Result<Response, ContractError> {
     BINARIES.remove(deps.storage, key);
 
     Ok(Response::new()
         .add_attribute("method", "delete_binary")
-        .add_attribute("deleted_binary_key", key.to_string()))
+        .add_attribute("deleted_binary_key", key))
 }
 
 /// Queries a binary and its description by key
-pub fn query_binary(deps: Deps, key: &u128) -> StdResult<BinaryStruct> {
+pub fn query_binary(deps: Deps, key: &String) -> StdResult<BinaryStruct> {
     let binary = BINARIES.load(deps.storage, key)?;
     Ok(binary)
 }
