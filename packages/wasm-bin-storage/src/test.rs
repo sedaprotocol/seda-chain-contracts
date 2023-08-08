@@ -1,4 +1,5 @@
 use crate::contract::{execute, instantiate, query};
+use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::BinaryStruct;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -42,6 +43,10 @@ fn store_and_read_binary() {
             .add_attribute("method", "store_binary")
             .add_attribute("new_binary_key", key.clone())
     );
+
+    // Expect error if we try to store the same binary again
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone()).unwrap_err();
+    assert_eq!(res, ContractError::BinaryAlreadyExists {});
 
     // Now query the data back
     let res = query(deps.as_ref(), mock_env(), QueryMsg::QueryEntry { key }).unwrap();

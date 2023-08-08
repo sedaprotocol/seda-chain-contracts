@@ -67,6 +67,11 @@ pub fn store_binary(
     hasher.update(&binary);
     let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
 
+    // require hash to be unique
+    if BINARIES.may_load(deps.storage, &binary_hash)?.is_some() {
+        return Err(ContractError::BinaryAlreadyExists {});
+    }
+
     // save the binary
     BINARIES.save(deps.storage, &binary_hash, &binary_struct)?;
 
