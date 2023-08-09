@@ -172,4 +172,35 @@ mod dr_result_tests {
         let value: GetDataRequestsFromPoolResponse = from_binary(&res.unwrap()).unwrap();
         assert_eq!(value.value.len(), 0);
     }
+
+    #[test]
+    #[should_panic]
+
+    fn ineligible_post_data_result() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337,
+            nonce: 1,
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // ineligible shouldn't be able to post a data result
+        let info = mock_info("ineligible", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+            result: "dr 0 result".to_string(),
+        };
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
 }
