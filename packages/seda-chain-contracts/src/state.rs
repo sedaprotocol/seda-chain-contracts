@@ -15,15 +15,30 @@ pub struct DataRequest {
     pub wasm_args: Vec<Vec<u8>>,
 }
 
-/// An resolved data request with an attached result
+/// A committed data request with an attached result
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct DataResult {
+pub struct CommittedDataResult {
     pub dr_id: Hash,
     pub nonce: u128,
     pub value: String,
-    pub result: String,
     pub chain_id: u128,
+    pub executor: Addr,
+    pub result: Hash,
+
 }
+
+/// A committed data request with an attached result
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+pub struct RevealedDataResult {
+    pub dr_id: Hash,
+    pub nonce: u128,
+    pub value: String,
+    pub chain_id: u128,
+    pub executor: Addr,
+    pub answer: String,
+    pub salt: String,
+}
+
 
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
@@ -39,8 +54,11 @@ pub const DATA_REQUESTS_POOL: Map<Hash, DataRequest> = Map::new("data_requests_p
 /// A map of data requests in the pool by nonce
 pub const DATA_REQUESTS_BY_NONCE: Map<u128, Hash> = Map::new("DATA_REQUESTS_BY_NONCE");
 
-/// Once resolved, data requests are moved to this map and removed from the pool
-pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results");
+/// Once committed, data requests are moved to this map and removed from the DATA_REQUESTS_POOL
+pub const COMMITTED_DATA_RESULTS: Map<Hash, Vec<CommittedDataResult>> = Map::new("committed_data_results");
+
+/// Once revealed, committed data requests are moved to this map and removed from the COMMITTED_DATA_RESULTS
+pub const REVEALED_DATA_RESULTS: Map<Hash, Vec<RevealedDataResult>> = Map::new("revealed_data_results");
 
 /// An auto-incrementing counter for the data requests
 pub const DATA_REQUESTS_COUNT: Item<u128> = Item::new("data_requests_count");

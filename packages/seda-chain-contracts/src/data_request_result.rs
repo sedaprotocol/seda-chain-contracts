@@ -2,52 +2,131 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use crate::msg::GetDataResultResponse;
-use crate::state::{DATA_REQUESTS_POOL, DATA_RESULTS};
+use crate::state::{DATA_REQUESTS_POOL, COMMITTED_DATA_RESULTS};
 use crate::types::Hash;
 
-use crate::state::DataResult;
+use crate::state::CommittedDataResult;
 use crate::ContractError;
 
 pub mod data_request_results {
 
-    use crate::utils::check_eligibility;
+    // use hex_literal::hex;
+    use sha3::{Digest, Sha3_256};
+
+    use crate::{utils::check_eligibility, consts::COMMITS_THRESHOLD, state::{REVEALED_DATA_RESULTS, RevealedDataResult}};
 
     use super::*;
 
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
-    pub fn post_data_result(
+    pub fn commit_result(
         deps: DepsMut,
         info: MessageInfo,
         dr_id: Hash,
-        result: String,
+        result: Hash,
     ) -> Result<Response, ContractError> {
-        assert!(check_eligibility(&deps, info.sender)?);
+        assert!(check_eligibility(&deps, info.sender.clone())?);
         // find the data request from the pool (if it exists, otherwise error)
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id.clone())?;
-        let dr_result = DataResult {
+        let dr_result = CommittedDataResult {
             dr_id: dr.dr_id,
             nonce: dr.nonce,
             value: dr.value,
             result: result.clone(),
             chain_id: dr.chain_id,
+            executor: info.sender.clone()
         };
+        let mut committed_drs = Vec::new();
+        if COMMITTED_DATA_RESULTS.has(deps.storage, dr_id.clone()) {
+            committed_drs = COMMITTED_DATA_RESULTS.load(deps.storage, dr_id.clone())?;
 
+        }
+        committed_drs.push(dr_result);
+
+        
         // save the data result then remove it from the pool
-        DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
+        COMMITTED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &committed_drs)?;
         DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone());
 
         Ok(Response::new()
-            .add_attribute("action", "post_data_result")
+            .add_attribute("action", "commit_result")
             .add_attribute("dr_id", dr_id)
             .add_attribute("result", result))
     }
 
+
+     /// Posts a data result of a data request with an attached result.
+    /// This removes the data request from the pool and creates a new entry in the data results.
+    pub fn reveal_result(
+        deps: DepsMut,
+        info: MessageInfo,
+        dr_id: Hash,
+        answer: String,
+        salt: String,
+    ) -> Result<Response, ContractError> {
+        assert!(check_eligibility(&deps, info.sender.clone())?, "sender is not an eligible dr executor");
+
+        // find the data request from the committed pool (if it exists, otherwise error)
+        let mut committed_dr_results = COMMITTED_DATA_RESULTS.load(deps.storage, dr_id.clone())?;
+        assert!(u128::try_from(committed_dr_results.len()).unwrap()>= COMMITS_THRESHOLD, "Revealing didn't start yet");
+        let mut committed_dr: Option<CommittedDataResult> = None;
+        for (index, committed)in committed_dr_results.clone().iter_mut().enumerate(){
+            let committed = committed.clone();
+            if committed.executor == info.sender.clone() {
+                committed_dr = Some(committed.clone());
+                committed_dr_results.remove(index.clone());
+                COMMITTED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &committed_dr_results)?;
+
+            } else {
+                panic!("executor hasn't committed an answer");
+            }
+        }
+        let calculated_dr_result = compute_hash(&answer.clone()) + &compute_hash(&salt);
+        assert_eq!(calculated_dr_result, committed_dr.clone().unwrap().result, "committed result doesn't match revealed result");
+
+
+        let dr_result = RevealedDataResult {
+            dr_id: committed_dr.clone().unwrap().dr_id,
+            nonce: committed_dr.clone().unwrap().nonce,
+            value: committed_dr.clone().unwrap().value,
+            chain_id: committed_dr.clone().unwrap().chain_id,
+            executor: info.sender.clone(),
+            answer: answer.clone(),
+            salt: salt.clone(),
+        };
+
+        let mut revealed_drs = Vec::new();
+        if REVEALED_DATA_RESULTS.has(deps.storage, dr_id.clone()) {
+            revealed_drs = REVEALED_DATA_RESULTS.load(deps.storage, dr_id.clone())?;
+
+        }
+        revealed_drs.push(dr_result);
+       
+        // save the data result then remove it from the pool
+        REVEALED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &revealed_drs)?;
+        DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone());
+
+        Ok(Response::new()
+            .add_attribute("action", "commit_result")
+            .add_attribute("dr_id", dr_id)
+            .add_attribute("answer", answer))
+    }
+
     /// Returns a data result from the results with the given id, if it exists.
-    pub fn get_data_result(deps: Deps, dr_id: Hash) -> StdResult<GetDataResultResponse> {
-        let dr = DATA_RESULTS.may_load(deps.storage, dr_id)?;
+    pub fn get_committed_data_result(deps: Deps, dr_id: Hash) -> StdResult<GetDataResultResponse> {
+        let dr = COMMITTED_DATA_RESULTS.may_load(deps.storage, dr_id)?;
         Ok(GetDataResultResponse { value: dr })
     }
+
+  
+
+    fn compute_hash(input_data: &str) -> String {
+        let mut hasher = Sha3_256::new();
+        hasher.update(input_data.as_bytes());
+        let digest = hasher.finalize();
+        format!("{:x}", digest)
+    }
+    
 }
 
 #[cfg(test)]
@@ -66,7 +145,7 @@ mod dr_result_tests {
     use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 
     #[test]
-    fn post_data_result() {
+    fn commit_result() {
         let mut deps = mock_dependencies();
 
         let msg = InstantiateMsg {
@@ -147,7 +226,7 @@ mod dr_result_tests {
             dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
             result: "dr 0 result".to_string(),
         };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         // should be able to fetch data result with id 0x66...
         let res = query(
@@ -160,15 +239,18 @@ mod dr_result_tests {
         )
         .unwrap();
         let value: GetDataResultResponse = from_binary(&res).unwrap();
+        let mut res = Vec::new();
+        res.push(CommittedDataResult {
+            value: "hello world".to_string(),
+            nonce: 1,
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
+                .to_string(),
+            result: "dr 0 result".to_string(),
+            chain_id: 31337,
+            executor: info.clone().sender.clone()
+        });
         assert_eq!(
-            Some(DataResult {
-                value: "hello world".to_string(),
-                nonce: 1,
-                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
-                    .to_string(),
-                result: "dr 0 result".to_string(),
-                chain_id: 31337,
-            }),
+            Some(res),
             value.value
         );
 

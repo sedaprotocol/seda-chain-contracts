@@ -2,7 +2,10 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 use cw_storage_plus::Bound;
 
-use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse, PostDataRequestArgs};
+use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, COMMITTED_DATA_RESULTS};
+
+use crate::helpers::hash_update;
+use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use crate::state::DataRequest;
 use crate::state::{DATA_REQUESTS_BY_NONCE, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 use crate::types::Hash;
@@ -20,7 +23,7 @@ pub mod data_requests {
             .ok()
             .flatten()
             .is_some()
-            || DATA_RESULTS
+            || COMMITTED_DATA_RESULTS
                 .may_load(deps.storage, dr_id)
                 .ok()
                 .flatten()

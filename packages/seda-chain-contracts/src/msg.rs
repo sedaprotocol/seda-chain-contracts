@@ -1,4 +1,4 @@
-use crate::state::{DataRequest, DataRequestExecutor, DataResult};
+use crate::state::{DataRequest, DataRequestExecutor, CommittedDataResult};
 use crate::types::Hash;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
@@ -57,7 +57,7 @@ pub struct GetDataRequestsFromPoolResponse {
 
 #[cw_serde]
 pub struct GetDataResultResponse {
-    pub value: Option<DataResult>,
+    pub value: Option<Vec<CommittedDataResult>>,
 }
 
 #[cw_serde]

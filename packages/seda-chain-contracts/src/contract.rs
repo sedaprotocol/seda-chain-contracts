@@ -39,7 +39,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::PostDataRequest { args } => data_requests::post_data_request(deps, info, args),
         ExecuteMsg::PostDataResult { dr_id, result } => {
-            data_request_results::post_data_result(deps, info, dr_id, result)
+            data_request_results::commit_result(deps, info, dr_id, result)
         }
         ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
             data_request_executors::register_data_request_executor(deps, info, p2p_multi_address)
@@ -63,7 +63,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             &data_requests::get_data_requests_from_pool(deps, position, limit)?,
         ),
         QueryMsg::GetDataResult { dr_id } => {
-            to_binary(&data_request_results::get_data_result(deps, dr_id)?)
+            to_binary(&data_request_results::get_committed_data_result(deps, dr_id)?)
         }
         QueryMsg::GetDataRequestExecutor { executor } => to_binary(
             &data_request_executors::get_data_request_executor(deps, executor)?,
