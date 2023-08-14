@@ -1,4 +1,4 @@
-use crate::state::{DataRequest, DataRequestExecutor, CommittedDataResult};
+use crate::state::{CommittedDataResult, DataRequest, DataRequestExecutor, RevealedDataResult};
 use crate::types::Hash;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
@@ -39,8 +39,10 @@ pub enum QueryMsg {
         position: Option<u128>,
         limit: Option<u32>,
     },
-    #[returns(GetDataResultResponse)]
-    GetDataResult { dr_id: Hash },
+    #[returns(GetCommittedDataResultResponse)]
+    GetCommittedDataResult { dr_id: Hash },
+    #[returns(GetRevealedDataResultResponse)]
+    GetRevealedDataResult { dr_id: Hash },
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
 }
@@ -56,8 +58,17 @@ pub struct GetDataRequestsFromPoolResponse {
 }
 
 #[cw_serde]
-pub struct GetDataResultResponse {
+pub struct GetCommittedDataResultResponse {
     pub value: Option<Vec<CommittedDataResult>>,
+}
+
+#[cw_serde]
+pub struct GetRevealedDataResultResponse {
+    pub value: Option<Vec<RevealedDataResult>>,
+}
+#[cw_serde]
+pub struct GetDataResultsIdsResponse {
+    pub value: Vec<Hash>,
 }
 
 #[cw_serde]

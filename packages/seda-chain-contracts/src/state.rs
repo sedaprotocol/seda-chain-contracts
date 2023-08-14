@@ -24,7 +24,6 @@ pub struct CommittedDataResult {
     pub chain_id: u128,
     pub executor: Addr,
     pub result: Hash,
-
 }
 
 /// A committed data request with an attached result
@@ -38,7 +37,6 @@ pub struct RevealedDataResult {
     pub answer: String,
     pub salt: String,
 }
-
 
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
@@ -55,10 +53,12 @@ pub const DATA_REQUESTS_POOL: Map<Hash, DataRequest> = Map::new("data_requests_p
 pub const DATA_REQUESTS_BY_NONCE: Map<u128, Hash> = Map::new("DATA_REQUESTS_BY_NONCE");
 
 /// Once committed, data requests are moved to this map and removed from the DATA_REQUESTS_POOL
-pub const COMMITTED_DATA_RESULTS: Map<Hash, Vec<CommittedDataResult>> = Map::new("committed_data_results");
+pub const COMMITTED_DATA_RESULTS: Map<Hash, Vec<CommittedDataResult>> =
+    Map::new("committed_data_results");
 
 /// Once revealed, committed data requests are moved to this map and removed from the COMMITTED_DATA_RESULTS
-pub const REVEALED_DATA_RESULTS: Map<Hash, Vec<RevealedDataResult>> = Map::new("revealed_data_results");
+pub const REVEALED_DATA_RESULTS: Map<Hash, Vec<RevealedDataResult>> =
+    Map::new("revealed_data_results");
 
 /// An auto-incrementing counter for the data requests
 pub const DATA_REQUESTS_COUNT: Item<u128> = Item::new("data_requests_count");

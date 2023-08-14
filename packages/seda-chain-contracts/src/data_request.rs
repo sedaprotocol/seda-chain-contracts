@@ -2,7 +2,7 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 use cw_storage_plus::Bound;
 
-use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, COMMITTED_DATA_RESULTS};
+use crate::state::{COMMITTED_DATA_RESULTS, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL};
 
 use crate::helpers::hash_update;
 use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};

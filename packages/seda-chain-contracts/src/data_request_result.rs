@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use crate::msg::GetDataResultResponse;
-use crate::state::{DATA_REQUESTS_POOL, COMMITTED_DATA_RESULTS};
+use crate::msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse};
+use crate::state::{COMMITTED_DATA_RESULTS, DATA_REQUESTS_POOL};
 use crate::types::Hash;
 
 use crate::state::CommittedDataResult;
@@ -13,7 +13,12 @@ pub mod data_request_results {
     // use hex_literal::hex;
     use sha3::{Digest, Sha3_256};
 
-    use crate::{utils::check_eligibility, consts::COMMITS_THRESHOLD, state::{REVEALED_DATA_RESULTS, RevealedDataResult}};
+    use crate::{
+        consts::COMMITS_THRESHOLD,
+        msg::GetDataResultsIdsResponse,
+        state::{RevealedDataResult, REVEALED_DATA_RESULTS},
+        utils::check_eligibility,
+    };
 
     use super::*;
 
@@ -34,16 +39,14 @@ pub mod data_request_results {
             value: dr.value,
             result: result.clone(),
             chain_id: dr.chain_id,
-            executor: info.sender.clone()
+            executor: info.sender,
         };
         let mut committed_drs = Vec::new();
         if COMMITTED_DATA_RESULTS.has(deps.storage, dr_id.clone()) {
             committed_drs = COMMITTED_DATA_RESULTS.load(deps.storage, dr_id.clone())?;
-
         }
         committed_drs.push(dr_result);
 
-        
         // save the data result then remove it from the pool
         COMMITTED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &committed_drs)?;
         DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone());
@@ -54,8 +57,7 @@ pub mod data_request_results {
             .add_attribute("result", result))
     }
 
-
-     /// Posts a data result of a data request with an attached result.
+    /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn reveal_result(
         deps: DepsMut,
@@ -64,44 +66,50 @@ pub mod data_request_results {
         answer: String,
         salt: String,
     ) -> Result<Response, ContractError> {
-        assert!(check_eligibility(&deps, info.sender.clone())?, "sender is not an eligible dr executor");
+        assert!(
+            check_eligibility(&deps, info.sender.clone())?,
+            "sender is not an eligible dr executor"
+        );
 
         // find the data request from the committed pool (if it exists, otherwise error)
         let mut committed_dr_results = COMMITTED_DATA_RESULTS.load(deps.storage, dr_id.clone())?;
-        assert!(u128::try_from(committed_dr_results.len()).unwrap()>= COMMITS_THRESHOLD, "Revealing didn't start yet");
+        assert!(
+            u128::try_from(committed_dr_results.len()).unwrap() >= COMMITS_THRESHOLD,
+            "Revealing didn't start yet"
+        );
         let mut committed_dr: Option<CommittedDataResult> = None;
-        for (index, committed)in committed_dr_results.clone().iter_mut().enumerate(){
-            let committed = committed.clone();
+        for (index, committed) in committed_dr_results.clone().iter_mut().enumerate() {
             if committed.executor == info.sender.clone() {
                 committed_dr = Some(committed.clone());
-                committed_dr_results.remove(index.clone());
+                committed_dr_results.remove(index);
                 COMMITTED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &committed_dr_results)?;
-
             } else {
                 panic!("executor hasn't committed an answer");
             }
         }
-        let calculated_dr_result = compute_hash(&answer.clone()) + &compute_hash(&salt);
-        assert_eq!(calculated_dr_result, committed_dr.clone().unwrap().result, "committed result doesn't match revealed result");
+        let committed_dr = committed_dr.unwrap();
 
-
+        let calculated_dr_result = compute_hash(&answer) + &compute_hash(&salt);
+        assert_eq!(
+            calculated_dr_result, committed_dr.result,
+            "committed result doesn't match revealed result"
+        );
         let dr_result = RevealedDataResult {
-            dr_id: committed_dr.clone().unwrap().dr_id,
-            nonce: committed_dr.clone().unwrap().nonce,
-            value: committed_dr.clone().unwrap().value,
-            chain_id: committed_dr.clone().unwrap().chain_id,
-            executor: info.sender.clone(),
+            dr_id: committed_dr.dr_id,
+            nonce: committed_dr.nonce,
+            value: committed_dr.value,
+            chain_id: committed_dr.chain_id,
+            executor: info.sender,
             answer: answer.clone(),
-            salt: salt.clone(),
+            salt,
         };
 
         let mut revealed_drs = Vec::new();
         if REVEALED_DATA_RESULTS.has(deps.storage, dr_id.clone()) {
             revealed_drs = REVEALED_DATA_RESULTS.load(deps.storage, dr_id.clone())?;
-
         }
         revealed_drs.push(dr_result);
-       
+
         // save the data result then remove it from the pool
         REVEALED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &revealed_drs)?;
         DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone());
@@ -113,12 +121,46 @@ pub mod data_request_results {
     }
 
     /// Returns a data result from the results with the given id, if it exists.
-    pub fn get_committed_data_result(deps: Deps, dr_id: Hash) -> StdResult<GetDataResultResponse> {
+    pub fn get_committed_data_result(
+        deps: Deps,
+        dr_id: Hash,
+    ) -> StdResult<GetCommittedDataResultResponse> {
         let dr = COMMITTED_DATA_RESULTS.may_load(deps.storage, dr_id)?;
-        Ok(GetDataResultResponse { value: dr })
+        Ok(GetCommittedDataResultResponse { value: dr })
     }
 
-  
+    /// Returns a data result from the results with the given id, if it exists.
+    pub fn get_revealed_data_result(
+        deps: Deps,
+        dr_id: Hash,
+    ) -> StdResult<GetRevealedDataResultResponse> {
+        let dr = REVEALED_DATA_RESULTS.may_load(deps.storage, dr_id)?;
+        Ok(GetRevealedDataResultResponse { value: dr })
+    }
+
+    /// Returns a vector of committed data requests ids, if it exists.
+    pub fn get_committed_data_results_ids(deps: Deps) -> StdResult<GetDataResultsIdsResponse> {
+        let mut dr_ids = Vec::new();
+        for (_, key) in COMMITTED_DATA_RESULTS
+            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .enumerate()
+        {
+            dr_ids.push(key?)
+        }
+        Ok(GetDataResultsIdsResponse { value: dr_ids })
+    }
+
+    /// Returns a vector of revealed data requests ids, if it exists.
+    pub fn get_revealed_data_results_ids(deps: Deps) -> StdResult<GetDataResultsIdsResponse> {
+        let mut dr_ids = Vec::new();
+        for (_, key) in REVEALED_DATA_RESULTS
+            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .enumerate()
+        {
+            dr_ids.push(key?)
+        }
+        Ok(GetDataResultsIdsResponse { value: dr_ids })
+    }
 
     fn compute_hash(input_data: &str) -> String {
         let mut hasher = Sha3_256::new();
@@ -126,7 +168,6 @@ pub mod data_request_results {
         let digest = hasher.finalize();
         format!("{:x}", digest)
     }
-    
 }
 
 #[cfg(test)]
@@ -211,8 +252,8 @@ mod dr_result_tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataResult {
-                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
+            QueryMsg::GetCommittedDataResult {
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             },
         )
@@ -232,27 +273,23 @@ mod dr_result_tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataResult {
-                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
+            QueryMsg::GetCommittedDataResult {
+                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
                     .to_string(),
             },
         )
         .unwrap();
-        let value: GetDataResultResponse = from_binary(&res).unwrap();
+        let value: GetCommittedDataResultResponse = from_binary(&res).unwrap();
         let mut res = Vec::new();
         res.push(CommittedDataResult {
             value: "hello world".to_string(),
             nonce: 1,
-            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
-                .to_string(),
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
             result: "dr 0 result".to_string(),
             chain_id: 31337,
-            executor: info.clone().sender.clone()
+            executor: info.clone().sender.clone(),
         });
-        assert_eq!(
-            Some(res),
-            value.value
-        );
+        assert_eq!(Some(res), value.value);
 
         // can no longer fetch the first via `get_data_requests_from_pool`, only the second
         let res = query(
