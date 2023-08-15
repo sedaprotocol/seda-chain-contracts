@@ -22,13 +22,13 @@ pub mod data_request_results {
 
     use super::*;
 
-    /// Posts a data result of a data request with an attached result.
+    /// Posts a data result of a data request with an attached hash of the answer and salt.
     /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn commit_result(
         deps: DepsMut,
         info: MessageInfo,
         dr_id: Hash,
-        result: Hash,
+        commitment: Hash,
     ) -> Result<Response, ContractError> {
         assert!(check_eligibility(&deps, info.sender.clone())?);
         // find the data request from the pool (if it exists, otherwise error)
@@ -37,7 +37,7 @@ pub mod data_request_results {
             dr_id: dr.dr_id,
             nonce: dr.nonce,
             value: dr.value,
-            result: result.clone(),
+            commitment: commitment.clone(),
             chain_id: dr.chain_id,
             executor: info.sender,
         };
@@ -54,7 +54,7 @@ pub mod data_request_results {
         Ok(Response::new()
             .add_attribute("action", "commit_result")
             .add_attribute("dr_id", dr_id)
-            .add_attribute("result", result))
+            .add_attribute("result", commitment))
     }
 
     /// Posts a data result of a data request with an attached result.
@@ -63,7 +63,7 @@ pub mod data_request_results {
         deps: DepsMut,
         info: MessageInfo,
         dr_id: Hash,
-        answer: String,
+        reveal: String,
         salt: String,
     ) -> Result<Response, ContractError> {
         assert!(
@@ -84,14 +84,14 @@ pub mod data_request_results {
                 committed_dr_results.remove(index);
                 COMMITTED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &committed_dr_results)?;
             } else {
-                panic!("executor hasn't committed an answer");
+                panic!("executor hasn't committed an reveal");
             }
         }
         let committed_dr = committed_dr.unwrap();
 
-        let calculated_dr_result = compute_hash(&answer) + &compute_hash(&salt);
+        let calculated_dr_result = compute_hash(&reveal) + &compute_hash(&salt);
         assert_eq!(
-            calculated_dr_result, committed_dr.result,
+            calculated_dr_result, committed_dr.commitment,
             "committed result doesn't match revealed result"
         );
         let dr_result = RevealedDataResult {
@@ -100,7 +100,7 @@ pub mod data_request_results {
             value: committed_dr.value,
             chain_id: committed_dr.chain_id,
             executor: info.sender,
-            answer: answer.clone(),
+            reveal: reveal.clone(),
             salt,
         };
 
@@ -110,14 +110,14 @@ pub mod data_request_results {
         }
         revealed_drs.push(dr_result);
 
-        // save the data result then remove it from the pool
+        // save the data result then remove it from the COMMITTED_DATA_RESULTS pool
         REVEALED_DATA_RESULTS.save(deps.storage, dr_id.clone(), &revealed_drs)?;
-        DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone());
+        COMMITTED_DATA_RESULTS.remove(deps.storage, dr_id.clone());
 
         Ok(Response::new()
             .add_attribute("action", "commit_result")
             .add_attribute("dr_id", dr_id)
-            .add_attribute("answer", answer))
+            .add_attribute("reveal", reveal))
     }
 
     /// Returns a data result from the results with the given id, if it exists.
@@ -208,9 +208,9 @@ mod dr_result_tests {
 
         // can't post a data result for a data request that doesn't exist
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataResult {
-            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
-            result: "dr 0 result".to_string(),
+        let msg = ExecuteMsg::CommitDataResult {
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+            commitment: "dr 0 result".to_string(),
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert!(res.is_err());
@@ -263,9 +263,9 @@ mod dr_result_tests {
 
         // someone posts a data result
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataResult {
-            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
-            result: "dr 0 result".to_string(),
+        let msg = ExecuteMsg::CommitDataResult {
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+            commitment: "dr 0 result".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
@@ -285,7 +285,7 @@ mod dr_result_tests {
             value: "hello world".to_string(),
             nonce: 1,
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
-            result: "dr 0 result".to_string(),
+            commitment: "dr 0 result".to_string(),
             chain_id: 31337,
             executor: info.clone().sender.clone(),
         });
@@ -339,9 +339,9 @@ mod dr_result_tests {
 
         // ineligible shouldn't be able to post a data result
         let info = mock_info("ineligible", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataResult {
-            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
-            result: "dr 0 result".to_string(),
+        let msg = ExecuteMsg::CommitDataResult {
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+            commitment: "dr 0 result".to_string(),
         };
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }

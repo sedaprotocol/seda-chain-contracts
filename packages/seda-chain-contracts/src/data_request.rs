@@ -13,6 +13,9 @@ use crate::utils::hash_data_request;
 use crate::ContractError;
 
 pub mod data_requests {
+    use cw_storage_plus::Bound;
+
+    use crate::state::{DATA_REQUESTS_BY_NONCE, REVEALED_DATA_RESULTS};
 
     use super::*;
 
@@ -24,6 +27,11 @@ pub mod data_requests {
             .flatten()
             .is_some()
             || COMMITTED_DATA_RESULTS
+                .may_load(deps.storage, dr_id.clone())
+                .ok()
+                .flatten()
+                .is_some()
+            || REVEALED_DATA_RESULTS
                 .may_load(deps.storage, dr_id)
                 .ok()
                 .flatten()
@@ -462,9 +470,9 @@ mod dr_tests {
 
         // someone posts a data result
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataResult {
-            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
-            result: "dr 0 result".to_string(),
+        let msg = ExecuteMsg::CommitDataResult {
+            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
+            commitment: "dr 0 result".to_string(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 

@@ -21,8 +21,19 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     PostDataRequest { args: PostDataRequestArgs },
-    PostDataResult { dr_id: Hash, result: String },
-    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
+   
+    CommitDataResult {
+        dr_id: Hash,
+        commitment: String,
+    },
+    RevealDataResult {
+        dr_id: Hash,
+        reveal: String,
+        salt: String,
+    },
+    RegisterDataRequestExecutor {
+        p2p_multi_address: Option<String>,
+    },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
     Unstake { amount: u128 },

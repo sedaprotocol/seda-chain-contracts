@@ -23,10 +23,10 @@ pub struct CommittedDataResult {
     pub value: String,
     pub chain_id: u128,
     pub executor: Addr,
-    pub result: Hash,
+    pub commitment: Hash,
 }
 
-/// A committed data request with an attached result
+/// A revealed data request with an attached reveal and salt
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct RevealedDataResult {
     pub dr_id: Hash,
@@ -34,7 +34,7 @@ pub struct RevealedDataResult {
     pub value: String,
     pub chain_id: u128,
     pub executor: Addr,
-    pub answer: String,
+    pub reveal: String,
     pub salt: String,
 }
 

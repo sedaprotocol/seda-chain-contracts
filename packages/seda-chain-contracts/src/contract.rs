@@ -37,10 +37,20 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::PostDataRequest { args } => data_requests::post_data_request(deps, info, args),
-        ExecuteMsg::PostDataResult { dr_id, result } => {
-            data_request_results::commit_result(deps, info, dr_id, result)
+        ExecuteMsg::PostDataRequest {
+            dr_id,
+            value,
+            nonce,
+            chain_id,
+        } => data_requests::post_data_request(deps, info, dr_id, value, nonce, chain_id),
+        ExecuteMsg::CommitDataResult { dr_id, commitment } => {
+            data_request_results::commit_result(deps, info, dr_id, commitment)
         }
+        ExecuteMsg::RevealDataResult {
+            dr_id,
+            reveal,
+            salt,
+        } => data_request_results::reveal_result(deps, info, dr_id, reveal, salt),
         ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
             data_request_executors::register_data_request_executor(deps, info, p2p_multi_address)
         }
