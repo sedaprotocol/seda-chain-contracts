@@ -6,6 +6,7 @@ use cosmwasm_std::Addr;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
+    pub wasm_storage_contract_address: Addr,
 }
 
 #[cw_serde]

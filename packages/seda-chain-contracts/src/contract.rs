@@ -7,7 +7,7 @@ use crate::error::ContractError;
 use crate::executors_registry::data_request_executors;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::staking::staking;
-use crate::state::{DATA_REQUESTS_COUNT, TOKEN};
+use crate::state::{DATA_REQUESTS_COUNT, TOKEN, WASM_STORAGE_CONTRACT_ADDRESS};
 
 use crate::data_request_result::data_request_results;
 use cosmwasm_std::StdResult;
@@ -26,6 +26,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     DATA_REQUESTS_COUNT.save(deps.storage, &0)?;
     TOKEN.save(deps.storage, &msg.token)?;
+    WASM_STORAGE_CONTRACT_ADDRESS.save(deps.storage, &msg.wasm_storage_contract_address)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
@@ -79,8 +80,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg(test)]
 mod init_tests {
     use super::*;
-    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, Addr};
 
     #[test]
     fn proper_initialization() {
@@ -88,6 +89,7 @@ mod init_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 

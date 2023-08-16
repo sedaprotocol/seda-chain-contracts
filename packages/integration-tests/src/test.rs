@@ -1,8 +1,8 @@
 use crate::helpers::CwTemplateContract;
-use seda_chain_contracts::msg::ExecuteMsg;
-use seda_chain_contracts::msg::InstantiateMsg;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use seda_chain_contracts::msg::ExecuteMsg;
+use seda_chain_contracts::msg::InstantiateMsg;
 
 pub fn contract_template() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(

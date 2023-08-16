@@ -11,9 +11,3 @@ pub mod state;
 pub mod utils;
 pub use crate::error::ContractError;
 pub mod types;
-
-#[path = ""]
-#[cfg(test)]
-mod tests {
-    mod integration_tests;
-}

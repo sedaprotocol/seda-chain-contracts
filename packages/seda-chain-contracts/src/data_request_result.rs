@@ -57,7 +57,7 @@ mod dr_result_tests {
     use crate::contract::query;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_binary};
+    use cosmwasm_std::{coins, from_binary, Addr};
 
     use crate::contract::instantiate;
     use crate::msg::InstantiateMsg;
@@ -70,6 +70,7 @@ mod dr_result_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -181,6 +182,7 @@ mod dr_result_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
