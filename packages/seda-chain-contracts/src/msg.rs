@@ -16,6 +16,8 @@ pub enum ExecuteMsg {
         value: String,
         nonce: u128,
         chain_id: u128,
+        wasm_id: Vec<u8>,
+        wasm_args: Vec<Vec<u8>>,
     },
     PostDataResult {
         dr_id: Hash,

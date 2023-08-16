@@ -11,6 +11,8 @@ pub struct DataRequest {
     pub nonce: u128,
     pub value: String,
     pub chain_id: u128,
+    pub wasm_id: Vec<u8>,
+    pub wasm_args: Vec<Vec<u8>>
 }
 
 /// An resolved data request with an attached result
