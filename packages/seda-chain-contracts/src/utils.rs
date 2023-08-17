@@ -50,14 +50,14 @@ pub fn hash_data_request(
     nonce: &u128,
     value: &str,
     chain_id: &u128,
-    wasm_id: Vec<u8>,
+    wasm_id: &[u8],
     wasm_args: Vec<Vec<u8>>,
 ) -> String {
     let mut hasher = Keccak256::new();
     hash_update(&mut hasher, nonce);
     hasher.update(value.as_bytes());
     hash_update(&mut hasher, chain_id);
-    hasher.update(wasm_id.as_slice());
+    hasher.update(wasm_id);
     for arg in wasm_args.iter() {
         hasher.update(arg.as_slice());
     }

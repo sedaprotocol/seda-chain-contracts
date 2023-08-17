@@ -97,9 +97,10 @@ mod dr_result_tests {
         // set arguments for post_data_request
         // TODO: move this and duplicates to a helper function
         let wasm_id = "wasm_id".to_string().into_bytes();
-        let mut wasm_args: Vec<Vec<u8>> = vec![];
-        wasm_args.push("arg1".to_string().into_bytes());
-        wasm_args.push("arg2".to_string().into_bytes());
+        let wasm_args: Vec<Vec<u8>> = vec![
+            "arg1".to_string().into_bytes(),
+            "arg2".to_string().into_bytes(),
+        ];
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
@@ -197,9 +198,10 @@ mod dr_result_tests {
         // set arguments for post_data_request
         // TODO: move this and duplicates to a helper function
         let wasm_id = "wasm_id".to_string().into_bytes();
-        let mut wasm_args: Vec<Vec<u8>> = vec![];
-        wasm_args.push("arg1".to_string().into_bytes());
-        wasm_args.push("arg2".to_string().into_bytes());
+        let wasm_args: Vec<Vec<u8>> = vec![
+            "arg1".to_string().into_bytes(),
+            "arg2".to_string().into_bytes(),
+        ];
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));

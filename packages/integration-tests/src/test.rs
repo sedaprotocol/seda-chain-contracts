@@ -92,9 +92,10 @@ fn post_data_request() {
 
     // set arguments for post_data_request
     let wasm_id = "wasm_id".to_string().into_bytes();
-    let mut wasm_args: Vec<Vec<u8>> = vec![];
-    wasm_args.push("arg1".to_string().into_bytes());
-    wasm_args.push("arg2".to_string().into_bytes());
+    let wasm_args: Vec<Vec<u8>> = vec![
+        "arg1".to_string().into_bytes(),
+        "arg2".to_string().into_bytes(),
+    ];
 
     // post the data request
     let msg = seda_chain_contracts::msg::ExecuteMsg::PostDataRequest {
