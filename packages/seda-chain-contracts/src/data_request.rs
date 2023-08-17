@@ -33,6 +33,7 @@ pub mod data_requests {
     }
 
     /// Posts a data request to the pool
+    #[allow(clippy::too_many_arguments)]
     pub fn post_data_request(
         deps: DepsMut,
         _info: MessageInfo,
@@ -54,12 +55,11 @@ pub mod data_requests {
         hasher.update(value.as_bytes());
         hash_update(&mut hasher, chain_id);
         hasher.update(wasm_id.as_slice());
-        // for arg in wasm_args.iter() {
-        //     hasher.update(arg.as_slice());
-        // }
+        for arg in wasm_args.iter() {
+            hasher.update(arg.as_slice());
+        }
         let reconstructed_dr_id_bytes = hasher.finalize();
         let reconstructed_dr_id = format!("0x{}", hex::encode(reconstructed_dr_id_bytes));
-        println!("reconstructed_dr_id: {}", reconstructed_dr_id);
 
         // check if the reconstructed dr_id matches the given dr_id
         if reconstructed_dr_id != dr_id {
@@ -160,12 +160,12 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // data request with id 0x66... does not yet exist
+        // data request with id 0x69... does not yet exist
         let res = query(
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequest {
-                dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
+                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
                     .to_string(),
             },
         )
@@ -173,275 +173,318 @@ mod dr_tests {
         let value: GetDataRequestResponse = from_binary(&res).unwrap();
         assert_eq!(None, value.value);
 
-        // someone posts a data request
+        // set arguments for post_data_request
+        // TODO: move this and duplicates to a helper function
         let wasm_id = "wasm_id".to_string().into_bytes();
-        println!("wasm_id: {:?}", wasm_id);
         let mut wasm_args: Vec<Vec<u8>> = vec![];
         wasm_args.push("arg1".to_string().into_bytes());
         wasm_args.push("arg2".to_string().into_bytes());
-        println!("wasm_args: {:?}", wasm_args);
+
+        // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             value: "hello world".to_string(),
             chain_id: 31337,
             nonce: 1,
-            dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
-            wasm_id: "wasm_id".to_string().into_bytes(),
-            wasm_args: wasm_args,
+            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
+            wasm_id: wasm_id.clone(),
+            wasm_args: wasm_args.clone(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // // should be able to fetch data request with id 0x66...
-        // let res = query(
-        //     deps.as_ref(),
-        //     mock_env(),
-        //     QueryMsg::GetDataRequest {
-        //         dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
-        //             .to_string(),
-        //     },
-        // )
-        // .unwrap();
-        // let value: GetDataRequestResponse = from_binary(&res).unwrap();
-        // assert_eq!(
-        //     Some(DataRequest {
-        //         value: "hello world".to_string(),
-        //         chain_id: 31337,
-        //         nonce: 1,
-        //         dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae"
-        //             .to_string(),
-        //     }),
-        //     value.value
-        // );
+        // should be able to fetch data request with id 0x69...
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest {
+                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
+                    .to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            Some(DataRequest {
+                value: "hello world".to_string(),
+                chain_id: 31337,
+                nonce: 1,
+                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
+                    .to_string(),
+                wasm_id,
+                wasm_args
+            }),
+            value.value
+        );
 
-        // // nonexistent data request does not yet exist
-        // let res = query(
-        //     deps.as_ref(),
-        //     mock_env(),
-        //     QueryMsg::GetDataRequest {
-        //         dr_id: "nonexistent".to_string(),
-        //     },
-        // )
-        // .unwrap();
-        // let value: GetDataRequestResponse = from_binary(&res).unwrap();
-        // assert_eq!(None, value.value);
+        // nonexistent data request does not yet exist
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequest {
+                dr_id: "nonexistent".to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetDataRequestResponse = from_binary(&res).unwrap();
+        assert_eq!(None, value.value);
     }
 
-    // #[test]
-    // fn get_data_requests() {
-    //     let mut deps = mock_dependencies();
+    #[test]
+    fn get_data_requests() {
+        let mut deps = mock_dependencies();
 
-    //     let msg = InstantiateMsg {
-    //         token: "token".to_string(),
-    //         wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
-    //     };
-    //     let info = mock_info("creator", &coins(2, "token"));
-    //     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // instantiate contract
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+            wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //     // someone posts three data requests
-    //     let info = mock_info("anyone", &coins(2, "token"));
-    //     let msg = ExecuteMsg::PostDataRequest {
-    //         value: "1".to_string(),
-    //         nonce: 1,
-    //         chain_id: 31337,
-    //         dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd".to_string(),
-    //     };
-    //     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-    //     let msg = ExecuteMsg::PostDataRequest {
-    //         value: "2".to_string(),
-    //         nonce: 1,
-    //         chain_id: 31337,
-    //         dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162".to_string(),
-    //     };
-    //     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-    //     let msg = ExecuteMsg::PostDataRequest {
-    //         value: "3".to_string(),
-    //         nonce: 1,
-    //         chain_id: 31337,
-    //         dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a".to_string(),
-    //     };
-    //     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // set arguments for data request
+        let wasm_id = "wasm_id".to_string().into_bytes();
+        let mut wasm_args: Vec<Vec<u8>> = vec![];
+        wasm_args.push("arg1".to_string().into_bytes());
+        wasm_args.push("arg2".to_string().into_bytes());
 
-    //     // fetch all three data requests
-    //     let res = query(
-    //         deps.as_ref(),
-    //         mock_env(),
-    //         QueryMsg::GetDataRequestsFromPool {
-    //             position: None,
-    //             limit: None,
-    //         },
-    //     )
-    //     .unwrap();
-    //     let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
-    //     assert_eq!(
-    //         GetDataRequestsFromPoolResponse {
-    //             value: vec![
-    //                 DataRequest {
-    //                     value: "1".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd"
-    //                         .to_string()
-    //                 },
-    //                 DataRequest {
-    //                     value: "2".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
-    //                         .to_string()
-    //                 },
-    //                 DataRequest {
-    //                     value: "3".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a"
-    //                         .to_string()
-    //                 },
-    //             ]
-    //         },
-    //         response
-    //     );
+        // someone posts three data requests
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "1".to_string(),
+            nonce: 1,
+            chain_id: 31337,
+            dr_id: "0x11016abf1a828a71787dfb403b76c3ddb9aa1d80f9b9ea5748e48d2c10a38777".to_string(),
+            wasm_id: wasm_id.clone(),
+            wasm_args: wasm_args.clone(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "2".to_string(),
+            nonce: 1,
+            chain_id: 31337,
+            dr_id: "0x163109688c51e6c41c9db047e5fb1f6be92bf250f39d3efc62448b45a1211019".to_string(),
+            wasm_id: wasm_id.clone(),
+            wasm_args: wasm_args.clone(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "3".to_string(),
+            nonce: 1,
+            chain_id: 31337,
+            dr_id: "0x03fa1e34b70fadffd926f685d8195bc590636702a03d217b322d5c229683fdf0".to_string(),
+            wasm_id: wasm_id.clone(),
+            wasm_args: wasm_args.clone(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //     // fetch data requests with limit of 2
-    //     let res = query(
-    //         deps.as_ref(),
-    //         mock_env(),
-    //         QueryMsg::GetDataRequestsFromPool {
-    //             position: None,
-    //             limit: Some(2),
-    //         },
-    //     )
-    //     .unwrap();
-    //     let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
-    //     assert_eq!(
-    //         GetDataRequestsFromPoolResponse {
-    //             value: vec![
-    //                 DataRequest {
-    //                     value: "1".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x1ae35ab1000b2d88156730481e1e913e8b78a980e956a5eb4221f1e3403887dd"
-    //                         .to_string()
-    //                 },
-    //                 DataRequest {
-    //                     value: "2".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
-    //                         .to_string()
-    //                 },
-    //             ]
-    //         },
-    //         response
-    //     );
+        // fetch all three data requests
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestsFromPool {
+                position: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsFromPoolResponse {
+                value: vec![
+                    DataRequest {
+                        value: "1".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x11016abf1a828a71787dfb403b76c3ddb9aa1d80f9b9ea5748e48d2c10a38777"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone()
+                    },
+                    DataRequest {
+                        value: "2".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x163109688c51e6c41c9db047e5fb1f6be92bf250f39d3efc62448b45a1211019"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone()
+                    },
+                    DataRequest {
+                        value: "3".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x03fa1e34b70fadffd926f685d8195bc590636702a03d217b322d5c229683fdf0"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone()
+                    },
+                ]
+            },
+            response
+        );
 
-    //     // fetch a single data request
-    //     let res = query(
-    //         deps.as_ref(),
-    //         mock_env(),
-    //         QueryMsg::GetDataRequestsFromPool {
-    //             position: Some(1),
-    //             limit: Some(1),
-    //         },
-    //     )
-    //     .unwrap();
-    //     let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
-    //     assert_eq!(
-    //         GetDataRequestsFromPoolResponse {
-    //             value: vec![DataRequest {
-    //                 value: "2".to_string(),
-    //                 nonce: 1,
-    //                 chain_id: 31337,
-    //                 dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
-    //                     .to_string()
-    //             },]
-    //         },
-    //         response
-    //     );
+        // fetch data requests with limit of 2
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestsFromPool {
+                position: None,
+                limit: Some(2),
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsFromPoolResponse {
+                value: vec![
+                    DataRequest {
+                        value: "1".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x11016abf1a828a71787dfb403b76c3ddb9aa1d80f9b9ea5748e48d2c10a38777"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone()
+                    },
+                    DataRequest {
+                        value: "2".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x163109688c51e6c41c9db047e5fb1f6be92bf250f39d3efc62448b45a1211019"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone(),
+                    },
+                ]
+            },
+            response
+        );
 
-    //     // fetch all data requests starting from id 1
-    //     let res = query(
-    //         deps.as_ref(),
-    //         mock_env(),
-    //         QueryMsg::GetDataRequestsFromPool {
-    //             position: Some(1),
-    //             limit: None,
-    //         },
-    //     )
-    //     .unwrap();
-    //     let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
-    //     assert_eq!(
-    //         GetDataRequestsFromPoolResponse {
-    //             value: vec![
-    //                 DataRequest {
-    //                     value: "2".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x71847d61bd26ef76413a7b766bbdbcfde4724b09d19bbd01432c478cbcf71162"
-    //                         .to_string()
-    //                 },
-    //                 DataRequest {
-    //                     value: "3".to_string(),
-    //                     nonce: 1,
-    //                     chain_id: 31337,
-    //                     dr_id: "0x1a1b26ca0700551abdaf41ed3199dbd14ac9bb70cfb4e58d83e1f3bf2c6d548a"
-    //                         .to_string()
-    //                 },
-    //             ]
-    //         },
-    //         response
-    //     );
-    // }
+        // fetch a single data request
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestsFromPool {
+                position: Some(1),
+                limit: Some(1),
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsFromPoolResponse {
+                value: vec![DataRequest {
+                    value: "2".to_string(),
+                    nonce: 1,
+                    chain_id: 31337,
+                    dr_id: "0x163109688c51e6c41c9db047e5fb1f6be92bf250f39d3efc62448b45a1211019"
+                        .to_string(),
+                    wasm_id: wasm_id.clone(),
+                    wasm_args: wasm_args.clone(),
+                },]
+            },
+            response
+        );
 
-    // #[test]
-    // fn no_duplicate_dr_ids() {
-    //     let mut deps = mock_dependencies();
+        // fetch all data requests starting from id 1
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetDataRequestsFromPool {
+                position: Some(1),
+                limit: None,
+            },
+        )
+        .unwrap();
+        let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            GetDataRequestsFromPoolResponse {
+                value: vec![
+                    DataRequest {
+                        value: "2".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x163109688c51e6c41c9db047e5fb1f6be92bf250f39d3efc62448b45a1211019"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone()
+                    },
+                    DataRequest {
+                        value: "3".to_string(),
+                        nonce: 1,
+                        chain_id: 31337,
+                        dr_id: "0x03fa1e34b70fadffd926f685d8195bc590636702a03d217b322d5c229683fdf0"
+                            .to_string(),
+                        wasm_id: wasm_id.clone(),
+                        wasm_args: wasm_args.clone()
+                    },
+                ]
+            },
+            response
+        );
+    }
 
-    //     let msg = InstantiateMsg {
-    //         token: "token".to_string(),
-    //         wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
-    //     };
-    //     let info = mock_info("creator", &coins(2, "token"));
-    //     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    #[test]
+    fn no_duplicate_dr_ids() {
+        let mut deps = mock_dependencies();
 
-    //     // register dr executor
-    //     let info = mock_info("anyone", &coins(1, "token"));
-    //     let msg = ExecuteMsg::RegisterDataRequestExecutor {
-    //         p2p_multi_address: Some("address".to_string()),
-    //     };
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+            wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-    //     let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
-    //         .load(&deps.storage, info.sender.clone())
-    //         .unwrap();
-    //     assert!(executor_is_eligible);
+        // register dr executor
+        let info = mock_info("anyone", &coins(1, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            p2p_multi_address: Some("address".to_string()),
+        };
 
-    //     // someone posts a data request
-    //     let info = mock_info("anyone", &coins(2, "token"));
-    //     let msg = ExecuteMsg::PostDataRequest {
-    //         value: "hello world".to_string(),
-    //         chain_id: 31337,
-    //         nonce: 1,
-    //         dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
-    //     };
-    //     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
+            .load(&deps.storage, info.sender.clone())
+            .unwrap();
+        assert!(executor_is_eligible);
 
-    //     // someone posts a data result
-    //     let info = mock_info("anyone", &coins(2, "token"));
-    //     let msg = ExecuteMsg::PostDataResult {
-    //         dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
-    //         result: "dr 0 result".to_string(),
-    //     };
-    //     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // set arguments for post_data_request
+        // TODO: move this and duplicates to a helper function
+        let wasm_id = "wasm_id".to_string().into_bytes();
+        let mut wasm_args: Vec<Vec<u8>> = vec![];
+        wasm_args.push("arg1".to_string().into_bytes());
+        wasm_args.push("arg2".to_string().into_bytes());
 
-    //     // can't create a data request with the same id as a data result
-    //     let info = mock_info("anyone", &coins(2, "token"));
-    //     let msg = ExecuteMsg::PostDataRequest {
-    //         value: "hello world".to_string(),
-    //         chain_id: 31337,
-    //         nonce: 1,
-    //         dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
-    //     };
-    //     let res = execute(deps.as_mut(), mock_env(), info, msg);
-    //     assert!(res.is_err());
-    // }
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337,
+            nonce: 1,
+            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
+            wasm_id: wasm_id.clone(),
+            wasm_args: wasm_args.clone(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // someone posts a data result
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataResult {
+            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
+            result: "dr 0 result".to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // can't create a data request with the same id as a data result
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest {
+            value: "hello world".to_string(),
+            chain_id: 31337,
+            nonce: 1,
+            dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
+            wasm_id: wasm_id,
+            wasm_args: wasm_args,
+        };
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert!(res.is_err());
+    }
 }

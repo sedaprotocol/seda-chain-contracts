@@ -44,8 +44,10 @@ pub fn execute(
             nonce,
             chain_id,
             wasm_id,
-            wasm_args
-        } => data_requests::post_data_request(deps, info, dr_id, value, nonce, chain_id, wasm_id, wasm_args),
+            wasm_args,
+        } => data_requests::post_data_request(
+            deps, info, dr_id, value, nonce, chain_id, wasm_id, wasm_args,
+        ),
         ExecuteMsg::PostDataResult { dr_id, result } => {
             data_request_results::post_data_result(deps, info, dr_id, result)
         }
