@@ -1,20 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
-use sha3::{Digest, Keccak256};
-
-use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
+use cw_storage_plus::Bound;
 
 use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use crate::state::DataRequest;
+use crate::state::{DATA_REQUESTS_BY_NONCE, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 use crate::types::Hash;
-use crate::utils::hash_update;
-
+use crate::utils::hash_data_request;
 use crate::ContractError;
 
 pub mod data_requests {
-    use cw_storage_plus::Bound;
-
-    use crate::state::DATA_REQUESTS_BY_NONCE;
 
     use super::*;
 
@@ -50,16 +45,13 @@ pub mod data_requests {
         }
 
         // reconstruct the data request id hash
-        let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, nonce);
-        hasher.update(value.as_bytes());
-        hash_update(&mut hasher, chain_id);
-        hasher.update(wasm_id.as_slice());
-        for arg in wasm_args.iter() {
-            hasher.update(arg.as_slice());
-        }
-        let reconstructed_dr_id_bytes = hasher.finalize();
-        let reconstructed_dr_id = format!("0x{}", hex::encode(reconstructed_dr_id_bytes));
+        let reconstructed_dr_id = hash_data_request(
+            nonce,
+            value.clone(),
+            chain_id,
+            wasm_id.clone(),
+            wasm_args.clone(),
+        );
 
         // check if the reconstructed dr_id matches the given dr_id
         if reconstructed_dr_id != dr_id {
@@ -483,5 +475,26 @@ mod dr_tests {
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_hash_data_request() {
+        let nonce = 1;
+        let value = "hello world";
+        let chain_id = 31337;
+        let wasm_id = "wasm_id".to_string().into_bytes();
+        let mut wasm_args: Vec<Vec<u8>> = vec![];
+        wasm_args.push("arg1".to_string().into_bytes());
+        wasm_args.push("arg2".to_string().into_bytes());
+
+        let dr_hash = hash_data_request(
+            nonce,
+            value.to_string(),
+            chain_id,
+            wasm_id.clone(),
+            wasm_args.clone(),
+        );
+
+        println!("dr_hash: {}", dr_hash);
     }
 }

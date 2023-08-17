@@ -45,3 +45,22 @@ pub fn hash_update(hasher: &mut Keccak256, value: u128) {
     let bytes = pad_to_32_bytes(value);
     hasher.update(bytes);
 }
+
+pub fn hash_data_request(
+    nonce: u128,
+    value: String,
+    chain_id: u128,
+    wasm_id: Vec<u8>,
+    wasm_args: Vec<Vec<u8>>,
+) -> String {
+    let mut hasher = Keccak256::new();
+    hash_update(&mut hasher, nonce);
+    hasher.update(value.as_bytes());
+    hash_update(&mut hasher, chain_id);
+    hasher.update(wasm_id.as_slice());
+    for arg in wasm_args.iter() {
+        hasher.update(arg.as_slice());
+    }
+    let hash_bytes = hasher.finalize();
+    format!("0x{}", hex::encode(hash_bytes))
+}
