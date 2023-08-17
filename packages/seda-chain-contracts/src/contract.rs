@@ -26,7 +26,9 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     DATA_REQUESTS_COUNT.save(deps.storage, &0)?;
     TOKEN.save(deps.storage, &msg.token)?;
-    WASM_STORAGE_CONTRACT_ADDRESS.save(deps.storage, &msg.wasm_storage_contract_address)?;
+    let wasm_storage_contract_address =
+        deps.api.addr_validate(&msg.wasm_storage_contract_address)?;
+    WASM_STORAGE_CONTRACT_ADDRESS.save(deps.storage, &wasm_storage_contract_address)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
@@ -84,8 +86,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg(test)]
 mod init_tests {
     use super::*;
+    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, Addr};
 
     #[test]
     fn proper_initialization() {
@@ -93,7 +95,7 @@ mod init_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
-            wasm_storage_contract_address: Addr::unchecked("wasm_storage_contract_address"),
+            wasm_storage_contract_address: "wasm_storage_contract_address".to_string(),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 
