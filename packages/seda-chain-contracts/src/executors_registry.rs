@@ -25,7 +25,7 @@ pub mod data_request_executors {
     ) -> Result<Response, ContractError> {
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
-        let amount = get_attached_funds(&info.funds, token)?;
+        let amount = get_attached_funds(&info.funds, &token)?;
 
         if amount < MINIMUM_STAKE_TO_REGISTER {
             return Err(ContractError::InsufficientFunds(

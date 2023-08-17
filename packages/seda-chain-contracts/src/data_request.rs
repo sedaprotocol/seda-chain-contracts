@@ -46,9 +46,9 @@ pub mod data_requests {
 
         // reconstruct the data request id hash
         let reconstructed_dr_id = hash_data_request(
-            nonce,
-            value.clone(),
-            chain_id,
+            &nonce,
+            &value,
+            &chain_id,
             wasm_id.clone(),
             wasm_args.clone(),
         );
@@ -487,13 +487,8 @@ mod dr_tests {
         wasm_args.push("arg1".to_string().into_bytes());
         wasm_args.push("arg2".to_string().into_bytes());
 
-        let dr_hash = hash_data_request(
-            nonce,
-            value.to_string(),
-            chain_id,
-            wasm_id.clone(),
-            wasm_args.clone(),
-        );
+        let dr_hash =
+            hash_data_request(&nonce, value, &chain_id, wasm_id.clone(), wasm_args.clone());
 
         println!("dr_hash: {}", dr_hash);
     }

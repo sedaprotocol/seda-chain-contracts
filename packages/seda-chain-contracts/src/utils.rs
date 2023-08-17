@@ -26,7 +26,7 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
     Ok(is_eligible)
 }
 
-pub fn get_attached_funds(funds: &[Coin], token: String) -> Result<u128, ContractError> {
+pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {
     let amount: Option<u128> = funds
         .iter()
         .find(|coin| coin.denom == token)
@@ -34,22 +34,22 @@ pub fn get_attached_funds(funds: &[Coin], token: String) -> Result<u128, Contrac
     amount.ok_or(ContractError::NoFunds)
 }
 
-pub fn pad_to_32_bytes(value: u128) -> [u8; 32] {
+pub fn pad_to_32_bytes(value: &u128) -> [u8; 32] {
     let mut bytes = [0u8; 32];
     let small_bytes = &value.to_be_bytes();
     bytes[(32 - small_bytes.len())..].copy_from_slice(small_bytes);
     bytes
 }
 
-pub fn hash_update(hasher: &mut Keccak256, value: u128) {
+pub fn hash_update(hasher: &mut Keccak256, value: &u128) {
     let bytes = pad_to_32_bytes(value);
     hasher.update(bytes);
 }
 
 pub fn hash_data_request(
-    nonce: u128,
-    value: String,
-    chain_id: u128,
+    nonce: &u128,
+    value: &str,
+    chain_id: &u128,
     wasm_id: Vec<u8>,
     wasm_args: Vec<Vec<u8>>,
 ) -> String {

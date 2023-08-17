@@ -22,7 +22,7 @@ pub mod staking {
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
-        let amount = get_attached_funds(&info.funds, token)?;
+        let amount = get_attached_funds(&info.funds, &token)?;
 
         // update staked tokens for executor
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.clone().sender)?;
