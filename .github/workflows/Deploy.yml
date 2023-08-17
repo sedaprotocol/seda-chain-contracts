@@ -1,7 +1,7 @@
 on:
   workflow_dispatch:
 
-name: Deploy to testnet
+name: Deploy seda-mainchain-contracts to testnet
 
 jobs:
   check_actor:
