@@ -2,9 +2,9 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use crate::consts::MINIMUM_STAKE_TO_REGISTER;
-use crate::helpers::get_attached_funds;
 use crate::state::DATA_REQUEST_EXECUTORS;
 use crate::state::TOKEN;
+use crate::utils::get_attached_funds;
 
 use crate::msg::GetDataRequestExecutorResponse;
 use crate::state::DataRequestExecutor;

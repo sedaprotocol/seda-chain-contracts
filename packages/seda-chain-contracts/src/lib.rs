@@ -4,7 +4,6 @@ pub mod data_request;
 pub mod data_request_result;
 mod error;
 pub mod executors_registry;
-pub mod helpers;
 pub mod msg;
 pub mod staking;
 pub mod state;

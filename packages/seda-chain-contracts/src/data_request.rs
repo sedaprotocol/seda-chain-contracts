@@ -4,10 +4,10 @@ use sha3::{Digest, Keccak256};
 
 use crate::state::{DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 
-use crate::helpers::hash_update;
 use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use crate::state::DataRequest;
 use crate::types::Hash;
+use crate::utils::hash_update;
 
 use crate::ContractError;
 

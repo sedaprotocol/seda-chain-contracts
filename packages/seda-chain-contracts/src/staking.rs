@@ -4,8 +4,8 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use crate::state::DATA_REQUEST_EXECUTORS;
 
 use crate::error::ContractError;
-use crate::helpers::get_attached_funds;
 use crate::state::TOKEN;
+use crate::utils::get_attached_funds;
 
 #[allow(clippy::module_inception)]
 pub mod staking {

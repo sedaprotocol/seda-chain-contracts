@@ -86,17 +86,26 @@ fn proper_instantiate() -> (App, CwTemplateContract, CwTemplateContract) {
     )
 }
 
-// #[test]
-// fn post_data_request() {
-//     let (mut app, _wasm_bin_storage_template_contract, seda_chain_contracts_template_contract) =
-//         proper_instantiate();
+#[test]
+fn post_data_request() {
+    let (mut app, _wasm_bin_storage_template_contract, seda_chain_contracts_template_contract) =
+        proper_instantiate();
 
-//     let msg = seda_chain_contracts::msg::ExecuteMsg::PostDataRequest {
-//         dr_id: "0x899e5a9b45bf4a4ffb24c5b11b8cbcd7808182addd3c3ac21ee0a5d321e7ff81".to_string(), // expected
-//         nonce: 1,
-//         chain_id: 31337,
-//         value: "test".to_string(),
-//     };
-//     let cosmos_msg = seda_chain_contracts_template_contract.call(msg).unwrap();
-//     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
-// }
+    // set arguments for post_data_request
+    let wasm_id = "wasm_id".to_string().into_bytes();
+    let mut wasm_args: Vec<Vec<u8>> = vec![];
+    wasm_args.push("arg1".to_string().into_bytes());
+    wasm_args.push("arg2".to_string().into_bytes());
+
+    // post the data request
+    let msg = seda_chain_contracts::msg::ExecuteMsg::PostDataRequest {
+        dr_id: "0xd98fb83e7f68c29c21313afd147eb6c3851d70b8d37fd75e5b78f0ecabd9f69b".to_string(), // expected
+        nonce: 1,
+        chain_id: 31337,
+        value: "test".to_string(),
+        wasm_id,
+        wasm_args,
+    };
+    let cosmos_msg = seda_chain_contracts_template_contract.call(msg).unwrap();
+    app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+}
