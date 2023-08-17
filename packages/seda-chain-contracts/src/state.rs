@@ -55,7 +55,3 @@ pub const TOKEN: Item<String> = Item::new("token");
 /// A map of data request executors (of address to info) that are eligible for committee inclusion
 pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
     Map::new("eligible_data_request_executors");
-
-/// The address of the WASM binary storage contract
-//TODO: this should be a governance-controller parameter
-pub const WASM_STORAGE_CONTRACT_ADDRESS: Item<Addr> = Item::new("wasm_storage_contract_address");

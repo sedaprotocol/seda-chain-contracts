@@ -64,7 +64,6 @@ fn proper_instantiate() -> (App, CwTemplateContract, CwTemplateContract) {
     let seda_chain_contracts_template_id = app.store_code(seda_chain_contracts_template());
     let msg = seda_chain_contracts::msg::InstantiateMsg {
         token: "token".to_string(),
-        wasm_storage_contract_address: wasm_bin_storage_template_contract.addr().to_string(),
     };
     let seda_chain_contracts_template_contract_addr = app
         .instantiate_contract(

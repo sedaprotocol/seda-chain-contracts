@@ -155,7 +155,6 @@ mod dr_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
-            wasm_storage_contract_address: "wasm_storage_contract_address".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -236,7 +235,6 @@ mod dr_tests {
         // instantiate contract
         let msg = InstantiateMsg {
             token: "token".to_string(),
-            wasm_storage_contract_address: "wasm_storage_contract_address".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -430,7 +428,6 @@ mod dr_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
-            wasm_storage_contract_address: "wasm_storage_contract_address".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
