@@ -46,7 +46,7 @@ pub mod data_requests {
 
         // reconstruct the data request id hash
         let reconstructed_dr_id =
-            hash_data_request(&nonce, &value, &chain_id, &wasm_id, wasm_args.clone());
+            hash_data_request(&nonce, &value, &chain_id, &wasm_id, &wasm_args);
 
         // check if the reconstructed dr_id matches the given dr_id
         if reconstructed_dr_id != dr_id {
@@ -486,7 +486,7 @@ mod dr_tests {
             "arg2".to_string().into_bytes(),
         ];
 
-        let dr_hash = hash_data_request(&nonce, value, &chain_id, wasm_id.as_slice(), wasm_args);
+        let dr_hash = hash_data_request(&nonce, value, &chain_id, wasm_id.as_slice(), &wasm_args);
 
         println!("dr_hash: {}", dr_hash);
     }

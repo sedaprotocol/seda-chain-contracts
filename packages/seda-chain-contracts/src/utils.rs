@@ -51,7 +51,7 @@ pub fn hash_data_request(
     value: &str,
     chain_id: &u128,
     wasm_id: &[u8],
-    wasm_args: Vec<Vec<u8>>,
+    wasm_args: &[Vec<u8>],
 ) -> String {
     let mut hasher = Keccak256::new();
     hash_update(&mut hasher, nonce);
