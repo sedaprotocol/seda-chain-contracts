@@ -1,5 +1,5 @@
-use crate::state::{CommittedDataResult, DataRequest, DataRequestExecutor, RevealedDataResult};
-use crate::types::Hash;
+use crate::state::{DataRequest, DataRequestExecutor, Reveal};
+use crate::types::{Commitment, Hash, Input, Memo, PayloadItem};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -20,16 +20,28 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest { args: PostDataRequestArgs },
-   
+    PostDataRequest {
+        dr_id: Hash,
+
+        dr_binary_id: Hash,
+        tally_binary_id: Hash,
+        dr_inputs: Vec<Input>,
+        tally_inputs: Vec<Input>,
+        memo: Memo,
+        replication_factor: u16,
+
+        gas_price: u128,
+        gas_limit: u128,
+
+        payload: Vec<PayloadItem>,
+    },
     CommitDataResult {
         dr_id: Hash,
         commitment: String,
     },
     RevealDataResult {
         dr_id: Hash,
-        reveal: String,
-        salt: String,
+        reveal: Reveal,
     },
     RegisterDataRequestExecutor {
         p2p_multi_address: Option<String>,
@@ -51,9 +63,9 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     #[returns(GetCommittedDataResultResponse)]
-    GetCommittedDataResult { dr_id: Hash },
+    GetCommittedDataResult { dr_id: Hash, executor: Addr },
     #[returns(GetRevealedDataResultResponse)]
-    GetRevealedDataResult { dr_id: Hash },
+    GetRevealedDataResult { dr_id: Hash, executor: Addr },
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
 }
@@ -70,19 +82,24 @@ pub struct GetDataRequestsFromPoolResponse {
 
 #[cw_serde]
 pub struct GetCommittedDataResultResponse {
-    pub value: Option<Vec<CommittedDataResult>>,
+    pub value: Option<Commitment>,
 }
 
 #[cw_serde]
 pub struct GetRevealedDataResultResponse {
-    pub value: Option<Vec<RevealedDataResult>>,
+    pub value: Option<Reveal>,
 }
 #[cw_serde]
-pub struct GetDataResultsIdsResponse {
+pub struct GetIdsResponse {
     pub value: Vec<Hash>,
 }
 
 #[cw_serde]
 pub struct GetDataRequestExecutorResponse {
     pub value: Option<DataRequestExecutor>,
+}
+
+#[cw_serde]
+pub struct GetCommittedExecutorsResponse {
+    pub value: Vec<Addr>,
 }

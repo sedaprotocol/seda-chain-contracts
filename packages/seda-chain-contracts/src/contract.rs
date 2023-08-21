@@ -39,18 +39,38 @@ pub fn execute(
     match msg {
         ExecuteMsg::PostDataRequest {
             dr_id,
-            value,
-            nonce,
-            chain_id,
-        } => data_requests::post_data_request(deps, info, dr_id, value, nonce, chain_id),
+
+            dr_binary_id,
+            tally_binary_id,
+            dr_inputs,
+            tally_inputs,
+            memo,
+            replication_factor,
+
+            gas_price,
+            gas_limit,
+
+            payload,
+        } => data_requests::post_data_request(
+            deps,
+            info,
+            dr_id,
+            dr_binary_id,
+            tally_binary_id,
+            dr_inputs,
+            tally_inputs,
+            memo,
+            replication_factor,
+            gas_price,
+            gas_limit,
+            payload,
+        ),
         ExecuteMsg::CommitDataResult { dr_id, commitment } => {
             data_request_results::commit_result(deps, info, dr_id, commitment)
         }
-        ExecuteMsg::RevealDataResult {
-            dr_id,
-            reveal,
-            salt,
-        } => data_request_results::reveal_result(deps, info, dr_id, reveal, salt),
+        ExecuteMsg::RevealDataResult { dr_id, reveal } => {
+            data_request_results::reveal_result(deps, info, dr_id, reveal)
+        }
         ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
             data_request_executors::register_data_request_executor(deps, info, p2p_multi_address)
         }
@@ -72,11 +92,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetDataRequestsFromPool { position, limit } => to_binary(
             &data_requests::get_data_requests_from_pool(deps, position, limit)?,
         ),
-        QueryMsg::GetCommittedDataResult { dr_id } => to_binary(
-            &data_request_results::get_committed_data_result(deps, dr_id)?,
+        QueryMsg::GetCommittedDataResult { dr_id, executor } => to_binary(
+            &data_request_results::get_committed_data_result(deps, dr_id, executor)?,
         ),
-        QueryMsg::GetRevealedDataResult { dr_id } => to_binary(
-            &data_request_results::get_revealed_data_result(deps, dr_id)?,
+        QueryMsg::GetRevealedDataResult { dr_id, executor } => to_binary(
+            &data_request_results::get_revealed_data_result(deps, dr_id, executor)?,
         ),
         QueryMsg::GetDataRequestExecutor { executor } => to_binary(
             &data_request_executors::get_data_request_executor(deps, executor)?,
