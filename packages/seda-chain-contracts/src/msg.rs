@@ -4,35 +4,29 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
 #[cw_serde]
+pub struct PostDataRequestArgs {
+    pub dr_id: Hash,
+    pub value: String,
+    pub nonce: u128,
+    pub chain_id: u128,
+    pub wasm_id: Vec<u8>,
+    pub wasm_args: Vec<Vec<u8>>,
+}
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest {
-        dr_id: Hash,
-        value: String,
-        nonce: u128,
-        chain_id: u128,
-        wasm_id: Vec<u8>,
-        wasm_args: Vec<Vec<u8>>,
-    },
-    PostDataResult {
-        dr_id: Hash,
-        result: String,
-    },
-    RegisterDataRequestExecutor {
-        p2p_multi_address: Option<String>,
-    },
+    PostDataRequest { args: PostDataRequestArgs },
+    PostDataResult { dr_id: Hash, result: String },
+    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
-    Unstake {
-        amount: u128,
-    },
-    Withdraw {
-        amount: u128,
-    },
+    Unstake { amount: u128 },
+    Withdraw { amount: u128 },
 }
 
 #[cw_serde]

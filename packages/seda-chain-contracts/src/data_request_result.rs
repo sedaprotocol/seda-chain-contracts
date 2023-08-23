@@ -55,6 +55,7 @@ mod dr_result_tests {
     use super::*;
     use crate::contract::execute;
     use crate::contract::query;
+    use crate::msg::PostDataRequestArgs;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
@@ -104,7 +105,7 @@ mod dr_result_tests {
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "hello world".to_string(),
             chain_id: 31337,
             nonce: 1,
@@ -112,6 +113,7 @@ mod dr_result_tests {
             wasm_id: wasm_id.clone(),
             wasm_args: wasm_args.clone(),
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // can fetch it via `get_data_requests_from_pool`
@@ -205,7 +207,7 @@ mod dr_result_tests {
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "hello world".to_string(),
             chain_id: 31337,
             nonce: 1,
@@ -213,6 +215,7 @@ mod dr_result_tests {
             wasm_id: wasm_id,
             wasm_args: wasm_args,
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // ineligible shouldn't be able to post a data result

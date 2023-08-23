@@ -1,6 +1,7 @@
 use crate::helpers::CwTemplateContract;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use seda_chain_contracts::msg::PostDataRequestArgs;
 
 pub fn seda_chain_contracts_template() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(
@@ -96,9 +97,7 @@ fn post_data_request() {
         "arg1".to_string().into_bytes(),
         "arg2".to_string().into_bytes(),
     ];
-
-    // post the data request
-    let msg = seda_chain_contracts::msg::ExecuteMsg::PostDataRequest {
+    let args = PostDataRequestArgs {
         dr_id: "0xd98fb83e7f68c29c21313afd147eb6c3851d70b8d37fd75e5b78f0ecabd9f69b".to_string(), // expected
         nonce: 1,
         chain_id: 31337,
@@ -106,6 +105,9 @@ fn post_data_request() {
         wasm_id,
         wasm_args,
     };
+
+    // post the data request
+    let msg = seda_chain_contracts::msg::ExecuteMsg::PostDataRequest { args };
     let cosmos_msg = seda_chain_contracts_template_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 }

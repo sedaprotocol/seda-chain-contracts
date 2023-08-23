@@ -2,7 +2,7 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 use cw_storage_plus::Bound;
 
-use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
+use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse, PostDataRequestArgs};
 use crate::state::DataRequest;
 use crate::state::{DATA_REQUESTS_BY_NONCE, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 use crate::types::Hash;
@@ -28,31 +28,30 @@ pub mod data_requests {
     }
 
     /// Posts a data request to the pool
-    #[allow(clippy::too_many_arguments)]
     pub fn post_data_request(
         deps: DepsMut,
         _info: MessageInfo,
-        dr_id: Hash,
-        value: String,
-        nonce: u128,
-        chain_id: u128,
-        wasm_id: Vec<u8>,
-        wasm_args: Vec<Vec<u8>>,
+        args: PostDataRequestArgs,
     ) -> Result<Response, ContractError> {
         // require the data request id to be unique
-        if data_request_or_result_exists(deps.as_ref(), dr_id.clone()) {
+        if data_request_or_result_exists(deps.as_ref(), args.dr_id.clone()) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
         // reconstruct the data request id hash
-        let reconstructed_dr_id =
-            hash_data_request(&nonce, &value, &chain_id, &wasm_id, &wasm_args);
+        let reconstructed_dr_id = hash_data_request(
+            &args.nonce,
+            &args.value,
+            &args.chain_id,
+            &args.wasm_id,
+            &args.wasm_args,
+        );
 
         // check if the reconstructed dr_id matches the given dr_id
-        if reconstructed_dr_id != dr_id {
+        if reconstructed_dr_id != args.dr_id {
             return Err(ContractError::InvalidDataRequestId(
                 reconstructed_dr_id,
-                dr_id,
+                args.dr_id,
             ));
         }
 
@@ -60,17 +59,17 @@ pub mod data_requests {
         let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?;
         DATA_REQUESTS_POOL.save(
             deps.storage,
-            dr_id.clone(),
+            args.dr_id.clone(),
             &DataRequest {
-                value,
-                dr_id: dr_id.clone(),
-                nonce,
-                chain_id,
-                wasm_id,
-                wasm_args,
+                value: args.value,
+                dr_id: args.dr_id.clone(),
+                nonce: args.nonce,
+                chain_id: args.chain_id,
+                wasm_id: args.wasm_id,
+                wasm_args: args.wasm_args,
             },
         )?;
-        DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &dr_id)?; // todo wrong nonce
+        DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &args.dr_id)?; // todo wrong nonce
 
         // increment the data request count
         DATA_REQUESTS_COUNT.update(deps.storage, |mut new_dr_id| -> Result<_, ContractError> {
@@ -80,7 +79,7 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            .add_attribute("dr_id", dr_id))
+            .add_attribute("dr_id", args.dr_id))
     }
 
     /// Returns a data request from the pool with the given id, if it exists.
@@ -169,7 +168,7 @@ mod dr_tests {
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "hello world".to_string(),
             chain_id: 31337,
             nonce: 1,
@@ -177,6 +176,7 @@ mod dr_tests {
             wasm_id: wasm_id.clone(),
             wasm_args: wasm_args.clone(),
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // should be able to fetch data request with id 0x69...
@@ -236,7 +236,7 @@ mod dr_tests {
 
         // someone posts three data requests
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "1".to_string(),
             nonce: 1,
             chain_id: 31337,
@@ -244,8 +244,9 @@ mod dr_tests {
             wasm_id: wasm_id.clone(),
             wasm_args: wasm_args.clone(),
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "2".to_string(),
             nonce: 1,
             chain_id: 31337,
@@ -253,8 +254,9 @@ mod dr_tests {
             wasm_id: wasm_id.clone(),
             wasm_args: wasm_args.clone(),
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "3".to_string(),
             nonce: 1,
             chain_id: 31337,
@@ -262,6 +264,7 @@ mod dr_tests {
             wasm_id: wasm_id.clone(),
             wasm_args: wasm_args.clone(),
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // fetch all three data requests
@@ -443,7 +446,7 @@ mod dr_tests {
 
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "hello world".to_string(),
             chain_id: 31337,
             nonce: 1,
@@ -451,6 +454,7 @@ mod dr_tests {
             wasm_id: wasm_id.clone(),
             wasm_args: wasm_args.clone(),
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // someone posts a data result
@@ -463,7 +467,7 @@ mod dr_tests {
 
         // can't create a data request with the same id as a data result
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let args = PostDataRequestArgs {
             value: "hello world".to_string(),
             chain_id: 31337,
             nonce: 1,
@@ -471,6 +475,7 @@ mod dr_tests {
             wasm_id: wasm_id,
             wasm_args: wasm_args,
         };
+        let msg = ExecuteMsg::PostDataRequest { args };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert!(res.is_err());
     }
