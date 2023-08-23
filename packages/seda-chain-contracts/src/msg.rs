@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::state::{DataRequest, DataRequestExecutor, Reveal};
+use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal};
 use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
@@ -73,6 +73,8 @@ pub enum QueryMsg {
     GetRevealedDataResult { dr_id: Hash, executor: Addr },
     #[returns(GetRevealedDataResultsResponse)]
     GetRevealedDataResults { dr_id: Hash },
+    #[returns(GetResolvedDataResultResponse)]
+    GetResolvedDataResult { dr_id: Hash },
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
 }
@@ -105,6 +107,11 @@ pub struct GetRevealedDataResultResponse {
 #[cw_serde]
 pub struct GetRevealedDataResultsResponse {
     pub value: HashMap<String, Reveal>,
+}
+
+#[cw_serde]
+pub struct GetResolvedDataResultResponse {
+    pub value: DataResult,
 }
 #[cw_serde]
 pub struct GetIdsResponse {

@@ -71,7 +71,7 @@ pub fn execute(
             data_request_results::commit_result(deps, info, dr_id, commitment)
         }
         ExecuteMsg::RevealDataResult { dr_id, reveal } => {
-            data_request_results::reveal_result(deps, info, dr_id, reveal)
+            data_request_results::reveal_result(deps, info, env, dr_id, reveal)
         }
         ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
             data_request_executors::register_data_request_executor(deps, info, p2p_multi_address)
@@ -105,6 +105,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         ),
         QueryMsg::GetRevealedDataResults { dr_id } => to_binary(
             &data_request_results::get_revealed_data_results(deps, dr_id)?,
+        ),
+        QueryMsg::GetResolvedDataResult { dr_id } => to_binary(
+            &data_request_results::get_resolved_data_result(deps, dr_id)?,
         ),
         QueryMsg::GetDataRequestExecutor { executor } => to_binary(
             &data_request_executors::get_data_request_executor(deps, executor)?,

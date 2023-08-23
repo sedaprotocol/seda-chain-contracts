@@ -57,7 +57,7 @@ pub struct DataResult {
     /// Data Request Identifier
     pub dr_id: Hash,
     /// Block Height at which data request was finalized
-    pub block_height: u128,
+    pub block_height: u64,
     /// Exit code of Tally WASM binary execution
     pub exit_code: u8,
     /// Result from Tally WASM binary execution
@@ -107,6 +107,3 @@ pub const TOKEN: Item<String> = Item::new("token");
 /// A map of data request executors (of address to info) that are eligible for committee inclusion
 pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
     Map::new("eligible_data_request_executors");
-
-pub const COMMITS: Map<Addr, Commitment> = Map::new("commits");
-pub const REVEALS: Map<Addr, bool> = Map::new("reveals");

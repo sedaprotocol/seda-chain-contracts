@@ -9,16 +9,17 @@ use crate::ContractError;
 
 pub mod data_request_results {
 
-    use cosmwasm_std::Addr;
+    use cosmwasm_std::{Addr, Env};
     // use hex_literal::hex;
     use sha3::{Digest, Keccak256};
 
     use crate::{
         msg::{
             GetCommittedDataResultsResponse, GetCommittedExecutorsResponse, GetIdsResponse,
-            GetRevealedDataResultsResponse,
+            GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
         },
-        state::{Reveal, DATA_RESULTS},
+        state::{DataResult, Reveal, DATA_RESULTS},
+        types::Bytes,
         utils::check_eligibility,
     };
 
@@ -54,6 +55,7 @@ pub mod data_request_results {
     pub fn reveal_result(
         deps: DepsMut,
         info: MessageInfo,
+        env: Env,
         dr_id: Hash,
         reveal: Reveal,
     ) -> Result<Response, ContractError> {
@@ -92,8 +94,40 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
+        if u16::try_from(dr.reveals.len()).unwrap() == dr.replication_factor {
+            let block_height: u64 = env.block.height;
+            let exit_code: u8 = 0;
+            let result: Bytes = reveal.reveal.as_bytes().to_vec();
+
+            let payback_address: Bytes = dr.payback_address;
+            let seda_payload: Bytes = dr.seda_payload;
+
+            let mut hasher = Keccak256::new();
+            hasher.update(dr_id.as_bytes());
+            hasher.update(block_height.to_be_bytes());
+            hasher.update(exit_code.to_be_bytes());
+            hasher.update(result.clone());
+            hasher.update(payback_address.clone());
+            hasher.update(seda_payload.clone());
+
+            let digest = hasher.finalize();
+            let result_id = format!("0x{}", hex::encode(digest));
+
+            let dr_result = DataResult {
+                result_id,
+                dr_id: dr_id.clone(),
+                block_height,
+                exit_code,
+                result,
+                payback_address,
+                seda_payload,
+            };
+            DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
+            DATA_REQUESTS.remove(deps.storage, dr_id.clone());
+        }
+
         Ok(Response::new()
-            .add_attribute("action", "commit_result")
+            .add_attribute("action", "reveal_result")
             .add_attribute("dr_id", dr_id)
             .add_attribute("reveal", reveal.reveal))
     }
@@ -140,6 +174,15 @@ pub mod data_request_results {
     ) -> StdResult<GetRevealedDataResultsResponse> {
         let dr = DATA_REQUESTS.load(deps.storage, dr_id)?;
         Ok(GetRevealedDataResultsResponse { value: dr.reveals })
+    }
+
+    /// Returns a data result from the results with the given id, if it exists.
+    pub fn get_resolved_data_result(
+        deps: Deps,
+        dr_id: Hash,
+    ) -> StdResult<GetResolvedDataResultResponse> {
+        let result = DATA_RESULTS.load(deps.storage, dr_id)?;
+        Ok(GetResolvedDataResultResponse { value: result })
     }
 
     /// Returns a vector of committed data requests ids, if it exists.
@@ -196,6 +239,7 @@ mod dr_result_tests {
     use crate::contract::query;
     use crate::msg::PostDataRequestArgs;
     use crate::helpers::hash_update;
+    use crate::msg::GetResolvedDataResultResponse;
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::types::Bytes;
@@ -376,11 +420,25 @@ mod dr_result_tests {
             salt: "executor1".to_string(),
         };
         let info = mock_info("executor1", &coins(2, "token"));
+        let executor1 = info.sender.clone();
         let msg = ExecuteMsg::RevealDataResult {
             dr_id: constructed_dr_id.clone(),
             reveal: reveal1.clone(),
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetRevealedDataResult {
+                dr_id: constructed_dr_id.clone(),
+                executor: executor1.clone(),
+            },
+        )
+        .unwrap();
+        let value: GetRevealedDataResultResponse = from_binary(&res).unwrap();
+
+        assert_eq!(Some(reveal1.clone()), value.value);
         let reveal2 = Reveal {
             reveal: "2200".to_string(),
             salt: "executor2".to_string(),
@@ -393,19 +451,16 @@ mod dr_result_tests {
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
-        // should be able to fetch data result with id 0x66...
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetRevealedDataResult {
+            QueryMsg::GetResolvedDataResult {
                 dr_id: constructed_dr_id.clone(),
-                executor: executor2.clone(),
             },
         )
         .unwrap();
-        let value: GetRevealedDataResultResponse = from_binary(&res).unwrap();
-
-        assert_eq!(Some(reveal2.clone()), value.value);
+        let value: GetResolvedDataResultResponse = from_binary(&res).unwrap();
+        assert_eq!(reveal2.reveal.as_bytes().to_vec(), value.value.result);
     }
 
     #[test]
