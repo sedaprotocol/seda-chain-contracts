@@ -3,10 +3,9 @@ use crate::helpers::CwTemplateContract;
 use crate::msg::ExecuteMsg;
 use crate::msg::InstantiateMsg;
 
+use crate::types::Bytes;
 use crate::types::Hash;
-use crate::types::Input;
 use crate::types::Memo;
-use crate::types::PayloadItem;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use sha3::{Digest, Keccak256};
@@ -69,8 +68,8 @@ fn post_data_request() {
     let (mut app, cw_template_contract) = proper_instantiate();
     let dr_binary_id: Hash = "".to_string();
     let tally_binary_id: Hash = "".to_string();
-    let dr_inputs: Vec<Input> = Vec::new();
-    let tally_inputs: Vec<Input> = Vec::new();
+    let dr_inputs: Bytes = Vec::new();
+    let tally_inputs: Bytes = Vec::new();
 
     let replication_factor: u16 = 3;
 
@@ -79,7 +78,7 @@ fn post_data_request() {
     let gas_limit: u128 = 10;
 
     // set by relayer and SEDA protocol
-    let payload: Vec<PayloadItem> = Vec::new();
+    let seda_payload: Bytes = Vec::new();
 
     let chain_id = 31337;
     let nonce = 1;
@@ -94,6 +93,7 @@ fn post_data_request() {
     hasher.update(memo1.clone());
 
     let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+    let payback_address: Bytes = Vec::new();
 
     let msg = ExecuteMsg::PostDataRequest {
         dr_id: constructed_dr_id, // expected
@@ -106,7 +106,8 @@ fn post_data_request() {
         replication_factor,
         gas_price,
         gas_limit,
-        payload,
+        seda_payload,
+        payback_address,
     };
     let cosmos_msg = cw_template_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();

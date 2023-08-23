@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use crate::state::{DataRequest, DataRequestExecutor, Reveal};
-use crate::types::{Commitment, Hash, Input, Memo, PayloadItem};
+use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -25,15 +27,16 @@ pub enum ExecuteMsg {
 
         dr_binary_id: Hash,
         tally_binary_id: Hash,
-        dr_inputs: Vec<Input>,
-        tally_inputs: Vec<Input>,
+        dr_inputs: Bytes,
+        tally_inputs: Bytes,
         memo: Memo,
         replication_factor: u16,
 
         gas_price: u128,
         gas_limit: u128,
 
-        payload: Vec<PayloadItem>,
+        seda_payload: Bytes,
+        payback_address: Bytes,
     },
     CommitDataResult {
         dr_id: Hash,
@@ -64,8 +67,12 @@ pub enum QueryMsg {
     },
     #[returns(GetCommittedDataResultResponse)]
     GetCommittedDataResult { dr_id: Hash, executor: Addr },
+    #[returns(GetCommittedDataResultsResponse)]
+    GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]
     GetRevealedDataResult { dr_id: Hash, executor: Addr },
+    #[returns(GetRevealedDataResultsResponse)]
+    GetRevealedDataResults { dr_id: Hash },
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
 }
@@ -86,8 +93,18 @@ pub struct GetCommittedDataResultResponse {
 }
 
 #[cw_serde]
+pub struct GetCommittedDataResultsResponse {
+    pub value: HashMap<String, Commitment>,
+}
+
+#[cw_serde]
 pub struct GetRevealedDataResultResponse {
     pub value: Option<Reveal>,
+}
+
+#[cw_serde]
+pub struct GetRevealedDataResultsResponse {
+    pub value: HashMap<String, Reveal>,
 }
 #[cw_serde]
 pub struct GetIdsResponse {
@@ -101,5 +118,5 @@ pub struct GetDataRequestExecutorResponse {
 
 #[cw_serde]
 pub struct GetCommittedExecutorsResponse {
-    pub value: Vec<Addr>,
+    pub value: Vec<String>,
 }

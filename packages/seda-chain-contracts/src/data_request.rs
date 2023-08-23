@@ -18,7 +18,7 @@ pub mod data_requests {
 
     use crate::{
         state::{DATA_REQUESTS_BY_NONCE, DATA_RESULTS},
-        types::{Input, Memo, PayloadItem},
+        types::{Bytes, Memo},
     };
 
     use super::*;
@@ -46,8 +46,8 @@ pub mod data_requests {
 
         dr_binary_id: Hash,
         tally_binary_id: Hash,
-        dr_inputs: Vec<Input>,
-        tally_inputs: Vec<Input>,
+        dr_inputs: Bytes,
+        tally_inputs: Bytes,
 
         memo: Memo,
         replication_factor: u16,
@@ -55,7 +55,8 @@ pub mod data_requests {
         gas_price: u128,
         gas_limit: u128,
 
-        payload: Vec<PayloadItem>,
+        seda_payload: Bytes,
+        payback_address: Bytes,
     ) -> Result<Response, ContractError> {
         // require the data request id to be unique
         if data_request_or_result_exists(deps.as_ref(), args.dr_id.clone()) {
@@ -94,8 +95,8 @@ pub mod data_requests {
                 gas_price,
                 gas_limit,
 
-                payload,
-
+                seda_payload,
+                payback_address,
                 commits: HashMap::new(),
                 reveals: HashMap::new(),
             },
@@ -162,12 +163,10 @@ mod dr_tests {
     use crate::helpers::hash_update;
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
+    use crate::types::Bytes;
     use crate::types::Commitment;
-    use crate::types::Input;
     use crate::types::Memo;
-    use crate::types::PayloadItem;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::Addr;
     use cosmwasm_std::{coins, from_binary};
 
     use crate::contract::instantiate;
@@ -199,8 +198,8 @@ mod dr_tests {
         assert_eq!(None, value.value);
         let dr_binary_id: Hash = "".to_string();
         let tally_binary_id: Hash = "".to_string();
-        let dr_inputs: Vec<Input> = Vec::new();
-        let tally_inputs: Vec<Input> = Vec::new();
+        let dr_inputs: Bytes = Vec::new();
+        let tally_inputs: Bytes = Vec::new();
 
         let replication_factor: u16 = 3;
 
@@ -209,7 +208,7 @@ mod dr_tests {
         let gas_limit: u128 = 10;
 
         // set by relayer and SEDA protocol
-        let payload: Vec<PayloadItem> = Vec::new();
+        let seda_payload: Bytes = Vec::new();
 
         let chain_id = 31337;
         let nonce = 1;
@@ -223,8 +222,10 @@ mod dr_tests {
         let mut hasher = Keccak256::new();
         hasher.update(memo1.clone());
         let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+        let payback_address: Bytes = Vec::new();
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
+
         let msg = ExecuteMsg::PostDataRequest {
             dr_id: constructed_dr_id.clone(),
             dr_binary_id: dr_binary_id.clone(),
@@ -235,7 +236,8 @@ mod dr_tests {
             replication_factor,
             gas_price,
             gas_limit,
-            payload,
+            seda_payload,
+            payback_address,
         };
         let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -253,7 +255,7 @@ mod dr_tests {
 
         let dr_binary_id: Hash = "".to_string();
         let tally_binary_id: Hash = "".to_string();
-        let dr_inputs: Vec<Input> = Vec::new();
+        let dr_inputs: Bytes = Vec::new();
         let replication_factor: u16 = 3;
 
         // set by dr creator
@@ -261,9 +263,9 @@ mod dr_tests {
         let gas_limit: u128 = 10;
 
         // set by relayer and SEDA protocol
-        let payload: Vec<PayloadItem> = Vec::new();
-        let commits: HashMap<Addr, Commitment> = HashMap::new();
-        let reveals: HashMap<Addr, Reveal> = HashMap::new();
+        let seda_payload: Bytes = Vec::new();
+        let commits: HashMap<String, Commitment> = HashMap::new();
+        let reveals: HashMap<String, Reveal> = HashMap::new();
         let chain_id = 31337;
         let nonce = 1;
         let value = "hello world".to_string();
@@ -276,9 +278,9 @@ mod dr_tests {
 
         let mut hasher = Keccak256::new();
         hasher.update(memo1.clone());
-    
-        let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
 
+        let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+        let payback_address: Bytes = Vec::new();
         assert_eq!(
             Some(DataRequest {
                 dr_id: constructed_dr_id.clone(),
@@ -291,9 +293,10 @@ mod dr_tests {
                 replication_factor,
                 gas_price,
                 gas_limit,
-                payload,
+                seda_payload,
                 commits,
                 reveals,
+                payback_address,
             }),
             received_value.value
         );
@@ -323,8 +326,8 @@ mod dr_tests {
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         let dr_binary_id: Hash = "".to_string();
         let tally_binary_id: Hash = "".to_string();
-        let dr_inputs: Vec<Input> = Vec::new();
-        let tally_inputs: Vec<Input> = Vec::new();
+        let dr_inputs: Bytes = Vec::new();
+        let tally_inputs: Bytes = Vec::new();
 
         let replication_factor: u16 = 3;
 
@@ -333,7 +336,7 @@ mod dr_tests {
         let gas_limit: u128 = 10;
 
         // set by relayer and SEDA protocol
-        let payload: Vec<PayloadItem> = Vec::new();
+        let seda_payload: Bytes = Vec::new();
 
         let chain_id = 31337;
         let nonce = 1;
@@ -346,7 +349,7 @@ mod dr_tests {
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let mut hasher = Keccak256::new();
         hasher.update(memo1.clone());
-    
+
         let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
         let chain_id = 31337;
         let nonce = 1;
@@ -359,7 +362,7 @@ mod dr_tests {
         let memo2: Memo = binary_hash2.clone().into_bytes();
         let mut hasher = Keccak256::new();
         hasher.update(memo2.clone());
-    
+
         let constructed_dr_id2 = format!("0x{}", hex::encode(hasher.finalize()));
         let chain_id = 31337;
         let nonce = 1;
@@ -372,8 +375,11 @@ mod dr_tests {
         let memo3: Memo = binary_hash3.clone().into_bytes();
         let mut hasher = Keccak256::new();
         hasher.update(memo3.clone());
-    
+
         let constructed_dr_id3 = format!("0x{}", hex::encode(hasher.finalize()));
+
+        let payback_address: Bytes = Vec::new();
+
         // someone posts three data requests
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
@@ -387,7 +393,8 @@ mod dr_tests {
             replication_factor,
             gas_price,
             gas_limit,
-            payload: payload.clone(),
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
         };
         let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -402,7 +409,8 @@ mod dr_tests {
             replication_factor,
             gas_price,
             gas_limit,
-            payload: payload.clone(),
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
         };
         let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -417,7 +425,8 @@ mod dr_tests {
             replication_factor,
             gas_price,
             gas_limit,
-            payload: payload.clone(),
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
         };
         let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -433,10 +442,12 @@ mod dr_tests {
         )
         .unwrap();
 
+        let payback_address: Bytes = Vec::new();
+
         let dr_binary_id: Hash = "".to_string();
         let tally_binary_id: Hash = "".to_string();
-        let dr_inputs: Vec<Input> = Vec::new();
-        let tally_inputs: Vec<Input> = Vec::new();
+        let dr_inputs: Bytes = Vec::new();
+        let tally_inputs: Bytes = Vec::new();
 
         let replication_factor: u16 = 3;
 
@@ -445,10 +456,10 @@ mod dr_tests {
         let gas_limit: u128 = 10;
 
         // set by relayer and SEDA protocol
-        let payload: Vec<PayloadItem> = Vec::new();
+        let seda_payload: Bytes = Vec::new();
 
-        let commits: HashMap<Addr, Commitment> = HashMap::new();
-        let reveals: HashMap<Addr, Reveal> = HashMap::new();
+        let commits: HashMap<String, Commitment> = HashMap::new();
+        let reveals: HashMap<String, Reveal> = HashMap::new();
 
         let chain_id = 31337;
         let nonce = 1;
@@ -461,10 +472,8 @@ mod dr_tests {
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let mut hasher = Keccak256::new();
         hasher.update(memo1.clone());
-    
-        let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
 
-        
+        let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
 
         let chain_id = 31337;
         let nonce = 1;
@@ -477,7 +486,7 @@ mod dr_tests {
         let memo2: Memo = binary_hash2.clone().into_bytes();
         let mut hasher = Keccak256::new();
         hasher.update(memo2.clone());
-    
+
         let constructed_dr_id2 = format!("0x{}", hex::encode(hasher.finalize()));
         let chain_id = 31337;
         let nonce = 1;
@@ -490,7 +499,7 @@ mod dr_tests {
         let memo3: Memo = binary_hash3.clone().into_bytes();
         let mut hasher = Keccak256::new();
         hasher.update(memo3.clone());
-    
+
         let constructed_dr_id3 = format!("0x{}", hex::encode(hasher.finalize()));
         let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
         assert_eq!(
@@ -508,9 +517,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone(),
                     },
                     DataRequest {
                         dr_id: constructed_dr_id2.clone(),
@@ -523,9 +533,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone(),
                     },
                     DataRequest {
                         dr_id: constructed_dr_id3.clone(),
@@ -538,9 +549,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone(),
                     },
                 ]
             },
@@ -558,6 +570,8 @@ mod dr_tests {
         )
         .unwrap();
         let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+        let payback_address: Bytes = Vec::new();
+
         assert_eq!(
             GetDataRequestsFromPoolResponse {
                 value: vec![
@@ -572,9 +586,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone()
                     },
                     DataRequest {
                         dr_id: constructed_dr_id2.clone(),
@@ -587,9 +602,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone()
                     },
                 ]
             },
@@ -607,6 +623,8 @@ mod dr_tests {
         )
         .unwrap();
         let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+        let payback_address: Bytes = Vec::new();
+
         assert_eq!(
             GetDataRequestsFromPoolResponse {
                 value: vec![DataRequest {
@@ -620,9 +638,10 @@ mod dr_tests {
                     replication_factor,
                     gas_price,
                     gas_limit,
-                    payload: payload.clone(),
+                    seda_payload: seda_payload.clone(),
                     commits: commits.clone(),
                     reveals: reveals.clone(),
+                    payback_address: payback_address.clone(),
                 },]
             },
             response
@@ -653,9 +672,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone()
                     },
                     DataRequest {
                         dr_id: constructed_dr_id3.clone(),
@@ -668,9 +688,10 @@ mod dr_tests {
                         replication_factor,
                         gas_price,
                         gas_limit,
-                        payload: payload.clone(),
+                        seda_payload: seda_payload.clone(),
                         commits: commits.clone(),
                         reveals: reveals.clone(),
+                        payback_address: payback_address.clone()
                     },
                 ]
             },
@@ -702,8 +723,8 @@ mod dr_tests {
 
         let dr_binary_id: Hash = "".to_string();
         let tally_binary_id: Hash = "".to_string();
-        let dr_inputs: Vec<Input> = Vec::new();
-        let tally_inputs: Vec<Input> = Vec::new();
+        let dr_inputs: Bytes = Vec::new();
+        let tally_inputs: Bytes = Vec::new();
 
         let replication_factor: u16 = 3;
 
@@ -712,9 +733,8 @@ mod dr_tests {
         let gas_limit: u128 = 10;
 
         // set by relayer and SEDA protocol
-        let payload: Vec<PayloadItem> = Vec::new();
+        let seda_payload: Bytes = Vec::new();
 
-       
         let chain_id = 31337;
         let nonce = 1;
         let value = 1;
@@ -728,10 +748,10 @@ mod dr_tests {
         let mut hasher = Keccak256::new();
 
         hasher.update(memo1.clone());
-    
+
         let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
 
-        
+        let payback_address: Bytes = Vec::new();
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
@@ -745,7 +765,8 @@ mod dr_tests {
             replication_factor,
             gas_price,
             gas_limit,
-            payload: payload.clone(),
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
         };
         let msg = ExecuteMsg::PostDataRequest { args };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -771,7 +792,8 @@ mod dr_tests {
             replication_factor,
             gas_price,
             gas_limit,
-            payload: payload.clone(),
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
         };
         let msg = ExecuteMsg::PostDataRequest { args };
         let res = execute(deps.as_mut(), mock_env(), info, msg);

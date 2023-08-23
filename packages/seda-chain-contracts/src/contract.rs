@@ -50,7 +50,8 @@ pub fn execute(
             gas_price,
             gas_limit,
 
-            payload,
+            seda_payload,
+            payback_address,
         } => data_requests::post_data_request(
             deps,
             info,
@@ -63,7 +64,8 @@ pub fn execute(
             replication_factor,
             gas_price,
             gas_limit,
-            payload,
+            seda_payload,
+            payback_address,
         ),
         ExecuteMsg::CommitDataResult { dr_id, commitment } => {
             data_request_results::commit_result(deps, info, dr_id, commitment)
@@ -95,8 +97,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetCommittedDataResult { dr_id, executor } => to_binary(
             &data_request_results::get_committed_data_result(deps, dr_id, executor)?,
         ),
+        QueryMsg::GetCommittedDataResults { dr_id } => to_binary(
+            &data_request_results::get_committed_data_results(deps, dr_id)?,
+        ),
         QueryMsg::GetRevealedDataResult { dr_id, executor } => to_binary(
             &data_request_results::get_revealed_data_result(deps, dr_id, executor)?,
+        ),
+        QueryMsg::GetRevealedDataResults { dr_id } => to_binary(
+            &data_request_results::get_revealed_data_results(deps, dr_id)?,
         ),
         QueryMsg::GetDataRequestExecutor { executor } => to_binary(
             &data_request_executors::get_data_request_executor(deps, executor)?,
