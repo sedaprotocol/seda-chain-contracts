@@ -22,33 +22,10 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest {
-        dr_id: Hash,
-
-        dr_binary_id: Hash,
-        tally_binary_id: Hash,
-        dr_inputs: Bytes,
-        tally_inputs: Bytes,
-        memo: Memo,
-        replication_factor: u16,
-
-        gas_price: u128,
-        gas_limit: u128,
-
-        seda_payload: Bytes,
-        payback_address: Bytes,
-    },
-    CommitDataResult {
-        dr_id: Hash,
-        commitment: String,
-    },
-    RevealDataResult {
-        dr_id: Hash,
-        reveal: Reveal,
-    },
-    RegisterDataRequestExecutor {
-        p2p_multi_address: Option<String>,
-    },
+    PostDataRequest { posted_dr: PostDataRequestArgs },
+    CommitDataResult { dr_id: Hash, commitment: String },
+    RevealDataResult { dr_id: Hash, reveal: Reveal },
+    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
     Unstake { amount: u128 },
@@ -126,4 +103,19 @@ pub struct GetDataRequestExecutorResponse {
 #[cw_serde]
 pub struct GetCommittedExecutorsResponse {
     pub value: Vec<String>,
+}
+
+#[cw_serde]
+pub struct PostDataRequestArgs {
+    pub dr_id: Hash,
+    pub dr_binary_id: Hash,
+    pub tally_binary_id: Hash,
+    pub dr_inputs: Bytes,
+    pub tally_inputs: Bytes,
+    pub memo: Memo,
+    pub replication_factor: u16,
+    pub gas_price: u128,
+    pub gas_limit: u128,
+    pub seda_payload: Bytes,
+    pub payback_address: Bytes,
 }

@@ -240,6 +240,7 @@ mod dr_result_tests {
     use crate::msg::PostDataRequestArgs;
     use crate::helpers::hash_update;
     use crate::msg::GetResolvedDataResultResponse;
+    use crate::msg::PostDataRequestArgs;
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::types::Bytes;
@@ -322,9 +323,8 @@ mod dr_result_tests {
         let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
 
         let payback_address: Bytes = Vec::new();
-        // someone posts a data request
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id.clone(),
 
             dr_binary_id: dr_binary_id.clone(),
@@ -340,6 +340,9 @@ mod dr_result_tests {
             seda_payload,
             payback_address,
         };
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         // can fetch it via `get_data_requests_from_pool`
@@ -495,10 +498,10 @@ mod dr_result_tests {
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo: Memo = binary_hash.clone().into_bytes();
         let payback_address: Bytes = Vec::new();
-        // someone posts a data request
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: binary_hash.clone(),
+
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id,
             dr_inputs,
@@ -512,7 +515,9 @@ mod dr_result_tests {
             seda_payload,
             payback_address,
         };
-        let msg = ExecuteMsg::PostDataRequest { args };
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // ineligible shouldn't be able to post a data result

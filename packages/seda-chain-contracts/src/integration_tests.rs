@@ -3,6 +3,7 @@ use crate::helpers::CwTemplateContract;
 use crate::msg::ExecuteMsg;
 use crate::msg::InstantiateMsg;
 
+use crate::msg::PostDataRequestArgs;
 use crate::types::Bytes;
 use crate::types::Hash;
 use crate::types::Memo;
@@ -94,21 +95,23 @@ fn post_data_request() {
 
     let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
     let payback_address: Bytes = Vec::new();
+    let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
+        dr_id: constructed_dr_id.clone(),
 
-    let msg = ExecuteMsg::PostDataRequest {
-        dr_id: constructed_dr_id, // expected
         dr_binary_id: dr_binary_id.clone(),
         tally_binary_id,
         dr_inputs,
         tally_inputs,
-
         memo: memo1,
         replication_factor,
+
         gas_price,
         gas_limit,
+
         seda_payload,
         payback_address,
     };
+    let msg = ExecuteMsg::PostDataRequest { posted_dr };
     let cosmos_msg = cw_template_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 }

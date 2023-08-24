@@ -17,8 +17,8 @@ pub mod data_requests {
     use cw_storage_plus::Bound;
 
     use crate::{
+        msg::PostDataRequestArgs,
         state::{DATA_REQUESTS_BY_NONCE, DATA_RESULTS},
-        types::{Bytes, Memo},
     };
 
     use super::*;
@@ -41,39 +41,35 @@ pub mod data_requests {
     pub fn post_data_request(
         deps: DepsMut,
         _info: MessageInfo,
-
-        dr_id: Hash,
-
-        dr_binary_id: Hash,
-        tally_binary_id: Hash,
-        dr_inputs: Bytes,
-        tally_inputs: Bytes,
-
-        memo: Memo,
-        replication_factor: u16,
-
-        gas_price: u128,
-        gas_limit: u128,
-
-        seda_payload: Bytes,
-        payback_address: Bytes,
+        posted_dr: PostDataRequestArgs,
     ) -> Result<Response, ContractError> {
         // require the data request id to be unique
+<<<<<<< HEAD
         if data_request_or_result_exists(deps.as_ref(), args.dr_id.clone()) {
+=======
+        if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id.clone()) {
+>>>>>>> refactor: add PostDataRequestArgs
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
         // reconstruct the data request id hash
         let mut hasher = Keccak256::new();
-        hasher.update(memo.clone());
+        hasher.update(posted_dr.memo.clone());
 
         let reconstructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
 
         // check if the reconstructed dr_id matches the given dr_id
+<<<<<<< HEAD
         if reconstructed_dr_id != args.dr_id {
             return Err(ContractError::InvalidDataRequestId(
                 reconstructed_dr_id,
                 args.dr_id,
+=======
+        if reconstructed_dr_id != posted_dr.dr_id {
+            return Err(ContractError::InvalidDataRequestId(
+                reconstructed_dr_id,
+                posted_dr.dr_id,
+>>>>>>> refactor: add PostDataRequestArgs
             ));
         }
 
@@ -81,27 +77,35 @@ pub mod data_requests {
         let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?;
         DATA_REQUESTS.save(
             deps.storage,
+<<<<<<< HEAD
             args.dr_id.clone(),
+=======
+            posted_dr.dr_id.clone(),
+>>>>>>> refactor: add PostDataRequestArgs
             &DataRequest {
-                dr_id: dr_id.clone(),
+                dr_id: posted_dr.dr_id.clone(),
 
-                dr_binary_id,
-                tally_binary_id,
-                dr_inputs,
-                tally_inputs,
-                memo,
-                replication_factor,
+                dr_binary_id: posted_dr.dr_binary_id,
+                tally_binary_id: posted_dr.tally_binary_id,
+                dr_inputs: posted_dr.dr_inputs,
+                tally_inputs: posted_dr.tally_inputs,
+                memo: posted_dr.memo,
+                replication_factor: posted_dr.replication_factor,
 
-                gas_price,
-                gas_limit,
+                gas_price: posted_dr.gas_price,
+                gas_limit: posted_dr.gas_limit,
 
-                seda_payload,
-                payback_address,
+                seda_payload: posted_dr.seda_payload,
+                payback_address: posted_dr.payback_address,
                 commits: HashMap::new(),
                 reveals: HashMap::new(),
             },
         )?;
+<<<<<<< HEAD
         DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &args.dr_id)?; // todo wrong nonce
+=======
+        DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &posted_dr.dr_id)?; // todo wrong nonce
+>>>>>>> refactor: add PostDataRequestArgs
 
         // increment the data request count
         DATA_REQUESTS_COUNT.update(deps.storage, |mut new_dr_id| -> Result<_, ContractError> {
@@ -111,7 +115,11 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
+<<<<<<< HEAD
             .add_attribute("dr_id", args.dr_id))
+=======
+            .add_attribute("dr_id", posted_dr.dr_id))
+>>>>>>> refactor: add PostDataRequestArgs
     }
 
     /// Returns a data request from the pool with the given id, if it exists.
@@ -161,6 +169,7 @@ mod dr_tests {
     use crate::contract::execute;
     use crate::contract::query;
     use crate::helpers::hash_update;
+    use crate::msg::PostDataRequestArgs;
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::types::Bytes;
@@ -225,8 +234,7 @@ mod dr_tests {
         let payback_address: Bytes = Vec::new();
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
-
-        let msg = ExecuteMsg::PostDataRequest {
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id.clone(),
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id,
@@ -239,7 +247,11 @@ mod dr_tests {
             seda_payload,
             payback_address,
         };
+<<<<<<< HEAD
         let msg = ExecuteMsg::PostDataRequest { args };
+=======
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
+>>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // should be able to fetch data request with id 0x69...
@@ -379,10 +391,7 @@ mod dr_tests {
         let constructed_dr_id3 = format!("0x{}", hex::encode(hasher.finalize()));
 
         let payback_address: Bytes = Vec::new();
-
-        // someone posts three data requests
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id1.clone(),
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -396,9 +405,16 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
+<<<<<<< HEAD
         let msg = ExecuteMsg::PostDataRequest { args };
+=======
+        // someone posts three data requests
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
+>>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let msg = ExecuteMsg::PostDataRequest {
+
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id2.clone(),
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -412,9 +428,14 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
+<<<<<<< HEAD
         let msg = ExecuteMsg::PostDataRequest { args };
+=======
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
+>>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let msg = ExecuteMsg::PostDataRequest {
+
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id3.clone(),
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -428,7 +449,11 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
+<<<<<<< HEAD
         let msg = ExecuteMsg::PostDataRequest { args };
+=======
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
+>>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // fetch all three data requests
@@ -752,9 +777,7 @@ mod dr_tests {
         let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
 
         let payback_address: Bytes = Vec::new();
-        // someone posts a data request
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id1.clone(),
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -768,7 +791,9 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
-        let msg = ExecuteMsg::PostDataRequest { args };
+        // someone posts a data request
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // someone posts a data result
@@ -779,9 +804,7 @@ mod dr_tests {
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // can't create a data request with the same id as a data result
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest {
+        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id1.clone(),
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -795,7 +818,10 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
-        let msg = ExecuteMsg::PostDataRequest { args };
+
+        // can't create a data request with the same id as a data result
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert!(res.is_err());
     }

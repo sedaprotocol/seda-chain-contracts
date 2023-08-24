@@ -37,36 +37,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::PostDataRequest {
-            dr_id,
-
-            dr_binary_id,
-            tally_binary_id,
-            dr_inputs,
-            tally_inputs,
-            memo,
-            replication_factor,
-
-            gas_price,
-            gas_limit,
-
-            seda_payload,
-            payback_address,
-        } => data_requests::post_data_request(
-            deps,
-            info,
-            dr_id,
-            dr_binary_id,
-            tally_binary_id,
-            dr_inputs,
-            tally_inputs,
-            memo,
-            replication_factor,
-            gas_price,
-            gas_limit,
-            seda_payload,
-            payback_address,
-        ),
+        ExecuteMsg::PostDataRequest { posted_dr } => {
+            data_requests::post_data_request(deps, info, posted_dr)
+        }
         ExecuteMsg::CommitDataResult { dr_id, commitment } => {
             data_request_results::commit_result(deps, info, dr_id, commitment)
         }
