@@ -90,8 +90,18 @@ fn post_data_request() {
     hasher.update(value);
     let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
     let memo1: Memo = binary_hash.clone().into_bytes();
+    let payback_address: Bytes = Vec::new();
     let mut hasher = Keccak256::new();
+    hasher.update(dr_binary_id.clone());
+    hasher.update(dr_inputs.clone());
+    hasher.update(gas_limit.to_be_bytes().clone());
+    hasher.update(gas_price.to_be_bytes().clone());
     hasher.update(memo1.clone());
+    hasher.update(payback_address.clone());
+    hasher.update(replication_factor.to_be_bytes().clone());
+    hasher.update(seda_payload.clone());
+    hasher.update(tally_binary_id.clone());
+    hasher.update(tally_inputs.clone());
 
     let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
     let payback_address: Bytes = Vec::new();

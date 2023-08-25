@@ -36,7 +36,6 @@ pub mod data_requests {
                 .flatten()
                 .is_some()
     }
-    #[allow(clippy::too_many_arguments)]
     /// Posts a data request to the pool
     pub fn post_data_request(
         deps: DepsMut,
@@ -54,7 +53,16 @@ pub mod data_requests {
 
         // reconstruct the data request id hash
         let mut hasher = Keccak256::new();
+        hasher.update(posted_dr.dr_binary_id.clone());
+        hasher.update(posted_dr.dr_inputs.clone());
+        hasher.update(posted_dr.gas_limit.to_be_bytes());
+        hasher.update(posted_dr.gas_price.to_be_bytes());
         hasher.update(posted_dr.memo.clone());
+        hasher.update(posted_dr.payback_address.clone());
+        hasher.update(posted_dr.replication_factor.to_be_bytes());
+        hasher.update(posted_dr.seda_payload.clone());
+        hasher.update(posted_dr.tally_binary_id.clone());
+        hasher.update(posted_dr.tally_inputs.clone());
 
         let reconstructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
 
@@ -222,6 +230,7 @@ mod dr_tests {
         let chain_id = 31337;
         let nonce = 1;
         let value = "hello world".to_string();
+        let payback_address: Bytes = Vec::new();
         let mut hasher = Keccak256::new();
         hash_update(&mut hasher, chain_id);
         hash_update(&mut hasher, nonce);
@@ -229,9 +238,18 @@ mod dr_tests {
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo1.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
         let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
-        let payback_address: Bytes = Vec::new();
+
         // someone posts a data request
         let info = mock_info("anyone", &coins(2, "token"));
         let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
@@ -245,7 +263,7 @@ mod dr_tests {
             gas_price,
             gas_limit,
             seda_payload,
-            payback_address,
+            payback_address: payback_address.clone(),
         };
 <<<<<<< HEAD
         let msg = ExecuteMsg::PostDataRequest { args };
@@ -289,7 +307,16 @@ mod dr_tests {
         let memo1: Memo = binary_hash.clone().into_bytes();
 
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo1.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
 
         let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
         let payback_address: Bytes = Vec::new();
@@ -353,6 +380,7 @@ mod dr_tests {
         let chain_id = 31337;
         let nonce = 1;
         let value = 1;
+        let payback_address: Bytes = Vec::new();
         let mut hasher = Keccak256::new();
         hash_update(&mut hasher, chain_id);
         hash_update(&mut hasher, nonce);
@@ -360,7 +388,16 @@ mod dr_tests {
         let binary_hash1 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo1.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
 
         let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
         let chain_id = 31337;
@@ -373,7 +410,16 @@ mod dr_tests {
         let binary_hash2 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo2: Memo = binary_hash2.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo2.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
 
         let constructed_dr_id2 = format!("0x{}", hex::encode(hasher.finalize()));
         let chain_id = 31337;
@@ -386,7 +432,16 @@ mod dr_tests {
         let binary_hash3 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo3: Memo = binary_hash3.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo3.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
 
         let constructed_dr_id3 = format!("0x{}", hex::encode(hasher.finalize()));
 
@@ -496,8 +551,16 @@ mod dr_tests {
         let binary_hash1 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo1.clone());
-
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
         let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
 
         let chain_id = 31337;
@@ -510,8 +573,16 @@ mod dr_tests {
         let binary_hash2 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo2: Memo = binary_hash2.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo2.clone());
-
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
         let constructed_dr_id2 = format!("0x{}", hex::encode(hasher.finalize()));
         let chain_id = 31337;
         let nonce = 1;
@@ -523,7 +594,16 @@ mod dr_tests {
         let binary_hash3 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo3: Memo = binary_hash3.clone().into_bytes();
         let mut hasher = Keccak256::new();
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo3.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
 
         let constructed_dr_id3 = format!("0x{}", hex::encode(hasher.finalize()));
         let response: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
@@ -769,14 +849,22 @@ mod dr_tests {
         hash_update(&mut hasher, value);
         let binary_hash1 = format!("0x{}", hex::encode(hasher.clone().finalize()));
         let memo1: Memo = binary_hash1.clone().into_bytes();
-
+        let payback_address: Bytes = Vec::new();
         let mut hasher = Keccak256::new();
 
+        hasher.update(dr_binary_id.clone());
+        hasher.update(dr_inputs.clone());
+        hasher.update(gas_limit.to_be_bytes().clone());
+        hasher.update(gas_price.to_be_bytes().clone());
         hasher.update(memo1.clone());
+        hasher.update(payback_address.clone());
+        hasher.update(replication_factor.to_be_bytes().clone());
+        hasher.update(seda_payload.clone());
+        hasher.update(tally_binary_id.clone());
+        hasher.update(tally_inputs.clone());
 
         let constructed_dr_id1 = format!("0x{}", hex::encode(hasher.finalize()));
 
-        let payback_address: Bytes = Vec::new();
         let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id1.clone(),
             dr_binary_id: dr_binary_id.clone(),
