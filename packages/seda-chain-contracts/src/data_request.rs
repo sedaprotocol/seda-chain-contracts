@@ -1,25 +1,23 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
-use cw_storage_plus::Bound;
 
 use crate::state::{DATA_REQUESTS, DATA_REQUESTS_COUNT};
 
 use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use crate::state::DataRequest;
-use crate::state::{DATA_REQUESTS_BY_NONCE, DATA_REQUESTS_COUNT, DATA_REQUESTS_POOL, DATA_RESULTS};
 use crate::types::Hash;
-use crate::utils::hash_data_request;
 use crate::ContractError;
 
 pub mod data_requests {
     use std::collections::HashMap;
 
-    use cw_storage_plus::Bound;
-
     use crate::{
         msg::PostDataRequestArgs,
         state::{DATA_REQUESTS_BY_NONCE, DATA_RESULTS},
     };
+    use cw_storage_plus::Bound;
+    use sha3::Digest;
+    use sha3::Keccak256;
 
     use super::*;
 
@@ -43,11 +41,7 @@ pub mod data_requests {
         posted_dr: PostDataRequestArgs,
     ) -> Result<Response, ContractError> {
         // require the data request id to be unique
-<<<<<<< HEAD
-        if data_request_or_result_exists(deps.as_ref(), args.dr_id.clone()) {
-=======
         if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id.clone()) {
->>>>>>> refactor: add PostDataRequestArgs
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
@@ -67,17 +61,10 @@ pub mod data_requests {
         let reconstructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
 
         // check if the reconstructed dr_id matches the given dr_id
-<<<<<<< HEAD
-        if reconstructed_dr_id != args.dr_id {
-            return Err(ContractError::InvalidDataRequestId(
-                reconstructed_dr_id,
-                args.dr_id,
-=======
         if reconstructed_dr_id != posted_dr.dr_id {
             return Err(ContractError::InvalidDataRequestId(
                 reconstructed_dr_id,
                 posted_dr.dr_id,
->>>>>>> refactor: add PostDataRequestArgs
             ));
         }
 
@@ -85,11 +72,7 @@ pub mod data_requests {
         let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?;
         DATA_REQUESTS.save(
             deps.storage,
-<<<<<<< HEAD
-            args.dr_id.clone(),
-=======
             posted_dr.dr_id.clone(),
->>>>>>> refactor: add PostDataRequestArgs
             &DataRequest {
                 dr_id: posted_dr.dr_id.clone(),
 
@@ -109,11 +92,7 @@ pub mod data_requests {
                 reveals: HashMap::new(),
             },
         )?;
-<<<<<<< HEAD
-        DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &args.dr_id)?; // todo wrong nonce
-=======
         DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &posted_dr.dr_id)?; // todo wrong nonce
->>>>>>> refactor: add PostDataRequestArgs
 
         // increment the data request count
         DATA_REQUESTS_COUNT.update(deps.storage, |mut new_dr_id| -> Result<_, ContractError> {
@@ -123,11 +102,7 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-<<<<<<< HEAD
-            .add_attribute("dr_id", args.dr_id))
-=======
             .add_attribute("dr_id", posted_dr.dr_id))
->>>>>>> refactor: add PostDataRequestArgs
     }
 
     /// Returns a data request from the pool with the given id, if it exists.
@@ -175,21 +150,23 @@ mod dr_tests {
 
     use super::*;
     use crate::contract::execute;
+    use crate::contract::instantiate;
     use crate::contract::query;
-    use crate::helpers::hash_update;
+    use crate::msg::GetDataRequestResponse;
+    use crate::msg::InstantiateMsg;
     use crate::msg::PostDataRequestArgs;
+    use crate::msg::{ExecuteMsg, QueryMsg};
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::types::Bytes;
     use crate::types::Commitment;
     use crate::types::Memo;
+    use crate::utils::hash_data_request;
+    use crate::utils::hash_update;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
-
-    use crate::contract::instantiate;
-    use crate::msg::GetDataRequestResponse;
-    use crate::msg::InstantiateMsg;
-    use crate::msg::{ExecuteMsg, QueryMsg};
+    use sha3::Digest;
+    use sha3::Keccak256;
 
     #[test]
     fn post_data_request() {
@@ -232,8 +209,8 @@ mod dr_tests {
         let value = "hello world".to_string();
         let payback_address: Bytes = Vec::new();
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
         hasher.update(value);
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash.clone().into_bytes();
@@ -265,11 +242,7 @@ mod dr_tests {
             seda_payload,
             payback_address: payback_address.clone(),
         };
-<<<<<<< HEAD
-        let msg = ExecuteMsg::PostDataRequest { args };
-=======
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
->>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // should be able to fetch data request with id 0x69...
@@ -300,8 +273,8 @@ mod dr_tests {
         let nonce = 1;
         let value = "hello world".to_string();
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
         hasher.update(value);
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash.clone().into_bytes();
@@ -382,9 +355,9 @@ mod dr_tests {
         let value = 1;
         let payback_address: Bytes = Vec::new();
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash1 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let mut hasher = Keccak256::new();
@@ -404,9 +377,9 @@ mod dr_tests {
         let nonce = 1;
         let value = 2;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash2 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo2: Memo = binary_hash2.clone().into_bytes();
         let mut hasher = Keccak256::new();
@@ -426,9 +399,9 @@ mod dr_tests {
         let nonce = 1;
         let value = 3;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash3 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo3: Memo = binary_hash3.clone().into_bytes();
         let mut hasher = Keccak256::new();
@@ -460,13 +433,9 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
-<<<<<<< HEAD
-        let msg = ExecuteMsg::PostDataRequest { args };
-=======
         // someone posts three data requests
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
->>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
@@ -483,11 +452,7 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
-<<<<<<< HEAD
-        let msg = ExecuteMsg::PostDataRequest { args };
-=======
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
->>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
@@ -504,11 +469,7 @@ mod dr_tests {
             seda_payload: seda_payload.clone(),
             payback_address: payback_address.clone(),
         };
-<<<<<<< HEAD
-        let msg = ExecuteMsg::PostDataRequest { args };
-=======
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
->>>>>>> refactor: add PostDataRequestArgs
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // fetch all three data requests
@@ -545,9 +506,9 @@ mod dr_tests {
         let nonce = 1;
         let value = 1;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash1 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let mut hasher = Keccak256::new();
@@ -567,9 +528,9 @@ mod dr_tests {
         let nonce = 1;
         let value = 2;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash2 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo2: Memo = binary_hash2.clone().into_bytes();
         let mut hasher = Keccak256::new();
@@ -588,9 +549,9 @@ mod dr_tests {
         let nonce = 1;
         let value = 3;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash3 = format!("0x{}", hex::encode(hasher.finalize()));
         let memo3: Memo = binary_hash3.clone().into_bytes();
         let mut hasher = Keccak256::new();
@@ -844,9 +805,9 @@ mod dr_tests {
         let nonce = 1;
         let value = 1;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
-        hash_update(&mut hasher, value);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
+        hash_update(&mut hasher, &value);
         let binary_hash1 = format!("0x{}", hex::encode(hasher.clone().finalize()));
         let memo1: Memo = binary_hash1.clone().into_bytes();
         let payback_address: Bytes = Vec::new();

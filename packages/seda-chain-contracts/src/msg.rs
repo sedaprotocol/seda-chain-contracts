@@ -6,16 +6,6 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
 #[cw_serde]
-pub struct PostDataRequestArgs {
-    pub dr_id: Hash,
-    pub value: String,
-    pub nonce: u128,
-    pub chain_id: u128,
-    pub wasm_id: Vec<u8>,
-    pub wasm_args: Vec<Vec<u8>>,
-}
-
-#[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
 }

@@ -237,14 +237,13 @@ mod dr_result_tests {
     use super::*;
     use crate::contract::execute;
     use crate::contract::query;
-    use crate::msg::PostDataRequestArgs;
-    use crate::helpers::hash_update;
     use crate::msg::GetResolvedDataResultResponse;
     use crate::msg::PostDataRequestArgs;
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::types::Bytes;
     use crate::types::Memo;
+    use crate::utils::hash_update;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::Addr;
     use cosmwasm_std::{coins, from_binary};
@@ -314,8 +313,8 @@ mod dr_result_tests {
         let payback_address: Bytes = Vec::new();
 
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
         hasher.update(value);
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo: Memo = binary_hash.clone().into_bytes();
@@ -500,8 +499,8 @@ mod dr_result_tests {
         let nonce = 1;
         let value = "hello world".to_string();
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, chain_id);
-        hash_update(&mut hasher, nonce);
+        hash_update(&mut hasher, &chain_id);
+        hash_update(&mut hasher, &nonce);
         hasher.update(value);
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo: Memo = binary_hash.clone().into_bytes();

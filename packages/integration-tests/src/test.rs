@@ -1,8 +1,10 @@
 use crate::helpers::CwTemplateContract;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-use seda_chain_contracts::msg::PostDataRequestArgs;
-
+use seda_chain_contracts::msg::{ExecuteMsg, PostDataRequestArgs};
+use seda_chain_contracts::types::{Bytes, Hash, Memo};
+use seda_chain_contracts::utils::hash_update;
+use sha3::{Digest, Keccak256};
 pub fn seda_chain_contracts_template() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(
         seda_chain_contracts::contract::execute,
@@ -90,24 +92,61 @@ fn proper_instantiate() -> (App, CwTemplateContract, CwTemplateContract) {
 fn post_data_request() {
     let (mut app, _wasm_bin_storage_template_contract, seda_chain_contracts_template_contract) =
         proper_instantiate();
+    let dr_binary_id: Hash = "".to_string();
+    let tally_binary_id: Hash = "".to_string();
+    let dr_inputs: Bytes = Vec::new();
+    let tally_inputs: Bytes = Vec::new();
 
-    // set arguments for post_data_request
-    let wasm_id = "wasm_id".to_string().into_bytes();
-    let wasm_args: Vec<Vec<u8>> = vec![
-        "arg1".to_string().into_bytes(),
-        "arg2".to_string().into_bytes(),
-    ];
-    let args = PostDataRequestArgs {
-        dr_id: "0xd98fb83e7f68c29c21313afd147eb6c3851d70b8d37fd75e5b78f0ecabd9f69b".to_string(), // expected
-        nonce: 1,
-        chain_id: 31337,
-        value: "test".to_string(),
-        wasm_id,
-        wasm_args,
+    let replication_factor: u16 = 3;
+
+    // set by dr creator
+    let gas_price: u128 = 10;
+    let gas_limit: u128 = 10;
+
+    // set by relayer and SEDA protocol
+    let seda_payload: Bytes = Vec::new();
+
+    let chain_id = 31337;
+    let nonce = 1;
+    let value = "test".to_string();
+    let mut hasher = Keccak256::new();
+    hash_update(&mut hasher, &chain_id);
+    hash_update(&mut hasher, &nonce);
+    hasher.update(value);
+    let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
+    let memo1: Memo = binary_hash.clone().into_bytes();
+    let payback_address: Bytes = Vec::new();
+    let mut hasher = Keccak256::new();
+    hasher.update(dr_binary_id.clone());
+    hasher.update(dr_inputs.clone());
+    hasher.update(gas_limit.to_be_bytes().clone());
+    hasher.update(gas_price.to_be_bytes().clone());
+    hasher.update(memo1.clone());
+    hasher.update(payback_address.clone());
+    hasher.update(replication_factor.to_be_bytes().clone());
+    hasher.update(seda_payload.clone());
+    hasher.update(tally_binary_id.clone());
+    hasher.update(tally_inputs.clone());
+
+    let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+    let payback_address: Bytes = Vec::new();
+    let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
+        dr_id: constructed_dr_id.clone(),
+
+        dr_binary_id: dr_binary_id.clone(),
+        tally_binary_id,
+        dr_inputs,
+        tally_inputs,
+        memo: memo1,
+        replication_factor,
+
+        gas_price,
+        gas_limit,
+
+        seda_payload,
+        payback_address,
     };
-
-    // post the data request
-    let msg = seda_chain_contracts::msg::ExecuteMsg::PostDataRequest { args };
+    let msg = ExecuteMsg::PostDataRequest { posted_dr };
     let cosmos_msg = seda_chain_contracts_template_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 }
