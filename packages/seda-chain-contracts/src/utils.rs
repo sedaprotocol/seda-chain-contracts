@@ -2,7 +2,9 @@ use cosmwasm_std::{Addr, Coin, DepsMut};
 use sha3::{Digest, Keccak256};
 
 use crate::{
-    consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, state::ELIGIBLE_DATA_REQUEST_EXECUTORS,
+    consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
+    state::{DataRequest, DataRequestInputs, ELIGIBLE_DATA_REQUEST_EXECUTORS},
+    types::Bytes,
     ContractError,
 };
 
@@ -46,21 +48,36 @@ pub fn hash_update(hasher: &mut Keccak256, value: &u128) {
     hasher.update(bytes);
 }
 
-pub fn hash_data_request(
-    nonce: &u128,
-    value: &str,
-    chain_id: &u128,
-    wasm_id: &[u8],
-    wasm_args: &[Vec<u8>],
+pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
+    let mut hasher = Keccak256::new();
+    hasher.update(posted_dr.dr_binary_id);
+    hasher.update(posted_dr.dr_inputs);
+    hasher.update(posted_dr.gas_limit.to_be_bytes());
+    hasher.update(posted_dr.gas_price.to_be_bytes());
+    hasher.update(posted_dr.memo);
+    hasher.update(posted_dr.payback_address);
+    hasher.update(posted_dr.replication_factor.to_be_bytes());
+    hasher.update(posted_dr.seda_payload);
+    hasher.update(posted_dr.tally_binary_id);
+    hasher.update(posted_dr.tally_inputs);
+
+    format!("0x{}", hex::encode(hasher.finalize()))
+}
+
+pub fn compute_result_hash(
+    dr: &DataRequest,
+    block_height: u64,
+    exit_code: u8,
+    result: &Bytes,
 ) -> String {
     let mut hasher = Keccak256::new();
-    hash_update(&mut hasher, nonce);
-    hasher.update(value.as_bytes());
-    hash_update(&mut hasher, chain_id);
-    hasher.update(wasm_id);
-    for arg in wasm_args.iter() {
-        hasher.update(arg.as_slice());
-    }
-    let hash_bytes = hasher.finalize();
-    format!("0x{}", hex::encode(hash_bytes))
+    hasher.update(dr.dr_id.as_bytes());
+    hasher.update(block_height.to_be_bytes());
+    hasher.update(exit_code.to_be_bytes());
+    hasher.update(result);
+    hasher.update(dr.payback_address.clone());
+    hasher.update(dr.seda_payload.clone());
+
+    let digest = hasher.finalize();
+    format!("0x{}", hex::encode(digest))
 }

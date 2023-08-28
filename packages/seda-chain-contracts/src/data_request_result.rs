@@ -10,7 +10,6 @@ use crate::ContractError;
 pub mod data_request_results {
 
     use cosmwasm_std::{Addr, Env};
-    // use hex_literal::hex;
     use sha3::{Digest, Keccak256};
 
     use crate::{
@@ -20,7 +19,7 @@ pub mod data_request_results {
         },
         state::{DataResult, Reveal, DATA_RESULTS},
         types::Bytes,
-        utils::check_eligibility,
+        utils::{check_eligibility, compute_result_hash},
     };
 
     use super::*;
@@ -99,19 +98,10 @@ pub mod data_request_results {
             let exit_code: u8 = 0;
             let result: Bytes = reveal.reveal.as_bytes().to_vec();
 
-            let payback_address: Bytes = dr.payback_address;
-            let seda_payload: Bytes = dr.seda_payload;
+            let payback_address: Bytes = dr.payback_address.clone();
+            let seda_payload: Bytes = dr.seda_payload.clone();
 
-            let mut hasher = Keccak256::new();
-            hasher.update(dr_id.as_bytes());
-            hasher.update(block_height.to_be_bytes());
-            hasher.update(exit_code.to_be_bytes());
-            hasher.update(result.clone());
-            hasher.update(payback_address.clone());
-            hasher.update(seda_payload.clone());
-
-            let digest = hasher.finalize();
-            let result_id = format!("0x{}", hex::encode(digest));
+            let result_id = compute_result_hash(&dr, block_height, exit_code, &result);
 
             let dr_result = DataResult {
                 result_id,
@@ -239,10 +229,12 @@ mod dr_result_tests {
     use crate::contract::query;
     use crate::msg::GetResolvedDataResultResponse;
     use crate::msg::PostDataRequestArgs;
+    use crate::state::DataRequestInputs;
     use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::types::Bytes;
     use crate::types::Memo;
+    use crate::utils::hash_data_request;
     use crate::utils::hash_update;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::Addr;
@@ -318,18 +310,21 @@ mod dr_result_tests {
         hasher.update(value);
         let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
         let memo: Memo = binary_hash.clone().into_bytes();
-        let mut hasher = Keccak256::new();
-        hasher.update(dr_binary_id.clone());
-        hasher.update(dr_inputs.clone());
-        hasher.update(gas_limit.to_be_bytes().clone());
-        hasher.update(gas_price.to_be_bytes().clone());
-        hasher.update(memo.clone());
-        hasher.update(payback_address.clone());
-        hasher.update(replication_factor.to_be_bytes().clone());
-        hasher.update(seda_payload.clone());
-        hasher.update(tally_binary_id.clone());
-        hasher.update(tally_inputs.clone());
-        let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+        let dr_inputs1 = DataRequestInputs {
+            dr_binary_id: dr_binary_id.clone(),
+            tally_binary_id: tally_binary_id.clone(),
+            dr_inputs: dr_inputs.clone(),
+            tally_inputs: tally_inputs.clone(),
+            memo: memo.clone(),
+            replication_factor,
+
+            gas_price,
+            gas_limit,
+
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
+        };
+        let constructed_dr_id = hash_data_request(dr_inputs1);
 
         let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: constructed_dr_id.clone(),
@@ -506,18 +501,21 @@ mod dr_result_tests {
         let memo: Memo = binary_hash.clone().into_bytes();
         let payback_address: Bytes = Vec::new();
 
-        let mut hasher = Keccak256::new();
-        hasher.update(dr_binary_id.clone());
-        hasher.update(dr_inputs.clone());
-        hasher.update(gas_limit.to_be_bytes().clone());
-        hasher.update(gas_price.to_be_bytes().clone());
-        hasher.update(memo.clone());
-        hasher.update(payback_address.clone());
-        hasher.update(replication_factor.to_be_bytes().clone());
-        hasher.update(seda_payload.clone());
-        hasher.update(tally_binary_id.clone());
-        hasher.update(tally_inputs.clone());
-        let dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+        let dr_inputs1 = DataRequestInputs {
+            dr_binary_id: dr_binary_id.clone(),
+            tally_binary_id: tally_binary_id.clone(),
+            dr_inputs: dr_inputs.clone(),
+            tally_inputs: tally_inputs.clone(),
+            memo: memo.clone(),
+            replication_factor,
+
+            gas_price,
+            gas_limit,
+
+            seda_payload: seda_payload.clone(),
+            payback_address: payback_address.clone(),
+        };
+        let dr_id: String = hash_data_request(dr_inputs1);
         let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
             dr_id: dr_id.clone(),
 

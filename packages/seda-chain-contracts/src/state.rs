@@ -44,6 +44,35 @@ pub struct DataRequest {
     pub reveals: HashMap<String, Reveal>,
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+pub struct DataRequestInputs {
+    // DR definition
+    /// Semantic Version String
+    // pub version: Version,
+    /// Identifier of DR WASM binary
+    pub dr_binary_id: Hash,
+    /// Inputs for DR WASM binary
+    pub dr_inputs: Bytes,
+    /// Identifier of Tally WASM binary
+    pub tally_binary_id: Hash,
+    /// Inputs for Tally WASM binary
+    pub tally_inputs: Bytes,
+    /// Amount of required DR executors
+    pub replication_factor: u16,
+    /// Amount of SEDA tokens per gas unit
+    pub gas_price: u128,
+    /// Maximum of gas units to be used
+    pub gas_limit: u128,
+    /// Public info attached to DR
+    pub memo: Bytes,
+
+    // Execution Information
+    /// Payback address set by the relayer
+    pub payback_address: Bytes,
+    /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
+    pub seda_payload: Bytes,
+}
+
 /// Represents a resolved data result
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataResult {

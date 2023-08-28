@@ -2,8 +2,9 @@ use crate::helpers::CwTemplateContract;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use seda_chain_contracts::msg::{ExecuteMsg, PostDataRequestArgs};
+use seda_chain_contracts::state::DataRequestInputs;
 use seda_chain_contracts::types::{Bytes, Hash, Memo};
-use seda_chain_contracts::utils::hash_update;
+use seda_chain_contracts::utils::{hash_data_request, hash_update};
 use sha3::{Digest, Keccak256};
 pub fn seda_chain_contracts_template() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(
@@ -116,24 +117,28 @@ fn post_data_request() {
     let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
     let memo1: Memo = binary_hash.clone().into_bytes();
     let payback_address: Bytes = Vec::new();
-    let mut hasher = Keccak256::new();
-    hasher.update(dr_binary_id.clone());
-    hasher.update(dr_inputs.clone());
-    hasher.update(gas_limit.to_be_bytes().clone());
-    hasher.update(gas_price.to_be_bytes().clone());
-    hasher.update(memo1.clone());
-    hasher.update(payback_address.clone());
-    hasher.update(replication_factor.to_be_bytes().clone());
-    hasher.update(seda_payload.clone());
-    hasher.update(tally_binary_id.clone());
-    hasher.update(tally_inputs.clone());
 
-    let constructed_dr_id = format!("0x{}", hex::encode(hasher.finalize()));
+    let dr_inputs1 = DataRequestInputs {
+        dr_binary_id: dr_binary_id.clone(),
+        tally_binary_id: tally_binary_id.clone(),
+        dr_inputs: dr_inputs.clone(),
+        tally_inputs: tally_inputs.clone(),
+        memo: memo1.clone(),
+        replication_factor,
+
+        gas_price,
+        gas_limit,
+
+        seda_payload: seda_payload.clone(),
+        payback_address: payback_address.clone(),
+    };
+    let constructed_dr_id: String = hash_data_request(dr_inputs1);
+
     let payback_address: Bytes = Vec::new();
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
-        dr_id: constructed_dr_id.clone(),
+        dr_id: constructed_dr_id,
 
-        dr_binary_id: dr_binary_id.clone(),
+        dr_binary_id,
         tally_binary_id,
         dr_inputs,
         tally_inputs,
