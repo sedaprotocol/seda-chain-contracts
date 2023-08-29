@@ -64,7 +64,7 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
     format!("0x{}", hex::encode(hasher.finalize()))
 }
 
-pub fn compute_result_hash(
+pub fn hash_data_result(
     dr: &DataRequest,
     block_height: u64,
     exit_code: u8,
@@ -77,7 +77,5 @@ pub fn compute_result_hash(
     hasher.update(result);
     hasher.update(dr.payback_address.clone());
     hasher.update(dr.seda_payload.clone());
-
-    let digest = hasher.finalize();
-    format!("0x{}", hex::encode(digest))
+    format!("0x{}", hex::encode(hasher.finalize()))
 }

@@ -19,7 +19,7 @@ pub mod data_request_results {
         },
         state::{DataResult, Reveal, DATA_RESULTS},
         types::Bytes,
-        utils::{check_eligibility, compute_result_hash},
+        utils::{check_eligibility, hash_data_result},
     };
 
     use super::*;
@@ -101,7 +101,7 @@ pub mod data_request_results {
             let payback_address: Bytes = dr.payback_address.clone();
             let seda_payload: Bytes = dr.seda_payload.clone();
 
-            let result_id = compute_result_hash(&dr, block_height, exit_code, &result);
+            let result_id = hash_data_result(&dr, block_height, exit_code, &result);
 
             let dr_result = DataResult {
                 result_id,
