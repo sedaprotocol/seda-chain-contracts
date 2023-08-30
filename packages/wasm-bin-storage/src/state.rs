@@ -1,9 +1,10 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::Binary;
 use cw_storage_plus::Map;
 
 #[cw_serde]
 pub struct BinaryStruct {
-    pub binary: Vec<u8>,
+    pub binary: Binary,
     pub description: String,
 }
 

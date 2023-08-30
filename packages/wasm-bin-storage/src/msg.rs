@@ -1,17 +1,13 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Binary;
 
 #[cw_serde]
 pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    NewEntry {
-        binary: Vec<u8>,
-        description: String,
-    },
-    DeleteEntry {
-        key: String,
-    },
+    NewEntry { binary: Binary, description: String },
+    DeleteEntry { key: String },
 }
 
 #[cw_serde]

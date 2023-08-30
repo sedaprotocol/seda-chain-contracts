@@ -3,7 +3,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::BinaryStruct;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, Response};
+use cosmwasm_std::{coins, from_binary, to_binary, Response};
 
 const MB: usize = 1024 * 1024;
 
@@ -27,8 +27,8 @@ fn store_and_read_binary() {
     instantiate(deps.as_mut(), mock_env(), info.clone(), InstantiateMsg {}).unwrap();
 
     // Define the binary data
-    let key = "0xe1bd58bbd853c00ee1d05a27c596e00f9bae26c87ca3276f2d46e45b24cfb4ff".to_string();
-    let data = create_data(2);
+    let key = "0xbb90889b42428945dc4e9cb1a957326d66d6f6f1d1d4fcbe39dbcbf16e7c91f3".to_string();
+    let data = to_binary(&create_data(2)).unwrap();
     let description = "my data binary".to_string();
 
     // Call the StoreBinary handler

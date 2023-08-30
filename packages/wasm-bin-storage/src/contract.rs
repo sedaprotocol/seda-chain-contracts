@@ -54,7 +54,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Bi
 pub fn store_binary(
     deps: DepsMut,
     _info: MessageInfo,
-    binary: Vec<u8>,
+    binary: Binary,
     description: String,
 ) -> Result<Response, ContractError> {
     let binary_struct = BinaryStruct {
