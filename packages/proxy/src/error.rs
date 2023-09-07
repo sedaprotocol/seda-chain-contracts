@@ -7,4 +7,6 @@ pub enum ContractError {
     Std(#[from] StdError),
     #[error("No funds provided")]
     NoFunds,
+    #[error("Contract already set")]
+    ContractAlreadySet,
 }
