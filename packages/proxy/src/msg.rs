@@ -4,7 +4,9 @@ use seda_chain_contracts::state::Reveal;
 use seda_chain_contracts::types::Hash;
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub token: String,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {

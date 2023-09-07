@@ -77,7 +77,9 @@ fn proper_instantiate() -> (App, CwTemplateContract) {
 
     // instantiate proxy-contract
     let proxy_contract_template_id = app.store_code(proxy_contract_template());
-    let msg = proxy_contract::msg::InstantiateMsg {};
+    let msg = proxy_contract::msg::InstantiateMsg {
+        token: "token".to_string(),
+    };
     let proxy_contract_template_contract_addr = app
         .instantiate_contract(
             proxy_contract_template_id,

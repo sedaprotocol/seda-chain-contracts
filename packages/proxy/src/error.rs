@@ -5,6 +5,6 @@ use thiserror::Error;
 pub enum ContractError {
     #[error(transparent)]
     Std(#[from] StdError),
-    #[error("Binary already exists")]
-    BinaryAlreadyExists {},
+    #[error("No funds provided")]
+    NoFunds,
 }

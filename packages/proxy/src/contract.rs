@@ -1,8 +1,9 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
+use crate::state::TOKEN;
 use cosmwasm_std::{
-    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, WasmMsg,
+    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
 use cw2::set_contract_version;
 use seda_chain_contracts::msg::ExecuteMsg as SedaChainContractsExecuteMsg;
@@ -11,6 +12,7 @@ use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
     state::SEDA_CHAIN_CONTRACTS,
+    utils::get_attached_funds,
 };
 
 // version info
@@ -22,10 +24,10 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
+    TOKEN.save(deps.storage, &msg.token)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
@@ -68,15 +70,24 @@ pub fn execute(
                 funds: vec![],
             }))
             .add_attribute("action", "post_data_result")),
-        ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => Ok(Response::new()
-            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&SedaChainContractsExecuteMsg::RegisterDataRequestExecutor {
-                    p2p_multi_address,
-                })?,
-                funds: vec![],
-            }))
-            .add_attribute("action", "register_data_request_executor")),
+        ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
+            // require token deposit
+            let token = TOKEN.load(deps.storage)?;
+            let amount = get_attached_funds(&info.funds, &token)?;
+
+            Ok(Response::new()
+                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&SedaChainContractsExecuteMsg::RegisterDataRequestExecutor {
+                        p2p_multi_address,
+                    })?,
+                    funds: vec![Coin {
+                        denom: token,
+                        amount: amount.into(),
+                    }],
+                }))
+                .add_attribute("action", "register_data_request_executor"))
+        }
         ExecuteMsg::UnregisterDataRequestExecutor {} => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
@@ -85,13 +96,22 @@ pub fn execute(
             }))
             .add_attribute("action", "unregister_data_request_executor")),
         // TODO: forward funds
-        ExecuteMsg::DepositAndStake {} => Ok(Response::new()
-            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&SedaChainContractsExecuteMsg::DepositAndStake {})?,
-                funds: vec![],
-            }))
-            .add_attribute("action", "deposit_and_stake")),
+        ExecuteMsg::DepositAndStake {} => {
+            // require token deposit
+            let token = TOKEN.load(deps.storage)?;
+            let amount = get_attached_funds(&info.funds, &token)?;
+
+            Ok(Response::new()
+                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&SedaChainContractsExecuteMsg::DepositAndStake {})?,
+                    funds: vec![Coin {
+                        denom: token,
+                        amount: amount.into(),
+                    }],
+                }))
+                .add_attribute("action", "deposit_and_stake"))
+        }
         ExecuteMsg::Unstake { amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
@@ -110,7 +130,7 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Binary> {
+pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Binary> {
     match msg {
         // QueryMsg::QueryEntry { key } => cosmwasm_std::to_binary(&query_binary(deps, &key)?),
     }
