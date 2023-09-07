@@ -26,15 +26,6 @@ pub fn seda_chain_contracts_template() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-// pub fn wasm_bin_storage_template() -> Box<dyn Contract<Empty>> {
-//     let contract = ContractWrapper::new(
-//         wasm_bin_storage::contract::execute,
-//         wasm_bin_storage::contract::instantiate,
-//         wasm_bin_storage::contract::query,
-//     );
-//     Box::new(contract)
-// }
-
 #[allow(dead_code)]
 const USER: &str = "USER";
 const ADMIN: &str = "ADMIN";
@@ -58,22 +49,6 @@ fn mock_app() -> App {
 
 fn proper_instantiate() -> (App, CwTemplateContract) {
     let mut app = mock_app();
-
-    // instantiate wasm-bin-storage
-    // let wasm_bin_storage_template_id = app.store_code(wasm_bin_storage_template());
-    // let msg = wasm_bin_storage::msg::InstantiateMsg {};
-    // let wasm_bin_storage_template_contract_addr = app
-    //     .instantiate_contract(
-    //         wasm_bin_storage_template_id,
-    //         Addr::unchecked(ADMIN),
-    //         &msg,
-    //         &[],
-    //         "test",
-    //         None,
-    //     )
-    //     .unwrap();
-    // let wasm_bin_storage_template_contract =
-    //     CwTemplateContract(wasm_bin_storage_template_contract_addr);
 
     // instantiate proxy-contract
     let proxy_contract_template_id = app.store_code(proxy_contract_template());
@@ -109,8 +84,6 @@ fn proper_instantiate() -> (App, CwTemplateContract) {
             None,
         )
         .unwrap();
-    // let seda_chain_contracts_template_contract =
-    //     CwTemplateContract(seda_chain_contracts_template_contract_addr.clone());
 
     // set seda-chain-contract address on proxy-contract
     let msg = proxy_contract::msg::ExecuteMsg::SetSedaChainContracts {

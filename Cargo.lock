@@ -452,7 +452,6 @@ dependencies = [
  "serde",
  "sha3",
  "thiserror",
- "wasm-bin-storage",
 ]
 
 [[package]]
