@@ -1,9 +1,9 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
+use crate::error::ContractError;
 use crate::state::DATA_REQUEST_EXECUTORS;
 
-use crate::error::ContractError;
 use crate::state::TOKEN;
 use crate::utils::{get_attached_funds, validate_sender};
 
@@ -119,11 +119,11 @@ mod staking_tests {
     use crate::contract::execute;
     use crate::contract::instantiate;
     use crate::contract::query;
-    use crate::msg::GetDataRequestExecutorResponse;
     use crate::msg::InstantiateMsg;
-    use crate::msg::{ExecuteMsg, QueryMsg};
-    use crate::state::DataRequestExecutor;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
+    use common::msg::GetDataRequestExecutorResponse;
+    use common::msg::{ExecuteMsg, QueryMsg};
+    use common::state::DataRequestExecutor;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary, Addr};
     #[test]

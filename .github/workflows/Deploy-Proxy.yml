@@ -21,6 +21,7 @@ jobs:
           else
             echo "is_allowed=false" >> $GITHUB_OUTPUT
           fi
+
   deploys:
     needs: check_pass
     if: ${{ needs.check_pass.outputs.is_allowed == 'true' }}
@@ -78,7 +79,7 @@ jobs:
         run: |
           testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
-          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/proxy-contract.wasm --node ${testnetNodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/proxy_contract.wasm --node ${testnetNodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"cargo +
           echo "txhash=$TXHASH" >> $GITHUB_ENV

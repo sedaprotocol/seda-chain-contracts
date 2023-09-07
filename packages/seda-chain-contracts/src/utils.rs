@@ -1,11 +1,12 @@
+use crate::error::ContractError;
+use common::state::DataRequest;
+use common::types::Bytes;
 use cosmwasm_std::{Addr, Coin, DepsMut};
 use sha3::{Digest, Keccak256};
 
 use crate::{
     consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
-    state::{DataRequest, DataRequestInputs, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT},
-    types::Bytes,
-    ContractError,
+    state::{DataRequestInputs, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT},
 };
 
 pub fn apply_validator_eligibility(
@@ -26,14 +27,6 @@ pub fn apply_validator_eligibility(
 pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, ContractError> {
     let is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.load(deps.storage, dr_executor)?;
     Ok(is_eligible)
-}
-
-pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {
-    let amount: Option<u128> = funds
-        .iter()
-        .find(|coin| coin.denom == token)
-        .map(|coin| coin.amount.u128());
-    amount.ok_or(ContractError::NoFunds)
 }
 
 pub fn pad_to_32_bytes(value: &u128) -> [u8; 32] {
@@ -78,6 +71,14 @@ pub fn hash_data_result(
     hasher.update(dr.payback_address.clone());
     hasher.update(dr.seda_payload.clone());
     format!("0x{}", hex::encode(hasher.finalize()))
+}
+
+pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {
+    let amount: Option<u128> = funds
+        .iter()
+        .find(|coin| coin.denom == token)
+        .map(|coin| coin.amount.u128());
+    amount.ok_or(ContractError::NoFunds)
 }
 
 pub fn validate_sender(

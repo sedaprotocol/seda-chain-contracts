@@ -3,16 +3,16 @@ use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 
 use crate::state::{DATA_REQUESTS, DATA_REQUESTS_COUNT};
 
-use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
-use crate::state::DataRequest;
-use crate::types::Hash;
-use crate::ContractError;
+use crate::error::ContractError;
+use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
+use common::state::DataRequest;
+use common::types::Hash;
 
 pub mod data_requests {
+    use common::msg::PostDataRequestArgs;
     use std::collections::HashMap;
 
     use crate::{
-        msg::PostDataRequestArgs,
         state::{DataRequestInputs, DATA_REQUESTS_BY_NONCE, DATA_RESULTS},
         utils::hash_data_request,
     };
@@ -152,18 +152,18 @@ mod dr_tests {
     use crate::contract::execute;
     use crate::contract::instantiate;
     use crate::contract::query;
-    use crate::msg::GetDataRequestResponse;
     use crate::msg::InstantiateMsg;
-    use crate::msg::PostDataRequestArgs;
-    use crate::msg::{ExecuteMsg, QueryMsg};
     use crate::state::DataRequestInputs;
-    use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
-    use crate::types::Bytes;
-    use crate::types::Commitment;
-    use crate::types::Memo;
     use crate::utils::hash_data_request;
     use crate::utils::hash_update;
+    use common::msg::GetDataRequestResponse;
+    use common::msg::PostDataRequestArgs;
+    use common::msg::{ExecuteMsg, QueryMsg};
+    use common::state::Reveal;
+    use common::types::Bytes;
+    use common::types::Commitment;
+    use common::types::Memo;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
     use sha3::Digest;

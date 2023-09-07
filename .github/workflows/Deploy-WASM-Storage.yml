@@ -21,6 +21,7 @@ jobs:
           else
             echo "is_allowed=false" >> $GITHUB_OUTPUT
           fi
+
   deploys:
     needs: check_pass
     if: ${{ needs.check_pass.outputs.is_allowed == 'true' }}

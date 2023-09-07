@@ -1,3 +1,4 @@
+use common::msg::{ExecuteMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
@@ -5,7 +6,7 @@ use cw2::set_contract_version;
 use crate::data_request::data_requests;
 use crate::error::ContractError;
 use crate::executors_registry::data_request_executors;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::InstantiateMsg;
 use crate::staking::staking;
 use crate::state::{DATA_REQUESTS_COUNT, PROXY_CONTRACT, TOKEN};
 

@@ -6,9 +6,9 @@ use crate::state::DATA_REQUEST_EXECUTORS;
 use crate::state::TOKEN;
 use crate::utils::{get_attached_funds, validate_sender};
 
-use crate::msg::GetDataRequestExecutorResponse;
-use crate::state::DataRequestExecutor;
-use crate::ContractError;
+use crate::error::ContractError;
+use common::msg::GetDataRequestExecutorResponse;
+use common::state::DataRequestExecutor;
 
 pub mod data_request_executors {
     use cosmwasm_std::Addr;
@@ -90,7 +90,7 @@ mod executers_tests {
     use crate::contract::instantiate;
     use crate::contract::query;
     use crate::msg::InstantiateMsg;
-    use crate::msg::{ExecuteMsg, QueryMsg};
+    use common::msg::{ExecuteMsg, QueryMsg};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary, Addr};
 

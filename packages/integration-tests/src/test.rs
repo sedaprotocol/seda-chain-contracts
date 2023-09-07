@@ -1,10 +1,10 @@
 use crate::helpers::CwTemplateContract;
+use common::msg::{GetDataRequestResponse, PostDataRequestArgs, QueryMsg};
+use common::types::{Bytes, Hash, Memo};
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use proxy_contract::msg::ExecuteMsg;
-use seda_chain_contracts::msg::{GetDataRequestResponse, PostDataRequestArgs, QueryMsg};
 use seda_chain_contracts::state::DataRequestInputs;
-use seda_chain_contracts::types::{Bytes, Hash, Memo};
 use seda_chain_contracts::utils::{hash_data_request, hash_update};
 use sha3::{Digest, Keccak256};
 

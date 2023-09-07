@@ -80,6 +80,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -440,6 +450,7 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
+ "common",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-multi-test",
@@ -554,11 +565,11 @@ dependencies = [
 name = "proxy-contract"
 version = "0.1.0"
 dependencies = [
+ "common",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
  "cw2",
- "seda-chain-contracts",
  "serde",
  "thiserror",
 ]
@@ -646,6 +657,7 @@ dependencies = [
 name = "seda-chain-contracts"
 version = "0.1.0"
 dependencies = [
+ "common",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",

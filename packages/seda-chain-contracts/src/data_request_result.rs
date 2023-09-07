@@ -1,24 +1,26 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use crate::msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse};
 use crate::state::DATA_REQUESTS;
-use crate::types::Hash;
+use common::msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse};
+use common::types::Hash;
 
-use crate::ContractError;
+use crate::error::ContractError;
 
 pub mod data_request_results {
 
     use cosmwasm_std::{Addr, Env};
     use sha3::{Digest, Keccak256};
 
+    use common::msg::{
+        GetCommittedDataResultsResponse, GetCommittedExecutorsResponse, GetIdsResponse,
+        GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
+    };
+    use common::state::{DataResult, Reveal};
+    use common::types::Bytes;
+
     use crate::{
-        msg::{
-            GetCommittedDataResultsResponse, GetCommittedExecutorsResponse, GetIdsResponse,
-            GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
-        },
-        state::{DataResult, Reveal, DATA_RESULTS},
-        types::Bytes,
+        state::DATA_RESULTS,
         utils::{check_eligibility, hash_data_result, validate_sender},
         ContractError::{
             AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
@@ -235,15 +237,16 @@ mod dr_result_tests {
     use super::*;
     use crate::contract::execute;
     use crate::contract::query;
-    use crate::msg::GetResolvedDataResultResponse;
-    use crate::msg::PostDataRequestArgs;
     use crate::state::DataRequestInputs;
-    use crate::state::Reveal;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
-    use crate::types::Bytes;
-    use crate::types::Memo;
     use crate::utils::hash_data_request;
     use crate::utils::hash_update;
+    use common::msg::{
+        ExecuteMsg, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
+        GetResolvedDataResultResponse, PostDataRequestArgs, QueryMsg,
+    };
+    use common::state::Reveal;
+    use common::types::{Bytes, Memo};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::Addr;
     use cosmwasm_std::{coins, from_binary};
@@ -251,8 +254,6 @@ mod dr_result_tests {
 
     use crate::contract::instantiate;
     use crate::msg::InstantiateMsg;
-    use crate::msg::{ExecuteMsg, QueryMsg};
-    use crate::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 
     #[test]
     fn commit_reveal_result() {

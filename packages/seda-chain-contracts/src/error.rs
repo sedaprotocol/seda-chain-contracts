@@ -1,4 +1,4 @@
-use crate::types::Hash;
+use common::types::Hash;
 use cosmwasm_std::StdError;
 use thiserror::Error;
 

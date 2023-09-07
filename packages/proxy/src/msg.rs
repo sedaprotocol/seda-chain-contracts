@@ -1,7 +1,7 @@
+use common::msg::PostDataRequestArgs;
+use common::state::Reveal;
+use common::types::Hash;
 use cosmwasm_schema::cw_serde;
-use seda_chain_contracts::msg::PostDataRequestArgs;
-use seda_chain_contracts::state::Reveal;
-use seda_chain_contracts::types::Hash;
 
 #[cw_serde]
 pub struct InstantiateMsg {

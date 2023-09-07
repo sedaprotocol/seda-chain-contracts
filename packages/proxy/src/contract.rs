@@ -2,24 +2,24 @@
 use cosmwasm_std::entry_point;
 
 use crate::state::TOKEN;
+use crate::utils::get_attached_funds;
+use common::msg::ExecuteMsg as SedaChainContractsExecuteMsg;
+use common::msg::{
+    GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
+    GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
+    GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
+    QueryMsg,
+};
 use cosmwasm_std::{
     to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
     WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
-use seda_chain_contracts::msg::ExecuteMsg as SedaChainContractsExecuteMsg;
-use seda_chain_contracts::msg::QueryMsg;
-use seda_chain_contracts::msg::{
-    GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
-    GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
-    GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
-};
 
 use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg},
     state::SEDA_CHAIN_CONTRACTS,
-    utils::get_attached_funds,
 };
 
 // version info
