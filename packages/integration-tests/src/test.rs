@@ -2,7 +2,7 @@ use crate::helpers::CwTemplateContract;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use proxy_contract::msg::ExecuteMsg;
-use seda_chain_contracts::msg::PostDataRequestArgs;
+use seda_chain_contracts::msg::{GetDataRequestResponse, PostDataRequestArgs, QueryMsg};
 use seda_chain_contracts::state::DataRequestInputs;
 use seda_chain_contracts::types::{Bytes, Hash, Memo};
 use seda_chain_contracts::utils::{hash_data_request, hash_update};
@@ -158,5 +158,17 @@ fn post_data_request() {
     };
     let msg = ExecuteMsg::PostDataRequest { posted_dr };
     let cosmos_msg = proxy_contract_template_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+    let res = app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+    // get data request
+    // TODO: this is ugly to loop through events, use Response.data once it's merged
+    let dr_id = &res.events.last().unwrap().attributes.last().unwrap().value;
+    let msg = QueryMsg::GetDataRequest {
+        dr_id: dr_id.clone(),
+    };
+    let res: GetDataRequestResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract_template_contract.addr(), &msg)
+        .unwrap();
+    println!("{:?}", res);
 }

@@ -13,7 +13,7 @@ use crate::data_request_result::data_request_results;
 use cosmwasm_std::StdResult;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:cw-template";
+const CONTRACT_NAME: &str = "seda-chain-contracts";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]

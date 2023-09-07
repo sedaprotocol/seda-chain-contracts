@@ -3,20 +3,27 @@ use cosmwasm_std::entry_point;
 
 use crate::state::TOKEN;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
+    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
+    WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 use seda_chain_contracts::msg::ExecuteMsg as SedaChainContractsExecuteMsg;
+use seda_chain_contracts::msg::QueryMsg;
+use seda_chain_contracts::msg::{
+    GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
+    GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
+    GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
+};
 
 use crate::{
     error::ContractError,
-    msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
+    msg::{ExecuteMsg, InstantiateMsg},
     state::SEDA_CHAIN_CONTRACTS,
     utils::get_attached_funds,
 };
 
 // version info
-const CONTRACT_NAME: &str = "seda-bin-storage";
+const CONTRACT_NAME: &str = "proxy-contract";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -147,8 +154,82 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Binary> {
-    match msg {
-        // QueryMsg::QueryEntry { key } => cosmwasm_std::to_binary(&query_binary(deps, &key)?),
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> cosmwasm_std::StdResult<Binary> {
+    match msg.clone() {
+        QueryMsg::GetDataRequest { dr_id: _dr_id } => {
+            let query_response: GetDataRequestResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetDataRequestsFromPool {
+            position: _position,
+            limit: _limit,
+        } => {
+            let query_response: GetDataRequestsFromPoolResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetCommittedDataResult {
+            dr_id: _dr_id,
+            executor: _executor,
+        } => {
+            let query_response: GetCommittedDataResultResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetCommittedDataResults { dr_id: _dr_id } => {
+            let query_response: GetCommittedDataResultsResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetRevealedDataResult {
+            dr_id: _dr_id,
+            executor: _executor,
+        } => {
+            let query_response: GetRevealedDataResultResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetRevealedDataResults { dr_id: _dr_id } => {
+            let query_response: GetRevealedDataResultsResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetResolvedDataResult { dr_id: _dr_id } => {
+            let query_response: GetResolvedDataResultResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        QueryMsg::GetDataRequestExecutor {
+            executor: _executor,
+        } => {
+            let query_response: GetDataRequestExecutorResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
     }
 }
