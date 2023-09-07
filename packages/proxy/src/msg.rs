@@ -1,5 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use seda_chain_contracts::msg::PostDataRequestArgs;
+use seda_chain_contracts::state::Reveal;
 use seda_chain_contracts::types::Hash;
 
 #[cw_serde]
@@ -11,8 +12,9 @@ pub enum ExecuteMsg {
     SetSedaChainContracts { contract: String },
 
     // Delegated calls to contracts
-    PostDataRequest { args: PostDataRequestArgs },
-    PostDataResult { dr_id: Hash, result: String },
+    PostDataRequest { posted_dr: PostDataRequestArgs },
+    CommitDataResult { dr_id: Hash, commitment: String },
+    RevealDataResult { dr_id: Hash, reveal: Reveal },
     RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
     UnregisterDataRequestExecutor {},
     DepositAndStake,

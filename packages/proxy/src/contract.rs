@@ -44,72 +44,68 @@ pub fn execute(
         }
 
         // Delegated calls to contracts
-        ExecuteMsg::PostDataRequest { args } => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::PostDataRequest { args })?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "post_data_request"))
-        }
-        ExecuteMsg::PostDataResult { dr_id, result } => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::PostDataResult { dr_id, result })?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "post_data_result"))
-        }
-        ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::RegisterDataRequestExecutor {
-                        p2p_multi_address,
-                    })?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "register_data_request_executor"))
-        }
-        ExecuteMsg::UnregisterDataRequestExecutor {} => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::UnregisterDataRequestExecutor {})?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "unregister_data_request_executor"))
-        }
+        ExecuteMsg::PostDataRequest { posted_dr } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::PostDataRequest { posted_dr })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "post_data_request")),
+        ExecuteMsg::CommitDataResult { dr_id, commitment } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::CommitDataResult {
+                    dr_id,
+                    commitment,
+                })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "post_data_result")),
+        ExecuteMsg::RevealDataResult { dr_id, reveal } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::RevealDataResult { dr_id, reveal })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "post_data_result")),
+        ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::RegisterDataRequestExecutor {
+                    p2p_multi_address,
+                })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "register_data_request_executor")),
+        ExecuteMsg::UnregisterDataRequestExecutor {} => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::UnregisterDataRequestExecutor {})?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "unregister_data_request_executor")),
         // TODO: forward funds
-        ExecuteMsg::DepositAndStake {} => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::DepositAndStake {})?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "deposit_and_stake"))
-        }
-        ExecuteMsg::Unstake { amount } => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::Unstake { amount })?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "unstake"))
-        }
-        ExecuteMsg::Withdraw { amount } => {
-            Ok(Response::new()
-                .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::Withdraw { amount })?,
-                    funds: vec![],
-                }))
-                .add_attribute("action", "withdraw"))
-        }
+        ExecuteMsg::DepositAndStake {} => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::DepositAndStake {})?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "deposit_and_stake")),
+        ExecuteMsg::Unstake { amount } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::Unstake { amount })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "unstake")),
+        ExecuteMsg::Withdraw { amount } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
+                msg: to_binary(&SedaChainContractsExecuteMsg::Withdraw { amount })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "withdraw")),
     }
 }
 

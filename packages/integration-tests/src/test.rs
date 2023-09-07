@@ -1,12 +1,12 @@
 use crate::helpers::CwTemplateContract;
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-use seda_chain_contracts::msg::{ExecuteMsg, PostDataRequestArgs};
+use proxy_contract::msg::ExecuteMsg;
+use seda_chain_contracts::msg::PostDataRequestArgs;
 use seda_chain_contracts::state::DataRequestInputs;
 use seda_chain_contracts::types::{Bytes, Hash, Memo};
 use seda_chain_contracts::utils::{hash_data_request, hash_update};
 use sha3::{Digest, Keccak256};
-use seda_chain_contracts::msg::PostDataRequestArgs;
 
 pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(
@@ -163,7 +163,6 @@ fn post_data_request() {
     };
     let constructed_dr_id: String = hash_data_request(dr_inputs1);
 
-<<<<<<< HEAD
     let payback_address: Bytes = Vec::new();
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         dr_id: constructed_dr_id,
@@ -182,11 +181,6 @@ fn post_data_request() {
         payback_address,
     };
     let msg = ExecuteMsg::PostDataRequest { posted_dr };
-    let cosmos_msg = seda_chain_contracts_template_contract.call(msg).unwrap();
-=======
-    // post the data request
-    let msg = proxy_contract::msg::ExecuteMsg::PostDataRequest { args };
     let cosmos_msg = proxy_contract_template_contract.call(msg).unwrap();
->>>>>>> 854ddcf (feat: create proxy contract, implement execute messages)
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 }
