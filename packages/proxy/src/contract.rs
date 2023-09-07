@@ -53,7 +53,7 @@ pub fn execute(
             if SEDA_CHAIN_CONTRACTS.may_load(deps.storage)?.is_some() {
                 return Err(ContractError::ContractAlreadySet {});
             }
-            
+
             SEDA_CHAIN_CONTRACTS.save(deps.storage, &deps.api.addr_validate(&contract)?)?;
             Ok(Response::new().add_attribute("method", "set_seda_chain_contracts"))
         }
