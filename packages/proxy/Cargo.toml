@@ -1,5 +1,5 @@
 [package]
-name = "integration-tests"
+name = "proxy-contract"
 version = "0.1.0"
 edition = "2021"
 
@@ -25,20 +25,11 @@ optimize = """docker run --rm -v "$(pwd)":/code \
   cosmwasm/rust-optimizer:0.12.10
 """
 
-# TODO: check if all of these are needed
 [dependencies]
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw2 = { workspace = true }
-hex = { workspace = true }
-proxy-contract = { workspace = true }
-schemars = { workspace = true }
-seda-chain-contracts = { workspace = true }
+seda-chain-contracts = { path = "../seda-chain-contracts" }
 serde = { workspace = true }
-sha3 = { workspace = true }
 thiserror = { workspace = true }
-wasm-bin-storage = { workspace = true }
-
-[dev-dependencies]
-cw-multi-test = "0.16.2"

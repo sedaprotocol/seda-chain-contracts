@@ -446,6 +446,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "hex",
+ "proxy-contract",
  "schemars",
  "seda-chain-contracts",
  "serde",
@@ -548,6 +549,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "proxy-contract"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "seda-chain-contracts",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

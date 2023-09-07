@@ -6,6 +6,17 @@ use seda_chain_contracts::state::DataRequestInputs;
 use seda_chain_contracts::types::{Bytes, Hash, Memo};
 use seda_chain_contracts::utils::{hash_data_request, hash_update};
 use sha3::{Digest, Keccak256};
+use seda_chain_contracts::msg::PostDataRequestArgs;
+
+pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new(
+        proxy_contract::contract::execute,
+        proxy_contract::contract::instantiate,
+        proxy_contract::contract::query,
+    );
+    Box::new(contract)
+}
+
 pub fn seda_chain_contracts_template() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(
         seda_chain_contracts::contract::execute,
@@ -15,14 +26,14 @@ pub fn seda_chain_contracts_template() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-pub fn wasm_bin_storage_template() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(
-        wasm_bin_storage::contract::execute,
-        wasm_bin_storage::contract::instantiate,
-        wasm_bin_storage::contract::query,
-    );
-    Box::new(contract)
-}
+// pub fn wasm_bin_storage_template() -> Box<dyn Contract<Empty>> {
+//     let contract = ContractWrapper::new(
+//         wasm_bin_storage::contract::execute,
+//         wasm_bin_storage::contract::instantiate,
+//         wasm_bin_storage::contract::query,
+//     );
+//     Box::new(contract)
+// }
 
 #[allow(dead_code)]
 const USER: &str = "USER";
@@ -45,15 +56,31 @@ fn mock_app() -> App {
     })
 }
 
-fn proper_instantiate() -> (App, CwTemplateContract, CwTemplateContract) {
+fn proper_instantiate() -> (App, CwTemplateContract) {
     let mut app = mock_app();
 
     // instantiate wasm-bin-storage
-    let wasm_bin_storage_template_id = app.store_code(wasm_bin_storage_template());
-    let msg = wasm_bin_storage::msg::InstantiateMsg {};
-    let wasm_bin_storage_template_contract_addr = app
+    // let wasm_bin_storage_template_id = app.store_code(wasm_bin_storage_template());
+    // let msg = wasm_bin_storage::msg::InstantiateMsg {};
+    // let wasm_bin_storage_template_contract_addr = app
+    //     .instantiate_contract(
+    //         wasm_bin_storage_template_id,
+    //         Addr::unchecked(ADMIN),
+    //         &msg,
+    //         &[],
+    //         "test",
+    //         None,
+    //     )
+    //     .unwrap();
+    // let wasm_bin_storage_template_contract =
+    //     CwTemplateContract(wasm_bin_storage_template_contract_addr);
+
+    // instantiate proxy-contract
+    let proxy_contract_template_id = app.store_code(proxy_contract_template());
+    let msg = proxy_contract::msg::InstantiateMsg {};
+    let proxy_contract_template_contract_addr = app
         .instantiate_contract(
-            wasm_bin_storage_template_id,
+            proxy_contract_template_id,
             Addr::unchecked(ADMIN),
             &msg,
             &[],
@@ -61,8 +88,8 @@ fn proper_instantiate() -> (App, CwTemplateContract, CwTemplateContract) {
             None,
         )
         .unwrap();
-    let wasm_bin_storage_template_contract =
-        CwTemplateContract(wasm_bin_storage_template_contract_addr);
+    let proxy_contract_template_contract =
+        CwTemplateContract(proxy_contract_template_contract_addr);
 
     // instantiate seda-chain-contracts
     let seda_chain_contracts_template_id = app.store_code(seda_chain_contracts_template());
@@ -79,20 +106,22 @@ fn proper_instantiate() -> (App, CwTemplateContract, CwTemplateContract) {
             None,
         )
         .unwrap();
-    let seda_chain_contracts_template_contract =
-        CwTemplateContract(seda_chain_contracts_template_contract_addr);
+    // let seda_chain_contracts_template_contract =
+    //     CwTemplateContract(seda_chain_contracts_template_contract_addr.clone());
 
-    (
-        app,
-        wasm_bin_storage_template_contract,
-        seda_chain_contracts_template_contract,
-    )
+    // set seda-chain-contract address on proxy-contract
+    let msg = proxy_contract::msg::ExecuteMsg::SetSedaChainContracts {
+        contract: seda_chain_contracts_template_contract_addr.to_string(),
+    };
+    let cosmos_msg = proxy_contract_template_contract.call(msg).unwrap();
+    app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+    (app, proxy_contract_template_contract)
 }
 
 #[test]
 fn post_data_request() {
-    let (mut app, _wasm_bin_storage_template_contract, seda_chain_contracts_template_contract) =
-        proper_instantiate();
+    let (mut app, proxy_contract_template_contract) = proper_instantiate();
     let dr_binary_id: Hash = "".to_string();
     let tally_binary_id: Hash = "".to_string();
     let dr_inputs: Bytes = Vec::new();
@@ -134,6 +163,7 @@ fn post_data_request() {
     };
     let constructed_dr_id: String = hash_data_request(dr_inputs1);
 
+<<<<<<< HEAD
     let payback_address: Bytes = Vec::new();
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         dr_id: constructed_dr_id,
@@ -153,5 +183,10 @@ fn post_data_request() {
     };
     let msg = ExecuteMsg::PostDataRequest { posted_dr };
     let cosmos_msg = seda_chain_contracts_template_contract.call(msg).unwrap();
+=======
+    // post the data request
+    let msg = proxy_contract::msg::ExecuteMsg::PostDataRequest { args };
+    let cosmos_msg = proxy_contract_template_contract.call(msg).unwrap();
+>>>>>>> 854ddcf (feat: create proxy contract, implement execute messages)
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 }

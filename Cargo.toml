@@ -3,7 +3,8 @@ resolver = "2"
 members = [
     "packages/seda-chain-contracts",
     "packages/wasm-bin-storage",
-    "packages/integration-tests"
+    "packages/integration-tests",
+    "packages/proxy"
 ]
 
 [profile.release]
@@ -24,6 +25,7 @@ cosmwasm-storage = "1.1.3"
 cw-storage-plus = "1.1"
 cw2 = "1.1"
 hex = "0.4.3"
+proxy-contract = { path = "./packages/proxy" }
 schemars = "0.8.10"
 seda-chain-contracts = { path = "./packages/seda-chain-contracts" }
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
