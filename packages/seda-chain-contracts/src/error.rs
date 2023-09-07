@@ -16,4 +16,16 @@ pub enum ContractError {
     InvalidDataRequestId(Hash, Hash),
     #[error("Data request already exists")]
     DataRequestAlreadyExists,
+    #[error("Caller is not an eligible data request executor")]
+    IneligibleExecutor,
+    #[error("Caller has already committed on this data request")]
+    AlreadyCommitted,
+    #[error("Reveal stage has not started yet")]
+    RevealNotStarted,
+    #[error("Executor has not committed on this data request")]
+    NotCommitted,
+    #[error("Executor has already revealed on this data request")]
+    AlreadyRevealed,
+    #[error("Revealed result does not match the committed result")]
+    RevealMismatch,
 }

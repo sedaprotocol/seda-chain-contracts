@@ -20,6 +20,10 @@ pub mod data_request_results {
         state::{DataResult, Reveal, DATA_RESULTS},
         types::Bytes,
         utils::{check_eligibility, hash_data_result},
+        ContractError::{
+            AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
+            RevealNotStarted,
+        },
     };
 
     use super::*;
@@ -32,11 +36,14 @@ pub mod data_request_results {
         dr_id: Hash,
         commitment: Hash,
     ) -> Result<Response, ContractError> {
-        assert!(check_eligibility(&deps, info.sender.clone())?);
+        if !check_eligibility(&deps, info.sender.clone())? {
+            return Err(IneligibleExecutor);
+        }
+
         // find the data request from the pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS.load(deps.storage, dr_id.clone())?;
         if dr.commits.contains_key(&info.sender.to_string()) {
-            panic!("sender already committed before");
+            return Err(AlreadyCommitted);
         }
         dr.commits
             .insert(info.sender.to_string(), commitment.clone());
@@ -58,24 +65,22 @@ pub mod data_request_results {
         dr_id: Hash,
         reveal: Reveal,
     ) -> Result<Response, ContractError> {
-        assert!(
-            check_eligibility(&deps, info.sender.clone())?,
-            "sender is not an eligible dr executor"
-        );
+        if !check_eligibility(&deps, info.sender.clone())? {
+            return Err(IneligibleExecutor);
+        }
 
         // find the data request from the committed pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS.load(deps.storage, dr_id.clone())?;
         let committed_dr_results = dr.clone().commits;
 
-        assert!(
-            u16::try_from(committed_dr_results.len()).unwrap() >= dr.replication_factor,
-            "Revealing didn't start yet"
-        );
+        if u16::try_from(committed_dr_results.len()).unwrap() < dr.replication_factor {
+            return Err(RevealNotStarted);
+        }
         if !committed_dr_results.contains_key(&info.sender.to_string()) {
-            panic!("executor hasn't committed");
+            return Err(NotCommitted);
         }
         if dr.reveals.contains_key(&info.sender.to_string()) {
-            panic!("sender already revealed");
+            return Err(AlreadyRevealed);
         }
 
         let committed_dr_result = committed_dr_results
@@ -84,10 +89,9 @@ pub mod data_request_results {
             .clone();
 
         let calculated_dr_result = compute_hash(&reveal.reveal, &reveal.salt);
-        assert_eq!(
-            calculated_dr_result, committed_dr_result,
-            "committed result doesn't match revealed result"
-        );
+        if calculated_dr_result != committed_dr_result {
+            return Err(RevealMismatch);
+        }
 
         dr.reveals.insert(info.sender.to_string(), reveal.clone());
 
