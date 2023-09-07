@@ -91,12 +91,13 @@ fn proper_instantiate() -> (App, CwTemplateContract) {
         )
         .unwrap();
     let proxy_contract_template_contract =
-        CwTemplateContract(proxy_contract_template_contract_addr);
+        CwTemplateContract(proxy_contract_template_contract_addr.clone());
 
     // instantiate seda-chain-contracts
     let seda_chain_contracts_template_id = app.store_code(seda_chain_contracts_template());
     let msg = seda_chain_contracts::msg::InstantiateMsg {
         token: "token".to_string(),
+        proxy: proxy_contract_template_contract_addr.to_string(),
     };
     let seda_chain_contracts_template_contract_addr = app
         .instantiate_contract(

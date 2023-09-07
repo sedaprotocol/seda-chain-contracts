@@ -19,7 +19,7 @@ pub mod data_request_results {
         },
         state::{DataResult, Reveal, DATA_RESULTS},
         types::Bytes,
-        utils::{check_eligibility, hash_data_result},
+        utils::{check_eligibility, hash_data_result, validate_sender},
         ContractError::{
             AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
             RevealNotStarted,
@@ -35,18 +35,20 @@ pub mod data_request_results {
         info: MessageInfo,
         dr_id: Hash,
         commitment: Hash,
+        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        if !check_eligibility(&deps, info.sender.clone())? {
+        let sender = validate_sender(&deps, info.sender, sender)?;
+
+        if !check_eligibility(&deps, sender.clone())? {
             return Err(IneligibleExecutor);
         }
 
         // find the data request from the pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS.load(deps.storage, dr_id.clone())?;
-        if dr.commits.contains_key(&info.sender.to_string()) {
+        if dr.commits.contains_key(&sender.to_string()) {
             return Err(AlreadyCommitted);
         }
-        dr.commits
-            .insert(info.sender.to_string(), commitment.clone());
+        dr.commits.insert(sender.to_string(), commitment.clone());
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
@@ -64,8 +66,10 @@ pub mod data_request_results {
         env: Env,
         dr_id: Hash,
         reveal: Reveal,
+        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        if !check_eligibility(&deps, info.sender.clone())? {
+        let sender = validate_sender(&deps, info.sender, sender)?;
+        if !check_eligibility(&deps, sender.clone())? {
             return Err(IneligibleExecutor);
         }
 
@@ -76,15 +80,15 @@ pub mod data_request_results {
         if u16::try_from(committed_dr_results.len()).unwrap() < dr.replication_factor {
             return Err(RevealNotStarted);
         }
-        if !committed_dr_results.contains_key(&info.sender.to_string()) {
+        if !committed_dr_results.contains_key(&sender.to_string()) {
             return Err(NotCommitted);
         }
-        if dr.reveals.contains_key(&info.sender.to_string()) {
+        if dr.reveals.contains_key(&sender.to_string()) {
             return Err(AlreadyRevealed);
         }
 
         let committed_dr_result = committed_dr_results
-            .get(&info.sender.to_string())
+            .get(&sender.to_string())
             .unwrap()
             .clone();
 
@@ -93,7 +97,7 @@ pub mod data_request_results {
             return Err(RevealMismatch);
         }
 
-        dr.reveals.insert(info.sender.to_string(), reveal.clone());
+        dr.reveals.insert(sender.to_string(), reveal.clone());
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
@@ -256,6 +260,7 @@ mod dr_result_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -263,6 +268,7 @@ mod dr_result_tests {
         let info = mock_info("executor1", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
             p2p_multi_address: Some("address1".to_string()),
+            sender: None,
         };
 
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -275,6 +281,7 @@ mod dr_result_tests {
         let info = mock_info("executor2", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
             p2p_multi_address: Some("address2".to_string()),
+            sender: None,
         };
 
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -288,6 +295,7 @@ mod dr_result_tests {
         let msg = ExecuteMsg::CommitDataResult {
             dr_id: "0x7e059b547de461457d49cd4b229c5cd172a6ac8063738068b932e26c3868e4ae".to_string(),
             commitment: "dr 0 result".to_string(),
+            sender: None,
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert!(res.is_err());
@@ -391,6 +399,7 @@ mod dr_result_tests {
         let msg = ExecuteMsg::CommitDataResult {
             dr_id: constructed_dr_id.clone(),
             commitment: commitment1,
+            sender: None,
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
@@ -407,6 +416,7 @@ mod dr_result_tests {
         let msg = ExecuteMsg::CommitDataResult {
             dr_id: constructed_dr_id.clone(),
             commitment: commitment2.clone(),
+            sender: None,
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let executor2: Addr = info.sender.clone();
@@ -433,6 +443,7 @@ mod dr_result_tests {
         let msg = ExecuteMsg::RevealDataResult {
             dr_id: constructed_dr_id.clone(),
             reveal: reveal1.clone(),
+            sender: None,
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
@@ -457,6 +468,7 @@ mod dr_result_tests {
         let msg = ExecuteMsg::RevealDataResult {
             dr_id: constructed_dr_id.clone(),
             reveal: reveal2.clone(),
+            sender: None,
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
@@ -480,6 +492,7 @@ mod dr_result_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -546,6 +559,7 @@ mod dr_result_tests {
         let msg = ExecuteMsg::CommitDataResult {
             dr_id: binary_hash.clone(),
             commitment: "dr 0 result".to_string(),
+            sender: None,
         };
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }

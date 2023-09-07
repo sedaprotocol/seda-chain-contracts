@@ -175,6 +175,7 @@ mod dr_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -340,6 +341,7 @@ mod dr_tests {
         // instantiate contract
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -802,6 +804,7 @@ mod dr_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -810,6 +813,7 @@ mod dr_tests {
         let info = mock_info("anyone", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
             p2p_multi_address: Some("address".to_string()),
+            sender: None,
         };
 
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -883,6 +887,7 @@ mod dr_tests {
         let msg = ExecuteMsg::CommitDataResult {
             dr_id: constructed_dr_id1.clone(),
             commitment: "dr 0 result".to_string(),
+            sender: None,
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 

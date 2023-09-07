@@ -5,7 +5,7 @@ use crate::state::DATA_REQUEST_EXECUTORS;
 
 use crate::error::ContractError;
 use crate::state::TOKEN;
-use crate::utils::get_attached_funds;
+use crate::utils::{get_attached_funds, validate_sender};
 
 #[allow(clippy::module_inception)]
 pub mod staking {
@@ -20,20 +20,23 @@ pub mod staking {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
+        sender: Option<String>,
     ) -> Result<Response, ContractError> {
+        let sender = validate_sender(&deps, info.sender, sender)?;
+
         let token = TOKEN.load(deps.storage)?;
         let amount = get_attached_funds(&info.funds, &token)?;
 
         // update staked tokens for executor
-        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.clone().sender)?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, sender.clone())?;
         executor.tokens_staked += amount;
-        DATA_REQUEST_EXECUTORS.save(deps.storage, info.clone().sender, &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, info.sender.clone(), executor.tokens_staked)?;
+        apply_validator_eligibility(deps, sender.clone(), executor.tokens_staked)?;
 
         Ok(Response::new()
             .add_attribute("action", "stake")
-            .add_attribute("executor", info.sender)
+            .add_attribute("executor", sender)
             .add_attribute("amount", amount.to_string()))
     }
 
@@ -43,9 +46,12 @@ pub mod staking {
         _env: Env,
         info: MessageInfo,
         amount: u128,
+        sender: Option<String>,
     ) -> Result<Response, ContractError> {
+        let sender = validate_sender(&deps, info.sender, sender)?;
+
         // error if amount is greater than staked tokens
-        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, sender.clone())?;
         if amount > executor.tokens_staked {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_staked,
@@ -56,14 +62,14 @@ pub mod staking {
         // update the executor
         executor.tokens_staked -= amount;
         executor.tokens_pending_withdrawal += amount;
-        DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, info.sender.clone(), executor.tokens_staked)?;
+        apply_validator_eligibility(deps, sender.clone(), executor.tokens_staked)?;
 
         // TODO: emit when pending tokens can be withdrawn
         Ok(Response::new()
             .add_attribute("action", "unstake")
-            .add_attribute("executor", info.sender)
+            .add_attribute("executor", sender)
             .add_attribute("amount", amount.to_string()))
     }
 
@@ -73,12 +79,15 @@ pub mod staking {
         env: Env,
         info: MessageInfo,
         amount: u128,
+        sender: Option<String>,
     ) -> Result<Response, ContractError> {
+        let sender = validate_sender(&deps, info.sender, sender)?;
+
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
 
         // error if amount is greater than pending tokens
-        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, info.sender.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, sender.clone())?;
         if amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_pending_withdrawal,
@@ -88,7 +97,7 @@ pub mod staking {
 
         // update the executor
         executor.tokens_pending_withdrawal -= amount;
-        DATA_REQUEST_EXECUTORS.save(deps.storage, info.sender.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
@@ -99,7 +108,7 @@ pub mod staking {
         Ok(Response::new()
             .add_message(bank_msg)
             .add_attribute("action", "withdraw")
-            .add_attribute("executor", info.sender)
+            .add_attribute("executor", sender)
             .add_attribute("amount", amount.to_string()))
     }
 }
@@ -123,6 +132,7 @@ mod staking_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(0, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -131,6 +141,7 @@ mod staking_tests {
         let info = mock_info("anyone", &coins(0, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
             p2p_multi_address: Some("address".to_string()),
+            sender: None,
         };
         let res = execute(deps.as_mut(), mock_env(), info, msg);
         assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds(1, 0));
@@ -139,6 +150,7 @@ mod staking_tests {
         let info = mock_info("anyone", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
             p2p_multi_address: Some("address".to_string()),
+            sender: None,
         };
 
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -169,7 +181,7 @@ mod staking_tests {
 
         // the data request executor stakes 2 more tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::DepositAndStake;
+        let msg = ExecuteMsg::DepositAndStake { sender: None };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
@@ -198,7 +210,10 @@ mod staking_tests {
 
         // the data request executor unstakes 1
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Unstake { amount: 1 };
+        let msg = ExecuteMsg::Unstake {
+            amount: 1,
+            sender: None,
+        };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
@@ -227,7 +242,10 @@ mod staking_tests {
 
         // the data request executor withdraws 1
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Withdraw { amount: 1 };
+        let msg = ExecuteMsg::Withdraw {
+            amount: 1,
+            sender: None,
+        };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
@@ -257,7 +275,10 @@ mod staking_tests {
 
         // unstake 2 more
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Unstake { amount: 2 };
+        let msg = ExecuteMsg::Unstake {
+            amount: 2,
+            sender: None,
+        };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         // assert executer is no longer eligible for committe inclusion

@@ -8,18 +8,42 @@ use cosmwasm_std::Addr;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
+    pub proxy: String,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest { posted_dr: PostDataRequestArgs },
-    CommitDataResult { dr_id: Hash, commitment: String },
-    RevealDataResult { dr_id: Hash, reveal: Reveal },
-    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
-    UnregisterDataRequestExecutor {},
-    DepositAndStake,
-    Unstake { amount: u128 },
-    Withdraw { amount: u128 },
+    PostDataRequest {
+        posted_dr: PostDataRequestArgs,
+    },
+    CommitDataResult {
+        dr_id: Hash,
+        commitment: String,
+        sender: Option<String>,
+    },
+    RevealDataResult {
+        dr_id: Hash,
+        reveal: Reveal,
+        sender: Option<String>,
+    },
+    RegisterDataRequestExecutor {
+        p2p_multi_address: Option<String>,
+        sender: Option<String>,
+    },
+    UnregisterDataRequestExecutor {
+        sender: Option<String>,
+    },
+    DepositAndStake {
+        sender: Option<String>,
+    },
+    Unstake {
+        amount: u128,
+        sender: Option<String>,
+    },
+    Withdraw {
+        amount: u128,
+        sender: Option<String>,
+    },
 }
 
 #[cw_serde]

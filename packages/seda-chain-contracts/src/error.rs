@@ -28,4 +28,6 @@ pub enum ContractError {
     AlreadyRevealed,
     #[error("Revealed result does not match the committed result")]
     RevealMismatch,
+    #[error("Only proxy can pass a sender")]
+    NotProxy,
 }

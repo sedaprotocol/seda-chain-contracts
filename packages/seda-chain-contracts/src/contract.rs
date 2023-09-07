@@ -7,7 +7,7 @@ use crate::error::ContractError;
 use crate::executors_registry::data_request_executors;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::staking::staking;
-use crate::state::{DATA_REQUESTS_COUNT, TOKEN};
+use crate::state::{DATA_REQUESTS_COUNT, PROXY_CONTRACT, TOKEN};
 
 use crate::data_request_result::data_request_results;
 use cosmwasm_std::StdResult;
@@ -26,6 +26,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     DATA_REQUESTS_COUNT.save(deps.storage, &0)?;
     TOKEN.save(deps.storage, &msg.token)?;
+    PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
@@ -40,21 +41,35 @@ pub fn execute(
         ExecuteMsg::PostDataRequest { posted_dr } => {
             data_requests::post_data_request(deps, info, posted_dr)
         }
-        ExecuteMsg::CommitDataResult { dr_id, commitment } => {
-            data_request_results::commit_result(deps, info, dr_id, commitment)
+        ExecuteMsg::CommitDataResult {
+            dr_id,
+            commitment,
+            sender,
+        } => data_request_results::commit_result(deps, info, dr_id, commitment, sender),
+        ExecuteMsg::RevealDataResult {
+            dr_id,
+            reveal,
+            sender,
+        } => data_request_results::reveal_result(deps, info, env, dr_id, reveal, sender),
+        ExecuteMsg::RegisterDataRequestExecutor {
+            p2p_multi_address,
+            sender,
+        } => data_request_executors::register_data_request_executor(
+            deps,
+            info,
+            p2p_multi_address,
+            sender,
+        ),
+        ExecuteMsg::UnregisterDataRequestExecutor { sender } => {
+            data_request_executors::unregister_data_request_executor(deps, info, sender)
         }
-        ExecuteMsg::RevealDataResult { dr_id, reveal } => {
-            data_request_results::reveal_result(deps, info, env, dr_id, reveal)
+        ExecuteMsg::DepositAndStake { sender } => {
+            staking::deposit_and_stake(deps, env, info, sender)
         }
-        ExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
-            data_request_executors::register_data_request_executor(deps, info, p2p_multi_address)
+        ExecuteMsg::Unstake { amount, sender } => staking::unstake(deps, env, info, amount, sender),
+        ExecuteMsg::Withdraw { amount, sender } => {
+            staking::withdraw(deps, env, info, amount, sender)
         }
-        ExecuteMsg::UnregisterDataRequestExecutor {} => {
-            data_request_executors::unregister_data_request_executor(deps, info)
-        }
-        ExecuteMsg::DepositAndStake => staking::deposit_and_stake(deps, env, info),
-        ExecuteMsg::Unstake { amount } => staking::unstake(deps, env, info, amount),
-        ExecuteMsg::Withdraw { amount } => staking::withdraw(deps, env, info, amount),
     }
 }
 
@@ -100,6 +115,7 @@ mod init_tests {
 
         let msg = InstantiateMsg {
             token: "token".to_string(),
+            proxy: "proxy".to_string(),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 

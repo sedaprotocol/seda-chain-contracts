@@ -59,6 +59,7 @@ pub fn execute(
                 msg: to_binary(&SedaChainContractsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
+                    sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
             }))
@@ -66,7 +67,11 @@ pub fn execute(
         ExecuteMsg::RevealDataResult { dr_id, reveal } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&SedaChainContractsExecuteMsg::RevealDataResult { dr_id, reveal })?,
+                msg: to_binary(&SedaChainContractsExecuteMsg::RevealDataResult {
+                    dr_id,
+                    reveal,
+                    sender: Some(info.sender.to_string()),
+                })?,
                 funds: vec![],
             }))
             .add_attribute("action", "post_data_result")),
@@ -80,6 +85,7 @@ pub fn execute(
                     contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
                     msg: to_binary(&SedaChainContractsExecuteMsg::RegisterDataRequestExecutor {
                         p2p_multi_address,
+                        sender: Some(info.sender.to_string()),
                     })?,
                     funds: vec![Coin {
                         denom: token,
@@ -91,11 +97,14 @@ pub fn execute(
         ExecuteMsg::UnregisterDataRequestExecutor {} => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&SedaChainContractsExecuteMsg::UnregisterDataRequestExecutor {})?,
+                msg: to_binary(
+                    &SedaChainContractsExecuteMsg::UnregisterDataRequestExecutor {
+                        sender: Some(info.sender.to_string()),
+                    },
+                )?,
                 funds: vec![],
             }))
             .add_attribute("action", "unregister_data_request_executor")),
-        // TODO: forward funds
         ExecuteMsg::DepositAndStake {} => {
             // require token deposit
             let token = TOKEN.load(deps.storage)?;
@@ -104,7 +113,9 @@ pub fn execute(
             Ok(Response::new()
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&SedaChainContractsExecuteMsg::DepositAndStake {})?,
+                    msg: to_binary(&SedaChainContractsExecuteMsg::DepositAndStake {
+                        sender: Some(info.sender.to_string()),
+                    })?,
                     funds: vec![Coin {
                         denom: token,
                         amount: amount.into(),
@@ -115,14 +126,20 @@ pub fn execute(
         ExecuteMsg::Unstake { amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&SedaChainContractsExecuteMsg::Unstake { amount })?,
+                msg: to_binary(&SedaChainContractsExecuteMsg::Unstake {
+                    amount,
+                    sender: Some(info.sender.to_string()),
+                })?,
                 funds: vec![],
             }))
             .add_attribute("action", "unstake")),
         ExecuteMsg::Withdraw { amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: SEDA_CHAIN_CONTRACTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&SedaChainContractsExecuteMsg::Withdraw { amount })?,
+                msg: to_binary(&SedaChainContractsExecuteMsg::Withdraw {
+                    amount,
+                    sender: Some(info.sender.to_string()),
+                })?,
                 funds: vec![],
             }))
             .add_attribute("action", "withdraw")),

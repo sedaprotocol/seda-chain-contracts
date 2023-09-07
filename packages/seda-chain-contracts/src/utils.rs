@@ -3,7 +3,7 @@ use sha3::{Digest, Keccak256};
 
 use crate::{
     consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
-    state::{DataRequest, DataRequestInputs, ELIGIBLE_DATA_REQUEST_EXECUTORS},
+    state::{DataRequest, DataRequestInputs, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT},
     types::Bytes,
     ContractError,
 };
@@ -78,4 +78,21 @@ pub fn hash_data_result(
     hasher.update(dr.payback_address.clone());
     hasher.update(dr.seda_payload.clone());
     format!("0x{}", hex::encode(hasher.finalize()))
+}
+
+pub fn validate_sender(
+    deps: &DepsMut,
+    caller: Addr,
+    sender: Option<String>,
+) -> Result<Addr, ContractError> {
+    match sender {
+        Some(sender) => {
+            // if a sender is passed, caller must be the proxy contract
+            if caller != PROXY_CONTRACT.load(deps.storage)? {
+                return Err(ContractError::NotProxy {});
+            }
+            Ok(deps.api.addr_validate(&sender)?)
+        }
+        None => Ok(caller),
+    }
 }
