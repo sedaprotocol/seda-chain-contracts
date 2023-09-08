@@ -86,14 +86,12 @@ pub fn validate_sender(
     caller: Addr,
     sender: Option<String>,
 ) -> Result<Addr, ContractError> {
+    // if a sender is passed, caller must be the proxy contract
     match sender {
-        Some(sender) => {
-            // if a sender is passed, caller must be the proxy contract
-            if caller != PROXY_CONTRACT.load(deps.storage)? {
-                return Err(ContractError::NotProxy {});
-            }
-            Ok(deps.api.addr_validate(&sender)?)
+        Some(_sender) if caller != PROXY_CONTRACT.load(deps.storage)? => {
+            Err(ContractError::NotProxy {})
         }
+        Some(sender) => Ok(deps.api.addr_validate(&sender)?),
         None => Ok(caller),
     }
 }
