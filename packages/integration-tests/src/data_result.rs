@@ -40,7 +40,7 @@ fn commit_reveal_result() {
     let res = app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone());
     assert!(res.is_err());
 
-    // format inputs to post data request with replication factory of 2
+    // format inputs to post data request with replication factor of 2
     let dr_binary_id: Hash = "".to_string();
     let tally_binary_id: Hash = "".to_string();
     let dr_inputs: Bytes = Vec::new();

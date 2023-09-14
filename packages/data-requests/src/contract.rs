@@ -101,34 +101,4 @@ mod init_tests {
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         assert_eq!(0, res.messages.len());
     }
-
-    // TODO
-    #[test]
-    fn only_proxy_can_pass_caller() {
-        // let mut deps = mock_dependencies();
-
-        // let msg = InstantiateMsg {
-        //     token: "token".to_string(),
-        //     proxy: "proxy".to_string(),
-        // };
-        // let info = mock_info("creator", &coins(1000, "token"));
-        // let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // // post a data request, while passing a sender
-        // let info = mock_info("anyone", &coins(2, "token"));
-        // let dr = PostDataRequestArgs {
-
-        // };
-        // let msg = ExecuteMsg::PostDataRequest {
-        // let res = execute(deps.as_mut(), mock_env(), info, msg);
-        // assert!(res.is_err());
-
-        // // post a data request from the proxy
-        // let info = mock_info("proxy", &coins(2, "token"));
-        // let msg = ExecuteMsg::RegisterDataRequestExecutor {
-        //     p2p_multi_address: Some("address".to_string()),
-        //     sender: Some("sender".to_string()),
-        // };
-        // let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    }
 }
