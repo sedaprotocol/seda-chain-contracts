@@ -154,12 +154,12 @@ mod dr_tests {
     use crate::contract::query;
     use crate::msg::InstantiateMsg;
     use crate::state::DataRequestInputs;
-    use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use crate::utils::hash_data_request;
     use crate::utils::hash_update;
+    use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
+    use common::msg::DataRequestsQueryMsg as QueryMsg;
     use common::msg::GetDataRequestResponse;
     use common::msg::PostDataRequestArgs;
-    use common::msg::{ExecuteMsg, QueryMsg};
     use common::state::Reveal;
     use common::types::Bytes;
     use common::types::Commitment;
@@ -796,120 +796,5 @@ mod dr_tests {
             },
             response
         );
-    }
-
-    #[test]
-    fn no_duplicate_dr_ids() {
-        let mut deps = mock_dependencies();
-
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // register dr executor
-        let info = mock_info("anyone", &coins(1, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: None,
-        };
-
-        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-        let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
-            .load(&deps.storage, info.sender.clone())
-            .unwrap();
-        assert!(executor_is_eligible);
-
-        let dr_binary_id: Hash = "".to_string();
-        let tally_binary_id: Hash = "".to_string();
-        let dr_inputs: Bytes = Vec::new();
-        let tally_inputs: Bytes = Vec::new();
-
-        let replication_factor: u16 = 3;
-
-        // set by dr creator
-        let gas_price: u128 = 10;
-        let gas_limit: u128 = 10;
-
-        // set by relayer and SEDA protocol
-        let seda_payload: Bytes = Vec::new();
-
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 1;
-        let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash1 = format!("0x{}", hex::encode(hasher.clone().finalize()));
-        let memo1: Memo = binary_hash1.clone().into_bytes();
-        let payback_address: Bytes = Vec::new();
-
-        let dr_inputs1 = DataRequestInputs {
-            dr_binary_id: dr_binary_id.clone(),
-            tally_binary_id: tally_binary_id.clone(),
-            dr_inputs: dr_inputs.clone(),
-            tally_inputs: tally_inputs.clone(),
-            memo: memo1.clone(),
-            replication_factor,
-
-            gas_price,
-            gas_limit,
-
-            seda_payload: seda_payload.clone(),
-            payback_address: payback_address.clone(),
-        };
-        let constructed_dr_id1 = hash_data_request(dr_inputs1);
-
-        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
-            dr_id: constructed_dr_id1.clone(),
-            dr_binary_id: dr_binary_id.clone(),
-            tally_binary_id: tally_binary_id.clone(),
-            dr_inputs: dr_inputs.clone(),
-            tally_inputs: tally_inputs.clone(),
-
-            memo: memo1.clone(),
-            replication_factor,
-            gas_price,
-            gas_limit,
-            seda_payload: seda_payload.clone(),
-            payback_address: payback_address.clone(),
-        };
-        // someone posts a data request
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest { posted_dr };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // someone posts a data result
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::CommitDataResult {
-            dr_id: constructed_dr_id1.clone(),
-            commitment: "dr 0 result".to_string(),
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
-            dr_id: constructed_dr_id1.clone(),
-            dr_binary_id: dr_binary_id.clone(),
-            tally_binary_id: tally_binary_id.clone(),
-            dr_inputs: dr_inputs.clone(),
-            tally_inputs: tally_inputs.clone(),
-
-            memo: memo1.clone(),
-            replication_factor,
-            gas_price,
-            gas_limit,
-            seda_payload: seda_payload.clone(),
-            payback_address: payback_address.clone(),
-        };
-
-        // can't create a data request with the same id as a data result
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::PostDataRequest { posted_dr };
-        let res = execute(deps.as_mut(), mock_env(), info, msg);
-        assert!(res.is_err());
     }
 }

@@ -2,18 +2,18 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use crate::consts::MINIMUM_STAKE_TO_REGISTER;
-use crate::state::DATA_REQUEST_EXECUTORS;
-use crate::state::TOKEN;
+use crate::error::ContractError;
+use crate::state::{DATA_REQUEST_EXECUTORS, TOKEN};
 use crate::utils::{get_attached_funds, validate_sender};
 
-use crate::error::ContractError;
 use common::msg::GetDataRequestExecutorResponse;
 use common::state::DataRequestExecutor;
 
 pub mod data_request_executors {
+    use common::msg::IsDataRequestExecutorEligibleResponse;
     use cosmwasm_std::Addr;
 
-    use crate::utils::apply_validator_eligibility;
+    use crate::{state::ELIGIBLE_DATA_REQUEST_EXECUTORS, utils::apply_validator_eligibility};
 
     use super::*;
 
@@ -81,6 +81,17 @@ pub mod data_request_executors {
         let executor = DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
         Ok(GetDataRequestExecutorResponse { value: executor })
     }
+
+    /// Returns whether a data request executor is eligible to participate in the committee.
+    pub fn is_data_request_executor_eligible(
+        deps: Deps,
+        executor: Addr,
+    ) -> StdResult<IsDataRequestExecutorEligibleResponse> {
+        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
+        Ok(IsDataRequestExecutorEligibleResponse {
+            value: executor.is_some(),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -90,7 +101,8 @@ mod executers_tests {
     use crate::contract::instantiate;
     use crate::contract::query;
     use crate::msg::InstantiateMsg;
-    use common::msg::{ExecuteMsg, QueryMsg};
+    use common::msg::StakingExecuteMsg as ExecuteMsg;
+    use common::msg::StakingQueryMsg as QueryMsg;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary, Addr};
 

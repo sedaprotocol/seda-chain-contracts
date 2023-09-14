@@ -20,7 +20,7 @@ pub struct PostDataRequestArgs {
 }
 
 #[cw_serde]
-pub enum ExecuteMsg {
+pub enum DataRequestsExecuteMsg {
     PostDataRequest {
         posted_dr: PostDataRequestArgs,
     },
@@ -34,6 +34,10 @@ pub enum ExecuteMsg {
         reveal: Reveal,
         sender: Option<String>,
     },
+}
+
+#[cw_serde]
+pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
         p2p_multi_address: Option<String>,
         sender: Option<String>,
@@ -56,7 +60,7 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {
+pub enum DataRequestsQueryMsg {
     #[returns(GetDataRequestResponse)]
     GetDataRequest { dr_id: Hash },
     #[returns(GetDataRequestsFromPoolResponse)]
@@ -74,8 +78,15 @@ pub enum QueryMsg {
     GetRevealedDataResults { dr_id: Hash },
     #[returns(GetResolvedDataResultResponse)]
     GetResolvedDataResult { dr_id: Hash },
+}
+
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum StakingQueryMsg {
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
+    #[returns(IsDataRequestExecutorEligibleResponse)]
+    IsDataRequestExecutorEligible { executor: Addr },
 }
 
 #[cw_serde]
@@ -125,4 +136,9 @@ pub struct GetDataRequestExecutorResponse {
 #[cw_serde]
 pub struct GetCommittedExecutorsResponse {
     pub value: Vec<String>,
+}
+
+#[cw_serde]
+pub struct IsDataRequestExecutorEligibleResponse {
+    pub value: bool,
 }

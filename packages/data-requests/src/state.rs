@@ -1,4 +1,4 @@
-use common::state::{DataRequest, DataRequestExecutor, DataResult};
+use common::state::{DataRequest, DataResult};
 use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
@@ -46,16 +46,9 @@ pub const DATA_REQUESTS_BY_NONCE: Map<u128, Hash> = Map::new("DATA_REQUESTS_BY_N
 /// An auto-incrementing counter for the data requests
 pub const DATA_REQUESTS_COUNT: Item<u128> = Item::new("data_requests_count");
 
-/// A map of data request executors (of address to info) that have not yet been marked as active
-pub const DATA_REQUEST_EXECUTORS: Map<Addr, DataRequestExecutor> =
-    Map::new("data_request_executors");
-
-/// Address of the token used for data request executor staking
+/// Address of the token used for deposit for posting a data request
+// TODO: implement deposit for posting data requests
 pub const TOKEN: Item<String> = Item::new("token");
-
-/// A map of data request executors (of address to info) that are eligible for committee inclusion
-pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
-    Map::new("eligible_data_request_executors");
 
 /// Address of proxy contract which has permission to set the sender on one's behalf
 pub const PROXY_CONTRACT: Item<Addr> = Item::new("proxy_contract");

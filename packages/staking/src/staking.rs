@@ -122,7 +122,8 @@ mod staking_tests {
     use crate::msg::InstantiateMsg;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
     use common::msg::GetDataRequestExecutorResponse;
-    use common::msg::{ExecuteMsg, QueryMsg};
+    use common::msg::StakingExecuteMsg as ExecuteMsg;
+    use common::msg::StakingQueryMsg as QueryMsg;
     use common::state::DataRequestExecutor;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary, Addr};

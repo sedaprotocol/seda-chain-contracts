@@ -1,32 +1,23 @@
 use crate::error::ContractError;
+use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
 use common::types::Bytes;
-use cosmwasm_std::{Addr, Coin, DepsMut};
+use cosmwasm_std::{to_binary, Addr, Coin, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
-use crate::{
-    consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
-    state::{DataRequestInputs, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT},
-};
-
-pub fn apply_validator_eligibility(
-    deps: DepsMut,
-    sender: Addr,
-    tokens_staked: u128,
-) -> Result<(), ContractError> {
-    if tokens_staked < MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY {
-        if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, sender.clone()) {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, sender);
-        }
-    } else {
-        ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, sender, &true)?;
-    }
-    Ok(())
-}
+use crate::state::{DataRequestInputs, PROXY_CONTRACT};
 
 pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, ContractError> {
-    let is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.load(deps.storage, dr_executor)?;
-    Ok(is_eligible)
+    // query proxy contract to see if this executor is eligible
+    let msg = StakingQueryMsg::IsDataRequestExecutorEligible {
+        executor: dr_executor,
+    };
+    let query_response: IsDataRequestExecutorEligibleResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: PROXY_CONTRACT.load(deps.storage)?.to_string(),
+            msg: to_binary(&msg)?,
+        }))?;
+    Ok(query_response.value)
 }
 
 pub fn pad_to_32_bytes(value: &u128) -> [u8; 32] {
