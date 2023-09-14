@@ -7,7 +7,7 @@ on:
 name: Deploy WASM storage to testnet
 
 jobs:
-    check_pass:
+  check_pass:
     name: Check password
     runs-on: ubuntu-latest
     outputs:
