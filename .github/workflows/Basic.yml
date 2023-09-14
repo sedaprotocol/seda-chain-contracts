@@ -53,7 +53,7 @@ jobs:
         run: cargo clippy -- -D warnings
 
       - name: Generate Schema
-        run: cargo schema --locked
+        run: cargo schema --locked --package proxy-contract
 
       - name: Schema Changes
         # fails if any changes not committed

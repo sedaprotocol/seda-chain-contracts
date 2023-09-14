@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use common::msg::{
     GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
     GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
