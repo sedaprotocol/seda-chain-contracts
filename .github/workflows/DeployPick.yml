@@ -47,26 +47,21 @@ jobs:
             echo "proxy_ok=true" >> $GITHUB_OUTPUT
           fi
 
-  node_url:
-    name: Set Node Url
-    runs-on: ubuntu-latest
-    outputs:
-      node_url: ${{ steps.node_url.outputs.node_url }}
-    steps:
-      - id: node_url
-        run: |
-          case "${{ github.event.inputs.network }}"  in
-            devnet)
-              echo "${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_OUTPUT
-              ;;
-          esac
-
   deploys:
-    needs: [check_pass, check_proxy, node_url]
+    needs: [check_pass, check_proxy]
     if: ${{ needs.check_pass.outputs.is_allowed == 'true' && needs.check_proxy.outputs.proxy_ok == 'true' }}
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Set Environment Variables
+        run: |
+          case "${{ github.event.inputs.network }}" in
+            devnet)
+              echo "Setting NODE_URL for devnet"
+              echo "NODE_URL=${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_ENV
+              ;;
+          esac
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
@@ -110,7 +105,6 @@ jobs:
 
       - name: Store contract on chain
         env:
-          NODE_URL: ${{ needs.node_url.outputs.node_url }}
           DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
         id: store
         run: |
@@ -125,8 +119,6 @@ jobs:
         run: sleep 12
 
       - name: Find the code ID
-        env:
-          NODE_URL: ${{ needs.node_url.outputs.node_url }}
         id: query
         run: |
           nodeUrl=${{ env.NODE_URL }}
@@ -137,7 +129,6 @@ jobs:
 
       - name: Instantiate contract
         env:
-          NODE_URL: ${{ needs.node_url.outputs.node_url }}
           DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
         id: instantiate
         run: |
@@ -157,8 +148,6 @@ jobs:
         run: sleep 12
 
       - name: Find the contract address
-        env:
-          NODE_URL: ${{ needs.node_url.outputs.node_url }}
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${nodeUrl} --output json)"
