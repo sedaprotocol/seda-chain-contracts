@@ -1,12 +1,21 @@
 on:
   workflow_dispatch:
     inputs:
+      network:
+        type: choice
+        options:
+          - devnet
+      contract:
+        type: choice
+        options:
+          - proxy_contract
+          - seda_chain_contracts
       password:
         required: true
       proxy:
-        required: true
+        required: false
 
-name: Deploy seda-mainchain-contracts to testnet
+name: Deploy Seda Contract
 
 jobs:
   check_pass:
@@ -24,22 +33,43 @@ jobs:
             echo "is_allowed=false" >> $GITHUB_OUTPUT
           fi
 
+  check_proxy:
+    name: Check Proxy
+    runs-on: ubuntu-latest
+    outputs:
+      proxy_ok: ${{ steps.check_proxy.outputs.proxy_ok }}
+    steps:
+      - id: check_proxy
+        run: |
+          if [[ "${{ github.event.inputs.contract }}" != "proxy_contract" && -z "${{github.event.inputs.proxy }}" ]]; then
+            echo "proxy_ok=false" >> $GITHUB_OUTPUT
+          else
+            echo "proxy_ok=true" >> $GITHUB_OUTPUT
+          fi
+
   deploys:
-    needs: check_pass
-    if: ${{ needs.check_pass.outputs.is_allowed == 'true' }}
+    needs: [check_pass, check_proxy]
+    if: ${{ needs.check_pass.outputs.is_allowed == 'true' && needs.check_proxy.outputs.proxy_ok == 'true' }}
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Set Environment Variables
+        run: |
+          case "${{ github.event.inputs.network }}" in
+            devnet)
+              echo "Setting NODE_URL for devnet"
+              echo "NODE_URL=${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_ENV
+              ;;
+          esac
+
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: 1.65.0
           target: wasm32-unknown-unknown
-          override: true
 
       - name: Compile optimized WASM contract
         run: |
@@ -75,13 +105,12 @@ jobs:
 
       - name: Store contract on chain
         env:
-          TESTNET_NODE_URL: ${{ secrets.TESTNET_NODE_URL }}
           DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
         id: store
         run: |
-          testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
+          nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
-          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/seda_chain_contracts.wasm --node ${testnetNodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/${{ github.event.inputs.contract }}.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"
           echo "txhash=$TXHASH" >> $GITHUB_ENV
@@ -90,26 +119,27 @@ jobs:
         run: sleep 12
 
       - name: Find the code ID
-        env:
-          TESTNET_NODE_URL: ${{ secrets.TESTNET_NODE_URL }}
         id: query
         run: |
-          testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${testnetNodeUrl} --output json)"
+          nodeUrl=${{ env.NODE_URL }}
+          OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${nodeUrl} --output json)"
           CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "code_id=$CODE_ID" >> $GITHUB_ENV
 
       - name: Instantiate contract
         env:
-          TESTNET_NODE_URL: ${{ secrets.TESTNET_NODE_URL }}
           DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
         id: instantiate
         run: |
-          proxy=${{ github.event.inputs.proxy }}
-          testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
+          nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
-          OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda","proxy":"${proxy}"}' --no-admin --from ${devAccount} --node ${testnetNodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+          if [[ "${{ github.event.inputs.contract }}" != "proxy_contract" ]]; then
+            proxy=${{ github.event.inputs.proxy }}
+            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda","proxy":"${proxy}"}' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+          else
+            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda"}' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+          fi
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "Instantiate transaction is $TXHASH"
           echo "txhash=$TXHASH" >> $GITHUB_ENV
@@ -118,10 +148,8 @@ jobs:
         run: sleep 12
 
       - name: Find the contract address
-        env:
-          TESTNET_NODE_URL: ${{ secrets.TESTNET_NODE_URL }}
         run: |
-          testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${testnetNodeUrl} --output json)"
+          nodeUrl=${{ env.NODE_URL }}
+          OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${nodeUrl} --output json)"
           CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
