@@ -41,7 +41,7 @@ jobs:
     steps:
       - id: check_proxy
         run: |
-          if [[ "${{ github.event.inputs.contract }}" != "proxy_contract" && -z "${{github.event.inputs.proxy }}"]]; then
+          if [[ "${{ github.event.inputs.contract }}" != "proxy_contract" && -z "${{github.event.inputs.proxy }}" ]]; then
             echo "proxy_ok=false" >> $GITHUB_OUTPUT
           else
             echo "proxy_ok=true" >> $GITHUB_OUTPUT
@@ -51,9 +51,9 @@ jobs:
     name: Set Node Url
     runs-on: ubuntu-latest
     outputs:
-      node_url: ${{ steps.check_proxy.outputs.proxy_ok }}
+      node_url: ${{ steps.node_url.outputs.node_url }}
     steps:
-      - id: set_node_url
+      - id: node_url
         run: |
           case "${{ github.event.inputs.network }}"  in
             devnet)
