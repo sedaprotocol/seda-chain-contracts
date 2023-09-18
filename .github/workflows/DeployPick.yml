@@ -33,9 +33,23 @@ jobs:
             echo "is_allowed=false" >> $GITHUB_OUTPUT
           fi
 
+  check_proxy:
+    name: Check Proxy
+    runs-on: ubuntu-latest
+    outputs:
+      proxy_ok: ${{ steps.check_proxy.outputs.proxy_ok }}
+    steps:
+      - id: check_proxy
+        run: |
+          if [[ "${{ github.event.inputs.contract }}" == "proxy_contract" && -z "${{github.event.inputs.proxy }}"]]; then
+            echo "proxy_ok=false" >> $GITHUB_OUTPUT
+          else
+            echo "proxy_ok=true" >> $GITHUB_OUTPUT
+          fi
+
   deploys:
-    needs: check_pass
-    if: ${{ needs.check_pass.outputs.is_allowed == 'true' }}
+    needs: [check_pass, check_proxy]
+    if: ${{ needs.check_pass.outputs.is_allowed == 'true' && needs.check_proxy.outputs.proxy_ok == 'true' }}
     name: Deploy
     runs-on: ubuntu-latest
     steps:
@@ -89,7 +103,6 @@ jobs:
           testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           OUTPUT="$(./seda-chaind tx wasm store ./artifacts/${{ github.event.inputs.contract }}.wasm --node ${testnetNodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
-          esac
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"
           echo "txhash=$TXHASH" >> $GITHUB_ENV
@@ -114,11 +127,11 @@ jobs:
           DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
         id: instantiate
         run: |
-          if [[ "${{ github.event.inputs.contract }}" == "proxy" ]]; then
+          if [[ "${{ github.event.inputs.contract }}" == "proxy_contract" ]]; then
             proxy=${{ github.event.inputs.proxy }}
             OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda","proxy":"${proxy}"}' --no-admin --from ${devAccount} --node ${testnetNodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
             else
-            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda","proxy":"${proxy}"}' --no-admin --from ${devAccount} --node ${testnetNodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda"}' --no-admin --from ${devAccount} --node ${testnetNodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
           fi
           testnetNodeUrl=${{ env.TESTNET_NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
