@@ -57,7 +57,8 @@ jobs:
         run: |
           case "${{ github.event.inputs.network }}"  in
             devnet)
-            echo "${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_OUTPUT
+              echo "${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_OUTPUT
+              ;;
           esac
 
   deploys:
