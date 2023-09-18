@@ -3,20 +3,16 @@ on:
     inputs:
       network:
         type: choice
-        description: Which sedanetwork to deploy it to.
         options:
           - devnet
       contract:
         type: choice
-        description: Which contract to deploy.
         options:
           - proxy_contract
           - seda_chain_contracts
       password:
-        description: Required to deploy the contracts to a chain.
         required: true
       proxy:
-        description: Required if deploying a non-proxy contract.
         required: false
 
 name: Deploy Seda Contract
