@@ -155,7 +155,6 @@ mod dr_tests {
     use crate::msg::InstantiateMsg;
     use crate::state::DataRequestInputs;
     use crate::utils::hash_data_request;
-    use crate::utils::hash_update;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::DataRequestsQueryMsg as QueryMsg;
     use common::msg::GetDataRequestResponse;
@@ -163,7 +162,6 @@ mod dr_tests {
     use common::state::Reveal;
     use common::types::Bytes;
     use common::types::Commitment;
-    use common::types::Memo;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
     use sha3::Digest;
@@ -205,17 +203,15 @@ mod dr_tests {
 
         // set by relayer and SEDA protocol
         let seda_payload: Bytes = Vec::new();
-
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = "hello world".to_string();
         let payback_address: Bytes = Vec::new();
+
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 1;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hasher.update(value);
-        let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo1: Memo = binary_hash.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo1 = hasher.finalize().to_vec();
 
         let dr_inputs1 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
@@ -275,15 +271,15 @@ mod dr_tests {
         let seda_payload: Bytes = Vec::new();
         let commits: HashMap<String, Commitment> = HashMap::new();
         let reveals: HashMap<String, Reveal> = HashMap::new();
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = "hello world".to_string();
+
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 1;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hasher.update(value);
-        let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo1: Memo = binary_hash.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo1 = hasher.finalize().to_vec();
+
         let dr_inputs1 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -358,17 +354,16 @@ mod dr_tests {
 
         // set by relayer and SEDA protocol
         let seda_payload: Bytes = Vec::new();
-
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 1;
         let payback_address: Bytes = Vec::new();
+
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 1;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash1 = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo1: Memo = binary_hash1.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo1 = hasher.finalize().to_vec();
+
         let dr_inputs1 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
             tally_binary_id: tally_binary_id.clone(),
@@ -385,15 +380,13 @@ mod dr_tests {
         };
         let constructed_dr_id1 = hash_data_request(dr_inputs1);
 
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 2;
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 2;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash2 = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo2: Memo = binary_hash2.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo2 = hasher.finalize().to_vec();
 
         let dr_inputs2 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
@@ -411,15 +404,13 @@ mod dr_tests {
         };
         let constructed_dr_id2 = hash_data_request(dr_inputs2);
 
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 3;
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 3;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash3 = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo3: Memo = binary_hash3.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo3 = hasher.finalize().to_vec();
 
         let dr_inputs3 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
@@ -522,15 +513,13 @@ mod dr_tests {
         let commits: HashMap<String, Commitment> = HashMap::new();
         let reveals: HashMap<String, Reveal> = HashMap::new();
 
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 1;
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 1;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash1 = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo1: Memo = binary_hash1.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo1 = hasher.finalize().to_vec();
 
         let dr_inputs1 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
@@ -548,15 +537,13 @@ mod dr_tests {
         };
         let constructed_dr_id1 = hash_data_request(dr_inputs1);
 
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 2;
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 2;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash2 = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo2: Memo = binary_hash2.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo2 = hasher.finalize().to_vec();
 
         let dr_inputs2 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
@@ -574,15 +561,13 @@ mod dr_tests {
         };
         let constructed_dr_id2 = hash_data_request(dr_inputs2);
 
-        let chain_id = 31337;
-        let nonce = 1;
-        let value = 3;
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 3;
         let mut hasher = Keccak256::new();
-        hash_update(&mut hasher, &chain_id);
-        hash_update(&mut hasher, &nonce);
-        hash_update(&mut hasher, &value);
-        let binary_hash3 = format!("0x{}", hex::encode(hasher.finalize()));
-        let memo3: Memo = binary_hash3.clone().into_bytes();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo3 = hasher.finalize().to_vec();
 
         let dr_inputs3 = DataRequestInputs {
             dr_binary_id: dr_binary_id.clone(),
@@ -796,5 +781,59 @@ mod dr_tests {
             },
             response
         );
+    }
+
+    #[test]
+    fn test_hash_data_request() {
+        let mut deps = mock_dependencies();
+
+        // instantiate contract
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+            proxy: "proxy".to_string(),
+        };
+        let info = mock_info("creator", &coins(2, "token"));
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let dr_binary_id: Hash = "dr_binary_id".to_string();
+        let dr_inputs: Bytes = "dr_inputs".to_string().into_bytes();
+        let tally_binary_id: Hash = "tally_binary_id".to_string();
+        let tally_inputs: Bytes = "tally_inputs".to_string().into_bytes();
+
+        let replication_factor: u16 = 123;
+
+        // set by dr creator
+        let gas_price: u128 = 456;
+        let gas_limit: u128 = 789;
+
+        // set by relayer and SEDA protocol
+        let seda_payload: Bytes = "seda_payload".to_string().into_bytes();
+        let payback_address: Bytes = "payback_address".to_string().into_bytes();
+
+        // memo
+        let chain_id: u128 = 31337;
+        let nonce: u128 = 1;
+        let mut hasher = Keccak256::new();
+        hasher.update(chain_id.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
+        let memo = hasher.finalize().to_vec();
+
+        // format inputs
+        let dr_inputs1 = DataRequestInputs {
+            dr_binary_id,
+            tally_binary_id,
+            dr_inputs,
+            tally_inputs,
+            memo,
+            replication_factor,
+            gas_price,
+            gas_limit,
+            seda_payload,
+            payback_address,
+        };
+
+        // reconstruct dr_id
+        let constructed_dr_id1 = hash_data_request(dr_inputs1);
+        println!("constructed_dr_id1: {}", constructed_dr_id1);
     }
 }

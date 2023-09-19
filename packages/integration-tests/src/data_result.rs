@@ -4,11 +4,11 @@ use common::msg::{
     PostDataRequestArgs,
 };
 use common::state::Reveal;
-use common::types::{Bytes, Hash, Memo};
+use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use data_requests::state::DataRequestInputs;
-use data_requests::utils::{hash_data_request, hash_update};
+use data_requests::utils::hash_data_request;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 use sha3::{Digest, Keccak256};
 use staking::consts::MINIMUM_STAKE_TO_REGISTER;
@@ -49,15 +49,12 @@ fn commit_reveal_result() {
     let gas_price: u128 = 10;
     let gas_limit: u128 = 10;
     let seda_payload: Bytes = Vec::new();
-    let chain_id = 31337;
-    let nonce = 1;
-    let value = "test".to_string();
+    let chain_id: u128 = 31337;
+    let nonce: u128 = 1;
     let mut hasher = Keccak256::new();
-    hash_update(&mut hasher, &chain_id);
-    hash_update(&mut hasher, &nonce);
-    hasher.update(value);
-    let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
-    let memo1: Memo = binary_hash.clone().into_bytes();
+    hasher.update(chain_id.to_be_bytes());
+    hasher.update(nonce.to_be_bytes());
+    let memo1 = hasher.finalize().to_vec();
     let payback_address: Bytes = Vec::new();
     let dr_inputs1 = DataRequestInputs {
         dr_binary_id: dr_binary_id.clone(),
@@ -203,15 +200,12 @@ fn ineligible_post_data_result() {
     let gas_price: u128 = 10;
     let gas_limit: u128 = 10;
     let seda_payload: Bytes = Vec::new();
-    let chain_id = 31337;
-    let nonce = 1;
-    let value = "test".to_string();
+    let chain_id: u128 = 31337;
+    let nonce: u128 = 1;
     let mut hasher = Keccak256::new();
-    hash_update(&mut hasher, &chain_id);
-    hash_update(&mut hasher, &nonce);
-    hasher.update(value);
-    let binary_hash = format!("0x{}", hex::encode(hasher.finalize()));
-    let memo1: Memo = binary_hash.clone().into_bytes();
+    hasher.update(chain_id.to_be_bytes());
+    hasher.update(nonce.to_be_bytes());
+    let memo1 = hasher.finalize().to_vec();
     let payback_address: Bytes = Vec::new();
     let dr_inputs1 = DataRequestInputs {
         dr_binary_id: dr_binary_id.clone(),

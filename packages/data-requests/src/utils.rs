@@ -20,18 +20,6 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
     Ok(query_response.value)
 }
 
-pub fn pad_to_32_bytes(value: &u128) -> [u8; 32] {
-    let mut bytes = [0u8; 32];
-    let small_bytes = &value.to_be_bytes();
-    bytes[(32 - small_bytes.len())..].copy_from_slice(small_bytes);
-    bytes
-}
-
-pub fn hash_update(hasher: &mut Keccak256, value: &u128) {
-    let bytes = pad_to_32_bytes(value);
-    hasher.update(bytes);
-}
-
 pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
     let mut hasher = Keccak256::new();
     hasher.update(posted_dr.dr_binary_id);
@@ -39,9 +27,7 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
     hasher.update(posted_dr.gas_limit.to_be_bytes());
     hasher.update(posted_dr.gas_price.to_be_bytes());
     hasher.update(posted_dr.memo);
-    hasher.update(posted_dr.payback_address);
     hasher.update(posted_dr.replication_factor.to_be_bytes());
-    hasher.update(posted_dr.seda_payload);
     hasher.update(posted_dr.tally_binary_id);
     hasher.update(posted_dr.tally_inputs);
 
