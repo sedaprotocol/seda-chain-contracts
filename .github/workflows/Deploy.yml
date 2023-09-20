@@ -9,13 +9,14 @@ on:
         type: choice
         options:
           - proxy_contract
-          - seda_chain_contracts
+          - data_requests
+          - staking
       password:
         required: true
       proxy:
         required: false
 
-name: Deploy Seda Contract
+name: Deploy SEDA Contract
 
 jobs:
   check_pass:
