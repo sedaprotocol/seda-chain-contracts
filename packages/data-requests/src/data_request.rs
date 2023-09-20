@@ -1,9 +1,10 @@
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
+use cosmwasm_std::{to_binary, Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 
 use crate::state::{DATA_REQUESTS, DATA_REQUESTS_COUNT};
 
 use crate::error::ContractError;
+use crate::msg::PostDataRequestResponse;
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use common::state::DataRequest;
 use common::types::Hash;
@@ -101,8 +102,13 @@ pub mod data_requests {
         })?;
 
         Ok(Response::new()
-            .add_attribute("action", "post_data_request")
-            .add_attribute("dr_id", posted_dr.dr_id))
+            .set_data(to_binary(&PostDataRequestResponse {
+                dr_id: posted_dr.dr_id.clone(),
+            })?)
+            .add_attributes(vec![
+                ("action", "post_data_request"),
+                ("dr_id", &posted_dr.dr_id),
+            ]))
     }
 
     /// Returns a data request from the pool with the given id, if it exists.
