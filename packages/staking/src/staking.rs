@@ -76,12 +76,12 @@ pub mod staking {
     /// Sends tokens back to the executor that are marked as pending withdrawal.
     pub fn withdraw(
         deps: DepsMut,
-        env: Env,
+        _env: Env,
         info: MessageInfo,
         amount: u128,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
+        let sender = validate_sender(&deps, info.sender.clone(), sender)?;
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
@@ -101,7 +101,7 @@ pub mod staking {
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
-            to_address: env.contract.address.to_string(),
+            to_address: sender.to_string(),
             amount: coins(amount, token),
         };
 
@@ -115,6 +115,8 @@ pub mod staking {
 
 #[cfg(test)]
 mod staking_tests {
+    use std::env;
+
     use super::*;
     use crate::contract::execute;
     use crate::contract::instantiate;
@@ -126,6 +128,10 @@ mod staking_tests {
     use common::msg::StakingQueryMsg as QueryMsg;
     use common::state::DataRequestExecutor;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::BalanceResponse;
+    use cosmwasm_std::BankQuery;
+    use cosmwasm_std::Querier;
+    use cosmwasm_std::QueryRequest;
     use cosmwasm_std::{coins, from_binary, Addr};
     #[test]
     fn deposit_stake_withdraw() {
@@ -240,6 +246,14 @@ mod staking_tests {
                 })
             }
         );
+        let msg = QueryRequest::Bank(BankQuery::Balance {
+            address: info.sender.into_string(),
+            denom: "token".to_owned(),
+        });
+        let res = deps.querier.handle_query(&msg).unwrap();
+        let value: BalanceResponse = from_binary(&res.unwrap()).unwrap();
+        let balance_u128 = value.amount.amount.u128();
+        assert_eq!(balance_u128, 0);
 
         // the data request executor withdraws 1
         let info = mock_info("anyone", &coins(0, "token"));
@@ -273,6 +287,15 @@ mod staking_tests {
                 })
             }
         );
+
+        let msg = QueryRequest::Bank(BankQuery::Balance {
+            address: info.sender.into_string(),
+            denom: "token".to_owned(),
+        });
+        let res = deps.querier.handle_query(&msg).unwrap();
+        let value: BalanceResponse = from_binary(&res.unwrap()).unwrap();
+        let balance_u128 = value.amount.amount.u128();
+        assert_eq!(balance_u128, 1);
 
         // unstake 2 more
         let info = mock_info("anyone", &coins(0, "token"));
