@@ -7,7 +7,7 @@ pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 pub const EXECUTOR_2: &str = "executor2";
 const ADMIN: &str = "admin";
-const NATIVE_DENOM: &str = "seda";
+pub const NATIVE_DENOM: &str = "seda";
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.

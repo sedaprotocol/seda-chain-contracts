@@ -115,7 +115,6 @@ pub mod staking {
 
 #[cfg(test)]
 mod staking_tests {
-    use std::env;
 
     use super::*;
     use crate::contract::execute;
@@ -128,10 +127,6 @@ mod staking_tests {
     use common::msg::StakingQueryMsg as QueryMsg;
     use common::state::DataRequestExecutor;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::BalanceResponse;
-    use cosmwasm_std::BankQuery;
-    use cosmwasm_std::Querier;
-    use cosmwasm_std::QueryRequest;
     use cosmwasm_std::{coins, from_binary, Addr};
     #[test]
     fn deposit_stake_withdraw() {
@@ -246,14 +241,6 @@ mod staking_tests {
                 })
             }
         );
-        let msg = QueryRequest::Bank(BankQuery::Balance {
-            address: info.sender.into_string(),
-            denom: "token".to_owned(),
-        });
-        let res = deps.querier.handle_query(&msg).unwrap();
-        let value: BalanceResponse = from_binary(&res.unwrap()).unwrap();
-        let balance_u128 = value.amount.amount.u128();
-        assert_eq!(balance_u128, 0);
 
         // the data request executor withdraws 1
         let info = mock_info("anyone", &coins(0, "token"));
@@ -287,15 +274,6 @@ mod staking_tests {
                 })
             }
         );
-
-        let msg = QueryRequest::Bank(BankQuery::Balance {
-            address: info.sender.into_string(),
-            denom: "token".to_owned(),
-        });
-        let res = deps.querier.handle_query(&msg).unwrap();
-        let value: BalanceResponse = from_binary(&res.unwrap()).unwrap();
-        let balance_u128 = value.amount.amount.u128();
-        assert_eq!(balance_u128, 1);
 
         // unstake 2 more
         let info = mock_info("anyone", &coins(0, "token"));

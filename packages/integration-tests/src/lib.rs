@@ -3,5 +3,6 @@
 mod tests {
     mod data_request;
     mod data_result;
+    mod staking;
     pub mod utils;
 }
