@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "packages/staking",
     "packages/data-requests",
-    "packages/wasm-bin-storage",
     "packages/integration-tests",
     "packages/proxy"
 ]
