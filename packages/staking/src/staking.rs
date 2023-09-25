@@ -81,7 +81,7 @@ pub mod staking {
         amount: u128,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender.clone(), sender)?;
+        let sender = validate_sender(&deps, info.sender, sender)?;
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
