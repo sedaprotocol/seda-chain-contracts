@@ -32,12 +32,16 @@ pub mod staking {
         executor.tokens_staked += amount;
         DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, sender.clone(), executor.tokens_staked)?;
+        apply_validator_eligibility(deps, sender, executor.tokens_staked)?;
 
-        Ok(Response::new()
-            .add_attribute("action", "stake")
-            .add_attribute("executor", sender)
-            .add_attribute("amount", amount.to_string()))
+        Ok(Response::new().add_attributes(vec![
+            ("action", "deposit_and_stake"),
+            (
+                "seda_data_request_executor",
+                &serde_json::to_string(&executor).unwrap(),
+            ),
+            ("amount_deposited", &amount.to_string()),
+        ]))
     }
 
     /// Unstakes tokens to be withdrawn after a delay.
@@ -64,13 +68,17 @@ pub mod staking {
         executor.tokens_pending_withdrawal += amount;
         DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, sender.clone(), executor.tokens_staked)?;
+        apply_validator_eligibility(deps, sender, executor.tokens_staked)?;
 
         // TODO: emit when pending tokens can be withdrawn
-        Ok(Response::new()
-            .add_attribute("action", "unstake")
-            .add_attribute("executor", sender)
-            .add_attribute("amount", amount.to_string()))
+        Ok(Response::new().add_attributes(vec![
+            ("action", "unstake"),
+            (
+                "seda_data_request_executor",
+                &serde_json::to_string(&executor).unwrap(),
+            ),
+            ("amount_unstaked", &amount.to_string()),
+        ]))
     }
 
     /// Sends tokens back to the executor that are marked as pending withdrawal.
@@ -105,11 +113,14 @@ pub mod staking {
             amount: coins(amount, token),
         };
 
-        Ok(Response::new()
-            .add_message(bank_msg)
-            .add_attribute("action", "withdraw")
-            .add_attribute("executor", sender)
-            .add_attribute("amount", amount.to_string()))
+        Ok(Response::new().add_message(bank_msg).add_attributes(vec![
+            ("action", "withdraw"),
+            (
+                "seda_data_request_executor",
+                &serde_json::to_string(&executor).unwrap(),
+            ),
+            ("amount_withdrawn", &amount.to_string()),
+        ]))
     }
 }
 

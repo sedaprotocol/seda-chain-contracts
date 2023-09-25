@@ -87,7 +87,7 @@ pub fn execute(
                 })?,
                 funds: vec![],
             }))
-            .add_attribute("action", "post_data_result")),
+            .add_attribute("action", "commit_data_result")),
         ProxyExecuteMsg::RevealDataResult { dr_id, reveal } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
@@ -98,7 +98,7 @@ pub fn execute(
                 })?,
                 funds: vec![],
             }))
-            .add_attribute("action", "post_data_result")),
+            .add_attribute("action", "reveal_data_result")),
 
         // Staking
         ProxyExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {

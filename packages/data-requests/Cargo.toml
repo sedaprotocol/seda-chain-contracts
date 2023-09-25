@@ -37,5 +37,6 @@ cw2 = { workspace = true }
 hex = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 sha3 = { workspace = true }
 thiserror = { workspace = true }

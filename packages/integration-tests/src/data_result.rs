@@ -3,7 +3,7 @@ use common::msg::{
     GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
     PostDataRequestArgs,
 };
-use common::state::Reveal;
+use common::state::{DataRequest, Reveal};
 use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
@@ -92,8 +92,12 @@ fn commit_reveal_result() {
         .unwrap();
 
     // get dr_id
-    // TODO: this is ugly to loop through events, use Response.data once it's merged
-    let dr_id = &res.events.last().unwrap().attributes.last().unwrap().value;
+    // TODO: this is an ugly way to get the dr_id.
+    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
+    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
+    let dr: DataRequest =
+        serde_json::from_str(&res.events.last().unwrap().attributes.last().unwrap().value).unwrap();
+    let dr_id = dr.dr_id.clone();
 
     // executor1 commits on the data request
     let reveal = "2000";
@@ -241,8 +245,12 @@ fn ineligible_post_data_result() {
         .unwrap();
 
     // get dr_id
-    // TODO: this is ugly to loop through events, use Response.data once it's merged
-    let dr_id = &res.events.last().unwrap().attributes.last().unwrap().value;
+    // TODO: this is an ugly way to get the dr_id.
+    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
+    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
+    let dr: DataRequest =
+        serde_json::from_str(&res.events.last().unwrap().attributes.last().unwrap().value).unwrap();
+    let dr_id = dr.dr_id.clone();
 
     // ineligible shouldn't be able to post a data result
     let reveal = "2000";

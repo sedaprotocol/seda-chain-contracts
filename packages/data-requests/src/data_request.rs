@@ -71,28 +71,25 @@ pub mod data_requests {
 
         // save the data request
         let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?;
-        DATA_REQUESTS.save(
-            deps.storage,
-            posted_dr.dr_id.clone(),
-            &DataRequest {
-                dr_id: posted_dr.dr_id.clone(),
+        let dr = DataRequest {
+            dr_id: posted_dr.dr_id.clone(),
 
-                dr_binary_id: posted_dr.dr_binary_id.clone(),
-                tally_binary_id: posted_dr.tally_binary_id.clone(),
-                dr_inputs: posted_dr.dr_inputs.clone(),
-                tally_inputs: posted_dr.tally_inputs.clone(),
-                memo: posted_dr.memo.clone(),
-                replication_factor: posted_dr.replication_factor,
+            dr_binary_id: posted_dr.dr_binary_id.clone(),
+            tally_binary_id: posted_dr.tally_binary_id.clone(),
+            dr_inputs: posted_dr.dr_inputs.clone(),
+            tally_inputs: posted_dr.tally_inputs.clone(),
+            memo: posted_dr.memo.clone(),
+            replication_factor: posted_dr.replication_factor,
 
-                gas_price: posted_dr.gas_price,
-                gas_limit: posted_dr.gas_limit,
+            gas_price: posted_dr.gas_price,
+            gas_limit: posted_dr.gas_limit,
 
-                seda_payload: posted_dr.seda_payload.clone(),
-                payback_address: posted_dr.payback_address.clone(),
-                commits: HashMap::new(),
-                reveals: HashMap::new(),
-            },
-        )?;
+            seda_payload: posted_dr.seda_payload.clone(),
+            payback_address: posted_dr.payback_address.clone(),
+            commits: HashMap::new(),
+            reveals: HashMap::new(),
+        };
+        DATA_REQUESTS.save(deps.storage, dr.dr_id.clone(), &dr)?;
         DATA_REQUESTS_BY_NONCE.save(deps.storage, dr_count, &posted_dr.dr_id)?; // todo wrong nonce
 
         // increment the data request count
@@ -103,11 +100,11 @@ pub mod data_requests {
 
         Ok(Response::new()
             .set_data(to_binary(&PostDataRequestResponse {
-                dr_id: posted_dr.dr_id.clone(),
+                dr_id: posted_dr.dr_id,
             })?)
             .add_attributes(vec![
                 ("action", "post_data_request"),
-                ("dr_id", &posted_dr.dr_id),
+                ("seda_data_request", &serde_json::to_string(&dr).unwrap()),
             ]))
     }
 

@@ -38,18 +38,21 @@ pub mod data_request_executors {
         }
 
         let executor = DataRequestExecutor {
-            p2p_multi_address: p2p_multi_address.clone(),
+            p2p_multi_address,
             tokens_staked: amount,
             tokens_pending_withdrawal: 0,
         };
         DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, sender.clone(), amount)?;
+        apply_validator_eligibility(deps, sender, amount)?;
 
-        Ok(Response::new()
-            .add_attribute("action", "register_data_request_executor")
-            .add_attribute("executor", sender)
-            .add_attribute("p2p_multi_address", p2p_multi_address.unwrap_or_default()))
+        Ok(Response::new().add_attributes(vec![
+            ("action", "register_data_request_executor"),
+            (
+                "seda_data_request_executor",
+                &serde_json::to_string(&executor).unwrap(),
+            ),
+        ]))
     }
 
     /// Unregisters a data request executor, with the requirement that no tokens are staked or pending withdrawal.

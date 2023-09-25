@@ -38,6 +38,7 @@ schemars = { workspace = true }
 data-requests = { workspace = true }
 staking = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 sha3 = { workspace = true }
 thiserror = { workspace = true }
 

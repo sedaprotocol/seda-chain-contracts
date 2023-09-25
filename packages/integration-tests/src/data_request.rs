@@ -1,5 +1,6 @@
 use crate::tests::utils::{proper_instantiate, USER};
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse, PostDataRequestArgs};
+use common::state::DataRequest;
 use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
@@ -67,8 +68,13 @@ fn post_data_request() {
     assert!(app.execute(Addr::unchecked(USER), cosmos_msg).is_err());
 
     // should be able to fetch data request
-    // TODO: this is ugly to loop through events, use Response.data once it's merged
-    let dr_id = &res.events.last().unwrap().attributes.last().unwrap().value;
+    // TODO: this is an ugly way to get the dr_id.
+    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
+    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
+    let dr: DataRequest =
+        serde_json::from_str(&res.events.last().unwrap().attributes.last().unwrap().value).unwrap();
+    let dr_id = dr.dr_id.clone();
+
     let msg = ProxyQueryMsg::GetDataRequest {
         dr_id: dr_id.clone(),
     };

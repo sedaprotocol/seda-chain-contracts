@@ -21,6 +21,7 @@ pub mod data_request_results {
 
     use crate::{
         state::DATA_RESULTS,
+        types::{CommitmentEntity, DataResultEntity, RevealEntity},
         utils::{check_eligibility, hash_data_result, validate_sender},
         ContractError::{
             AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
@@ -53,10 +54,18 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
-        Ok(Response::new()
-            .add_attribute("action", "commit_result")
-            .add_attribute("dr_id", dr_id)
-            .add_attribute("result", commitment))
+        Ok(Response::new().add_attributes(vec![
+            ("action", "commit_data_result"),
+            (
+                "seda_commitment",
+                &serde_json::to_string(&CommitmentEntity {
+                    dr_id,
+                    executor: sender.to_string(),
+                    commitment,
+                })
+                .unwrap(),
+            ),
+        ]))
     }
 
     /// Posts a data result of a data request with an attached result.
@@ -102,6 +111,7 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
+        let mut dr_result_entity: DataResultEntity = None;
         if u16::try_from(dr.reveals.len()).unwrap() == dr.replication_factor {
             let block_height: u64 = env.block.height;
             let exit_code: u8 = 0;
@@ -121,14 +131,27 @@ pub mod data_request_results {
                 payback_address,
                 seda_payload,
             };
+            dr_result_entity = Some(dr_result.clone());
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
             DATA_REQUESTS.remove(deps.storage, dr_id.clone());
         }
 
-        Ok(Response::new()
-            .add_attribute("action", "reveal_result")
-            .add_attribute("dr_id", dr_id)
-            .add_attribute("reveal", reveal.reveal))
+        Ok(Response::new().add_attributes(vec![
+            ("action", "reveal_data_result"),
+            (
+                "seda_reveal",
+                &serde_json::to_string(&RevealEntity {
+                    dr_id,
+                    executor: sender.to_string(),
+                    reveal,
+                })
+                .unwrap(),
+            ),
+            (
+                "seda_data_request_result",
+                &serde_json::to_string(&dr_result_entity).unwrap(),
+            ),
+        ]))
     }
 
     /// Returns a data result from the results with the given id, if it exists.
