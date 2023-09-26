@@ -793,7 +793,6 @@ dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
  "cw2",
- "serde_json",
  "thiserror",
 ]
 

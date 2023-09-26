@@ -3,7 +3,7 @@ use common::msg::{
     GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
     PostDataRequestArgs,
 };
-use common::state::{DataRequest, Reveal};
+use common::state::Reveal;
 use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
@@ -41,8 +41,8 @@ fn commit_reveal_result() {
     assert!(res.is_err());
 
     // format inputs to post data request with replication factor of 2
-    let dr_binary_id: Hash = "".to_string();
-    let tally_binary_id: Hash = "".to_string();
+    let dr_binary_id: Hash = "dr_binary_id".to_string();
+    let tally_binary_id: Hash = "tally_binary_id".to_string();
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
     let replication_factor: u16 = 2;
@@ -95,9 +95,7 @@ fn commit_reveal_result() {
     // TODO: this is an ugly way to get the dr_id.
     // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
     // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
-    let dr: DataRequest =
-        serde_json::from_str(&res.events.last().unwrap().attributes.last().unwrap().value).unwrap();
-    let dr_id = dr.dr_id.clone();
+    let dr_id = &res.events.last().unwrap().attributes[2].value;
 
     // executor1 commits on the data request
     let reveal = "2000";
@@ -196,8 +194,8 @@ fn ineligible_post_data_result() {
     let (mut app, proxy_contract) = proper_instantiate();
 
     // post a data request
-    let dr_binary_id: Hash = "".to_string();
-    let tally_binary_id: Hash = "".to_string();
+    let dr_binary_id: Hash = "dr_binary_id".to_string();
+    let tally_binary_id: Hash = "tally_binary_id".to_string();
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
     let replication_factor: u16 = 2;
@@ -248,9 +246,7 @@ fn ineligible_post_data_result() {
     // TODO: this is an ugly way to get the dr_id.
     // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
     // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
-    let dr: DataRequest =
-        serde_json::from_str(&res.events.last().unwrap().attributes.last().unwrap().value).unwrap();
-    let dr_id = dr.dr_id.clone();
+    let dr_id = &res.events.last().unwrap().attributes[2].value;
 
     // ineligible shouldn't be able to post a data result
     let reveal = "2000";

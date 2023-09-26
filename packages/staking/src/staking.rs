@@ -9,9 +9,9 @@ use crate::utils::{get_attached_funds, validate_sender};
 
 #[allow(clippy::module_inception)]
 pub mod staking {
-    use cosmwasm_std::{coins, BankMsg};
+    use cosmwasm_std::{coins, BankMsg, Event};
 
-    use crate::utils::apply_validator_eligibility;
+    use crate::{contract::CONTRACT_VERSION, utils::apply_validator_eligibility};
 
     use super::*;
 
@@ -32,16 +32,30 @@ pub mod staking {
         executor.tokens_staked += amount;
         DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, sender, executor.tokens_staked)?;
+        apply_validator_eligibility(deps, sender.clone(), executor.tokens_staked)?;
 
-        Ok(Response::new().add_attributes(vec![
-            ("action", "deposit_and_stake"),
-            (
-                "seda_data_request_executor",
-                &serde_json::to_string(&executor).unwrap(),
-            ),
-            ("amount_deposited", &amount.to_string()),
-        ]))
+        Ok(Response::new()
+            .add_attribute("action", "deposit_and_stake")
+            .add_events(vec![
+                Event::new("seda-data-request-executor").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    (
+                        "p2p_multi_address",
+                        &executor.p2p_multi_address.unwrap_or_default(),
+                    ),
+                    ("tokens_staked", &executor.tokens_staked.to_string()),
+                    (
+                        "tokens_pending_withdrawal",
+                        &executor.tokens_pending_withdrawal.to_string(),
+                    ),
+                ]),
+                Event::new("seda-data-request-executor-deposit-and-stake").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    ("amount_deposited", &amount.to_string()),
+                ]),
+            ]))
     }
 
     /// Unstakes tokens to be withdrawn after a delay.
@@ -68,17 +82,31 @@ pub mod staking {
         executor.tokens_pending_withdrawal += amount;
         DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, sender, executor.tokens_staked)?;
+        apply_validator_eligibility(deps, sender.clone(), executor.tokens_staked)?;
 
         // TODO: emit when pending tokens can be withdrawn
-        Ok(Response::new().add_attributes(vec![
-            ("action", "unstake"),
-            (
-                "seda_data_request_executor",
-                &serde_json::to_string(&executor).unwrap(),
-            ),
-            ("amount_unstaked", &amount.to_string()),
-        ]))
+        Ok(Response::new()
+            .add_attribute("action", "unstake")
+            .add_events(vec![
+                Event::new("seda-data-request-executor").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    (
+                        "p2p_multi_address",
+                        &executor.p2p_multi_address.unwrap_or_default(),
+                    ),
+                    ("tokens_staked", &executor.tokens_staked.to_string()),
+                    (
+                        "tokens_pending_withdrawal",
+                        &executor.tokens_pending_withdrawal.to_string(),
+                    ),
+                ]),
+                Event::new("seda-data-request-executor-unstake").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    ("amount_unstaked", &amount.to_string()),
+                ]),
+            ]))
     }
 
     /// Sends tokens back to the executor that are marked as pending withdrawal.
@@ -113,14 +141,29 @@ pub mod staking {
             amount: coins(amount, token),
         };
 
-        Ok(Response::new().add_message(bank_msg).add_attributes(vec![
-            ("action", "withdraw"),
-            (
-                "seda_data_request_executor",
-                &serde_json::to_string(&executor).unwrap(),
-            ),
-            ("amount_withdrawn", &amount.to_string()),
-        ]))
+        Ok(Response::new()
+            .add_message(bank_msg)
+            .add_attribute("action", "withdraw")
+            .add_events(vec![
+                Event::new("seda-data-request-executor").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    (
+                        "p2p_multi_address",
+                        &executor.p2p_multi_address.unwrap_or_default(),
+                    ),
+                    ("tokens_staked", &executor.tokens_staked.to_string()),
+                    (
+                        "tokens_pending_withdrawal",
+                        &executor.tokens_pending_withdrawal.to_string(),
+                    ),
+                ]),
+                Event::new("seda-data-request-executor-withdraw").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    ("amount_withdrawn", &amount.to_string()),
+                ]),
+            ]))
     }
 }
 

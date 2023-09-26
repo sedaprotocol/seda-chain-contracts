@@ -11,9 +11,12 @@ use common::state::DataRequestExecutor;
 
 pub mod data_request_executors {
     use common::msg::IsDataRequestExecutorEligibleResponse;
-    use cosmwasm_std::Addr;
+    use cosmwasm_std::{Addr, Event};
 
-    use crate::{state::ELIGIBLE_DATA_REQUEST_EXECUTORS, utils::apply_validator_eligibility};
+    use crate::{
+        contract::CONTRACT_VERSION, state::ELIGIBLE_DATA_REQUEST_EXECUTORS,
+        utils::apply_validator_eligibility,
+    };
 
     use super::*;
 
@@ -38,21 +41,25 @@ pub mod data_request_executors {
         }
 
         let executor = DataRequestExecutor {
-            p2p_multi_address,
+            p2p_multi_address: p2p_multi_address.clone(),
             tokens_staked: amount,
             tokens_pending_withdrawal: 0,
         };
         DATA_REQUEST_EXECUTORS.save(deps.storage, sender.clone(), &executor)?;
 
-        apply_validator_eligibility(deps, sender, amount)?;
+        apply_validator_eligibility(deps, sender.clone(), amount)?;
 
-        Ok(Response::new().add_attributes(vec![
-            ("action", "register_data_request_executor"),
-            (
-                "seda_data_request_executor",
-                &serde_json::to_string(&executor).unwrap(),
-            ),
-        ]))
+        Ok(Response::new()
+            .add_attribute("action", "register_data_request_executor")
+            .add_event(
+                Event::new("seda-data-request-executor").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                    ("p2p_multi_address", &p2p_multi_address.unwrap_or_default()),
+                    ("tokens_staked", &amount.to_string()),
+                    ("tokens_pending_withdrawal", "0"),
+                ]),
+            ))
     }
 
     /// Unregisters a data request executor, with the requirement that no tokens are staked or pending withdrawal.
@@ -73,7 +80,12 @@ pub mod data_request_executors {
 
         Ok(Response::new()
             .add_attribute("action", "unregister_data_request_executor")
-            .add_attribute("executor", sender))
+            .add_event(
+                Event::new("seda-unregister-data-request-executor").add_attributes(vec![
+                    ("version", CONTRACT_VERSION),
+                    ("executor", sender.as_ref()),
+                ]),
+            ))
     }
 
     /// Returns a data request executor from the inactive executors with the given address, if it exists.

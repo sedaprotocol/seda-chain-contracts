@@ -28,4 +28,6 @@ pub enum ContractError {
     RevealMismatch,
     #[error("Only proxy can pass a sender")]
     NotProxy,
+    #[error("Arg cannot be empty: {0}")]
+    EmptyArg(String),
 }

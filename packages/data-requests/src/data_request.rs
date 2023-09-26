@@ -10,7 +10,9 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
+    use crate::contract::CONTRACT_VERSION;
     use common::msg::PostDataRequestArgs;
+    use cosmwasm_std::Event;
     use std::collections::HashMap;
 
     use crate::{
@@ -44,6 +46,15 @@ pub mod data_requests {
         if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id.clone()) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
+
+        // require dr_binary_id and tally_binary_id to be non-empty
+        if posted_dr.dr_binary_id == *"" {
+            return Err(ContractError::EmptyArg("dr_binary_id".to_string()));
+        }
+        if posted_dr.tally_binary_id == *"" {
+            return Err(ContractError::EmptyArg("tally_binary_id".to_string()));
+        }
+
         let dr_inputs = DataRequestInputs {
             dr_binary_id: posted_dr.dr_binary_id.clone(),
             tally_binary_id: posted_dr.tally_binary_id.clone(),
@@ -99,13 +110,39 @@ pub mod data_requests {
         })?;
 
         Ok(Response::new()
+            .add_attribute("action", "post_data_request")
             .set_data(to_binary(&PostDataRequestResponse {
-                dr_id: posted_dr.dr_id,
+                dr_id: posted_dr.dr_id.clone(),
             })?)
-            .add_attributes(vec![
-                ("action", "post_data_request"),
-                ("seda_data_request", &serde_json::to_string(&dr).unwrap()),
-            ]))
+            .add_event(Event::new("seda-data-request").add_attributes(vec![
+                ("version", CONTRACT_VERSION),
+                ("dr_id", &posted_dr.dr_id),
+                ("dr_binary_id", &posted_dr.dr_binary_id),
+                ("tally_binary_id", &posted_dr.tally_binary_id),
+                (
+                    "dr_inputs",
+                    &serde_json::to_string(&posted_dr.dr_inputs).unwrap(),
+                ),
+                (
+                    "tally_inputs",
+                    &serde_json::to_string(&posted_dr.tally_inputs).unwrap(),
+                ),
+                ("memo", &serde_json::to_string(&posted_dr.memo).unwrap()),
+                (
+                    "replication_factor",
+                    &posted_dr.replication_factor.to_string(),
+                ),
+                ("gas_price", &posted_dr.gas_price.to_string()),
+                ("gas_limit", &posted_dr.gas_limit.to_string()),
+                (
+                    "seda_payload",
+                    &serde_json::to_string(&posted_dr.seda_payload).unwrap(),
+                ),
+                (
+                    "payback_address",
+                    &serde_json::to_string(&posted_dr.payback_address).unwrap(),
+                ),
+            ])))
     }
 
     /// Returns a data request from the pool with the given id, if it exists.
@@ -193,8 +230,8 @@ mod dr_tests {
         .unwrap();
         let value: GetDataRequestResponse = from_binary(&res).unwrap();
         assert_eq!(None, value.value);
-        let dr_binary_id: Hash = "".to_string();
-        let tally_binary_id: Hash = "".to_string();
+        let dr_binary_id: Hash = "dr_binary_id".to_string();
+        let tally_binary_id: Hash = "tally_binary_id".to_string();
         let dr_inputs: Bytes = Vec::new();
         let tally_inputs: Bytes = Vec::new();
 
@@ -261,8 +298,8 @@ mod dr_tests {
         .unwrap();
         let received_value: GetDataRequestResponse = from_binary(&res).unwrap();
 
-        let dr_binary_id: Hash = "".to_string();
-        let tally_binary_id: Hash = "".to_string();
+        let dr_binary_id: Hash = "dr_binary_id".to_string();
+        let tally_binary_id: Hash = "tally_binary_id".to_string();
         let dr_inputs: Bytes = Vec::new();
         let replication_factor: u16 = 3;
 
@@ -344,8 +381,8 @@ mod dr_tests {
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-        let dr_binary_id: Hash = "".to_string();
-        let tally_binary_id: Hash = "".to_string();
+        let dr_binary_id: Hash = "dr_binary_id".to_string();
+        let tally_binary_id: Hash = "tally_binary_id".to_string();
         let dr_inputs: Bytes = Vec::new();
         let tally_inputs: Bytes = Vec::new();
 
@@ -499,8 +536,8 @@ mod dr_tests {
 
         let payback_address: Bytes = Vec::new();
 
-        let dr_binary_id: Hash = "".to_string();
-        let tally_binary_id: Hash = "".to_string();
+        let dr_binary_id: Hash = "dr_binary_id".to_string();
+        let tally_binary_id: Hash = "tally_binary_id".to_string();
         let dr_inputs: Bytes = Vec::new();
         let tally_inputs: Bytes = Vec::new();
 

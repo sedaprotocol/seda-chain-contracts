@@ -9,7 +9,7 @@ use crate::error::ContractError;
 
 pub mod data_request_results {
 
-    use cosmwasm_std::{Addr, Env};
+    use cosmwasm_std::{Addr, Env, Event};
     use sha3::{Digest, Keccak256};
 
     use common::msg::{
@@ -19,9 +19,9 @@ pub mod data_request_results {
     use common::state::{DataResult, Reveal};
     use common::types::Bytes;
 
+    use crate::contract::CONTRACT_VERSION;
     use crate::{
         state::DATA_RESULTS,
-        types::{CommitmentEntity, DataResultEntity, RevealEntity},
         utils::{check_eligibility, hash_data_result, validate_sender},
         ContractError::{
             AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
@@ -54,18 +54,14 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
-        Ok(Response::new().add_attributes(vec![
-            ("action", "commit_data_result"),
-            (
-                "seda_commitment",
-                &serde_json::to_string(&CommitmentEntity {
-                    dr_id,
-                    executor: sender.to_string(),
-                    commitment,
-                })
-                .unwrap(),
-            ),
-        ]))
+        Ok(Response::new()
+            .add_attribute("action", "commit_data_result")
+            .add_event(Event::new("seda-commitment").add_attributes(vec![
+                ("version", CONTRACT_VERSION),
+                ("dr_id", dr_id.as_str()),
+                ("executor", sender.as_str()),
+                ("commitment", commitment.as_str()),
+            ])))
     }
 
     /// Posts a data result of a data request with an attached result.
@@ -111,7 +107,13 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
-        let mut dr_result_entity: DataResultEntity = None;
+        let mut events = vec![Event::new("seda-reveal").add_attributes(vec![
+            ("version", CONTRACT_VERSION),
+            ("dr_id", dr_id.as_str()),
+            ("executor", sender.as_str()),
+            ("reveal", serde_json::to_string(&reveal).unwrap().as_str()),
+        ])];
+
         if u16::try_from(dr.reveals.len()).unwrap() == dr.replication_factor {
             let block_height: u64 = env.block.height;
             let exit_code: u8 = 0;
@@ -123,35 +125,38 @@ pub mod data_request_results {
             let result_id = hash_data_result(&dr, block_height, exit_code, &result);
 
             let dr_result = DataResult {
-                result_id,
+                result_id: result_id.clone(),
                 dr_id: dr_id.clone(),
                 block_height,
                 exit_code,
-                result,
-                payback_address,
-                seda_payload,
+                result: result.clone(),
+                payback_address: payback_address.clone(),
+                seda_payload: seda_payload.clone(),
             };
-            dr_result_entity = Some(dr_result.clone());
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
             DATA_REQUESTS.remove(deps.storage, dr_id.clone());
+
+            events.push(Event::new("seda-data-result").add_attributes(vec![
+                ("version", CONTRACT_VERSION),
+                ("result_id", &result_id),
+                ("dr_id", &dr_id),
+                ("block_height", &block_height.to_string()),
+                ("exit_code", &exit_code.to_string()),
+                ("result", &serde_json::to_string(&result).unwrap()),
+                (
+                    "payback_address",
+                    &serde_json::to_string(&payback_address).unwrap(),
+                ),
+                (
+                    "seda_payload",
+                    &serde_json::to_string(&seda_payload).unwrap(),
+                ),
+            ]));
         }
 
-        Ok(Response::new().add_attributes(vec![
-            ("action", "reveal_data_result"),
-            (
-                "seda_reveal",
-                &serde_json::to_string(&RevealEntity {
-                    dr_id,
-                    executor: sender.to_string(),
-                    reveal,
-                })
-                .unwrap(),
-            ),
-            (
-                "seda_data_request_result",
-                &serde_json::to_string(&dr_result_entity).unwrap(),
-            ),
-        ]))
+        Ok(Response::new()
+            .add_attribute("action", "reveal_data_result")
+            .add_events(events))
     }
 
     /// Returns a data result from the results with the given id, if it exists.

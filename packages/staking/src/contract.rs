@@ -14,7 +14,7 @@ use cosmwasm_std::StdResult;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "staking";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

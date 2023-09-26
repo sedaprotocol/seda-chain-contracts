@@ -1,6 +1,5 @@
 use crate::tests::utils::{proper_instantiate, USER};
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse, PostDataRequestArgs};
-use common::state::DataRequest;
 use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
@@ -14,8 +13,8 @@ fn post_data_request() {
     let (mut app, proxy_contract) = proper_instantiate();
 
     // format inputs to post data request
-    let dr_binary_id: Hash = "".to_string();
-    let tally_binary_id: Hash = "".to_string();
+    let dr_binary_id: Hash = "dr_binary_id".to_string();
+    let tally_binary_id: Hash = "tally_binary_id".to_string();
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
     let replication_factor: u16 = 3;
@@ -71,9 +70,7 @@ fn post_data_request() {
     // TODO: this is an ugly way to get the dr_id.
     // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
     // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
-    let dr: DataRequest =
-        serde_json::from_str(&res.events.last().unwrap().attributes.last().unwrap().value).unwrap();
-    let dr_id = dr.dr_id.clone();
+    let dr_id = &res.events.last().unwrap().attributes[2].value;
 
     let msg = ProxyQueryMsg::GetDataRequest {
         dr_id: dr_id.clone(),
