@@ -14,8 +14,8 @@ use common::{
     },
 };
 use cosmwasm_std::{
-    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    StdResult, WasmMsg, WasmQuery,
+    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
+    Response, StdResult, SubMsg, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -27,6 +27,8 @@ use crate::{
 // version info
 const CONTRACT_NAME: &str = "proxy-contract";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const POST_DATA_REQUEST_REPLY_ID: u64 = 1u64;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -86,13 +88,21 @@ pub fn execute(
         // Delegated calls to contracts
 
         // DataRequests
-        ProxyExecuteMsg::PostDataRequest { posted_dr } => Ok(Response::new()
-            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&DataRequestsExecuteMsg::PostDataRequest { posted_dr })?,
-                funds: vec![],
-            }))
-            .add_attribute("action", "post_data_request")),
+        ProxyExecuteMsg::PostDataRequest { posted_dr } => {
+            // we create a submessage here rather than a fire-and-forget
+            // message to the DataRequest contract in order to return the dr_id
+            // in the data field of this call on the Proxy contract.
+            Ok(Response::new()
+                .add_submessage(SubMsg::reply_on_success(
+                    CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
+                        msg: to_binary(&DataRequestsExecuteMsg::PostDataRequest { posted_dr })?,
+                        funds: vec![],
+                    }),
+                    POST_DATA_REQUEST_REPLY_ID,
+                ))
+                .add_attribute("action", "post_data_request"))
+        }
         ProxyExecuteMsg::CommitDataResult { dr_id, commitment } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
@@ -315,6 +325,22 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: ProxySudoMsg) -> Result<Response, Con
             STAKING.save(deps.storage, &deps.api.addr_validate(&contract)?)?;
             Ok(Response::new().add_attribute("method", "set_staking"))
         }
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    println!("Reply: {:?}", msg);
+    match msg.id {
+        POST_DATA_REQUEST_REPLY_ID => {
+            println!("Reply: {:?}", msg.result);
+            Ok(
+                Response::new().set_data(to_binary(&IsDataRequestExecutorEligibleResponse {
+                    value: true,
+                })?),
+            )
+        }
+        id => Err(ContractError::UnknownReplyId(id.to_string())),
     }
 }
 

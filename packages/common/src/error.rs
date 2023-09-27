@@ -40,4 +40,6 @@ pub enum ContractError {
     ContractAlreadySet,
     #[error("Caller must be the contract creator")]
     NotContractCreator,
+    #[error("Unknown reply ID: {0}")]
+    UnknownReplyId(String),
 }
