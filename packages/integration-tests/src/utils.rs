@@ -1,5 +1,5 @@
 use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -173,4 +173,11 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 
     (app, proxy_template_contract)
+}
+
+pub fn get_dr_id(res: AppResponse) -> String {
+    // TODO: this is an ugly way to get the dr_id.
+    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
+    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
+    res.events.last().unwrap().attributes[2].value.clone()
 }

@@ -1,4 +1,6 @@
-use crate::tests::utils::{proper_instantiate, send_tokens, EXECUTOR_1, EXECUTOR_2, USER};
+use crate::tests::utils::{
+    get_dr_id, proper_instantiate, send_tokens, EXECUTOR_1, EXECUTOR_2, USER,
+};
 use common::msg::{
     GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
     PostDataRequestArgs,
@@ -92,10 +94,7 @@ fn commit_reveal_result() {
         .unwrap();
 
     // get dr_id
-    // TODO: this is an ugly way to get the dr_id.
-    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
-    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
-    let dr_id = &res.events.last().unwrap().attributes[2].value;
+    let dr_id = get_dr_id(res);
 
     // executor1 commits on the data request
     let reveal = "2000";
@@ -243,10 +242,7 @@ fn ineligible_post_data_result() {
         .unwrap();
 
     // get dr_id
-    // TODO: this is an ugly way to get the dr_id.
-    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
-    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
-    let dr_id = &res.events.last().unwrap().attributes[2].value;
+    let dr_id = get_dr_id(res);
 
     // ineligible shouldn't be able to post a data result
     let reveal = "2000";
