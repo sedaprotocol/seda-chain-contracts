@@ -36,8 +36,8 @@ pub mod staking {
 
         Ok(Response::new()
             .add_attribute("action", "deposit_and_stake")
-            .add_events(vec![
-                Event::new("seda-data-request-executor").add_attributes(vec![
+            .add_events([
+                Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
                     (
@@ -50,7 +50,7 @@ pub mod staking {
                         &executor.tokens_pending_withdrawal.to_string(),
                     ),
                 ]),
-                Event::new("seda-data-request-executor-deposit-and-stake").add_attributes(vec![
+                Event::new("seda-data-request-executor-deposit-and-stake").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
                     ("amount_deposited", &amount.to_string()),
@@ -87,8 +87,8 @@ pub mod staking {
         // TODO: emit when pending tokens can be withdrawn
         Ok(Response::new()
             .add_attribute("action", "unstake")
-            .add_events(vec![
-                Event::new("seda-data-request-executor").add_attributes(vec![
+            .add_events([
+                Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
                     (
@@ -101,7 +101,7 @@ pub mod staking {
                         &executor.tokens_pending_withdrawal.to_string(),
                     ),
                 ]),
-                Event::new("seda-data-request-executor-unstake").add_attributes(vec![
+                Event::new("seda-data-request-executor-unstake").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
                     ("amount_unstaked", &amount.to_string()),
@@ -144,8 +144,8 @@ pub mod staking {
         Ok(Response::new()
             .add_message(bank_msg)
             .add_attribute("action", "withdraw")
-            .add_events(vec![
-                Event::new("seda-data-request-executor").add_attributes(vec![
+            .add_events([
+                Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
                     (
@@ -158,7 +158,7 @@ pub mod staking {
                         &executor.tokens_pending_withdrawal.to_string(),
                     ),
                 ]),
-                Event::new("seda-data-request-executor-withdraw").add_attributes(vec![
+                Event::new("seda-data-request-executor-withdraw").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
                     ("amount_withdrawn", &amount.to_string()),

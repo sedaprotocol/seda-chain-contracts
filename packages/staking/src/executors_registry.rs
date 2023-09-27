@@ -51,15 +51,13 @@ pub mod data_request_executors {
 
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")
-            .add_event(
-                Event::new("seda-data-request-executor").add_attributes(vec![
-                    ("version", CONTRACT_VERSION),
-                    ("executor", sender.as_ref()),
-                    ("p2p_multi_address", &p2p_multi_address.unwrap_or_default()),
-                    ("tokens_staked", &amount.to_string()),
-                    ("tokens_pending_withdrawal", "0"),
-                ]),
-            ))
+            .add_event(Event::new("seda-data-request-executor").add_attributes([
+                ("version", CONTRACT_VERSION),
+                ("executor", sender.as_ref()),
+                ("p2p_multi_address", &p2p_multi_address.unwrap_or_default()),
+                ("tokens_staked", &amount.to_string()),
+                ("tokens_pending_withdrawal", "0"),
+            ])))
     }
 
     /// Unregisters a data request executor, with the requirement that no tokens are staked or pending withdrawal.
@@ -81,10 +79,8 @@ pub mod data_request_executors {
         Ok(Response::new()
             .add_attribute("action", "unregister_data_request_executor")
             .add_event(
-                Event::new("seda-unregister-data-request-executor").add_attributes(vec![
-                    ("version", CONTRACT_VERSION),
-                    ("executor", sender.as_ref()),
-                ]),
+                Event::new("seda-unregister-data-request-executor")
+                    .add_attributes([("version", CONTRACT_VERSION), ("executor", sender.as_ref())]),
             ))
     }
 

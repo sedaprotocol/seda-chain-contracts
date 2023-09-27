@@ -56,7 +56,7 @@ pub mod data_request_results {
 
         Ok(Response::new()
             .add_attribute("action", "commit_data_result")
-            .add_event(Event::new("seda-commitment").add_attributes(vec![
+            .add_event(Event::new("seda-commitment").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", dr_id.as_str()),
                 ("executor", sender.as_str()),
@@ -107,7 +107,7 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
-        let mut events = vec![Event::new("seda-reveal").add_attributes(vec![
+        let mut events = vec![Event::new("seda-reveal").add_attributes([
             ("version", CONTRACT_VERSION),
             ("dr_id", dr_id.as_str()),
             ("executor", sender.as_str()),
@@ -136,7 +136,7 @@ pub mod data_request_results {
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
             DATA_REQUESTS.remove(deps.storage, dr_id.clone());
 
-            events.push(Event::new("seda-data-result").add_attributes(vec![
+            events.push(Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("result_id", &result_id),
                 ("dr_id", &dr_id),

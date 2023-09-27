@@ -114,7 +114,7 @@ pub mod data_requests {
             .set_data(to_binary(&PostDataRequestResponse {
                 dr_id: posted_dr.dr_id.clone(),
             })?)
-            .add_event(Event::new("seda-data-request").add_attributes(vec![
+            .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &posted_dr.dr_id),
                 ("dr_binary_id", &posted_dr.dr_binary_id),
