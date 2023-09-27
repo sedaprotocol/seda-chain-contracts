@@ -107,12 +107,14 @@ pub mod data_request_results {
 
         DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
 
-        let mut events = vec![Event::new("seda-reveal").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("dr_id", dr_id.as_str()),
-            ("executor", sender.as_str()),
-            ("reveal", serde_json::to_string(&reveal).unwrap().as_str()),
-        ])];
+        let mut response = Response::new()
+            .add_attribute("action", "reveal_data_result")
+            .add_event(Event::new("seda-reveal").add_attributes([
+                ("version", CONTRACT_VERSION),
+                ("dr_id", dr_id.as_str()),
+                ("executor", sender.as_str()),
+                ("reveal", serde_json::to_string(&reveal).unwrap().as_str()),
+            ]));
 
         if u16::try_from(dr.reveals.len()).unwrap() == dr.replication_factor {
             let block_height: u64 = env.block.height;
@@ -136,7 +138,7 @@ pub mod data_request_results {
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
             DATA_REQUESTS.remove(deps.storage, dr_id.clone());
 
-            events.push(Event::new("seda-data-result").add_attributes([
+            response = response.add_event(Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("result_id", &result_id),
                 ("dr_id", &dr_id),
@@ -154,9 +156,7 @@ pub mod data_request_results {
             ]));
         }
 
-        Ok(Response::new()
-            .add_attribute("action", "reveal_data_result")
-            .add_events(events))
+        Ok(response)
     }
 
     /// Returns a data result from the results with the given id, if it exists.
