@@ -48,10 +48,10 @@ pub mod data_requests {
         }
 
         // require dr_binary_id and tally_binary_id to be non-empty
-        if posted_dr.dr_binary_id == *"" {
+        if posted_dr.dr_binary_id.is_empty() {
             return Err(ContractError::EmptyArg("dr_binary_id".to_string()));
         }
-        if posted_dr.tally_binary_id == *"" {
+        if posted_dr.tally_binary_id.is_empty() {
             return Err(ContractError::EmptyArg("tally_binary_id".to_string()));
         }
 
