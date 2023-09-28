@@ -1,6 +1,8 @@
 use crate::types::Hash;
 use cosmwasm_std::StdError;
+use cw_utils::ParseReplyError;
 use thiserror::Error;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     // staking contract errors
@@ -42,4 +44,8 @@ pub enum ContractError {
     NotContractCreator,
     #[error("Unknown reply ID: {0}")]
     UnknownReplyId(String),
+    #[error("Unexpected error: {0}")]
+    UnexpectedError(String),
+    #[error(transparent)]
+    ParseReplyError(#[from] ParseReplyError),
 }

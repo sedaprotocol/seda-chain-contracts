@@ -3,7 +3,6 @@ use cosmwasm_std::{to_binary, Deps, DepsMut, MessageInfo, Order, Response, StdRe
 
 use crate::state::{DATA_REQUESTS, DATA_REQUESTS_COUNT};
 
-use crate::msg::PostDataRequestResponse;
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use common::state::DataRequest;
 use common::types::Hash;
@@ -110,9 +109,7 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(to_binary(&PostDataRequestResponse {
-                dr_id: posted_dr.dr_id.clone(),
-            })?)
+            .set_data(to_binary(&posted_dr.dr_id)?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &posted_dr.dr_id),

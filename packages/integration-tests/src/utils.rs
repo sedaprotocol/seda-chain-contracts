@@ -89,7 +89,8 @@ pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
         proxy_contract::contract::instantiate,
         proxy_contract::contract::query,
     )
-    .with_sudo(proxy_contract::contract::sudo);
+    .with_sudo(proxy_contract::contract::sudo)
+    .with_reply(proxy_contract::contract::reply);
     Box::new(contract)
 }
 
@@ -210,10 +211,17 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
 }
 
 pub fn get_dr_id(res: AppResponse) -> String {
-    // TODO: this is an ugly way to get the dr_id.
-    // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
-    // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
-    res.events.last().unwrap().attributes[2].value.clone()
+    let binary = res.data.unwrap();
+
+    // I don't know why protobuf adds 2 bytes to the beginning of the data payload but it does
+    let binary = &binary.to_vec()[2..];
+
+    let dr_id = String::from_utf8(binary.to_vec()).unwrap();
+
+    // remove first and last char (they are quotes)
+    let dr_id = &dr_id[1..dr_id.len() - 1];
+
+    dr_id.to_string()
 }
 
 pub fn calculate_commitment(reveal: &str, salt: &str) -> String {

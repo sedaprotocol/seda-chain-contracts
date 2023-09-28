@@ -18,6 +18,7 @@ use cosmwasm_std::{
     Response, StdResult, SubMsg, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
+use cw_utils::parse_reply_execute_data;
 
 use crate::{
     msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg},
@@ -28,7 +29,7 @@ use crate::{
 const CONTRACT_NAME: &str = "proxy-contract";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const POST_DATA_REQUEST_REPLY_ID: u64 = 1u64;
+const POST_DATA_REQUEST_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -330,15 +331,12 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: ProxySudoMsg) -> Result<Response, Con
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
-    println!("Reply: {:?}", msg);
     match msg.id {
         POST_DATA_REQUEST_REPLY_ID => {
-            println!("Reply: {:?}", msg.result);
-            Ok(
-                Response::new().set_data(to_binary(&IsDataRequestExecutorEligibleResponse {
-                    value: true,
-                })?),
-            )
+            let data = parse_reply_execute_data(msg)?
+                .data
+                .ok_or_else(|| ContractError::UnexpectedError("Data is None".to_string()))?;
+            Ok(Response::new().set_data(data))
         }
         id => Err(ContractError::UnknownReplyId(id.to_string())),
     }
