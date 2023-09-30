@@ -11,10 +11,10 @@ use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use data_requests::state::DataRequestInputs;
 use data_requests::utils::hash_data_request;
+use data_requests::utils::string_to_hash;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 use sha3::{Digest, Keccak256};
 use staking::consts::MINIMUM_STAKE_TO_REGISTER;
-
 #[test]
 fn commit_reveal_result() {
     let (mut app, proxy_contract) = proper_instantiate();
@@ -35,16 +35,16 @@ fn commit_reveal_result() {
 
     // can't commit on a data request if it doesn't exist
     let msg = ProxyExecuteMsg::CommitDataResult {
-        dr_id: "nonexistent".to_string(),
-        commitment: "result".to_string(),
+        dr_id: string_to_hash("nonexistent".to_owned()),
+        commitment: string_to_hash("result".to_owned()),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     let res = app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone());
     assert!(res.is_err());
 
     // format inputs to post data request with replication factor of 2
-    let dr_binary_id: Hash = "dr_binary_id".to_string();
-    let tally_binary_id: Hash = "tally_binary_id".to_string();
+    let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+    let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
     let replication_factor: u16 = 2;
@@ -70,7 +70,7 @@ fn commit_reveal_result() {
         seda_payload: seda_payload.clone(),
         payback_address: payback_address.clone(),
     };
-    let constructed_dr_id: String = hash_data_request(dr_inputs1);
+    let constructed_dr_id: Hash = hash_data_request(dr_inputs1);
     let payback_address: Bytes = Vec::new();
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         dr_id: constructed_dr_id,
@@ -94,7 +94,7 @@ fn commit_reveal_result() {
         .unwrap();
 
     // get dr_id
-    let dr_id = get_dr_id(res);
+    let dr_id = get_dr_id(res).clone();
 
     // executor1 commits on the data request
     let reveal = "2000";
@@ -105,8 +105,8 @@ fn commit_reveal_result() {
     let digest = hasher.finalize();
     let commitment1 = format!("0x{}", hex::encode(digest));
     let msg = ProxyExecuteMsg::CommitDataResult {
-        dr_id: dr_id.to_string(),
-        commitment: commitment1,
+        dr_id: string_to_hash(dr_id.clone()),
+        commitment: string_to_hash(commitment1),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg)
@@ -121,8 +121,8 @@ fn commit_reveal_result() {
     let digest = hasher.finalize();
     let commitment2 = format!("0x{}", hex::encode(digest));
     let msg = ProxyExecuteMsg::CommitDataResult {
-        dr_id: dr_id.to_string(),
-        commitment: commitment2,
+        dr_id: string_to_hash(dr_id.clone()),
+        commitment: string_to_hash(commitment2),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_2), cosmos_msg)
@@ -130,7 +130,7 @@ fn commit_reveal_result() {
 
     // should be able to fetch committed data result
     let msg = ProxyQueryMsg::GetCommittedDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id: string_to_hash(dr_id.clone()),
         executor: Addr::unchecked(EXECUTOR_1),
     };
     let res: GetCommittedDataResultResponse = app
@@ -146,7 +146,7 @@ fn commit_reveal_result() {
         salt: "executor1".to_string(),
     };
     let msg = ProxyExecuteMsg::RevealDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id: string_to_hash(dr_id.clone()),
         reveal: reveal1,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
@@ -155,7 +155,7 @@ fn commit_reveal_result() {
 
     // should be able to fetch revealed data result
     let msg = ProxyQueryMsg::GetRevealedDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id: string_to_hash(dr_id.clone()),
         executor: Addr::unchecked(EXECUTOR_1),
     };
     let res: GetRevealedDataResultResponse = app
@@ -170,7 +170,7 @@ fn commit_reveal_result() {
         salt: "executor2".to_string(),
     };
     let msg = ProxyExecuteMsg::RevealDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id: string_to_hash(dr_id.clone()),
         reveal: reveal2,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
@@ -179,13 +179,14 @@ fn commit_reveal_result() {
 
     // now data request is resolved, let's check
     let msg = ProxyQueryMsg::GetResolvedDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id: string_to_hash(dr_id.clone()),
     };
     let res: GetResolvedDataResultResponse = app
         .wrap()
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
-    assert_eq!(res.value.dr_id, dr_id.to_string());
+    let dr_id_bytes: [u8; 32] = string_to_hash(dr_id.clone());
+    assert_eq!(res.value.dr_id, dr_id_bytes);
 }
 
 #[test]
@@ -193,8 +194,8 @@ fn ineligible_post_data_result() {
     let (mut app, proxy_contract) = proper_instantiate();
 
     // post a data request
-    let dr_binary_id: Hash = "dr_binary_id".to_string();
-    let tally_binary_id: Hash = "tally_binary_id".to_string();
+    let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+    let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
     let replication_factor: u16 = 2;
@@ -220,7 +221,7 @@ fn ineligible_post_data_result() {
         seda_payload: seda_payload.clone(),
         payback_address: payback_address.clone(),
     };
-    let constructed_dr_id: String = hash_data_request(dr_inputs1);
+    let constructed_dr_id: Hash = hash_data_request(dr_inputs1);
     let payback_address: Bytes = Vec::new();
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         dr_id: constructed_dr_id,
@@ -253,8 +254,8 @@ fn ineligible_post_data_result() {
     let digest = hasher.finalize();
     let commitment1 = format!("0x{}", hex::encode(digest));
     let msg = ProxyExecuteMsg::CommitDataResult {
-        dr_id: dr_id.to_string(),
-        commitment: commitment1,
+        dr_id: string_to_hash(dr_id),
+        commitment: string_to_hash(commitment1),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     let res = app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg);

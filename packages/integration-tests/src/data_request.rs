@@ -4,17 +4,17 @@ use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use data_requests::state::DataRequestInputs;
-use data_requests::utils::hash_data_request;
+use data_requests::utils::string_to_hash;
+use data_requests::utils::{decode_string, hash_data_request};
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 use sha3::{Digest, Keccak256};
-
 #[test]
 fn post_data_request() {
     let (mut app, proxy_contract) = proper_instantiate();
 
     // format inputs to post data request
-    let dr_binary_id: Hash = "dr_binary_id".to_string();
-    let tally_binary_id: Hash = "tally_binary_id".to_string();
+    let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+    let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
     let replication_factor: u16 = 3;
@@ -40,7 +40,7 @@ fn post_data_request() {
         seda_payload: seda_payload.clone(),
         payback_address: payback_address.clone(),
     };
-    let constructed_dr_id: String = hash_data_request(dr_inputs1);
+    let constructed_dr_id: Hash = hash_data_request(dr_inputs1);
     let payback_address: Bytes = Vec::new();
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         dr_id: constructed_dr_id,
@@ -55,6 +55,7 @@ fn post_data_request() {
         seda_payload,
         payback_address,
     };
+    println!("************constructed_dr_id {:?}", constructed_dr_id);
 
     // post the data request
     let msg = ProxyExecuteMsg::PostDataRequest { posted_dr };
@@ -68,10 +69,20 @@ fn post_data_request() {
 
     // should be able to fetch data request
     let dr_id = get_dr_id(res);
+    println!("************dr_id string {:?}", dr_id);
+    println!(
+        "************dr_id bytes {:?}",
+        string_to_hash(dr_id.clone())
+    );
+    println!(
+        "************dr_id decoded {:?}",
+        decode_string(dr_id.clone())
+    );
 
     let msg = ProxyQueryMsg::GetDataRequest {
-        dr_id: dr_id.clone(),
+        dr_id: string_to_hash(dr_id.clone()),
     };
+
     let res: GetDataRequestResponse = app
         .wrap()
         .query_wasm_smart(proxy_contract.addr(), &msg)
@@ -88,11 +99,13 @@ fn post_data_request() {
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
     assert_eq!(res.value.len(), 1);
-    assert_eq!(res.value.first().unwrap().dr_id, dr_id.clone());
+    let dr_id_bytes: [u8; 32] = string_to_hash(dr_id);
+
+    assert_eq!(res.value.first().unwrap().dr_id, dr_id_bytes);
 
     // non-existent data request should fail
     let msg = ProxyQueryMsg::GetDataRequest {
-        dr_id: "non-existent".to_string(),
+        dr_id: string_to_hash("non-existent".to_owned()),
     };
     let res: GetDataRequestResponse = app
         .wrap()

@@ -10,7 +10,7 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::contract::CONTRACT_VERSION;
+    use crate::{contract::CONTRACT_VERSION, utils::hash_to_string};
     use common::msg::PostDataRequestArgs;
     use cosmwasm_std::Event;
     use std::collections::HashMap;
@@ -116,9 +116,15 @@ pub mod data_requests {
             })?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", &posted_dr.dr_id),
-                ("dr_binary_id", &posted_dr.dr_binary_id),
-                ("tally_binary_id", &posted_dr.tally_binary_id),
+                ("dr_id", &hash_to_string(posted_dr.dr_id)),
+                (
+                    "dr_binary_id",
+                    &hash_to_string(posted_dr.dr_binary_id.into()),
+                ),
+                (
+                    "tally_binary_id",
+                    &hash_to_string(posted_dr.tally_binary_id.into()),
+                ),
                 (
                     "dr_inputs",
                     &serde_json::to_string(&posted_dr.dr_inputs).unwrap(),
@@ -195,6 +201,7 @@ mod dr_tests {
     use crate::msg::InstantiateMsg;
     use crate::state::DataRequestInputs;
     use crate::utils::hash_data_request;
+    use crate::utils::string_to_hash;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::DataRequestsQueryMsg as QueryMsg;
     use common::msg::GetDataRequestResponse;
@@ -217,21 +224,21 @@ mod dr_tests {
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let dr_id: [u8; 32] = string_to_hash(
+            "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_owned(),
+        );
 
         // data request with id 0x69... does not yet exist
         let res = query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::GetDataRequest {
-                dr_id: "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"
-                    .to_string(),
-            },
+            QueryMsg::GetDataRequest { dr_id },
         )
         .unwrap();
         let value: GetDataRequestResponse = from_binary(&res).unwrap();
         assert_eq!(None, value.value);
-        let dr_binary_id: Hash = "dr_binary_id".to_string();
-        let tally_binary_id: Hash = "tally_binary_id".to_string();
+        let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+        let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
         let dr_inputs: Bytes = Vec::new();
         let tally_inputs: Bytes = Vec::new();
 
@@ -298,8 +305,8 @@ mod dr_tests {
         .unwrap();
         let received_value: GetDataRequestResponse = from_binary(&res).unwrap();
 
-        let dr_binary_id: Hash = "dr_binary_id".to_string();
-        let tally_binary_id: Hash = "tally_binary_id".to_string();
+        let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+        let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
         let dr_inputs: Bytes = Vec::new();
         let replication_factor: u16 = 3;
 
@@ -362,7 +369,7 @@ mod dr_tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetDataRequest {
-                dr_id: "nonexistent".to_string(),
+                dr_id: string_to_hash("nonexistent".to_owned()),
             },
         )
         .unwrap();
@@ -381,8 +388,8 @@ mod dr_tests {
         };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-        let dr_binary_id: Hash = "dr_binary_id".to_string();
-        let tally_binary_id: Hash = "tally_binary_id".to_string();
+        let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+        let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
         let dr_inputs: Bytes = Vec::new();
         let tally_inputs: Bytes = Vec::new();
 
@@ -536,8 +543,8 @@ mod dr_tests {
 
         let payback_address: Bytes = Vec::new();
 
-        let dr_binary_id: Hash = "dr_binary_id".to_string();
-        let tally_binary_id: Hash = "tally_binary_id".to_string();
+        let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
+        let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
         let dr_inputs: Bytes = Vec::new();
         let tally_inputs: Bytes = Vec::new();
 
@@ -835,9 +842,9 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
         instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let dr_binary_id: Hash = "dr_binary_id".to_string();
+        let dr_binary_id: Hash = string_to_hash("dr_binary_id".to_owned());
         let dr_inputs: Bytes = "dr_inputs".to_string().into_bytes();
-        let tally_binary_id: Hash = "tally_binary_id".to_string();
+        let tally_binary_id: Hash = string_to_hash("tally_binary_id".to_owned());
         let tally_inputs: Bytes = "tally_inputs".to_string().into_bytes();
 
         let replication_factor: u16 = 123;
@@ -874,6 +881,6 @@ mod dr_tests {
 
         // reconstruct dr_id
         let constructed_dr_id1 = hash_data_request(dr_inputs1);
-        println!("constructed_dr_id1: {}", constructed_dr_id1);
+        println!("constructed_dr_id1: {:#?}", constructed_dr_id1);
     }
 }

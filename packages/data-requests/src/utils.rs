@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
-use common::types::Bytes;
+use common::types::{Bytes, Hash};
 use cosmwasm_std::{to_binary, Addr, Coin, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
@@ -20,7 +20,7 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
     Ok(query_response.value)
 }
 
-pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
+pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(posted_dr.dr_binary_id);
     hasher.update(posted_dr.dr_inputs);
@@ -31,7 +31,8 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
     hasher.update(posted_dr.tally_binary_id);
     hasher.update(posted_dr.tally_inputs);
 
-    format!("0x{}", hex::encode(hasher.finalize()))
+    // format!("0x{}", hex::encode(hasher.finalize()))
+    hasher.finalize().into()
 }
 
 pub fn hash_data_result(
@@ -39,15 +40,33 @@ pub fn hash_data_result(
     block_height: u64,
     exit_code: u8,
     result: &Bytes,
-) -> String {
+) -> Hash {
     let mut hasher = Keccak256::new();
-    hasher.update(dr.dr_id.as_bytes());
+    hasher.update(dr.dr_id);
     hasher.update(block_height.to_be_bytes());
     hasher.update(exit_code.to_be_bytes());
     hasher.update(result);
     hasher.update(dr.payback_address.clone());
     hasher.update(dr.seda_payload.clone());
-    format!("0x{}", hex::encode(hasher.finalize()))
+    // format!("0x{}", hex::encode(hasher.finalize()))
+    hasher.finalize().into()
+}
+
+pub fn string_to_hash(input: String) -> Hash {
+    let mut hasher = Keccak256::new();
+    hasher.update(input.as_bytes());
+    hasher.finalize().into()
+}
+
+pub fn decode_string(input: String) -> Hash {
+    let mut decoded: Hash = [0; 32];
+    hex::decode_to_slice(input, &mut decoded).unwrap();
+    decoded
+}
+
+pub fn hash_to_string(input: Hash) -> String {
+    format!("{}", hex::encode(input))
+    // String::from_utf8(input.to_vec())
 }
 
 pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {

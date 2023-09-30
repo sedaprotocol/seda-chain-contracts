@@ -26,7 +26,7 @@ pub enum DataRequestsExecuteMsg {
     },
     CommitDataResult {
         dr_id: Hash,
-        commitment: String,
+        commitment: Hash,
         sender: Option<String>,
     },
     RevealDataResult {

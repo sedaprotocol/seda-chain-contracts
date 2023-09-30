@@ -25,7 +25,7 @@ pub enum ProxyExecuteMsg {
 
     // DataRequests
     PostDataRequest { posted_dr: PostDataRequestArgs },
-    CommitDataResult { dr_id: Hash, commitment: String },
+    CommitDataResult { dr_id: Hash, commitment: Hash },
     RevealDataResult { dr_id: Hash, reveal: Reveal },
     // Staking
     RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
