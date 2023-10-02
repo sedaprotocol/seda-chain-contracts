@@ -54,6 +54,10 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Output Contract Name
+        run: |
+          echo "Contract is ${{ github.event.inputs.contract }}"
+
       - name: Set Environment Variables
         run: |
           case "${{ github.event.inputs.network }}" in
