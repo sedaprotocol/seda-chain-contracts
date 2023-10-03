@@ -265,3 +265,56 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> cosmwasm_std::StdResu
         }
     }
 }
+
+#[cfg(test)]
+mod init_tests {
+    use super::*;
+    use cosmwasm_std::coins;
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+
+    #[test]
+    #[should_panic(expected = "ContractAlreadySet")]
+    fn contract_already_set() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(1000, "token"));
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let msg = ProxyExecuteMsg::SetDataRequests {
+            contract: "contract".to_string(),
+        };
+        let info = mock_info("creator", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let msg = ProxyExecuteMsg::SetDataRequests {
+            contract: "contract2".to_string(),
+        };
+        let info = mock_info("creator", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "NoFunds")]
+    fn no_funds_provided() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(1000, "token"));
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let msg = ProxyExecuteMsg::SetDataRequests {
+            contract: "contract".to_string(),
+        };
+        let info = mock_info("creator", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let msg = ProxyExecuteMsg::DepositAndStake;
+        let info = mock_info("anyone", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+}

@@ -2,7 +2,7 @@ use common::error::ContractError;
 use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
 use common::types::Bytes;
-use cosmwasm_std::{to_binary, Addr, Coin, DepsMut, QueryRequest, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
 use crate::state::{DataRequestInputs, PROXY_CONTRACT};
@@ -48,14 +48,6 @@ pub fn hash_data_result(
     hasher.update(dr.payback_address.clone());
     hasher.update(dr.seda_payload.clone());
     format!("0x{}", hex::encode(hasher.finalize()))
-}
-
-pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {
-    let amount: Option<u128> = funds
-        .iter()
-        .find(|coin| coin.denom == token)
-        .map(|coin| coin.amount.u128());
-    amount.ok_or(ContractError::NoFunds)
 }
 
 pub fn validate_sender(

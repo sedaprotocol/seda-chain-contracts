@@ -307,4 +307,42 @@ mod staking_tests {
             ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, info.sender.clone());
         assert!(!executor_is_eligible);
     }
+
+    #[test]
+    #[should_panic(expected = "NoFunds")]
+    fn no_funds_provided() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+
+        let msg = ExecuteMsg::DepositAndStake { sender: None };
+        let info = mock_info("anyone", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "InsufficientFunds")]
+    fn insufficient_funds() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+
+        // register a data request executor
+        let info = mock_info("anyone", &coins(1, "token"));
+        let msg = ExecuteMsg::RegisterDataRequestExecutor {
+            p2p_multi_address: Some("address".to_string()),
+            sender: None,
+        };
+        execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+
+        // try unstaking more than staked
+        let info = mock_info("anyone", &coins(0, "token"));
+        let msg = ExecuteMsg::Unstake {
+            amount: 2,
+            sender: None,
+        };
+        execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+    }
 }

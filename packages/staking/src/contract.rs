@@ -73,7 +73,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg(test)]
 mod init_tests {
     use crate::helpers::{helper_register_executor, instantiate_staking_contract};
-
+    use common::error::ContractError;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
@@ -103,7 +103,7 @@ mod init_tests {
             Some("address".to_string()),
             Some("sender".to_string()),
         );
-        assert!(res.is_err());
+        assert_eq!(res.is_err_and(|x| x == ContractError::NotProxy), true);
 
         // register a data request executor from the proxy
         let info = mock_info("proxy", &coins(2, "token"));

@@ -1,8 +1,9 @@
 use crate::tests::utils::calculate_dr_id_and_args;
 use crate::tests::utils::{
     calculate_commitment, get_dr_id, helper_commit_result, helper_post_dr, helper_reveal_result,
-    proper_instantiate, send_tokens, EXECUTOR_1, EXECUTOR_2, USER,
+    proper_instantiate, send_tokens, EXECUTOR_1, EXECUTOR_2, EXECUTOR_3, USER,
 };
+use common::error::ContractError;
 use common::msg::{
     GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
 };
@@ -16,9 +17,10 @@ use staking::consts::MINIMUM_STAKE_TO_REGISTER;
 fn commit_reveal_result() {
     let (mut app, proxy_contract) = proper_instantiate();
 
-    // send tokens from USER to executor1 and executor2 so they can register
+    // send tokens from USER to executor1, executor2, executor3 so they can register
     send_tokens(&mut app, USER, EXECUTOR_1, 1);
     send_tokens(&mut app, USER, EXECUTOR_2, 1);
+    send_tokens(&mut app, USER, EXECUTOR_3, 1);
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
         p2p_multi_address: Some("address".to_string()),
     };
@@ -27,7 +29,9 @@ fn commit_reveal_result() {
         .unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
         .unwrap();
-    app.execute(Addr::unchecked(EXECUTOR_2), cosmos_msg)
+    app.execute(Addr::unchecked(EXECUTOR_2), cosmos_msg.clone())
+        .unwrap();
+    app.execute(Addr::unchecked(EXECUTOR_3), cosmos_msg)
         .unwrap();
 
     let res = helper_commit_result(
@@ -52,8 +56,8 @@ fn commit_reveal_result() {
     // get dr_id
     let dr_id = get_dr_id(res);
 
+    // executor 1 commits
     let commitment1 = calculate_commitment("2000", EXECUTOR_1);
-
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
@@ -63,16 +67,46 @@ fn commit_reveal_result() {
     )
     .unwrap();
 
-    let commitment2 = calculate_commitment("3000", EXECUTOR_2);
+    // can't reveal until replication factor is reached
+    let reveal1 = Reveal {
+        reveal: "2000".to_string(),
+        salt: "executor1".to_string(),
+    };
+    let res = helper_reveal_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id.to_string(),
+        reveal1.clone(),
+        Addr::unchecked(EXECUTOR_1),
+    );
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::RevealNotStarted)
+    );
 
+    // executor 2 commits
+    let commitment2 = calculate_commitment("3000", EXECUTOR_2);
     helper_commit_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id.to_string(),
+        commitment2.clone(),
+        Addr::unchecked(EXECUTOR_2),
+    )
+    .unwrap();
+
+    // can't commit on the data request a second time
+    let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
         dr_id.to_string(),
         commitment2,
         Addr::unchecked(EXECUTOR_2),
-    )
-    .unwrap();
+    );
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::AlreadyCommitted)
+    );
 
     // should be able to fetch committed data result
     let msg = ProxyQueryMsg::GetCommittedDataResult {
@@ -86,20 +120,27 @@ fn commit_reveal_result() {
     assert!(res.value.is_some());
     println!("res: {:?}", res);
 
-    // executor1 reveals data result
-    let reveal1 = Reveal {
-        reveal: "2000".to_string(),
-        salt: "executor1".to_string(),
-    };
-
     helper_reveal_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id.to_string(),
+        reveal1.clone(),
+        Addr::unchecked(EXECUTOR_1),
+    )
+    .unwrap();
+
+    // can't reveal on the data request a second time
+    let res = helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
         dr_id.to_string(),
         reveal1,
         Addr::unchecked(EXECUTOR_1),
-    )
-    .unwrap();
+    );
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::AlreadyRevealed)
+    );
 
     // should be able to fetch revealed data result
     let msg = ProxyQueryMsg::GetRevealedDataResult {
@@ -111,6 +152,38 @@ fn commit_reveal_result() {
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
     assert!(res.value.is_some());
+
+    // executor 3 can't reveal since no commit was posted
+    let reveal3 = Reveal {
+        reveal: "4000".to_string(),
+        salt: "executor3".to_string(),
+    };
+    let msg = ProxyExecuteMsg::RevealDataResult {
+        dr_id: dr_id.to_string(),
+        reveal: reveal3.clone(),
+    };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    let res = app.execute(Addr::unchecked(EXECUTOR_3), cosmos_msg.clone());
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::NotCommitted)
+    );
+
+    // reveal must match commitment
+    let reveal2 = Reveal {
+        reveal: "9999".to_string(),
+        salt: "executor2".to_string(),
+    };
+    let msg = ProxyExecuteMsg::RevealDataResult {
+        dr_id: dr_id.to_string(),
+        reveal: reveal2,
+    };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    let res = app.execute(Addr::unchecked(EXECUTOR_2), cosmos_msg);
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::RevealMismatch)
+    );
 
     // executor 2 reveals data result
     let reveal2 = Reveal {
@@ -165,5 +238,8 @@ fn ineligible_post_data_result() {
         Addr::unchecked(EXECUTOR_1),
     );
 
-    assert!(res.is_err());
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::IneligibleExecutor)
+    );
 }

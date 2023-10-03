@@ -193,6 +193,7 @@ mod dr_tests {
     use crate::helpers::get_dr;
     use crate::helpers::get_drs_from_pool;
     use crate::helpers::instantiate_dr_contract;
+    use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
     use cosmwasm_std::coins;
@@ -212,14 +213,21 @@ mod dr_tests {
         assert_eq!(None, value.value);
 
         let (constructed_dr_id, dr_args) = calculate_dr_id_and_args(1, 3);
-        // someone posts a data request
+
         let info = mock_info("anyone", &coins(2, "token"));
 
         let msg = ExecuteMsg::PostDataRequest { posted_dr: dr_args };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // someone posts a data request
+        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone()).unwrap();
+
+        // expect an error when trying to post it again
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert_eq!(
+            res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists),
+            true
+        );
 
         // should be able to fetch data request with id 0x69...
-
         let received_value: GetDataRequestResponse =
             get_dr(deps.as_mut(), constructed_dr_id.clone());
 
@@ -341,5 +349,41 @@ mod dr_tests {
         let (constructed_dr_id, _) = calculate_dr_id_and_args(1, 3);
 
         println!("constructed_dr_id1: {}", constructed_dr_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "InvalidDataRequestId")]
+    fn invalid_data_request_id() {
+        let mut deps = mock_dependencies();
+        let info = mock_info("creator", &coins(2, "token"));
+
+        // instantiate contract
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
+
+        // calculate args then modify the dr_id to be incorrect
+        let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
+        posted_dr.dr_id = "invalid hash".to_string();
+
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
+        let info = mock_info("anyone", &coins(2, "token"));
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "EmptyArg")]
+    fn empty_arg() {
+        let mut deps = mock_dependencies();
+        let info = mock_info("creator", &coins(2, "token"));
+
+        // instantiate contract
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
+
+        // calculate args then modify the dr_binary_id to be empty
+        let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
+        posted_dr.dr_binary_id = "".to_string();
+
+        let msg = ExecuteMsg::PostDataRequest { posted_dr };
+        let info = mock_info("anyone", &coins(2, "token"));
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
 }

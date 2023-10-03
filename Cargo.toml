@@ -19,6 +19,7 @@ incremental = false
 overflow-checks = true
 
 [workspace.dependencies]
+anyhow = "1.0.75"
 common = { path = "./packages/common" }
 cosmwasm-schema = "1.2"
 cosmwasm-std = { version = "1.4", features = ["staking"] }

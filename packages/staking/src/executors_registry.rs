@@ -107,12 +107,16 @@ pub mod data_request_executors {
 #[cfg(test)]
 mod executers_tests {
     use super::*;
+    use crate::contract::execute;
     use crate::helpers::helper_get_executor;
     use crate::helpers::helper_register_executor;
     use crate::helpers::helper_unregister_executor;
     use crate::helpers::helper_unstake;
     use crate::helpers::helper_withdraw;
     use crate::helpers::instantiate_staking_contract;
+    use common::error::ContractError;
+    use common::msg::StakingExecuteMsg as ExecuteMsg;
+    use cosmwasm_std::testing::mock_env;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
     use cosmwasm_std::{coins, Addr};
 
@@ -177,6 +181,15 @@ mod executers_tests {
                     tokens_pending_withdrawal: 0
                 })
             }
+        );
+
+        // can't unregister the data request executor if it has staked tokens
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::UnregisterDataRequestExecutor { sender: None };
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert_eq!(
+            res.is_err_and(|x| x == ContractError::ExecutorHasTokens),
+            true
         );
 
         // unstake and withdraw all tokens
