@@ -54,14 +54,14 @@ pub fn calculate_dr_id_and_args(
         dr_id: constructed_dr_id.clone(),
         dr_binary_id,
         tally_binary_id,
-        dr_inputs: dr_inputs.clone(),
-        tally_inputs: tally_inputs.clone(),
+        dr_inputs,
+        tally_inputs,
         memo,
         replication_factor,
         gas_price,
         gas_limit,
         seda_payload,
-        payback_address: payback_address,
+        payback_address,
     };
 
     (constructed_dr_id, posted_dr)
@@ -74,7 +74,7 @@ pub fn construct_dr(constructed_dr_id: String, dr_args: PostDataRequestArgs) -> 
     DataRequest {
         dr_id: constructed_dr_id,
 
-        dr_binary_id: dr_args.dr_binary_id.clone(),
+        dr_binary_id: dr_args.dr_binary_id,
         tally_binary_id: dr_args.tally_binary_id,
         dr_inputs: dr_args.dr_inputs,
         tally_inputs: dr_args.tally_inputs,
