@@ -1,8 +1,13 @@
+use anyhow::Error;
+use common::msg::PostDataRequestArgs;
+use common::state::Reveal;
 use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
+use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
+use sha3::Digest;
+use sha3::Keccak256;
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 pub const EXECUTOR_2: &str = "executor2";
@@ -128,7 +133,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
 
     // instantiate staking
     let staking_template_id = app.store_code(staking_template());
-    let msg = staking::msg::InstantiateMsg {
+    let msg = common::msg::InstantiateMsg {
         token: NATIVE_DENOM.to_string(),
         proxy: proxy_contract_addr.to_string(),
     };
@@ -145,7 +150,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
 
     // instantiate data-requests
     let data_requests_template_id = app.store_code(data_requests_template());
-    let msg = data_requests::msg::InstantiateMsg {
+    let msg = common::msg::InstantiateMsg {
         token: NATIVE_DENOM.to_string(),
         proxy: proxy_contract_addr.to_string(),
     };
@@ -180,4 +185,50 @@ pub fn get_dr_id(res: AppResponse) -> String {
     // although PostDataRequest on the DataRequest contract returns it in `data`, the Proxy contract does not yet.
     // https://github.com/sedaprotocol/seda-chain-contracts/issues/68
     res.events.last().unwrap().attributes[2].value.clone()
+}
+
+pub fn calculate_commitment(reveal: &str, salt: &str) -> String {
+    let mut hasher = Keccak256::new();
+    hasher.update(reveal.as_bytes());
+    hasher.update(salt.as_bytes());
+    let digest = hasher.finalize();
+    format!("0x{}", hex::encode(digest))
+}
+
+pub fn helper_commit_result(
+    app: &mut App,
+    proxy_contract: CwTemplateContract,
+    dr_id: String,
+    commitment: String,
+    sender: Addr,
+) -> Result<AppResponse, Error> {
+    let msg = ProxyExecuteMsg::CommitDataResult { dr_id, commitment };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    app.execute(sender, cosmos_msg.clone())
+}
+
+pub fn helper_reveal_result(
+    app: &mut App,
+    proxy_contract: CwTemplateContract,
+    dr_id: String,
+    reveal: Reveal,
+    sender: Addr,
+) -> Result<AppResponse, Error> {
+    let msg = ProxyExecuteMsg::RevealDataResult {
+        dr_id: dr_id.to_string(),
+        reveal,
+    };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    app.execute(sender, cosmos_msg)
+}
+
+pub fn helper_post_dr(
+    app: &mut App,
+    proxy_contract: CwTemplateContract,
+    posted_dr: PostDataRequestArgs,
+    sender: Addr,
+) -> Result<AppResponse, Error> {
+    let msg = ProxyExecuteMsg::PostDataRequest { posted_dr };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    app.execute(sender, cosmos_msg)
 }

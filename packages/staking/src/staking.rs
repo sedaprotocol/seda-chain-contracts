@@ -1,7 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::error::ContractError;
 use crate::state::DATA_REQUEST_EXECUTORS;
 
 use crate::state::TOKEN;
@@ -9,6 +8,7 @@ use crate::utils::{get_attached_funds, validate_sender};
 
 #[allow(clippy::module_inception)]
 pub mod staking {
+    use common::error::ContractError;
     use cosmwasm_std::{coins, BankMsg, Event};
 
     use crate::{contract::CONTRACT_VERSION, utils::apply_validator_eligibility};
@@ -170,60 +170,50 @@ pub mod staking {
 #[cfg(test)]
 mod staking_tests {
 
-    use super::*;
     use crate::contract::execute;
-    use crate::contract::instantiate;
-    use crate::contract::query;
-    use crate::msg::InstantiateMsg;
+    use crate::helpers::helper_deposit_and_stake;
+    use crate::helpers::helper_get_executor;
+    use crate::helpers::helper_register_executor;
+    use crate::helpers::helper_unstake;
+    use crate::helpers::helper_withdraw;
+    use crate::helpers::instantiate_staking_contract;
     use crate::state::ELIGIBLE_DATA_REQUEST_EXECUTORS;
+    use common::error::ContractError;
     use common::msg::GetDataRequestExecutorResponse;
     use common::msg::StakingExecuteMsg as ExecuteMsg;
-    use common::msg::StakingQueryMsg as QueryMsg;
     use common::state::DataRequestExecutor;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_binary, Addr};
+    use cosmwasm_std::{coins, Addr};
     #[test]
     fn deposit_stake_withdraw() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
         let info = mock_info("creator", &coins(0, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
         // cant register without depositing tokens
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: None,
-        };
-        let res = execute(deps.as_mut(), mock_env(), info, msg);
+
+        let res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None);
         assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds(1, 0));
 
         // register a data request executor
         let info = mock_info("anyone", &coins(1, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: None,
-        };
 
-        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let _res = helper_register_executor(
+            deps.as_mut(),
+            info.clone(),
+            Some("address".to_string()),
+            None,
+        );
         let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
         assert!(executor_is_eligible);
         // data request executor's stake should be 1
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {
@@ -237,22 +227,15 @@ mod staking_tests {
 
         // the data request executor stakes 2 more tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::DepositAndStake { sender: None };
-        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let _res = helper_deposit_and_stake(deps.as_mut(), info.clone(), None).unwrap();
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
         assert!(executor_is_eligible);
         // data request executor's stake should be 3
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {
@@ -266,25 +249,16 @@ mod staking_tests {
 
         // the data request executor unstakes 1
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Unstake {
-            amount: 1,
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+
+        let _res = helper_unstake(deps.as_mut(), info.clone(), 1, None);
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
         assert!(executor_is_eligible);
         // data request executor's stake should be 1 and pending 1
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {
@@ -298,26 +272,17 @@ mod staking_tests {
 
         // the data request executor withdraws 1
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Withdraw {
-            amount: 1,
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
+        let _res = helper_withdraw(deps.as_mut(), info.clone(), 1, None);
+
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, info.sender.clone())
             .unwrap();
         assert!(executor_is_eligible);
 
         // data request executor's stake should be 1 and pending 0
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {

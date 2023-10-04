@@ -5,10 +5,12 @@ use crate::state::DATA_REQUESTS;
 use common::msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse};
 use common::types::Hash;
 
-use crate::error::ContractError;
-
 pub mod data_request_results {
 
+    use common::error::ContractError::{
+        self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
+        RevealNotStarted,
+    };
     use cosmwasm_std::{Addr, Env, Event};
     use sha3::{Digest, Keccak256};
 
@@ -23,10 +25,6 @@ pub mod data_request_results {
     use crate::{
         state::DATA_RESULTS,
         utils::{check_eligibility, hash_data_result, validate_sender},
-        ContractError::{
-            AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
-            RevealNotStarted,
-        },
     };
 
     use super::*;

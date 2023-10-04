@@ -1,4 +1,4 @@
-use crate::error::ContractError;
+use common::error::ContractError;
 use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
 use common::types::Bytes;

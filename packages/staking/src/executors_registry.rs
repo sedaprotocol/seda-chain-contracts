@@ -2,7 +2,6 @@
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use crate::consts::MINIMUM_STAKE_TO_REGISTER;
-use crate::error::ContractError;
 use crate::state::{DATA_REQUEST_EXECUTORS, TOKEN};
 use crate::utils::{get_attached_funds, validate_sender};
 
@@ -10,7 +9,7 @@ use common::msg::GetDataRequestExecutorResponse;
 use common::state::DataRequestExecutor;
 
 pub mod data_request_executors {
-    use common::msg::IsDataRequestExecutorEligibleResponse;
+    use common::{error::ContractError, msg::IsDataRequestExecutorEligibleResponse};
     use cosmwasm_std::{Addr, Event};
 
     use crate::{
@@ -108,56 +107,38 @@ pub mod data_request_executors {
 #[cfg(test)]
 mod executers_tests {
     use super::*;
-    use crate::contract::execute;
-    use crate::contract::instantiate;
-    use crate::contract::query;
-    use crate::msg::InstantiateMsg;
-    use common::msg::StakingExecuteMsg as ExecuteMsg;
-    use common::msg::StakingQueryMsg as QueryMsg;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_binary, Addr};
+    use crate::helpers::helper_get_executor;
+    use crate::helpers::helper_register_executor;
+    use crate::helpers::helper_unregister_executor;
+    use crate::helpers::helper_unstake;
+    use crate::helpers::helper_withdraw;
+    use crate::helpers::instantiate_staking_contract;
+    use cosmwasm_std::testing::{mock_dependencies, mock_info};
+    use cosmwasm_std::{coins, Addr};
 
     #[test]
     fn register_data_request_executor() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
         let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
         // fetching data request executor for an address that doesn't exist should return None
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(value, GetDataRequestExecutorResponse { value: None });
 
         // someone registers a data request executor
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let _res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None)
+            .unwrap();
 
         // should be able to fetch the data request executor
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {
@@ -174,31 +155,19 @@ mod executers_tests {
     fn unregister_data_request_executor() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
         let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
         // someone registers a data request executor
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let _res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None)
+            .unwrap();
 
         // should be able to fetch the data request executor
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {
@@ -212,33 +181,19 @@ mod executers_tests {
 
         // unstake and withdraw all tokens
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Unstake {
-            amount: 2,
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let _res = helper_unstake(deps.as_mut(), info.clone(), 2, None);
         let info = mock_info("anyone", &coins(0, "token"));
-        let msg = ExecuteMsg::Withdraw {
-            amount: 2,
-            sender: None,
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = helper_withdraw(deps.as_mut(), info.clone(), 2, None);
 
         // unregister the data request executor
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::UnregisterDataRequestExecutor { sender: None };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = helper_unregister_executor(deps.as_mut(), info, None).unwrap();
 
         // fetching data request executor after unregistering should return None
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetDataRequestExecutor {
-                executor: Addr::unchecked("anyone"),
-            },
-        )
-        .unwrap();
-        let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), Addr::unchecked("anyone"));
+
         assert_eq!(value, GetDataRequestExecutorResponse { value: None });
     }
 }

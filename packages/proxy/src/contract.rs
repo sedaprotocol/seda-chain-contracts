@@ -3,11 +3,14 @@ use cosmwasm_std::entry_point;
 
 use crate::state::TOKEN;
 use crate::utils::get_attached_funds;
-use common::msg::{
-    DataRequestsExecuteMsg, GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
-    GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
-    GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
-    IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
+use common::{
+    error::ContractError,
+    msg::{
+        DataRequestsExecuteMsg, GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
+        GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
+        GetResolvedDataResultResponse, GetRevealedDataResultResponse,
+        GetRevealedDataResultsResponse, IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
+    },
 };
 use cosmwasm_std::{
     to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
@@ -16,7 +19,6 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 use crate::{
-    error::ContractError,
     msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg},
     state::{DATA_REQUESTS, STAKING},
 };

@@ -1,15 +1,15 @@
+use common::error::ContractError;
 use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
 use common::msg::DataRequestsQueryMsg as QueryMsg;
+use common::msg::InstantiateMsg;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
 use crate::data_request::data_requests;
-use crate::error::ContractError;
-use crate::msg::InstantiateMsg;
+use crate::data_request_result::data_request_results;
 use crate::state::{DATA_REQUESTS_COUNT, PROXY_CONTRACT, TOKEN};
 
-use crate::data_request_result::data_request_results;
 use cosmwasm_std::StdResult;
 
 // version info for migration info
@@ -83,22 +83,17 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg(test)]
 mod init_tests {
-    use super::*;
-    use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 
+    use crate::helpers::instantiate_dr_contract;
+    use cosmwasm_std::coins;
+    use cosmwasm_std::testing::{mock_dependencies, mock_info};
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies();
-
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
         let info = mock_info("creator", &coins(1000, "token"));
 
         // we can just call .unwrap() to assert this was a success
-        let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let res = instantiate_dr_contract(deps.as_mut(), info).unwrap();
         assert_eq!(0, res.messages.len());
     }
 }

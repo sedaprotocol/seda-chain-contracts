@@ -1,8 +1,7 @@
 pub mod consts;
 pub mod contract;
-pub mod error;
 pub mod executors_registry;
-pub mod msg;
+pub mod helpers;
 pub mod staking;
 pub mod state;
 pub mod utils;

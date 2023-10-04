@@ -1,4 +1,4 @@
-use crate::error::ContractError;
+use common::error::ContractError;
 use cosmwasm_std::{Addr, Coin, DepsMut};
 
 use crate::{

@@ -142,3 +142,9 @@ pub struct GetCommittedExecutorsResponse {
 pub struct IsDataRequestExecutorEligibleResponse {
     pub value: bool,
 }
+
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub token: String,
+    pub proxy: String,
+}

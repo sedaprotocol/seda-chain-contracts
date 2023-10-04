@@ -1,4 +1,4 @@
-use crate::error::ContractError;
+use common::error::ContractError;
 use cosmwasm_std::Coin;
 
 pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {

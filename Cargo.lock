@@ -87,6 +87,7 @@ dependencies = [
  "cosmwasm-std",
  "schemars",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
@@ -289,7 +290,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha3",
- "thiserror",
 ]
 
 [[package]]
@@ -468,6 +468,7 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "common",
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -793,7 +794,6 @@ dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
  "cw2",
- "thiserror",
 ]
 
 [[package]]

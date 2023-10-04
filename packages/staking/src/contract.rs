@@ -1,14 +1,13 @@
+use common::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
-use crate::error::ContractError;
 use crate::executors_registry::data_request_executors;
-use crate::msg::InstantiateMsg;
 use crate::staking::staking;
 use crate::state::{PROXY_CONTRACT, TOKEN};
-use common::msg::StakingExecuteMsg as ExecuteMsg;
 use common::msg::StakingQueryMsg as QueryMsg;
+use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
 
 use cosmwasm_std::StdResult;
 
@@ -73,22 +72,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg(test)]
 mod init_tests {
-    use super::*;
+    use crate::helpers::{helper_register_executor, instantiate_staking_contract};
+
     use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies();
-
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
         let info = mock_info("creator", &coins(1000, "token"));
 
         // we can just call .unwrap() to assert this was a success
-        let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
         assert_eq!(0, res.messages.len());
     }
 
@@ -96,28 +91,29 @@ mod init_tests {
     fn only_proxy_can_pass_caller() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
         let info = mock_info("creator", &coins(1000, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
         // register a data request executor, while passing a sender
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: Some("sender".to_string()),
-        };
-        let res = execute(deps.as_mut(), mock_env(), info, msg);
+
+        let res = helper_register_executor(
+            deps.as_mut(),
+            info,
+            Some("address".to_string()),
+            Some("sender".to_string()),
+        );
         assert!(res.is_err());
 
         // register a data request executor from the proxy
         let info = mock_info("proxy", &coins(2, "token"));
-        let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
-            sender: Some("sender".to_string()),
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let _res = helper_register_executor(
+            deps.as_mut(),
+            info,
+            Some("address".to_string()),
+            Some("sender".to_string()),
+        )
+        .unwrap();
     }
 }
