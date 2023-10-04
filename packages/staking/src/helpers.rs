@@ -1,10 +1,12 @@
-use cosmwasm_std::{from_binary, testing::mock_env, Addr, DepsMut, MessageInfo, Response};
+use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query};
 use common::{
     error::ContractError,
     msg::{GetDataRequestExecutorResponse, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg},
 };
+
+use cosmwasm_std::testing::mock_env;
 
 pub fn instantiate_staking_contract(
     deps: DepsMut,
@@ -56,7 +58,7 @@ pub fn helper_deposit_and_stake(
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::DepositAndStake { sender };
-    execute(deps, mock_env(), info.clone(), msg)
+    execute(deps, mock_env(), info, msg)
 }
 
 pub fn helper_unstake(
@@ -66,7 +68,7 @@ pub fn helper_unstake(
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::Unstake { amount, sender };
-    execute(deps, mock_env(), info.clone(), msg)
+    execute(deps, mock_env(), info, msg)
 }
 
 pub fn helper_withdraw(
@@ -76,5 +78,5 @@ pub fn helper_withdraw(
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::Withdraw { amount, sender };
-    execute(deps, mock_env(), info.clone(), msg)
+    execute(deps, mock_env(), info, msg)
 }

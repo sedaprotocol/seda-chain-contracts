@@ -190,9 +190,9 @@ mod dr_tests {
     use crate::contract::execute;
     use crate::helpers::calculate_dr_id_and_args;
     use crate::helpers::construct_dr;
-    use crate::helpers::get_dr;
-    use crate::helpers::get_drs_from_pool;
-    use crate::helpers::instantiate_dr_contract;
+    use crate::helpers::test_helpers::get_dr;
+    use crate::helpers::test_helpers::get_drs_from_pool;
+    use crate::helpers::test_helpers::instantiate_dr_contract;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
     use cosmwasm_std::coins;
