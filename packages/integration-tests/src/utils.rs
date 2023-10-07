@@ -1,4 +1,5 @@
-use anyhow::Error;
+use crate::tests::error::TestingError;
+use crate::tests::error::TestingError::ExecuteError;
 use common::msg::PostDataRequestArgs;
 use common::state::Reveal;
 use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
@@ -8,6 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
+
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 pub const EXECUTOR_2: &str = "executor2";
@@ -201,10 +203,11 @@ pub fn helper_commit_result(
     dr_id: String,
     commitment: String,
     sender: Addr,
-) -> Result<AppResponse, Error> {
+) -> Result<AppResponse, TestingError> {
     let msg = ProxyExecuteMsg::CommitDataResult { dr_id, commitment };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
+        .map_err(|x| ExecuteError(x.to_string()))
 }
 
 pub fn helper_reveal_result(
@@ -213,13 +216,14 @@ pub fn helper_reveal_result(
     dr_id: String,
     reveal: Reveal,
     sender: Addr,
-) -> Result<AppResponse, Error> {
+) -> Result<AppResponse, TestingError> {
     let msg = ProxyExecuteMsg::RevealDataResult {
         dr_id: dr_id.to_string(),
         reveal,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
-    app.execute(sender, cosmos_msg)
+    app.execute(sender, cosmos_msg.clone())
+        .map_err(|x| ExecuteError(x.to_string()))
 }
 
 pub fn helper_post_dr(
@@ -227,8 +231,9 @@ pub fn helper_post_dr(
     proxy_contract: CwTemplateContract,
     posted_dr: PostDataRequestArgs,
     sender: Addr,
-) -> Result<AppResponse, Error> {
+) -> Result<AppResponse, TestingError> {
     let msg = ProxyExecuteMsg::PostDataRequest { posted_dr };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
-    app.execute(sender, cosmos_msg)
+    app.execute(sender, cosmos_msg.clone())
+        .map_err(|x| ExecuteError(x.to_string()))
 }

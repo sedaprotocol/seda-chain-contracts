@@ -27,7 +27,6 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 
 # TODO: check if all of these are needed
 [dependencies]
-anyhow = { workspace = true }
 common = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }

@@ -552,7 +552,6 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "common",
  "cosmwasm-schema",
  "cosmwasm-std",
