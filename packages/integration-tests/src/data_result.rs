@@ -1,3 +1,4 @@
+use crate::tests::utils::calculate_dr_id_and_args;
 use crate::tests::utils::{
     calculate_commitment, get_dr_id, helper_commit_result, helper_post_dr, helper_reveal_result,
     proper_instantiate, send_tokens, EXECUTOR_1, EXECUTOR_2, USER,
@@ -8,7 +9,6 @@ use common::msg::{
 use common::state::Reveal;
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
-use data_requests::helpers::calculate_dr_id_and_args;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 use staking::consts::MINIMUM_STAKE_TO_REGISTER;
 

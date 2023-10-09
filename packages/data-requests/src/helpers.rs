@@ -10,6 +10,15 @@ use common::types::{Bytes, Commitment};
 use sha3::Digest;
 use sha3::Keccak256;
 
+use cosmwasm_std::testing::mock_env;
+
+use crate::contract::{instantiate, query};
+use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg};
+use common::{error::ContractError, msg::GetDataRequestResponse};
+use cosmwasm_std::from_binary;
+
+use cosmwasm_std::{DepsMut, MessageInfo, Response};
+
 pub fn calculate_dr_id_and_args(
     nonce: u128,
     replication_factor: u16,
@@ -89,51 +98,39 @@ pub fn construct_dr(constructed_dr_id: String, dr_args: PostDataRequestArgs) -> 
     }
 }
 
-#[cfg(test)]
-pub mod test_helpers {
-    use cosmwasm_std::testing::mock_env;
+pub fn instantiate_dr_contract(
+    deps: DepsMut,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
+    let msg = InstantiateMsg {
+        token: "token".to_string(),
+        proxy: "proxy".to_string(),
+    };
+    instantiate(deps, mock_env(), info, msg)
+}
 
-    use crate::contract::{instantiate, query};
-    use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg};
-    use common::{error::ContractError, msg::GetDataRequestResponse};
-    use cosmwasm_std::from_binary;
+pub fn get_dr(deps: DepsMut, dr_id: String) -> GetDataRequestResponse {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        common::msg::DataRequestsQueryMsg::GetDataRequest { dr_id },
+    )
+    .unwrap();
+    let value: GetDataRequestResponse = from_binary(&res).unwrap();
+    value
+}
 
-    use cosmwasm_std::{DepsMut, MessageInfo, Response};
-
-    pub fn instantiate_dr_contract(
-        deps: DepsMut,
-        info: MessageInfo,
-    ) -> Result<Response, ContractError> {
-        let msg = InstantiateMsg {
-            token: "token".to_string(),
-            proxy: "proxy".to_string(),
-        };
-        instantiate(deps, mock_env(), info, msg)
-    }
-
-    pub fn get_dr(deps: DepsMut, dr_id: String) -> GetDataRequestResponse {
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            common::msg::DataRequestsQueryMsg::GetDataRequest { dr_id },
-        )
-        .unwrap();
-        let value: GetDataRequestResponse = from_binary(&res).unwrap();
-        value
-    }
-
-    pub fn get_drs_from_pool(
-        deps: DepsMut,
-        position: Option<u128>,
-        limit: Option<u32>,
-    ) -> GetDataRequestsFromPoolResponse {
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            common::msg::DataRequestsQueryMsg::GetDataRequestsFromPool { position, limit },
-        )
-        .unwrap();
-        let value: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
-        value
-    }
+pub fn get_drs_from_pool(
+    deps: DepsMut,
+    position: Option<u128>,
+    limit: Option<u32>,
+) -> GetDataRequestsFromPoolResponse {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        common::msg::DataRequestsQueryMsg::GetDataRequestsFromPool { position, limit },
+    )
+    .unwrap();
+    let value: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+    value
 }

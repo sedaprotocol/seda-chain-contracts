@@ -2,8 +2,12 @@ use crate::tests::error::TestingError;
 use crate::tests::error::TestingError::ExecuteError;
 use common::msg::PostDataRequestArgs;
 use common::state::Reveal;
+use common::types::Bytes;
+use common::types::Hash;
 use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
+use data_requests::state::DataRequestInputs;
+use data_requests::utils::hash_data_request;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -236,4 +240,61 @@ pub fn helper_post_dr(
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
         .map_err(|x| ExecuteError(x.to_string()))
+}
+
+pub fn calculate_dr_id_and_args(
+    nonce: u128,
+    replication_factor: u16,
+) -> (String, PostDataRequestArgs) {
+    let dr_binary_id: Hash = "dr_binary_id".to_string();
+    let tally_binary_id: Hash = "tally_binary_id".to_string();
+    let dr_inputs: Bytes = Vec::new();
+    let tally_inputs: Bytes = Vec::new();
+
+    // set by dr creator
+    let gas_price: u128 = 10;
+    let gas_limit: u128 = 10;
+
+    // set by relayer and SEDA protocol
+    let seda_payload: Bytes = Vec::new();
+    let payback_address: Bytes = Vec::new();
+
+    // memo
+    let chain_id: u128 = 31337;
+    let mut hasher = Keccak256::new();
+    hasher.update(chain_id.to_be_bytes());
+    hasher.update(nonce.to_be_bytes());
+    let memo = hasher.finalize().to_vec();
+
+    let constructed_dr_input = DataRequestInputs {
+        dr_binary_id: dr_binary_id.clone(),
+        tally_binary_id: tally_binary_id.clone(),
+        dr_inputs: dr_inputs.clone(),
+        tally_inputs: tally_inputs.clone(),
+        memo: memo.clone(),
+        replication_factor,
+
+        gas_price,
+        gas_limit,
+
+        seda_payload: seda_payload.clone(),
+        payback_address: payback_address.clone(),
+    };
+    let constructed_dr_id = hash_data_request(constructed_dr_input);
+
+    let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
+        dr_id: constructed_dr_id.clone(),
+        dr_binary_id,
+        tally_binary_id,
+        dr_inputs,
+        tally_inputs,
+        memo,
+        replication_factor,
+        gas_price,
+        gas_limit,
+        seda_payload,
+        payback_address,
+    };
+
+    (constructed_dr_id, posted_dr)
 }

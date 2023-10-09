@@ -1,8 +1,7 @@
-use crate::tests::utils::{get_dr_id, proper_instantiate, USER};
+use crate::tests::utils::{calculate_dr_id_and_args, get_dr_id, proper_instantiate, USER};
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
-use data_requests::helpers::calculate_dr_id_and_args;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
