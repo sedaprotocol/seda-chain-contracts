@@ -1,8 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use crate::consts::MINIMUM_STAKE_TO_REGISTER;
-use crate::state::{DATA_REQUEST_EXECUTORS, TOKEN};
+use crate::state::{CONFIG, DATA_REQUEST_EXECUTORS, TOKEN};
 use crate::utils::{get_attached_funds, validate_sender};
 
 use common::msg::GetDataRequestExecutorResponse;
@@ -32,9 +31,10 @@ pub mod data_request_executors {
         let token = TOKEN.load(deps.storage)?;
         let amount = get_attached_funds(&info.funds, &token)?;
 
-        if amount < MINIMUM_STAKE_TO_REGISTER {
+        let minimum_stake_to_register = CONFIG.load(deps.storage)?.minimum_stake_to_register;
+        if amount < minimum_stake_to_register {
             return Err(ContractError::InsufficientFunds(
-                MINIMUM_STAKE_TO_REGISTER,
+                minimum_stake_to_register,
                 amount,
             ));
         }

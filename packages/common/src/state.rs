@@ -3,6 +3,15 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Governance-controlled configuration parameters
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+pub struct Config {
+    /// Minimum amount of SEDA tokens required to register as a data request executor
+    pub minimum_stake_to_register: u128,
+    /// Minimum amount of SEDA tokens required to be eligible for committee inclusion
+    pub minimum_stake_for_committee_eligibility: u128,
+}
+
 /// Represents a data request at creation time
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequest {

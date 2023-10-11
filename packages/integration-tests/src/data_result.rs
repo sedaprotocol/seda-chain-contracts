@@ -3,6 +3,7 @@ use crate::tests::utils::{
     calculate_commitment, get_dr_id, helper_commit_result, helper_post_dr, helper_reveal_result,
     proper_instantiate, send_tokens, EXECUTOR_1, EXECUTOR_2, EXECUTOR_3, USER,
 };
+use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use common::error::ContractError;
 use common::msg::{
     GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
@@ -11,7 +12,6 @@ use common::state::Reveal;
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
-use staking::consts::MINIMUM_STAKE_TO_REGISTER;
 
 #[test]
 fn commit_reveal_result() {
@@ -25,7 +25,7 @@ fn commit_reveal_result() {
         p2p_multi_address: Some("address".to_string()),
     };
     let cosmos_msg = proxy_contract
-        .call_with_deposit(msg, MINIMUM_STAKE_TO_REGISTER)
+        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
         .unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
         .unwrap();

@@ -1,17 +1,18 @@
 use common::error::ContractError;
 use cosmwasm_std::{Addr, Coin, DepsMut};
 
-use crate::{
-    consts::MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
-    state::{ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT},
-};
+use crate::state::{CONFIG, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT};
 
 pub fn apply_validator_eligibility(
     deps: DepsMut,
     sender: Addr,
     tokens_staked: u128,
 ) -> Result<(), ContractError> {
-    if tokens_staked < MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY {
+    if tokens_staked
+        < CONFIG
+            .load(deps.storage)?
+            .minimum_stake_for_committee_eligibility
+    {
         if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, sender.clone()) {
             ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, sender);
         }

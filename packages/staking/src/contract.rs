@@ -5,9 +5,13 @@ use cw2::set_contract_version;
 
 use crate::executors_registry::data_request_executors;
 use crate::staking::staking;
-use crate::state::{PROXY_CONTRACT, TOKEN};
+use crate::state::{CONFIG, PROXY_CONTRACT, TOKEN};
+use common::consts::{
+    INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER,
+};
 use common::msg::StakingQueryMsg as QueryMsg;
 use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
+use common::state::Config;
 
 use cosmwasm_std::StdResult;
 
@@ -25,6 +29,13 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
     PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
+
+    let init_config = Config {
+        minimum_stake_to_register: INITIAL_MINIMUM_STAKE_TO_REGISTER,
+        minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
+    };
+    CONFIG.save(deps.storage, &init_config)?;
+
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 

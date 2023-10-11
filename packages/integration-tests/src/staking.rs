@@ -4,8 +4,8 @@ use common::{msg::GetDataRequestExecutorResponse, state::DataRequestExecutor};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 
+use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
-use staking::consts::MINIMUM_STAKE_TO_REGISTER;
 
 #[test]
 fn deposit_stake_withdraw() {
@@ -18,7 +18,7 @@ fn deposit_stake_withdraw() {
         p2p_multi_address: Some("address".to_string()),
     };
     let cosmos_msg = proxy_contract
-        .call_with_deposit(msg, MINIMUM_STAKE_TO_REGISTER)
+        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
         .unwrap();
     // register executor
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())

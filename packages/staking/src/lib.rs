@@ -1,4 +1,3 @@
-pub mod consts;
 pub mod contract;
 pub mod executors_registry;
 

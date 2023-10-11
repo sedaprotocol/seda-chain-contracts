@@ -1,12 +1,13 @@
 use cosmwasm_schema::write_api;
 
 use common::msg::InstantiateMsg;
-use common::msg::{StakingExecuteMsg, StakingQueryMsg};
+use common::msg::{StakingExecuteMsg, StakingQueryMsg, SudoMsg};
 
 fn main() {
     write_api! {
         instantiate: InstantiateMsg,
         execute: StakingExecuteMsg,
         query: StakingQueryMsg,
+        sudo: SudoMsg,
     }
 }

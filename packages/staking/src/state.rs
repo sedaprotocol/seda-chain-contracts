@@ -1,4 +1,4 @@
-use common::state::DataRequestExecutor;
+use common::state::{Config, DataRequestExecutor};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 
@@ -15,3 +15,6 @@ pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
 
 /// Address of proxy contract which has permission to set the sender on one's behalf
 pub const PROXY_CONTRACT: Item<Addr> = Item::new("proxy_contract");
+
+/// Governance-controlled configuration parameters
+pub const CONFIG: Item<Config> = Item::new("config");

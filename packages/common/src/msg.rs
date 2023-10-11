@@ -1,8 +1,13 @@
-use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal};
+use crate::state::{Config, DataRequest, DataRequestExecutor, DataResult, Reveal};
 use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 use std::collections::HashMap;
+
+#[cw_serde]
+pub enum SudoMsg {
+    SetConfig { config: Config },
+}
 
 #[cw_serde]
 pub struct PostDataRequestArgs {
