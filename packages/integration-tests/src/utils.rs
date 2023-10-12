@@ -59,6 +59,17 @@ impl CwTemplateContract {
         }
         .into())
     }
+
+    pub fn sudo<T: Into<proxy_contract::msg::ProxySudoMsg>>(
+        &self,
+        msg: T,
+    ) -> cw_multi_test::SudoMsg {
+        let msg = to_binary(&msg.into()).unwrap();
+        cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
+            contract_addr: self.addr().into(),
+            msg,
+        })
+    }
 }
 
 pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
@@ -66,7 +77,8 @@ pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
         proxy_contract::contract::execute,
         proxy_contract::contract::instantiate,
         proxy_contract::contract::query,
-    );
+    )
+    .with_sudo(proxy_contract::contract::sudo);
     Box::new(contract)
 }
 
