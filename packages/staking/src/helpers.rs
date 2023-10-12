@@ -1,12 +1,11 @@
 use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query, sudo};
+use crate::msg::StakingSudoMsg;
+use crate::state::Config;
 use common::{
     error::ContractError,
-    msg::{
-        GetDataRequestExecutorResponse, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg, SudoMsg,
-    },
-    state::Config,
+    msg::{GetDataRequestExecutorResponse, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg},
 };
 
 use cosmwasm_std::testing::mock_env;
@@ -85,6 +84,6 @@ pub fn helper_withdraw(
 }
 
 pub fn helper_set_config(deps: DepsMut, config: Config) -> Result<Response, ContractError> {
-    let msg = SudoMsg::SetConfig { config };
+    let msg = StakingSudoMsg::SetConfig { config };
     sudo(deps, mock_env(), msg)
 }

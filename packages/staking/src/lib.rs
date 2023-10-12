@@ -1,5 +1,6 @@
 pub mod contract;
 pub mod executors_registry;
+pub mod msg;
 pub mod staking;
 pub mod state;
 pub mod utils;

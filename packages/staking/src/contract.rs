@@ -4,15 +4,14 @@ use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageIn
 use cw2::set_contract_version;
 
 use crate::executors_registry::data_request_executors;
+use crate::msg::StakingSudoMsg;
 use crate::staking::staking;
-use crate::state::{CONFIG, PROXY_CONTRACT, TOKEN};
+use crate::state::{Config, CONFIG, PROXY_CONTRACT, TOKEN};
 use common::consts::{
     INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER,
 };
 use common::msg::StakingQueryMsg as QueryMsg;
-use common::msg::SudoMsg;
 use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
-use common::state::Config;
 
 use cosmwasm_std::StdResult;
 
@@ -83,9 +82,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> Result<Response, ContractError> {
+pub fn sudo(deps: DepsMut, _env: Env, msg: StakingSudoMsg) -> Result<Response, ContractError> {
     match msg {
-        SudoMsg::SetConfig { config } => {
+        StakingSudoMsg::SetConfig { config } => {
             CONFIG.save(deps.storage, &config)?;
             Ok(Response::new().add_attribute("method", "set_config"))
         }
@@ -97,8 +96,8 @@ mod init_tests {
     use crate::helpers::{
         helper_register_executor, helper_set_config, instantiate_staking_contract,
     };
+    use crate::state::Config;
     use common::error::ContractError;
-    use common::state::Config;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
