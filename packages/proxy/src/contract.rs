@@ -21,7 +21,7 @@ use cw2::set_contract_version;
 
 use crate::{
     msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg},
-    state::{DATA_REQUESTS, STAKING},
+    state::{CONTRACT_CREATOR, DATA_REQUESTS, STAKING},
 };
 
 // version info
@@ -32,11 +32,12 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
+    CONTRACT_CREATOR.save(deps.storage, &info.sender)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
 
@@ -51,6 +52,12 @@ pub fn execute(
         // Admin
         ProxyExecuteMsg::SetDataRequests { contract } => {
             // This can only be called if not already set. Otherwise, a sudo message must be used.
+
+            // require info.sender to be the contract creator
+            if CONTRACT_CREATOR.load(deps.storage)? != info.sender {
+                return Err(ContractError::NotContractCreator {});
+            }
+
             // if already set, return error
             if DATA_REQUESTS.may_load(deps.storage)?.is_some() {
                 return Err(ContractError::ContractAlreadySet {});
@@ -61,6 +68,12 @@ pub fn execute(
         }
         ProxyExecuteMsg::SetStaking { contract } => {
             // This can only be called if not already set. Otherwise, a sudo message must be used.
+
+            // require info.sender to be the contract creator
+            if CONTRACT_CREATOR.load(deps.storage)? != info.sender {
+                return Err(ContractError::NotContractCreator {});
+            }
+
             // if already set, return error
             if STAKING.may_load(deps.storage)?.is_some() {
                 return Err(ContractError::ContractAlreadySet {});

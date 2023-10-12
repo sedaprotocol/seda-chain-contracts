@@ -38,4 +38,6 @@ pub enum ContractError {
     // proxy errors
     #[error("Contract already set")]
     ContractAlreadySet,
+    #[error("Caller must be the contract creator")]
+    NotContractCreator,
 }
