@@ -361,4 +361,22 @@ mod init_tests {
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
+
+    #[test]
+    #[should_panic(expected = "NotContractCreator")]
+    fn not_contract_creator() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg {
+            token: "token".to_string(),
+        };
+        let info = mock_info("creator", &coins(1000, "token"));
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let msg = ProxyExecuteMsg::SetDataRequests {
+            contract: "contract".to_string(),
+        };
+        let info = mock_info("not_creator", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
 }

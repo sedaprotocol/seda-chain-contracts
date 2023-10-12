@@ -175,12 +175,12 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
         contract: staking_contract_addr.to_string(),
     };
     let cosmos_msg = proxy_template_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+    app.execute(Addr::unchecked(ADMIN), cosmos_msg).unwrap();
     let msg = proxy_contract::msg::ProxyExecuteMsg::SetDataRequests {
         contract: data_requests_contract_addr.to_string(),
     };
     let cosmos_msg = proxy_template_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+    app.execute(Addr::unchecked(ADMIN), cosmos_msg).unwrap();
 
     (app, proxy_template_contract)
 }
