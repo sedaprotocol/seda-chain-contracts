@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use common::msg::{
-    GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
+    GetCommittedDataResultResponse, GetCommittedDataResultsResponse, GetContractResponse,
     GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
     GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
     IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
@@ -18,6 +18,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ProxyExecuteMsg {
     // Admin
+    // These can only be called if these are not already set. Otherwise, a sudo message must be used.
     SetDataRequests { contract: String },
     SetStaking { contract: String },
 
@@ -38,6 +39,11 @@ pub enum ProxyExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum ProxyQueryMsg {
+    // Proxy
+    #[returns(GetContractResponse)]
+    GetDataRequestsContract,
+    #[returns(GetContractResponse)]
+    GetStakingContract,
     // DataRequests
     #[returns(GetDataRequestResponse)]
     GetDataRequest { dr_id: Hash },
@@ -62,4 +68,10 @@ pub enum ProxyQueryMsg {
     GetDataRequestExecutor { executor: Addr },
     #[returns(IsDataRequestExecutorEligibleResponse)]
     IsDataRequestExecutorEligible { executor: Addr },
+}
+
+#[cw_serde]
+pub enum ProxySudoMsg {
+    SetDataRequests { contract: String },
+    SetStaking { contract: String },
 }

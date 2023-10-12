@@ -149,6 +149,11 @@ pub struct IsDataRequestExecutorEligibleResponse {
 }
 
 #[cw_serde]
+pub struct GetContractResponse {
+    pub value: String,
+}
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
     pub proxy: String,

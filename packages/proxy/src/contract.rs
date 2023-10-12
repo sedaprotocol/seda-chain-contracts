@@ -7,19 +7,20 @@ use common::{
     error::ContractError,
     msg::{
         DataRequestsExecuteMsg, GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
-        GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
-        GetResolvedDataResultResponse, GetRevealedDataResultResponse,
-        GetRevealedDataResultsResponse, IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
+        GetContractResponse, GetDataRequestExecutorResponse, GetDataRequestResponse,
+        GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
+        GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
+        IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
     },
 };
 use cosmwasm_std::{
     to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    WasmMsg, WasmQuery,
+    StdResult, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 
 use crate::{
-    msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg},
+    msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg},
     state::{DATA_REQUESTS, STAKING},
 };
 
@@ -49,7 +50,7 @@ pub fn execute(
     match msg {
         // Admin
         ProxyExecuteMsg::SetDataRequests { contract } => {
-            // TODO: this should be a sudo call
+            // This can only be called if not already set. Otherwise, a sudo message must be used.
             // if already set, return error
             if DATA_REQUESTS.may_load(deps.storage)?.is_some() {
                 return Err(ContractError::ContractAlreadySet {});
@@ -59,7 +60,7 @@ pub fn execute(
             Ok(Response::new().add_attribute("method", "set_data_requests"))
         }
         ProxyExecuteMsg::SetStaking { contract } => {
-            // TODO: this should be a sudo call
+            // This can only be called if not already set. Otherwise, a sudo message must be used.
             // if already set, return error
             if STAKING.may_load(deps.storage)?.is_some() {
                 return Err(ContractError::ContractAlreadySet {});
@@ -173,8 +174,24 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> cosmwasm_std::StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
     match msg.clone() {
+        // Proxy
+        ProxyQueryMsg::GetDataRequestsContract {} => {
+            let contract = DATA_REQUESTS.load(deps.storage)?;
+            let response: StdResult<GetContractResponse> = Ok(GetContractResponse {
+                value: contract.to_string(),
+            });
+            to_binary(&response?)
+        }
+        ProxyQueryMsg::GetStakingContract {} => {
+            let contract = DATA_REQUESTS.load(deps.storage)?;
+            let response: StdResult<GetContractResponse> = Ok(GetContractResponse {
+                value: contract.to_string(),
+            });
+            to_binary(&response?)
+        }
+
         // DataRequests
         ProxyQueryMsg::GetDataRequest { dr_id: _dr_id } => {
             let query_response: GetDataRequestResponse =
@@ -262,6 +279,20 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> cosmwasm_std::StdResu
                     msg: to_binary(&msg)?,
                 }))?;
             Ok(to_binary(&query_response)?)
+        }
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn sudo(deps: DepsMut, _env: Env, msg: ProxySudoMsg) -> Result<Response, ContractError> {
+    match msg {
+        ProxySudoMsg::SetDataRequests { contract } => {
+            DATA_REQUESTS.save(deps.storage, &deps.api.addr_validate(&contract)?)?;
+            Ok(Response::new().add_attribute("method", "set_data_requests"))
+        }
+        ProxySudoMsg::SetStaking { contract } => {
+            STAKING.save(deps.storage, &deps.api.addr_validate(&contract)?)?;
+            Ok(Response::new().add_attribute("method", "set_staking"))
         }
     }
 }
