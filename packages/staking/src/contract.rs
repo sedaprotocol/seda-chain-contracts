@@ -10,6 +10,7 @@ use common::consts::{
     INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER,
 };
 use common::msg::StakingQueryMsg as QueryMsg;
+use common::msg::SudoMsg;
 use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
 use common::state::Config;
 
@@ -81,10 +82,23 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> Result<Response, ContractError> {
+    match msg {
+        SudoMsg::SetConfig { config } => {
+            CONFIG.save(deps.storage, &config)?;
+            Ok(Response::new().add_attribute("method", "set_config"))
+        }
+    }
+}
+
 #[cfg(test)]
 mod init_tests {
-    use crate::helpers::{helper_register_executor, instantiate_staking_contract};
+    use crate::helpers::{
+        helper_register_executor, helper_set_config, instantiate_staking_contract,
+    };
     use common::error::ContractError;
+    use common::state::Config;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
@@ -126,5 +140,20 @@ mod init_tests {
             Some("sender".to_string()),
         )
         .unwrap();
+    }
+
+    #[test]
+    fn set_config() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &coins(1000, "token"));
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+
+        let new_config = Config {
+            minimum_stake_to_register: 100,
+            minimum_stake_for_committee_eligibility: 200,
+        };
+
+        let _res = helper_set_config(deps.as_mut(), new_config).unwrap();
     }
 }
