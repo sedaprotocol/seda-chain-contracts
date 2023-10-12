@@ -7,6 +7,7 @@ use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use common::error::ContractError;
 use common::msg::{
     GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
+    IsDataRequestExecutorEligibleResponse,
 };
 use common::state::Reveal;
 use cosmwasm_std::Addr;
@@ -16,6 +17,16 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 #[test]
 fn commit_reveal_result() {
     let (mut app, proxy_contract) = proper_instantiate();
+
+    // executor 1 should be ineligible to register
+    let msg = ProxyQueryMsg::IsDataRequestExecutorEligible {
+        executor: Addr::unchecked(EXECUTOR_1),
+    };
+    let res: IsDataRequestExecutorEligibleResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    assert!(res.value == false);
 
     // send tokens from USER to executor1, executor2, executor3 so they can register
     send_tokens(&mut app, USER, EXECUTOR_1, 1);
@@ -34,6 +45,17 @@ fn commit_reveal_result() {
     app.execute(Addr::unchecked(EXECUTOR_3), cosmos_msg)
         .unwrap();
 
+    // executor 1 should be eligible to register
+    let msg = ProxyQueryMsg::IsDataRequestExecutorEligible {
+        executor: Addr::unchecked(EXECUTOR_1),
+    };
+    let res: IsDataRequestExecutorEligibleResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    assert!(res.value == true);
+
+    // can't post data result on nonexistent data request
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
@@ -118,7 +140,6 @@ fn commit_reveal_result() {
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
     assert!(res.value.is_some());
-    println!("res: {:?}", res);
 
     helper_reveal_result(
         &mut app,

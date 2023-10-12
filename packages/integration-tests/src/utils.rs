@@ -70,6 +70,17 @@ impl CwTemplateContract {
             msg,
         })
     }
+
+    pub fn sudo_staking<T: Into<staking::msg::StakingSudoMsg>>(
+        &self,
+        msg: T,
+    ) -> cw_multi_test::SudoMsg {
+        let msg = to_binary(&msg.into()).unwrap();
+        cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
+            contract_addr: self.addr().into(),
+            msg,
+        })
+    }
 }
 
 pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
@@ -96,7 +107,8 @@ pub fn staking_template() -> Box<dyn Contract<Empty>> {
         staking::contract::execute,
         staking::contract::instantiate,
         staking::contract::query,
-    );
+    )
+    .with_sudo(staking::contract::sudo);
     Box::new(contract)
 }
 

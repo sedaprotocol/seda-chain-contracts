@@ -2,7 +2,7 @@ use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query, sudo};
 use crate::msg::StakingSudoMsg;
-use crate::state::Config;
+use common::state::StakingConfig;
 use common::{
     error::ContractError,
     msg::{GetDataRequestExecutorResponse, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg},
@@ -83,7 +83,10 @@ pub fn helper_withdraw(
     execute(deps, mock_env(), info, msg)
 }
 
-pub fn helper_set_config(deps: DepsMut, config: Config) -> Result<Response, ContractError> {
-    let msg = StakingSudoMsg::SetConfig { config };
+pub fn helper_set_staking_config(
+    deps: DepsMut,
+    config: StakingConfig,
+) -> Result<Response, ContractError> {
+    let msg = StakingSudoMsg::SetStakingConfig { config };
     sudo(deps, mock_env(), msg)
 }

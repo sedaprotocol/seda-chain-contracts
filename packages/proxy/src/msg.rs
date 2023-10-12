@@ -3,7 +3,7 @@ use common::msg::{
     GetCommittedDataResultResponse, GetCommittedDataResultsResponse, GetContractResponse,
     GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
     GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
-    IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
+    GetStakingConfigResponse, IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
 };
 use common::state::Reveal;
 use common::types::Hash;
@@ -68,6 +68,8 @@ pub enum ProxyQueryMsg {
     GetDataRequestExecutor { executor: Addr },
     #[returns(IsDataRequestExecutorEligibleResponse)]
     IsDataRequestExecutorEligible { executor: Addr },
+    #[returns(GetStakingConfigResponse)]
+    GetStakingConfig,
 }
 
 #[cw_serde]

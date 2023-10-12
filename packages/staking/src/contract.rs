@@ -6,12 +6,13 @@ use cw2::set_contract_version;
 use crate::executors_registry::data_request_executors;
 use crate::msg::StakingSudoMsg;
 use crate::staking::staking;
-use crate::state::{Config, CONFIG, PROXY_CONTRACT, TOKEN};
+use crate::state::{CONFIG, PROXY_CONTRACT, TOKEN};
 use common::consts::{
     INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER,
 };
-use common::msg::StakingQueryMsg as QueryMsg;
+use common::msg::{GetStakingConfigResponse, StakingQueryMsg as QueryMsg};
 use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
+use common::state::StakingConfig;
 
 use cosmwasm_std::StdResult;
 
@@ -30,7 +31,7 @@ pub fn instantiate(
     TOKEN.save(deps.storage, &msg.token)?;
     PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
 
-    let init_config = Config {
+    let init_config = StakingConfig {
         minimum_stake_to_register: INITIAL_MINIMUM_STAKE_TO_REGISTER,
         minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
     };
@@ -78,15 +79,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::IsDataRequestExecutorEligible { executor } => to_binary(
             &data_request_executors::is_data_request_executor_eligible(deps, executor)?,
         ),
+        QueryMsg::GetStakingConfig => to_binary(&GetStakingConfigResponse {
+            value: CONFIG.load(deps.storage)?,
+        }),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn sudo(deps: DepsMut, _env: Env, msg: StakingSudoMsg) -> Result<Response, ContractError> {
     match msg {
-        StakingSudoMsg::SetConfig { config } => {
+        StakingSudoMsg::SetStakingConfig { config } => {
             CONFIG.save(deps.storage, &config)?;
-            Ok(Response::new().add_attribute("method", "set_config"))
+            Ok(Response::new().add_attribute("method", "set_staking_config"))
         }
     }
 }
@@ -94,10 +98,10 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: StakingSudoMsg) -> Result<Response, C
 #[cfg(test)]
 mod init_tests {
     use crate::helpers::{
-        helper_register_executor, helper_set_config, instantiate_staking_contract,
+        helper_register_executor, helper_set_staking_config, instantiate_staking_contract,
     };
-    use crate::state::Config;
     use common::error::ContractError;
+    use common::state::StakingConfig;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
@@ -142,17 +146,17 @@ mod init_tests {
     }
 
     #[test]
-    fn set_config() {
+    fn set_staking_config() {
         let mut deps = mock_dependencies();
 
         let info = mock_info("creator", &coins(1000, "token"));
         let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
-        let new_config = Config {
+        let new_config = StakingConfig {
             minimum_stake_to_register: 100,
             minimum_stake_for_committee_eligibility: 200,
         };
 
-        let _res = helper_set_config(deps.as_mut(), new_config).unwrap();
+        let _res = helper_set_staking_config(deps.as_mut(), new_config).unwrap();
     }
 }

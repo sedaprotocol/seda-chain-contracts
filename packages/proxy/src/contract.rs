@@ -9,7 +9,7 @@ use common::{
         DataRequestsExecuteMsg, GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
         GetContractResponse, GetDataRequestExecutorResponse, GetDataRequestResponse,
         GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
-        GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
+        GetRevealedDataResultResponse, GetRevealedDataResultsResponse, GetStakingConfigResponse,
         IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
     },
 };
@@ -198,7 +198,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             to_binary(&response?)
         }
         ProxyQueryMsg::GetStakingContract {} => {
-            let contract = DATA_REQUESTS.load(deps.storage)?;
+            let contract = STAKING.load(deps.storage)?;
             let response: StdResult<GetContractResponse> = Ok(GetContractResponse {
                 value: contract.to_string(),
             });
@@ -287,6 +287,14 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             executor: _executor,
         } => {
             let query_response: IsDataRequestExecutorEligibleResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: STAKING.load(deps.storage)?.to_string(),
+                    msg: to_binary(&msg)?,
+                }))?;
+            Ok(to_binary(&query_response)?)
+        }
+        ProxyQueryMsg::GetStakingConfig => {
+            let query_response: GetStakingConfigResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_binary(&msg)?,

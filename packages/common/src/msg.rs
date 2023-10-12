@@ -1,4 +1,4 @@
-use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal};
+use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal, StakingConfig};
 use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
@@ -87,6 +87,8 @@ pub enum StakingQueryMsg {
     GetDataRequestExecutor { executor: Addr },
     #[returns(IsDataRequestExecutorEligibleResponse)]
     IsDataRequestExecutorEligible { executor: Addr },
+    #[returns(GetStakingConfigResponse)]
+    GetStakingConfig,
 }
 
 #[cw_serde]
@@ -146,6 +148,11 @@ pub struct IsDataRequestExecutorEligibleResponse {
 #[cw_serde]
 pub struct GetContractResponse {
     pub value: String,
+}
+
+#[cw_serde]
+pub struct GetStakingConfigResponse {
+    pub value: StakingConfig,
 }
 
 #[cw_serde]

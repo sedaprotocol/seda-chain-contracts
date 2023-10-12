@@ -1,17 +1,6 @@
-use common::state::DataRequestExecutor;
+use common::state::{DataRequestExecutor, StakingConfig};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
-/// Governance-controlled configuration parameters
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct Config {
-    /// Minimum amount of SEDA tokens required to register as a data request executor
-    pub minimum_stake_to_register: u128,
-    /// Minimum amount of SEDA tokens required to be eligible for committee inclusion
-    pub minimum_stake_for_committee_eligibility: u128,
-}
 
 /// Address of the token used for data request executor staking
 pub const TOKEN: Item<String> = Item::new("token");
@@ -28,4 +17,4 @@ pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
 pub const PROXY_CONTRACT: Item<Addr> = Item::new("proxy_contract");
 
 /// Governance-controlled configuration parameters
-pub const CONFIG: Item<Config> = Item::new("config");
+pub const CONFIG: Item<StakingConfig> = Item::new("config");
