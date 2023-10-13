@@ -11,6 +11,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
+use cw_utils::parse_execute_response_data;
 
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
@@ -211,10 +212,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
 }
 
 pub fn get_dr_id(res: AppResponse) -> String {
-    let binary = res.data.unwrap();
-
-    // I don't know why protobuf adds 2 bytes to the beginning of the data payload but it does
-    let binary = &binary.to_vec()[2..];
+    let binary = parse_execute_response_data(&res.data.unwrap().0).unwrap().data.unwrap();
 
     let dr_id = String::from_utf8(binary.to_vec()).unwrap();
 
