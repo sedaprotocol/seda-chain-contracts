@@ -4,6 +4,7 @@ use common::types::Bytes;
 use common::types::Hash;
 use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
+use cw_utils::parse_execute_response_data;
 use data_requests::state::DataRequestInputs;
 use data_requests::utils::hash_data_request;
 use proxy_contract::msg::ProxyExecuteMsg;
@@ -11,7 +12,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
-use cw_utils::parse_execute_response_data;
 
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
@@ -212,14 +212,12 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
 }
 
 pub fn get_dr_id(res: AppResponse) -> String {
-    let binary = parse_execute_response_data(&res.data.unwrap().0).unwrap().data.unwrap();
+    let binary = parse_execute_response_data(&res.data.unwrap().0)
+        .unwrap()
+        .data
+        .unwrap();
 
-    let dr_id = String::from_utf8(binary.to_vec()).unwrap();
-
-    // remove first and last char (they are quotes)
-    let dr_id = &dr_id[1..dr_id.len() - 1];
-
-    dr_id.to_string()
+    format!("0x{}", hex::encode(binary))
 }
 
 pub fn calculate_commitment(reveal: &str, salt: &str) -> String {

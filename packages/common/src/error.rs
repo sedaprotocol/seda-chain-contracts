@@ -1,6 +1,7 @@
 use crate::types::Hash;
 use cosmwasm_std::StdError;
 use cw_utils::ParseReplyError;
+use hex::FromHexError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -48,4 +49,12 @@ pub enum ContractError {
     UnexpectedError(String),
     #[error(transparent)]
     ParseReplyError(#[from] ParseReplyError),
+    #[error("Invalid hexadecimal input: {0}")]
+    FromHex(FromHexError),
+}
+
+impl From<FromHexError> for ContractError {
+    fn from(err: FromHexError) -> Self {
+        ContractError::FromHex(err)
+    }
 }

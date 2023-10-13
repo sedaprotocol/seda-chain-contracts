@@ -10,3 +10,4 @@ cw-utils = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+hex = { workspace = true }

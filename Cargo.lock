@@ -92,6 +92,7 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-utils",
+ "hex",
  "schemars",
  "serde",
  "thiserror",

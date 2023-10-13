@@ -1,5 +1,5 @@
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{to_binary, Deps, DepsMut, MessageInfo, Order, Response, StdResult};
+use cosmwasm_std::{Deps, DepsMut, MessageInfo, Order, Response, StdResult};
 
 use crate::state::{DATA_REQUESTS, DATA_REQUESTS_COUNT};
 
@@ -109,7 +109,9 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(to_binary(&posted_dr.dr_id)?)
+            .set_data(cosmwasm_std::Binary::from(hex::decode(
+                posted_dr.dr_id[2..].to_string().clone(),
+            )?))
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &posted_dr.dr_id),
