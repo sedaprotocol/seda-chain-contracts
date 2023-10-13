@@ -1,17 +1,25 @@
-name: release wasm
-
+name: Release
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  RUST_BACKTRACE: 1
 
 jobs:
   release:
+    name: Release Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
 
-      - name: Install stable toolchain
+      - name: 📥 Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -19,26 +27,36 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
 
-      - name: Install cargo-run-script
-        uses: actions-rs/cargo@v1
+      - name: 🔨 Compile optimized WASM contracts
+        run: |
+          docker run --rm -v $GITHUB_WORKSPACE:/code \
+          --mount type=volume,source=contract_cache,target=/code/target \
+          --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+          cosmwasm/rust-optimizer:0.12.11
+
+      - name: 🪵 Conventional Changelog
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3
         with:
-          command: install
-          args: cargo-run-script
+          github-token: ${{ secrets.github_token }}
+          output-file: "false"
+          skip-commit: true
+          skip-tag: true
+          skip-git-pull: true
+          git-push: false
 
-      - name: Run cargo optimize
-        run: cargo run-script optimize
-
-      - name: Get release ID
-        id: get_release
-        uses: bruceadams/get-release@v1.2.3
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Upload optimized wasm
-        uses: svenstaro/upload-release-action@v2
+      - name: 🧾 Generate Checksum
+        uses: jmgilman/actions-generate-checksum@v1
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./cosmwasm/artifacts/*.wasm
-          tag: ${{ github.ref }}
-          overwrite: true
-          file_glob: true
+          patterns: |
+            artifacts/data_requests.wasm
+            artifacts/proxy_contract.wasm
+            artifacts/staking.wasm
+
+      - name: 📦 Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          generateReleaseNotes: true
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          artifacts: "checksum.txt,artifacts/data_requests.wasm,artifacts/proxy_contract.wasm,artifacts/staking.wasm"
