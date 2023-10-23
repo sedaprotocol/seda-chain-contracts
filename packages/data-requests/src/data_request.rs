@@ -8,7 +8,10 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL_ARRAY};
+    use crate::{
+        contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL_ARRAY,
+        state::DATA_REQUESTS_POOL_COUNT,
+    };
     use common::{error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::Event;
     use std::collections::HashMap;
@@ -77,8 +80,17 @@ pub mod data_requests {
             ));
         }
 
+        // increment the data request count
+        DATA_REQUESTS_POOL_COUNT.update(
+            deps.storage,
+            |mut new_dr_id| -> Result<_, ContractError> {
+                new_dr_id += 1;
+                Ok(new_dr_id)
+            },
+        )?;
+
         // save the data request
-        let mut dr_pool_array = DATA_REQUESTS_POOL_ARRAY.load(deps.storage)?;
+        let dr_count = DATA_REQUESTS_POOL_COUNT.load(deps.storage)?;
         let dr = DataRequest {
             dr_id: posted_dr.dr_id.clone(),
 
@@ -97,11 +109,10 @@ pub mod data_requests {
             commits: HashMap::new(),
             reveals: HashMap::new(),
 
-            index_in_pool: dr_pool_array.len() as u128,
+            index_in_pool: dr_count,
         };
         DATA_REQUESTS.save(deps.storage, dr.dr_id.clone(), &dr)?;
-        dr_pool_array.push(posted_dr.dr_id.clone());
-        DATA_REQUESTS_POOL_ARRAY.save(deps.storage, &dr_pool_array)?;
+        DATA_REQUESTS_POOL_ARRAY.save(deps.storage, dr_count, &posted_dr.dr_id.clone())?;
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
@@ -151,44 +162,27 @@ pub mod data_requests {
         position: Option<u128>,
         limit: Option<u128>,
     ) -> StdResult<GetDataRequestsFromPoolResponse> {
-        // let dr_count = DATA_REQUESTS_COUNT.load(deps.storage)?.to_be_bytes();
-        // let position = position.unwrap_or(0).to_be_bytes();
-        // let limit = limit.unwrap_or(u32::MAX);
-
-        // // starting from position, iterate forwards until we reach the limit or the end of the data requests
-        // let mut requests = vec![];
-        // for dr in DATA_REQUESTS_BY_NONCE.range(
-        //     deps.storage,
-        //     Some(Bound::InclusiveRaw(position.into())),
-        //     Some(Bound::ExclusiveRaw(dr_count.into())),
-        //     Order::Ascending,
-        // ) {
-        //     let dr_pending = DATA_REQUESTS.may_load(deps.storage, dr?.1)?;
-        //     // skip if the data request is no longer in the pool
-        //     if dr_pending.is_none() {
-        //         continue;
-        //     }
-        //     requests.push(dr_pending.unwrap());
-        //     if requests.len() == limit as usize {
-        //         break;
-        //     }
-        // }
-
         let position = position.unwrap_or(0);
         let limit = limit.unwrap_or(u32::MAX as u128);
 
         // compute the actual limit, taking into account the array size
-        let dr_pool_array = DATA_REQUESTS_POOL_ARRAY.load(deps.storage)?;
-        let actual_limit = match position + limit > dr_pool_array.len() as u128 {
-            true => dr_pool_array.len() as u128 - position,
+        let dr_count = DATA_REQUESTS_POOL_COUNT.load(deps.storage)?;
+        if position > dr_count {
+            return Ok(GetDataRequestsFromPoolResponse { value: vec![] });
+        }
+        let actual_limit = match position + limit > dr_count {
+            true => dr_count - position,
             false => limit,
         };
 
         let mut requests = vec![];
         for i in 0..actual_limit {
-            requests.push(
-                DATA_REQUESTS.load(deps.storage, dr_pool_array[(position + i) as usize].clone())?,
-            );
+            let dr_id = DATA_REQUESTS_POOL_ARRAY.may_load(deps.storage, position + i + 1)?;
+            let dr_id = match dr_id {
+                Some(dr_id) => dr_id,
+                None => break,
+            };
+            requests.push(DATA_REQUESTS.load(deps.storage, dr_id)?);
         }
 
         Ok(GetDataRequestsFromPoolResponse { value: requests })
@@ -246,7 +240,7 @@ mod dr_tests {
         let (constructed_dr_id, dr_args) = calculate_dr_id_and_args(1, 3);
 
         assert_eq!(
-            Some(construct_dr(constructed_dr_id, dr_args, 0)),
+            Some(construct_dr(constructed_dr_id, dr_args, 1)),
             received_value.value
         );
 
@@ -293,9 +287,9 @@ mod dr_tests {
 
         let (constructed_dr_id3, dr_args3) = calculate_dr_id_and_args(3, 3);
 
-        let constructd_dr1 = construct_dr(constructed_dr_id1, dr_args1, 0);
-        let constructd_dr2 = construct_dr(constructed_dr_id2, dr_args2, 1);
-        let constructd_dr3 = construct_dr(constructed_dr_id3, dr_args3, 2);
+        let constructed_dr1 = construct_dr(constructed_dr_id1, dr_args1, 1);
+        let constructed_dr2 = construct_dr(constructed_dr_id2, dr_args2, 2);
+        let constructed_dr3 = construct_dr(constructed_dr_id3, dr_args3, 3);
 
         // fetch all three data requests
 
@@ -305,9 +299,9 @@ mod dr_tests {
         assert_eq!(
             GetDataRequestsFromPoolResponse {
                 value: vec![
-                    constructd_dr1.clone(),
-                    constructd_dr2.clone(),
-                    constructd_dr3.clone(),
+                    constructed_dr1.clone(),
+                    constructed_dr2.clone(),
+                    constructed_dr3.clone(),
                 ]
             },
             response
@@ -320,7 +314,7 @@ mod dr_tests {
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
-                value: vec![constructd_dr1.clone(), constructd_dr2.clone(),]
+                value: vec![constructed_dr1.clone(), constructed_dr2.clone(),]
             },
             response
         );
@@ -332,7 +326,7 @@ mod dr_tests {
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
-                value: vec![constructd_dr2.clone()]
+                value: vec![constructed_dr2.clone()]
             },
             response
         );
@@ -344,7 +338,7 @@ mod dr_tests {
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
-                value: vec![constructd_dr2.clone(), constructd_dr3.clone(),]
+                value: vec![constructed_dr2.clone(), constructed_dr3.clone(),]
             },
             response
         );

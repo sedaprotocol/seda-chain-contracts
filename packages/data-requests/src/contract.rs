@@ -8,7 +8,7 @@ use cw2::set_contract_version;
 
 use crate::data_request::data_requests;
 use crate::data_request_result::data_request_results;
-use crate::state::{DATA_REQUESTS_POOL_ARRAY, PROXY_CONTRACT, TOKEN};
+use crate::state::{DATA_REQUESTS_POOL_COUNT, PROXY_CONTRACT, TOKEN};
 
 use cosmwasm_std::StdResult;
 
@@ -24,7 +24,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    DATA_REQUESTS_POOL_ARRAY.save(deps.storage, &Vec::new())?;
+    DATA_REQUESTS_POOL_COUNT.save(deps.storage, &0)?;
     TOKEN.save(deps.storage, &msg.token)?;
     PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
     Ok(Response::new().add_attribute("method", "instantiate"))

@@ -6,8 +6,8 @@ use crate::tests::utils::{
 use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use common::error::ContractError;
 use common::msg::{
-    GetCommittedDataResultResponse, GetResolvedDataResultResponse, GetRevealedDataResultResponse,
-    IsDataRequestExecutorEligibleResponse,
+    GetCommittedDataResultResponse, GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
+    GetRevealedDataResultResponse, IsDataRequestExecutorEligibleResponse,
 };
 use common::state::Reveal;
 use cosmwasm_std::Addr;
@@ -263,4 +263,201 @@ fn ineligible_post_data_result() {
         res.unwrap_err().downcast_ref::<ContractError>(),
         Some(&ContractError::IneligibleExecutor)
     );
+}
+
+#[test]
+fn pop_and_swap_in_pool() {
+    let (mut app, proxy_contract) = proper_instantiate();
+
+    // send tokens from USER to executor1 and executor2 so they can register
+    send_tokens(&mut app, USER, EXECUTOR_1, 1);
+    send_tokens(&mut app, USER, EXECUTOR_2, 1);
+    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
+        p2p_multi_address: Some("address".to_string()),
+    };
+    let cosmos_msg = proxy_contract
+        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
+        .unwrap();
+    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+        .unwrap();
+    app.execute(Addr::unchecked(EXECUTOR_2), cosmos_msg.clone())
+        .unwrap();
+
+    // post three drs
+
+    // post dr of `index_in_pool` = 1
+    let (_, posted_dr) = calculate_dr_id_and_args(1, 2);
+    let res = helper_post_dr(
+        &mut app,
+        proxy_contract.clone(),
+        posted_dr,
+        Addr::unchecked(USER),
+    )
+    .unwrap();
+    let dr_id_1 = get_dr_id(res);
+    // post dr of `index_in_pool` = 2
+    let (_, posted_dr) = calculate_dr_id_and_args(2, 2);
+    let res = helper_post_dr(
+        &mut app,
+        proxy_contract.clone(),
+        posted_dr,
+        Addr::unchecked(USER),
+    )
+    .unwrap();
+    let dr_id_2 = get_dr_id(res);
+    // post dr of `index_in_pool` = 3
+    let (_, posted_dr) = calculate_dr_id_and_args(3, 2);
+    let res = helper_post_dr(
+        &mut app,
+        proxy_contract.clone(),
+        posted_dr,
+        Addr::unchecked(USER),
+    )
+    .unwrap();
+    let dr_id_3 = get_dr_id(res);
+
+    // check `index_in_pool` of dr 1, 2, 3
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: None,
+        limit: None,
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 3);
+    assert_eq!(fetched_drs[0].dr_id, dr_id_1);
+    assert_eq!(fetched_drs[0].index_in_pool, 1);
+    assert_eq!(fetched_drs[1].dr_id, dr_id_2);
+    assert_eq!(fetched_drs[1].index_in_pool, 2);
+    assert_eq!(fetched_drs[2].dr_id, dr_id_3);
+    assert_eq!(fetched_drs[2].index_in_pool, 3);
+
+    // resolve dr 1
+
+    // executor 1 commits
+    let commitment1 = calculate_commitment("2000", EXECUTOR_1);
+    helper_commit_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id_1.to_string(),
+        commitment1,
+        Addr::unchecked(EXECUTOR_1),
+    )
+    .unwrap();
+    // executor 2 commits
+    let commitment2 = calculate_commitment("3000", EXECUTOR_2);
+    helper_commit_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id_1.to_string(),
+        commitment2.clone(),
+        Addr::unchecked(EXECUTOR_2),
+    )
+    .unwrap();
+    // executor 1 reveals
+    let reveal1 = Reveal {
+        reveal: "2000".to_string(),
+        salt: "executor1".to_string(),
+    };
+    helper_reveal_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id_1.to_string(),
+        reveal1.clone(),
+        Addr::unchecked(EXECUTOR_1),
+    )
+    .unwrap();
+    // executor 2 reveals
+    let reveal2 = Reveal {
+        reveal: "3000".to_string(),
+        salt: "executor2".to_string(),
+    };
+    helper_reveal_result(
+        &mut app,
+        proxy_contract.clone(),
+        dr_id_1.to_string(),
+        reveal2,
+        Addr::unchecked(EXECUTOR_2),
+    )
+    .unwrap();
+
+    // pool is now of size two, the position of dr 2 and 3 should be swapped
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: None,
+        limit: None,
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 2);
+    assert_eq!(fetched_drs[0].dr_id, dr_id_3);
+    assert_eq!(fetched_drs[0].index_in_pool, 1);
+    assert_eq!(fetched_drs[1].dr_id, dr_id_2);
+    assert_eq!(fetched_drs[1].index_in_pool, 2);
+
+    // `GetDataRequestsFromPool` with position = 1 should return dr 2
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: Some(1),
+        limit: None,
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 1);
+    assert_eq!(fetched_drs[0].dr_id, dr_id_2);
+    assert_eq!(fetched_drs[0].index_in_pool, 2);
+
+    // `GetDataRequestsFromPool` with limit = 1 should return dr 3
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: None,
+        limit: Some(1),
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 1);
+    assert_eq!(fetched_drs[0].dr_id, dr_id_3);
+    assert_eq!(fetched_drs[0].index_in_pool, 1);
+
+    // `GetDataRequestsFromPool` with position = 2 or 3 should return empty array
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: Some(2),
+        limit: None,
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 0);
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: Some(3),
+        limit: None,
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 0);
+
+    // `GetDataRequestsFromPool` with limit = 0 should return empty array
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: None,
+        limit: Some(0),
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 0);
 }

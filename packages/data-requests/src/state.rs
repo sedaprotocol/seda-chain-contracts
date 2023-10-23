@@ -37,11 +37,14 @@ pub struct DataRequestInputs {
 /// Upon posting a data request, it is added to this map with a unique auto-incrementing ID
 pub const DATA_REQUESTS: Map<Hash, DataRequest> = Map::new("data_requests_pool");
 
-/// For internal bookkeeping when iterative over pool; index within DR pool
-pub const DATA_REQUESTS_POOL_ARRAY: Item<Vec<Hash>> = Item::new("data_requests_pool_array");
-
 /// Upon executing a data request, teh result is added to this map with a unique auto-incrementing ID
 pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results_pool");
+
+/// For internal bookkeeping when iterative over pool; index within DR pool
+pub const DATA_REQUESTS_POOL_ARRAY: Map<u128, Hash> = Map::new("data_requests_pool_array");
+
+/// A counter for how many data requests are unresolved
+pub const DATA_REQUESTS_POOL_COUNT: Item<u128> = Item::new("data_requests_count");
 
 /// Address of the token used for deposit for posting a data request
 // TODO: implement deposit for posting data requests

@@ -22,7 +22,7 @@ pub mod data_request_results {
     use common::types::Bytes;
 
     use crate::contract::CONTRACT_VERSION;
-    use crate::state::DATA_REQUESTS_POOL_ARRAY;
+    use crate::state::{DATA_REQUESTS_POOL_ARRAY, DATA_REQUESTS_POOL_COUNT};
     use crate::{
         state::DATA_RESULTS,
         utils::{check_eligibility, hash_data_result, validate_sender},
@@ -139,22 +139,17 @@ pub mod data_request_results {
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
 
             // swap and pop the data request's index_in_pool
-            let index_in_dr_pool: u128 = dr.index_in_pool;
-            let mut dr_pool_array = DATA_REQUESTS_POOL_ARRAY.load(deps.storage)?;
-            println!("dr_pool_array: {:?}", dr_pool_array);
-            let last_dr_id_in_pool_array = dr_pool_array.last().unwrap().to_string();
-            println!("last_dr_id_in_pool_array: {}", last_dr_id_in_pool_array);
-            dr_pool_array[dr.index_in_pool as usize] = dr_pool_array.last().unwrap().to_string();
-            let mut last_dr_in_pool_array =
-                DATA_REQUESTS.load(deps.storage, last_dr_id_in_pool_array.clone())?;
-            last_dr_in_pool_array.index_in_pool = index_in_dr_pool;
-            DATA_REQUESTS.save(
-                deps.storage,
-                last_dr_id_in_pool_array,
-                &last_dr_in_pool_array,
-            )?;
-            dr_pool_array.pop();
-            DATA_REQUESTS_POOL_ARRAY.save(deps.storage, &dr_pool_array)?;
+            // first, swap the data request's index_in_pool with the last data request in the pool
+            let dr_count = DATA_REQUESTS_POOL_COUNT.load(deps.storage)?;
+            let last_dr_id_in_pool = DATA_REQUESTS_POOL_ARRAY.load(deps.storage, dr_count)?;
+            DATA_REQUESTS_POOL_ARRAY.save(deps.storage, dr.index_in_pool, &last_dr_id_in_pool)?;
+            // next, update the last data request's index_in_pool to the swapped index
+            let mut last_dr_in_pool =
+                DATA_REQUESTS.load(deps.storage, last_dr_id_in_pool.clone())?;
+            last_dr_in_pool.index_in_pool = dr.index_in_pool;
+            DATA_REQUESTS.save(deps.storage, last_dr_id_in_pool, &last_dr_in_pool)?;
+            // finally, pop the last data request in the pool
+            DATA_REQUESTS_POOL_COUNT.save(deps.storage, &(dr_count - 1))?;
 
             // remove from the data requests pool
             DATA_REQUESTS.remove(deps.storage, dr_id.clone());
