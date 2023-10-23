@@ -22,6 +22,7 @@ pub mod data_request_results {
     use common::types::Bytes;
 
     use crate::contract::CONTRACT_VERSION;
+    use crate::state::DATA_REQUESTS_POOL_ARRAY;
     use crate::{
         state::DATA_RESULTS,
         utils::{check_eligibility, hash_data_result, validate_sender},
@@ -114,6 +115,8 @@ pub mod data_request_results {
                 ("reveal", serde_json::to_string(&reveal).unwrap().as_str()),
             ]));
 
+        // if total reveals equals replication factor, resolve the DR
+        // TODO: this needs to be separated out in a tally function once the module is implemented
         if u16::try_from(dr.reveals.len()).unwrap() == dr.replication_factor {
             let block_height: u64 = env.block.height;
             let exit_code: u8 = 0;
@@ -122,8 +125,8 @@ pub mod data_request_results {
             let payback_address: Bytes = dr.payback_address.clone();
             let seda_payload: Bytes = dr.seda_payload.clone();
 
+            // save the data result
             let result_id = hash_data_result(&dr, block_height, exit_code, &result);
-
             let dr_result = DataResult {
                 result_id: result_id.clone(),
                 dr_id: dr_id.clone(),
@@ -134,6 +137,26 @@ pub mod data_request_results {
                 seda_payload: seda_payload.clone(),
             };
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
+
+            // swap and pop the data request's index_in_pool
+            let index_in_dr_pool: u128 = dr.index_in_pool;
+            let mut dr_pool_array = DATA_REQUESTS_POOL_ARRAY.load(deps.storage)?;
+            println!("dr_pool_array: {:?}", dr_pool_array);
+            let last_dr_id_in_pool_array = dr_pool_array.last().unwrap().to_string();
+            println!("last_dr_id_in_pool_array: {}", last_dr_id_in_pool_array);
+            dr_pool_array[dr.index_in_pool as usize] = dr_pool_array.last().unwrap().to_string();
+            let mut last_dr_in_pool_array =
+                DATA_REQUESTS.load(deps.storage, last_dr_id_in_pool_array.clone())?;
+            last_dr_in_pool_array.index_in_pool = index_in_dr_pool;
+            DATA_REQUESTS.save(
+                deps.storage,
+                last_dr_id_in_pool_array,
+                &last_dr_in_pool_array,
+            )?;
+            dr_pool_array.pop();
+            DATA_REQUESTS_POOL_ARRAY.save(deps.storage, &dr_pool_array)?;
+
+            // remove from the data requests pool
             DATA_REQUESTS.remove(deps.storage, dr_id.clone());
 
             response = response.add_event(Event::new("seda-data-result").add_attributes([

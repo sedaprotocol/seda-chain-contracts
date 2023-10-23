@@ -76,7 +76,11 @@ pub fn calculate_dr_id_and_args(
     (constructed_dr_id, posted_dr)
 }
 
-pub fn construct_dr(constructed_dr_id: String, dr_args: PostDataRequestArgs) -> DataRequest {
+pub fn construct_dr(
+    constructed_dr_id: String,
+    dr_args: PostDataRequestArgs,
+    index_in_pool: u128,
+) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, Reveal> = HashMap::new();
     let payback_address: Bytes = Vec::new();
@@ -95,6 +99,7 @@ pub fn construct_dr(constructed_dr_id: String, dr_args: PostDataRequestArgs) -> 
         commits,
         reveals,
         payback_address,
+        index_in_pool,
     }
 }
 
@@ -123,7 +128,7 @@ pub fn get_dr(deps: DepsMut, dr_id: String) -> GetDataRequestResponse {
 pub fn get_drs_from_pool(
     deps: DepsMut,
     position: Option<u128>,
-    limit: Option<u32>,
+    limit: Option<u128>,
 ) -> GetDataRequestsFromPoolResponse {
     let res = query(
         deps.as_ref(),

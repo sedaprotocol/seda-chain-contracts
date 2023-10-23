@@ -66,7 +66,7 @@ pub enum DataRequestsQueryMsg {
     #[returns(GetDataRequestsFromPoolResponse)]
     GetDataRequestsFromPool {
         position: Option<u128>,
-        limit: Option<u32>,
+        limit: Option<u128>,
     },
     #[returns(GetCommittedDataResultResponse)]
     GetCommittedDataResult { dr_id: Hash, executor: Addr },
