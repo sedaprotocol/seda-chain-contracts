@@ -6,50 +6,51 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
+    #[error("{0}")]
+    Std(#[from] StdError),
+
     // staking contract errors
-    #[error("No funds provided")]
+    #[error("NoFunds: No funds provided")]
     NoFunds,
-    #[error("Executor has staked tokens or tokens pending withdrawal")]
+    #[error("ExecutorHasTokens: Executor has staked tokens or tokens pending withdrawal")]
     ExecutorHasTokens,
 
     // DR contract errors
-    #[error("{0}")]
-    Std(#[from] StdError),
-    #[error("Insufficient funds. Required: {0}, available: {1}")]
+    #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(u128, u128),
-    #[error("Invalid data request id, expected: {0}, actual: {1}")]
+    #[error("InvalidDataRequestId: Invalid data request id, expected: {0}, actual: {1}")]
     InvalidDataRequestId(Hash, Hash),
-    #[error("Data request already exists")]
+    #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
-    #[error("Caller is not an eligible data request executor")]
+    #[error("IneligibleExecutor: Caller is not an eligible data request executor")]
     IneligibleExecutor,
-    #[error("Caller has already committed on this data request")]
+    #[error("AlreadyCommitted: Caller has already committed on this data request")]
     AlreadyCommitted,
-    #[error("Reveal stage has not started yet")]
+    #[error("RevealNotStarted: Reveal stage has not started yet")]
     RevealNotStarted,
-    #[error("Executor has not committed on this data request")]
+    #[error("NotCommitted: Executor has not committed on this data request")]
     NotCommitted,
-    #[error("Executor has already revealed on this data request")]
+    #[error("AlreadyRevealed: Executor has already revealed on this data request")]
     AlreadyRevealed,
-    #[error("Revealed result does not match the committed result")]
+    #[error("RevealMismatch: Revealed result does not match the committed result")]
     RevealMismatch,
-    #[error("Only proxy can pass a sender")]
+    #[error("NotProxy: Only proxy can pass a sender")]
     NotProxy,
-    #[error("Arg cannot be empty: {0}")]
+    #[error("EmptyArg: Arg cannot be empty: {0}")]
     EmptyArg(String),
 
     // proxy errors
-    #[error("Contract already set")]
+    #[error("ContractAlreadySet: Contract already set")]
     ContractAlreadySet,
-    #[error("Caller must be the contract creator")]
+    #[error("NotContractCreator: Caller must be the contract creator")]
     NotContractCreator,
-    #[error("Unknown reply ID: {0}")]
+    #[error("UnknownReplyId: Unknown reply ID: {0}")]
     UnknownReplyId(String),
-    #[error("Unexpected error: {0}")]
+    #[error("UnexpectedError: Unexpected error: {0}")]
     UnexpectedError(String),
-    #[error(transparent)]
+    #[error("ParseReplyError: Parse reply error: {0}")]
     ParseReplyError(#[from] ParseReplyError),
-    #[error("Invalid hexadecimal input: {0}")]
+    #[error("FromHex: Invalid hexadecimal input: {0}")]
     FromHex(FromHexError),
 }
 
