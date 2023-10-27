@@ -125,10 +125,6 @@ pub struct GetRevealedDataResultsResponse {
 pub struct GetResolvedDataResultResponse {
     pub value: DataResult,
 }
-#[cw_serde]
-pub struct GetIdsResponse {
-    pub value: Vec<Hash>,
-}
 
 #[cw_serde]
 pub struct GetDataRequestExecutorResponse {

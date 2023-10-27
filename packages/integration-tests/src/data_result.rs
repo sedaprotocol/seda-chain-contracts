@@ -285,7 +285,6 @@ fn pop_and_swap_in_pool() {
 
     // post three drs
 
-    // post dr of `index_in_pool` = 1
     let (_, posted_dr) = calculate_dr_id_and_args(1, 2);
     let res = helper_post_dr(
         &mut app,
@@ -295,7 +294,6 @@ fn pop_and_swap_in_pool() {
     )
     .unwrap();
     let dr_id_1 = get_dr_id(res);
-    // post dr of `index_in_pool` = 2
     let (_, posted_dr) = calculate_dr_id_and_args(2, 2);
     let res = helper_post_dr(
         &mut app,
@@ -305,7 +303,6 @@ fn pop_and_swap_in_pool() {
     )
     .unwrap();
     let dr_id_2 = get_dr_id(res);
-    // post dr of `index_in_pool` = 3
     let (_, posted_dr) = calculate_dr_id_and_args(3, 2);
     let res = helper_post_dr(
         &mut app,
@@ -316,7 +313,7 @@ fn pop_and_swap_in_pool() {
     .unwrap();
     let dr_id_3 = get_dr_id(res);
 
-    // check `index_in_pool` of dr 1, 2, 3
+    // check dr 1, 2, 3 are in pool
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: None,
         limit: None,
@@ -328,11 +325,8 @@ fn pop_and_swap_in_pool() {
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 3);
     assert_eq!(fetched_drs[0].dr_id, dr_id_1);
-    assert_eq!(fetched_drs[0].index_in_pool, 1);
     assert_eq!(fetched_drs[1].dr_id, dr_id_2);
-    assert_eq!(fetched_drs[1].index_in_pool, 2);
     assert_eq!(fetched_drs[2].dr_id, dr_id_3);
-    assert_eq!(fetched_drs[2].index_in_pool, 3);
 
     // resolve dr 1
 
@@ -395,9 +389,7 @@ fn pop_and_swap_in_pool() {
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 2);
     assert_eq!(fetched_drs[0].dr_id, dr_id_3);
-    assert_eq!(fetched_drs[0].index_in_pool, 1);
     assert_eq!(fetched_drs[1].dr_id, dr_id_2);
-    assert_eq!(fetched_drs[1].index_in_pool, 2);
 
     // `GetDataRequestsFromPool` with position = 1 should return dr 2
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
@@ -411,7 +403,6 @@ fn pop_and_swap_in_pool() {
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
     assert_eq!(fetched_drs[0].dr_id, dr_id_2);
-    assert_eq!(fetched_drs[0].index_in_pool, 2);
 
     // `GetDataRequestsFromPool` with limit = 1 should return dr 3
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
@@ -425,7 +416,6 @@ fn pop_and_swap_in_pool() {
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
     assert_eq!(fetched_drs[0].dr_id, dr_id_3);
-    assert_eq!(fetched_drs[0].index_in_pool, 1);
 
     // `GetDataRequestsFromPool` with position = 2 or 3 should return empty array
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {

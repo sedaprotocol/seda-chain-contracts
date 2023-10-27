@@ -38,10 +38,6 @@ pub struct DataRequest {
     pub commits: HashMap<String, Commitment>,
     /// Reveals submitted by executors
     pub reveals: HashMap<String, Reveal>,
-
-    // Internal bookkeeping
-    /// Index within DR pool
-    pub index_in_pool: u128,
 }
 
 /// Represents a resolved data result

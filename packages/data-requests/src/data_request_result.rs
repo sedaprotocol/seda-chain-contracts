@@ -1,7 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use crate::state::DATA_REQUESTS;
 use common::msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse};
 use common::types::Hash;
 
@@ -15,14 +14,14 @@ pub mod data_request_results {
     use sha3::{Digest, Keccak256};
 
     use common::msg::{
-        GetCommittedDataResultsResponse, GetCommittedExecutorsResponse, GetIdsResponse,
+        GetCommittedDataResultsResponse, GetCommittedExecutorsResponse,
         GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
     };
     use common::state::{DataResult, Reveal};
     use common::types::Bytes;
 
     use crate::contract::CONTRACT_VERSION;
-    use crate::state::{DATA_REQUESTS_POOL_ARRAY, DATA_REQUESTS_POOL_COUNT};
+    use crate::state::DATA_REQUESTS_POOL;
     use crate::{
         state::DATA_RESULTS,
         utils::{check_eligibility, hash_data_result, validate_sender},
@@ -45,13 +44,13 @@ pub mod data_request_results {
         }
 
         // find the data request from the pool (if it exists, otherwise error)
-        let mut dr = DATA_REQUESTS.load(deps.storage, dr_id.clone())?;
+        let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id.clone())?;
         if dr.commits.contains_key(&sender.to_string()) {
             return Err(AlreadyCommitted);
         }
         dr.commits.insert(sender.to_string(), commitment.clone());
 
-        DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
+        DATA_REQUESTS_POOL.save(deps.storage, dr_id.clone(), &dr)?;
 
         Ok(Response::new()
             .add_attribute("action", "commit_data_result")
@@ -79,7 +78,7 @@ pub mod data_request_results {
         }
 
         // find the data request from the committed pool (if it exists, otherwise error)
-        let mut dr = DATA_REQUESTS.load(deps.storage, dr_id.clone())?;
+        let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id.clone())?;
         let committed_dr_results = dr.clone().commits;
 
         if u16::try_from(committed_dr_results.len()).unwrap() < dr.replication_factor {
@@ -104,7 +103,7 @@ pub mod data_request_results {
 
         dr.reveals.insert(sender.to_string(), reveal.clone());
 
-        DATA_REQUESTS.save(deps.storage, dr_id.clone(), &dr)?;
+        DATA_REQUESTS_POOL.save(deps.storage, dr_id.clone(), &dr)?;
 
         let mut response = Response::new()
             .add_attribute("action", "reveal_data_result")
@@ -138,21 +137,8 @@ pub mod data_request_results {
             };
             DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
 
-            // swap and pop the data request's index_in_pool
-            // first, swap the data request's index_in_pool with the last data request in the pool
-            let dr_count = DATA_REQUESTS_POOL_COUNT.load(deps.storage)?;
-            let last_dr_id_in_pool = DATA_REQUESTS_POOL_ARRAY.load(deps.storage, dr_count)?;
-            DATA_REQUESTS_POOL_ARRAY.save(deps.storage, dr.index_in_pool, &last_dr_id_in_pool)?;
-            // next, update the last data request's index_in_pool to the swapped index
-            let mut last_dr_in_pool =
-                DATA_REQUESTS.load(deps.storage, last_dr_id_in_pool.clone())?;
-            last_dr_in_pool.index_in_pool = dr.index_in_pool;
-            DATA_REQUESTS.save(deps.storage, last_dr_id_in_pool, &last_dr_in_pool)?;
-            // finally, pop the last data request in the pool
-            DATA_REQUESTS_POOL_COUNT.save(deps.storage, &(dr_count - 1))?;
-
-            // remove from the data requests pool
-            DATA_REQUESTS.remove(deps.storage, dr_id.clone());
+            // remove from the pool
+            DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone())?;
 
             response = response.add_event(Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION),
@@ -181,7 +167,7 @@ pub mod data_request_results {
         dr_id: Hash,
         executor: Addr,
     ) -> StdResult<GetCommittedDataResultResponse> {
-        let dr = DATA_REQUESTS.load(deps.storage, dr_id)?;
+        let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         let commitment = dr.commits.get(&executor.to_string());
         Ok(GetCommittedDataResultResponse {
             value: commitment.cloned(),
@@ -193,7 +179,7 @@ pub mod data_request_results {
         deps: Deps,
         dr_id: Hash,
     ) -> StdResult<GetCommittedDataResultsResponse> {
-        let dr = DATA_REQUESTS.load(deps.storage, dr_id)?;
+        let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         Ok(GetCommittedDataResultsResponse { value: dr.commits })
     }
 
@@ -203,7 +189,7 @@ pub mod data_request_results {
         dr_id: Hash,
         executor: Addr,
     ) -> StdResult<GetRevealedDataResultResponse> {
-        let dr = DATA_REQUESTS.load(deps.storage, dr_id)?;
+        let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         let reveal = dr.reveals.get(&executor.to_string());
         Ok(GetRevealedDataResultResponse {
             value: reveal.cloned(),
@@ -215,7 +201,7 @@ pub mod data_request_results {
         deps: Deps,
         dr_id: Hash,
     ) -> StdResult<GetRevealedDataResultsResponse> {
-        let dr = DATA_REQUESTS.load(deps.storage, dr_id)?;
+        let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         Ok(GetRevealedDataResultsResponse { value: dr.reveals })
     }
 
@@ -228,44 +214,19 @@ pub mod data_request_results {
         Ok(GetResolvedDataResultResponse { value: result })
     }
 
-    /// Returns a vector of data requests ids
-    pub fn get_drs_ids(deps: Deps) -> StdResult<GetIdsResponse> {
-        let mut ids = Vec::new();
-        for (_, key) in DATA_REQUESTS
-            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .enumerate()
-        {
-            ids.push(key?)
-        }
-        Ok(GetIdsResponse { value: ids })
-    }
-
-    /// Returns a vector of data results ids
-    pub fn get_results_ids(deps: Deps) -> StdResult<GetIdsResponse> {
-        let mut ids = Vec::new();
-        for (_, key) in DATA_RESULTS
-            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .enumerate()
-        {
-            ids.push(key?)
-        }
-        Ok(GetIdsResponse { value: ids })
-    }
-
     /// Returns a vector of committed executors
     pub fn get_committed_executors(
         deps: Deps,
         dr_id: Hash,
     ) -> StdResult<GetCommittedExecutorsResponse> {
         let mut executors = Vec::new();
-        for key in DATA_REQUESTS.load(deps.storage, dr_id)?.commits.keys() {
+        for key in DATA_REQUESTS_POOL.load(deps.storage, dr_id)?.commits.keys() {
             executors.push(key.clone())
         }
         Ok(GetCommittedExecutorsResponse { value: executors })
     }
 
-    /// Returns a vector of revealed data requests ids, if it exists.
-
+    /// Computes hash given a reveal and salt
     fn compute_hash(reveal: &str, salt: &str) -> String {
         let mut hasher = Keccak256::new();
         hasher.update(reveal.as_bytes());

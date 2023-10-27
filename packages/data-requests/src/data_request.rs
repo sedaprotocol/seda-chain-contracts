@@ -1,17 +1,12 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use crate::state::DATA_REQUESTS;
-
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{
-        contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL_ARRAY,
-        state::DATA_REQUESTS_POOL_COUNT,
-    };
+    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL};
     use common::{error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::Event;
     use std::collections::HashMap;
@@ -25,7 +20,7 @@ pub mod data_requests {
 
     /// Internal function to return whether a data request or result exists with the given id.
     fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
-        DATA_REQUESTS
+        DATA_REQUESTS_POOL
             .may_load(deps.storage, dr_id.clone())
             .ok()
             .flatten()
@@ -80,17 +75,7 @@ pub mod data_requests {
             ));
         }
 
-        // increment the data request count
-        DATA_REQUESTS_POOL_COUNT.update(
-            deps.storage,
-            |mut new_dr_id| -> Result<_, ContractError> {
-                new_dr_id += 1;
-                Ok(new_dr_id)
-            },
-        )?;
-
         // save the data request
-        let dr_count = DATA_REQUESTS_POOL_COUNT.load(deps.storage)?;
         let dr = DataRequest {
             dr_id: posted_dr.dr_id.clone(),
 
@@ -108,11 +93,8 @@ pub mod data_requests {
             payback_address: posted_dr.payback_address.clone(),
             commits: HashMap::new(),
             reveals: HashMap::new(),
-
-            index_in_pool: dr_count,
         };
-        DATA_REQUESTS.save(deps.storage, dr.dr_id.clone(), &dr)?;
-        DATA_REQUESTS_POOL_ARRAY.save(deps.storage, dr_count, &posted_dr.dr_id.clone())?;
+        DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id.clone(), dr)?;
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
@@ -152,7 +134,7 @@ pub mod data_requests {
 
     /// Returns a data request from the pool with the given id, if it exists.
     pub fn get_data_request(deps: Deps, dr_id: Hash) -> StdResult<GetDataRequestResponse> {
-        let dr = DATA_REQUESTS.may_load(deps.storage, dr_id)?;
+        let dr = DATA_REQUESTS_POOL.may_load(deps.storage, dr_id)?;
         Ok(GetDataRequestResponse { value: dr })
     }
 
@@ -166,7 +148,7 @@ pub mod data_requests {
         let limit = limit.unwrap_or(u32::MAX as u128);
 
         // compute the actual limit, taking into account the array size
-        let dr_count = DATA_REQUESTS_POOL_COUNT.load(deps.storage)?;
+        let dr_count = DATA_REQUESTS_POOL.len(deps.storage)?;
         if position > dr_count {
             return Ok(GetDataRequestsFromPoolResponse { value: vec![] });
         }
@@ -177,12 +159,12 @@ pub mod data_requests {
 
         let mut requests = vec![];
         for i in 0..actual_limit {
-            let dr_id = DATA_REQUESTS_POOL_ARRAY.may_load(deps.storage, position + i + 1)?;
+            let dr_id = DATA_REQUESTS_POOL.may_load_at_index(deps.storage, position + i + 1)?;
             let dr_id = match dr_id {
                 Some(dr_id) => dr_id,
                 None => break,
             };
-            requests.push(DATA_REQUESTS.load(deps.storage, dr_id)?);
+            requests.push(DATA_REQUESTS_POOL.load(deps.storage, dr_id)?);
         }
 
         Ok(GetDataRequestsFromPoolResponse { value: requests })
@@ -240,7 +222,7 @@ mod dr_tests {
         let (constructed_dr_id, dr_args) = calculate_dr_id_and_args(1, 3);
 
         assert_eq!(
-            Some(construct_dr(constructed_dr_id, dr_args, 1)),
+            Some(construct_dr(constructed_dr_id, dr_args)),
             received_value.value
         );
 
@@ -287,9 +269,9 @@ mod dr_tests {
 
         let (constructed_dr_id3, dr_args3) = calculate_dr_id_and_args(3, 3);
 
-        let constructed_dr1 = construct_dr(constructed_dr_id1, dr_args1, 1);
-        let constructed_dr2 = construct_dr(constructed_dr_id2, dr_args2, 2);
-        let constructed_dr3 = construct_dr(constructed_dr_id3, dr_args3, 3);
+        let constructed_dr1 = construct_dr(constructed_dr_id1, dr_args1);
+        let constructed_dr2 = construct_dr(constructed_dr_id2, dr_args2);
+        let constructed_dr3 = construct_dr(constructed_dr_id3, dr_args3);
 
         // fetch all three data requests
 
