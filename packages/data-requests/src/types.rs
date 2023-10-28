@@ -51,12 +51,8 @@ where
         self.items.may_load(store, key)
     }
 
-    pub fn may_load_at_index(
-        &'a self,
-        store: &dyn Storage,
-        index: u128,
-    ) -> Result<Option<K>, StdError> {
-        self.index_to_key.may_load(store, index)
+    pub fn load_at_index(&'a self, store: &dyn Storage, index: u128) -> Result<K, StdError> {
+        self.index_to_key.load(store, index)
     }
 
     pub fn save(&'a self, store: &mut dyn Storage, key: K, item: &T) -> Result<(), StdError> {

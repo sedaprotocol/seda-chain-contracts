@@ -145,25 +145,19 @@ pub mod data_requests {
         limit: Option<u128>,
     ) -> StdResult<GetDataRequestsFromPoolResponse> {
         let position = position.unwrap_or(0);
-        let limit = limit.unwrap_or(u32::MAX as u128);
-
-        // compute the actual limit, taking into account the array size
         let dr_count = DATA_REQUESTS_POOL.len(deps.storage)?;
+        let limit = limit.unwrap_or(dr_count);
+
         if position > dr_count {
             return Ok(GetDataRequestsFromPoolResponse { value: vec![] });
         }
-        let actual_limit = match position + limit > dr_count {
-            true => dr_count - position,
-            false => limit,
-        };
+
+        // compute the actual limit, taking into account the array size
+        let actual_limit = (position + limit).clamp(position, dr_count) - position;
 
         let mut requests = vec![];
         for i in 0..actual_limit {
-            let dr_id = DATA_REQUESTS_POOL.may_load_at_index(deps.storage, position + i + 1)?;
-            let dr_id = match dr_id {
-                Some(dr_id) => dr_id,
-                None => break,
-            };
+            let dr_id = DATA_REQUESTS_POOL.load_at_index(deps.storage, position + i + 1)?;
             requests.push(DATA_REQUESTS_POOL.load(deps.storage, dr_id)?);
         }
 
