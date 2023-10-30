@@ -69,7 +69,7 @@ where
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        let index = self.len.load(store).unwrap() + 1;
+        let index = self.len.load(store)? + 1;
         self.items.save(store, key.clone(), &item)?;
         self.index_to_key.save(store, index, &key)?;
         self.key_to_index.save(store, key, &index)?;
@@ -78,7 +78,7 @@ where
     }
 
     pub fn remove(&'a self, store: &mut dyn Storage, key: K) -> Result<(), StdError> {
-        let len = self.len.load(store).unwrap();
+        let len = self.len.load(store)?;
         let last_key = self.index_to_key.load(store, len)?;
         let item_index = self.key_to_index.load(store, key.clone())?;
 
