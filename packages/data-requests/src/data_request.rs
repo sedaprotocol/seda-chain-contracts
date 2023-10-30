@@ -153,11 +153,11 @@ pub mod data_requests {
         }
 
         // compute the actual limit, taking into account the array size
-        let actual_limit = (position + limit).clamp(position, dr_count) - position;
+        let actual_limit = (position + limit).clamp(position, dr_count);
 
         let mut requests = vec![];
-        for i in 0..actual_limit {
-            let dr_id = DATA_REQUESTS_POOL.load_at_index(deps.storage, position + i)?;
+        for i in position..actual_limit {
+            let dr_id = DATA_REQUESTS_POOL.load_at_index(deps.storage, i)?;
             requests.push(DATA_REQUESTS_POOL.load(deps.storage, dr_id)?);
         }
 
