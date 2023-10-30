@@ -328,6 +328,19 @@ fn pop_and_swap_in_pool() {
     assert_eq!(fetched_drs[1].dr_id, dr_id_2);
     assert_eq!(fetched_drs[2].dr_id, dr_id_3);
 
+    // `GetDataRequestsFromPool` with position = 0 and limit = 1 should return dr 1
+    let msg = ProxyQueryMsg::GetDataRequestsFromPool {
+        position: Some(0),
+        limit: Some(1),
+    };
+    let res: GetDataRequestsFromPoolResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &msg)
+        .unwrap();
+    let fetched_drs = res.value;
+    assert_eq!(fetched_drs.len(), 1);
+    assert_eq!(fetched_drs[0].dr_id, dr_id_1);
+
     // resolve dr 1
 
     // executor 1 commits

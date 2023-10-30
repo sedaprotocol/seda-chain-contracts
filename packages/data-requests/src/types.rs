@@ -55,7 +55,7 @@ where
         self.index_to_key.load(store, index)
     }
 
-    pub fn save(&'a self, store: &mut dyn Storage, key: K, item: &T) -> Result<(), StdError> {
+    pub fn update(&'a self, store: &mut dyn Storage, key: K, item: &T) -> Result<(), StdError> {
         self.items.save(store, key, item)
     }
 

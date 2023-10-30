@@ -50,7 +50,7 @@ pub mod data_request_results {
         }
         dr.commits.insert(sender.to_string(), commitment.clone());
 
-        DATA_REQUESTS_POOL.save(deps.storage, dr_id.clone(), &dr)?;
+        DATA_REQUESTS_POOL.update(deps.storage, dr_id.clone(), &dr)?;
 
         Ok(Response::new()
             .add_attribute("action", "commit_data_result")
@@ -103,7 +103,7 @@ pub mod data_request_results {
 
         dr.reveals.insert(sender.to_string(), reveal.clone());
 
-        DATA_REQUESTS_POOL.save(deps.storage, dr_id.clone(), &dr)?;
+        DATA_REQUESTS_POOL.update(deps.storage, dr_id.clone(), &dr)?;
 
         let mut response = Response::new()
             .add_attribute("action", "reveal_data_result")
