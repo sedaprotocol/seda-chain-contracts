@@ -11,7 +11,7 @@
   rustup target add wasm32-unknown-unknown
   ```
 
-- Install [Docker][2]
+- Install [Docker][2] (only if running cosmwasm/rust-optimizer image to compile contracts)
 
 - Install [seda-chaind][3]
 
@@ -84,84 +84,94 @@ Additionally, one may use [`cosmwasm-verify`](https://github.com/CosmWasm/cosmwa
 
 
 
+## Uploading contracts and setting up cross-dependencies
+To deploy and set up all contracts, the Proxy must first be instantiated followed by all of the other contracts, since the Proxy address is used as an argument when instantiating the other contracts. After all contracts are instantiated and to complete the circular dependency, the other contracts must then be set on the Proxy via Execute calls.
 
-
-## Uploading contracts and setting up cross-dependencies:
-
-- Upload Proxy contract
 ```bash
-1) OUTPUT="$(seda-chaind tx wasm store ./artifacts/proxy_contract.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)"
-2) TXHASH=$(echo $OUTPUT | jq -r '.txhash')
-3) echo "Proxy Store transaction is $TXHASH"
-4) OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
-5) PROXY_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-6) echo "Proxy Code ID is $PROXY_CODE_ID"
+CHAIN_ID=seda-devnet | seda-testnet
+```
+
+Upload Proxy contract
+```bash
+OUTPUT="$(seda-chaind tx wasm store ./artifacts/proxy_contract.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
+
+TXHASH=$(echo $OUTPUT | jq -r '.txhash')
+
+OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
+
+PROXY_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 ```
 
 
-- Instantiate Proxy:
+Instantiate Proxy
 ```bash
-1) OUTPUT=$(seda-chaind tx wasm instantiate $PROXY_CODE_ID '{"token":"aseda"}' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label proxy$PROXY_CODE_ID --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)
-2) TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-3) echo "Proxy Instantiate transaction is $TXHASH"
-4) OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
-5) PROXY_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-6) echo "Proxy Contract address is $PROXY_CONTRACT_ADDRESS"
+OUTPUT=$(seda-chaind tx wasm instantiate $PROXY_CODE_ID '{"token":"aseda"}' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label proxy$PROXY_CODE_ID --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)
+
+TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
+
+OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
+
+PROXY_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
 ```
 
-- upload DataRequests contract:
+Upload DataRequests contract
 ```bash
-1) OUTPUT="$(seda-chaind tx wasm store artifacts/data_requests.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)"
-2) TXHASH=$(echo $OUTPUT | jq -r '.txhash')
-3) echo "DataRequests Store transaction is $TXHASH"
-4) OUTPUT="$(seda-chaind query tx $dr_store_tx_hash --node $RPC_URL --output json)"
-5) DRs_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-6) echo "DataRequests Code ID is $DRs_CODE_ID"
+OUTPUT="$(seda-chaind tx wasm store artifacts/data_requests.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
+
+TXHASH=$(echo $OUTPUT | jq -r '.txhash')
+
+OUTPUT="$(seda-chaind query tx $dr_store_tx_hash --node $RPC_URL --output json)"
+
+DRs_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 ```
 
-- Instantiate DataRequests:
+Instantiate DataRequests
 
 ```bash
-1) OUTPUT=$(seda-chaind tx wasm instantiate $DRs_CODE_ID '{"token":"aseda", "proxy": "'$PROXY_CONTRACT_ADDRESS'" }' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label dr$DRs_CODE_ID --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)
-2) TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-3) echo "DataRequests Instantiate transaction is $TXHASH"
-4) OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
-5) DRs_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-6) echo "DataRequests Contract address is $DRs_CONTRACT_ADDRESS"
+OUTPUT=$(seda-chaind tx wasm instantiate $DRs_CODE_ID '{"token":"aseda", "proxy": "'$PROXY_CONTRACT_ADDRESS'" }' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label dr$DRs_CODE_ID --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)
+
+TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
+
+OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
+
+DRs_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
   ```
 
-- upload Staking contract:
+Upload Staking contract
 ```bash
-1) OUTPUT="$(seda-chaind tx wasm store artifacts/staking.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)"
-2) TXHASH=$(echo $OUTPUT | jq -r '.txhash')
-3) echo "Store transaction is $TXHASH"
-4) OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
-5) STAKING_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-6) echo "Staking Code ID is $STAKING_CODE_ID"
+OUTPUT="$(seda-chaind tx wasm store artifacts/staking.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
+
+TXHASH=$(echo $OUTPUT | jq -r '.txhash')
+
+OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
+
+STAKING_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 ```
 
 
-- Instantiate Staking:
+Instantiate Staking
 ```bash
-1) OUTPUT=$(seda-chaind tx wasm instantiate $STAKING_CODE_ID '{"token":"aseda", "proxy":  "'$PROXY_CONTRACT_ADDRESS'" }' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label staking$staking_code_id --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)
-2) TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-3) echo "Staking Instantiate transaction is $TXHASH"
-4) OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
-5) STAKING_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-6) echo "Staking Contract address is $STAKING_CONTRACT_ADDRESS"
+OUTPUT=$(seda-chaind tx wasm instantiate $STAKING_CODE_ID '{"token":"aseda", "proxy":  "'$PROXY_CONTRACT_ADDRESS'" }' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label staking$staking_code_id --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)
+
+TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
+
+OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
+
+STAKING_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
 ```
 
-- Set DataRequests on Proxy
+Set DataRequests on Proxy
 ```bash
-1) OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS '{"set_data_requests":{"contract": "'$DRs_CONTRACT_ADDRESS'" }}' --from $DEV_ACCOUNT --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)"
-2) TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-3) echo "SetDataRequests transaction is $TXHASH"
+OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS '{"set_data_requests":{"contract": "'$DRs_CONTRACT_ADDRESS'" }}' --from $DEV_ACCOUNT --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
+
+TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
 ```
-- Set Staking on Proxy
+
+Set Staking on Proxy
 ```bash
-1) OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS '{"set_staking":{"contract": "'$STAKING_CONTRACT_ADDRESS'" }}' --from $DEV_ACCOUNT --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id seda-devnet)"
-2) TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-3) echo "SetStaking transaction is $TXHASH"
+OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS '{"set_staking":{"contract": "'$STAKING_CONTRACT_ADDRESS'" }}' --from $DEV_ACCOUNT --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
+
+TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
 ```
 
 
