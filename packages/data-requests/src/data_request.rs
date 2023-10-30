@@ -157,7 +157,7 @@ pub mod data_requests {
 
         let mut requests = vec![];
         for i in 0..actual_limit {
-            let dr_id = DATA_REQUESTS_POOL.load_at_index(deps.storage, position + i + 1)?;
+            let dr_id = DATA_REQUESTS_POOL.load_at_index(deps.storage, position + i)?;
             requests.push(DATA_REQUESTS_POOL.load(deps.storage, dr_id)?);
         }
 

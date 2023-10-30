@@ -69,23 +69,23 @@ where
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        let index = self.len.load(store)? + 1;
+        let index = self.len.load(store)?;
         self.items.save(store, key.clone(), &item)?;
         self.index_to_key.save(store, index, &key)?;
         self.key_to_index.save(store, key, &index)?;
-        self.len.save(store, &(index))?;
+        self.len.save(store, &(index + 1))?;
         Ok(())
     }
 
     pub fn remove(&'a self, store: &mut dyn Storage, key: K) -> Result<(), StdError> {
-        let len = self.len.load(store)?;
-        let last_key = self.index_to_key.load(store, len)?;
+        let last_index = self.len.load(store)? - 1;
+        let last_key = self.index_to_key.load(store, last_index)?;
         let item_index = self.key_to_index.load(store, key.clone())?;
 
         // Handle special case where item to remove is last item
-        if item_index == len {
+        if item_index == last_index {
             // Just pop the last item
-            self.len.save(store, &(len - 1))?;
+            self.len.save(store, &last_index)?;
             self.items.remove(store, key);
             return Ok(());
         }
@@ -95,7 +95,7 @@ where
         // Set the last item's key to use the index of the item to remove
         self.key_to_index.save(store, last_key, &item_index)?;
         // Decrement the length of items by 1
-        self.len.save(store, &(len - 1))?;
+        self.len.save(store, &last_index)?;
         // Remove the item using its key
         self.items.remove(store, key);
         Ok(())
