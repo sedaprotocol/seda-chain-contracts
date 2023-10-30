@@ -63,7 +63,7 @@ jobs:
           case "${{ github.event.inputs.network }}" in
             devnet)
               echo "Setting NODE_URL for devnet"
-              echo "NODE_URL=${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_ENV
+              echo "NODE_URL=${{ secrets.DEVNET_NODE_URL }}" >> $GITHUB_ENV
               ;;
           esac
 
