@@ -1,3 +1,4 @@
+use crate::enumerable_map;
 use crate::types::EnumerableMap;
 use common::state::{DataRequest, DataResult};
 use common::types::{Bytes, Hash};
@@ -36,12 +37,8 @@ pub struct DataRequestInputs {
 }
 
 /// Upon posting a data request, it is added to this map with a ID
-pub const DATA_REQUESTS_POOL: EnumerableMap<Hash, DataRequest> = EnumerableMap::new(
-    "data_requests_pool_len",
-    "data_requests_pool_items",
-    "data_requests_pool_index_to_key",
-    "data_requests_pool_key_to_index",
-);
+pub const DATA_REQUESTS_POOL: EnumerableMap<Hash, DataRequest> =
+    enumerable_map!("data_request_pool");
 
 /// Upon executing a data request, the result is added to this map with a unique ID
 pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results_pool");

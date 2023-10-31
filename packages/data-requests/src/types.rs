@@ -7,30 +7,22 @@ pub type Input = Vec<u8>;
 pub type PayloadItem = Vec<u8>;
 
 pub struct EnumerableMap<'a, K, T> {
-    len: Item<'a, u128>,
-    items: Map<'a, K, T>,
-    index_to_key: Map<'a, u128, K>,
-    key_to_index: Map<'a, K, u128>,
+    pub len: Item<'a, u128>,
+    pub items: Map<'a, K, T>,
+    pub index_to_key: Map<'a, u128, K>,
+    pub key_to_index: Map<'a, K, u128>,
 }
 
-impl<'a, K, T> EnumerableMap<'a, K, T> {
-    pub const fn new(
-        len_namespace: &'a str,
-        items_namespace: &'a str,
-        index_to_key_namespace: &'a str,
-        key_to_index_namespace: &'a str,
-    ) -> Self {
-        let len: Item<u128> = Item::new(len_namespace);
-        let items: Map<K, T> = Map::new(items_namespace);
-        let index_to_key: Map<u128, K> = Map::new(index_to_key_namespace);
-        let key_to_index: Map<K, u128> = Map::new(key_to_index_namespace);
-        Self {
-            len,
-            items,
-            index_to_key,
-            key_to_index,
+#[macro_export]
+macro_rules! enumerable_map {
+    ($namespace:literal) => {
+        EnumerableMap {
+            len: Item::new(concat!($namespace, "_len")),
+            items: Map::new(concat!($namespace, "_items")),
+            index_to_key: Map::new(concat!($namespace, "_index_to_key")),
+            key_to_index: Map::new(concat!($namespace, "_key_to_index")),
         }
-    }
+    };
 }
 
 impl<'a, K, T> EnumerableMap<'_, K, T>
