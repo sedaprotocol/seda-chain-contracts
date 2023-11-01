@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::state::DataRequestInputs;
-use crate::utils::hash_data_request;
+use crate::utils::{hash_data_request, string_to_hash};
 use common::msg::PostDataRequestArgs;
 use common::state::{DataRequest, Reveal};
 use common::types::Hash;
@@ -22,9 +22,9 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response};
 pub fn calculate_dr_id_and_args(
     nonce: u128,
     replication_factor: u16,
-) -> (String, PostDataRequestArgs) {
-    let dr_binary_id: Hash = "dr_binary_id".to_string();
-    let tally_binary_id: Hash = "tally_binary_id".to_string();
+) -> (Hash, PostDataRequestArgs) {
+    let dr_binary_id: Hash = string_to_hash("dr_binary_id");
+    let tally_binary_id: Hash = string_to_hash("tally_binary_id");
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
 
@@ -76,7 +76,7 @@ pub fn calculate_dr_id_and_args(
     (constructed_dr_id, posted_dr)
 }
 
-pub fn construct_dr(constructed_dr_id: String, dr_args: PostDataRequestArgs) -> DataRequest {
+pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, Reveal> = HashMap::new();
     let payback_address: Bytes = Vec::new();
@@ -109,7 +109,7 @@ pub fn instantiate_dr_contract(
     instantiate(deps, mock_env(), info, msg)
 }
 
-pub fn get_dr(deps: DepsMut, dr_id: String) -> GetDataRequestResponse {
+pub fn get_dr(deps: DepsMut, dr_id: Hash) -> GetDataRequestResponse {
     let res = query(
         deps.as_ref(),
         mock_env(),

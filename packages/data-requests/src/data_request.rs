@@ -6,9 +6,9 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL};
+    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::hash_to_string};
     use common::{error::ContractError, msg::PostDataRequestArgs};
-    use cosmwasm_std::Event;
+    use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
     use crate::{
@@ -98,14 +98,18 @@ pub mod data_requests {
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(cosmwasm_std::Binary::from(hex::decode(
-                posted_dr.dr_id[2..].to_string().clone(),
-            )?))
+            // .set_data(cosmwasm_std::Binary::from(hex::decode(
+            //     posted_dr.dr_id[2..].to_string().clone(),
+            // )?))
+            .set_data(Binary::from(hex::decode(hash_to_string(posted_dr.dr_id))?))
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", &posted_dr.dr_id),
-                ("dr_binary_id", &posted_dr.dr_binary_id),
-                ("tally_binary_id", &posted_dr.tally_binary_id),
+                ("dr_id", &hash_to_string(posted_dr.dr_id)),
+                ("dr_binary_id", &hash_to_string(posted_dr.dr_binary_id)),
+                (
+                    "tally_binary_id",
+                    &hash_to_string(posted_dr.tally_binary_id),
+                ),
                 (
                     "dr_inputs",
                     &serde_json::to_string(&posted_dr.dr_inputs).unwrap(),
@@ -175,6 +179,7 @@ mod dr_tests {
     use crate::helpers::get_dr;
     use crate::helpers::get_drs_from_pool;
     use crate::helpers::instantiate_dr_contract;
+    use crate::utils::string_to_hash;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
@@ -190,7 +195,7 @@ mod dr_tests {
         // data request with id 0x69... does not yet exist
         let value: GetDataRequestResponse = get_dr(
             deps.as_mut(),
-            "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".to_string(),
+            string_to_hash("0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"),
         );
         assert_eq!(None, value.value);
 
@@ -222,7 +227,7 @@ mod dr_tests {
 
         // nonexistent data request does not yet exist
 
-        let value: GetDataRequestResponse = get_dr(deps.as_mut(), "nonexistent".to_string());
+        let value: GetDataRequestResponse = get_dr(deps.as_mut(), string_to_hash("nonexistent"));
 
         assert_eq!(None, value.value);
     }
@@ -330,7 +335,7 @@ mod dr_tests {
 
         let (constructed_dr_id, _) = calculate_dr_id_and_args(1, 3);
 
-        println!("constructed_dr_id1: {}", constructed_dr_id);
+        println!("constructed_dr_id1: {:#?}", constructed_dr_id);
     }
 
     #[test]
@@ -344,7 +349,7 @@ mod dr_tests {
 
         // calculate args then modify the dr_id to be incorrect
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
-        posted_dr.dr_id = "invalid hash".to_string();
+        posted_dr.dr_id = string_to_hash("invalid hash");
 
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let info = mock_info("anyone", &coins(2, "token"));
@@ -362,7 +367,7 @@ mod dr_tests {
 
         // calculate args then modify the dr_binary_id to be empty
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
-        posted_dr.dr_binary_id = "".to_string();
+        posted_dr.dr_binary_id = string_to_hash("");
 
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let info = mock_info("anyone", &coins(2, "token"));
