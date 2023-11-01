@@ -12,6 +12,7 @@ use common::msg::{
 use common::state::Reveal;
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
+use data_requests::utils::string_to_hash;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
@@ -59,8 +60,8 @@ fn commit_reveal_result() {
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        "nonexistent".to_string(),
-        "result".to_string(),
+        string_to_hash("nonexistent"),
+        string_to_hash("result"),
         Addr::unchecked(EXECUTOR_1),
     );
     assert!(res.is_err());
@@ -83,7 +84,7 @@ fn commit_reveal_result() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         commitment1,
         Addr::unchecked(EXECUTOR_1),
     )
@@ -97,7 +98,7 @@ fn commit_reveal_result() {
     let res = helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         reveal1.clone(),
         Addr::unchecked(EXECUTOR_1),
     );
@@ -111,7 +112,7 @@ fn commit_reveal_result() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         commitment2.clone(),
         Addr::unchecked(EXECUTOR_2),
     )
@@ -121,7 +122,7 @@ fn commit_reveal_result() {
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         commitment2,
         Addr::unchecked(EXECUTOR_2),
     );
@@ -132,7 +133,7 @@ fn commit_reveal_result() {
 
     // should be able to fetch committed data result
     let msg = ProxyQueryMsg::GetCommittedDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id,
         executor: Addr::unchecked(EXECUTOR_1),
     };
     let res: GetCommittedDataResultResponse = app
@@ -144,7 +145,7 @@ fn commit_reveal_result() {
     helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         reveal1.clone(),
         Addr::unchecked(EXECUTOR_1),
     )
@@ -154,7 +155,7 @@ fn commit_reveal_result() {
     let res = helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         reveal1,
         Addr::unchecked(EXECUTOR_1),
     );
@@ -165,7 +166,7 @@ fn commit_reveal_result() {
 
     // should be able to fetch revealed data result
     let msg = ProxyQueryMsg::GetRevealedDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id,
         executor: Addr::unchecked(EXECUTOR_1),
     };
     let res: GetRevealedDataResultResponse = app
@@ -180,7 +181,7 @@ fn commit_reveal_result() {
         salt: "executor3".to_string(),
     };
     let msg = ProxyExecuteMsg::RevealDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id,
         reveal: reveal3.clone(),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
@@ -196,7 +197,7 @@ fn commit_reveal_result() {
         salt: "executor2".to_string(),
     };
     let msg = ProxyExecuteMsg::RevealDataResult {
-        dr_id: dr_id.to_string(),
+        dr_id,
         reveal: reveal2,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
@@ -215,21 +216,19 @@ fn commit_reveal_result() {
     helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         reveal2,
         Addr::unchecked(EXECUTOR_2),
     )
     .unwrap();
 
     // now data request is resolved, let's check
-    let msg = ProxyQueryMsg::GetResolvedDataResult {
-        dr_id: dr_id.to_string(),
-    };
+    let msg = ProxyQueryMsg::GetResolvedDataResult { dr_id };
     let res: GetResolvedDataResultResponse = app
         .wrap()
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
-    assert_eq!(res.value.dr_id, dr_id.to_string());
+    assert_eq!(res.value.dr_id, dr_id);
 }
 
 #[test]
@@ -254,7 +253,7 @@ fn ineligible_post_data_result() {
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id.to_string(),
+        dr_id,
         commitment1,
         Addr::unchecked(EXECUTOR_1),
     );
@@ -348,7 +347,7 @@ fn pop_and_swap_in_pool() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id_1.to_string(),
+        dr_id_1,
         commitment1,
         Addr::unchecked(EXECUTOR_1),
     )
@@ -358,7 +357,7 @@ fn pop_and_swap_in_pool() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id_1.to_string(),
+        dr_id_1,
         commitment2.clone(),
         Addr::unchecked(EXECUTOR_2),
     )
@@ -371,7 +370,7 @@ fn pop_and_swap_in_pool() {
     helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id_1.to_string(),
+        dr_id_1,
         reveal1.clone(),
         Addr::unchecked(EXECUTOR_1),
     )
@@ -384,7 +383,7 @@ fn pop_and_swap_in_pool() {
     helper_reveal_result(
         &mut app,
         proxy_contract.clone(),
-        dr_id_1.to_string(),
+        dr_id_1,
         reveal2,
         Addr::unchecked(EXECUTOR_2),
     )

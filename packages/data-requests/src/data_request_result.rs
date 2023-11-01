@@ -22,6 +22,7 @@ pub mod data_request_results {
 
     use crate::contract::CONTRACT_VERSION;
     use crate::state::DATA_REQUESTS_POOL;
+    use crate::utils::hash_to_string;
     use crate::{
         state::DATA_RESULTS,
         utils::{check_eligibility, hash_data_result, validate_sender},
@@ -56,9 +57,9 @@ pub mod data_request_results {
             .add_attribute("action", "commit_data_result")
             .add_event(Event::new("seda-commitment").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", dr_id.as_str()),
+                ("dr_id", &hash_to_string(dr_id)),
                 ("executor", sender.as_str()),
-                ("commitment", commitment.as_str()),
+                ("commitment", &hash_to_string(commitment)),
             ])))
     }
 
@@ -109,7 +110,7 @@ pub mod data_request_results {
             .add_attribute("action", "reveal_data_result")
             .add_event(Event::new("seda-reveal").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", dr_id.as_str()),
+                ("dr_id", &hash_to_string(dr_id)),
                 ("executor", sender.as_str()),
                 ("reveal", serde_json::to_string(&reveal).unwrap().as_str()),
             ]));
@@ -142,8 +143,8 @@ pub mod data_request_results {
 
             response = response.add_event(Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("result_id", &result_id),
-                ("dr_id", &dr_id),
+                ("result_id", &hash_to_string(result_id)),
+                ("dr_id", &hash_to_string(dr_id)),
                 ("block_height", &block_height.to_string()),
                 ("exit_code", &exit_code.to_string()),
                 ("result", &serde_json::to_string(&result).unwrap()),
@@ -227,12 +228,14 @@ pub mod data_request_results {
     }
 
     /// Computes hash given a reveal and salt
-    fn compute_hash(reveal: &str, salt: &str) -> String {
+    fn compute_hash(reveal: &str, salt: &str) -> Hash {
         let mut hasher = Keccak256::new();
         hasher.update(reveal.as_bytes());
         hasher.update(salt.as_bytes());
-        let digest = hasher.finalize();
-        format!("0x{}", hex::encode(digest))
+        // let digest = hasher.finalize();
+        hasher.finalize().into()
+
+        // format!("0x{}", hex::encode(digest))
     }
 }
 
@@ -240,9 +243,10 @@ pub mod data_request_results {
 mod data_request_result_tests {
     use crate::contract::execute;
     use crate::helpers::instantiate_dr_contract;
+    use crate::utils::string_to_hash;
     use common::msg::DataRequestsExecuteMsg;
-    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, to_binary};
 
     #[test]
     #[should_panic(expected = "NotProxy")]
@@ -256,8 +260,10 @@ mod data_request_result_tests {
 
         // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
         let msg = DataRequestsExecuteMsg::CommitDataResult {
-            dr_id: "dr_id".to_string(),
-            commitment: "commitment".to_string(),
+            // dr_id: "dr_id".to_string(),
+            dr_id: string_to_hash("dr_id"),
+
+            commitment: string_to_hash("commitment"),
             sender: Some("someone".to_string()),
         };
         let info = mock_info("anyone", &[]);
