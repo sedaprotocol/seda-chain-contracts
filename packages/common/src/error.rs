@@ -18,7 +18,7 @@ pub enum ContractError {
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(u128, u128),
-    #[error("InvalidDataRequestId: Invalid data request id, expected: {0}, actual: {1}")]
+    #[error("InvalidDataRequestId: Invalid data request id, expected: {0:#?}, actual: {1:#?}")]
     InvalidDataRequestId(Hash, Hash),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,

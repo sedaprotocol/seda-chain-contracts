@@ -7,6 +7,7 @@ use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Exe
 use cw_utils::parse_execute_response_data;
 use data_requests::state::DataRequestInputs;
 use data_requests::utils::hash_data_request;
+use data_requests::utils::string_to_hash;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -211,28 +212,30 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     (app, proxy_template_contract)
 }
 
-pub fn get_dr_id(res: AppResponse) -> String {
+pub fn get_dr_id(res: AppResponse) -> Hash {
     let binary = parse_execute_response_data(&res.data.unwrap().0)
         .unwrap()
         .data
         .unwrap();
 
-    format!("0x{}", hex::encode(binary))
+    // format!("0x{}", hex::encode(binary))
+    binary.0.try_into().unwrap()
 }
 
-pub fn calculate_commitment(reveal: &str, salt: &str) -> String {
+pub fn calculate_commitment(reveal: &str, salt: &str) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(reveal.as_bytes());
     hasher.update(salt.as_bytes());
-    let digest = hasher.finalize();
-    format!("0x{}", hex::encode(digest))
+    // let digest = hasher.finalize();
+    // format!("0x{}", hex::encode(digest))
+    hasher.finalize().into()
 }
 
 pub fn helper_commit_result(
     app: &mut App,
     proxy_contract: CwTemplateContract,
-    dr_id: String,
-    commitment: String,
+    dr_id: Hash,
+    commitment: Hash,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
     let msg = ProxyExecuteMsg::CommitDataResult { dr_id, commitment };
@@ -243,14 +246,11 @@ pub fn helper_commit_result(
 pub fn helper_reveal_result(
     app: &mut App,
     proxy_contract: CwTemplateContract,
-    dr_id: String,
+    dr_id: Hash,
     reveal: Reveal,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
-    let msg = ProxyExecuteMsg::RevealDataResult {
-        dr_id: dr_id.to_string(),
-        reveal,
-    };
+    let msg = ProxyExecuteMsg::RevealDataResult { dr_id, reveal };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
 }
@@ -269,9 +269,9 @@ pub fn helper_post_dr(
 pub fn calculate_dr_id_and_args(
     nonce: u128,
     replication_factor: u16,
-) -> (String, PostDataRequestArgs) {
-    let dr_binary_id: Hash = "dr_binary_id".to_string();
-    let tally_binary_id: Hash = "tally_binary_id".to_string();
+) -> (Hash, PostDataRequestArgs) {
+    let dr_binary_id: Hash = string_to_hash("dr_binary_id");
+    let tally_binary_id: Hash = string_to_hash("tally_binary_id");
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
 

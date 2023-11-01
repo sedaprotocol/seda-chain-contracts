@@ -1,8 +1,8 @@
 use common::error::ContractError;
 use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
-use common::types::Bytes;
-use cosmwasm_std::{to_binary, Addr, DepsMut, QueryRequest, WasmQuery};
+use common::types::{Bytes, Hash};
+use cosmwasm_std::{to_binary, Addr, Binary, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
 use crate::state::{DataRequestInputs, PROXY_CONTRACT};
@@ -20,7 +20,7 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
     Ok(query_response.value)
 }
 
-pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
+pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(posted_dr.dr_binary_id);
     hasher.update(posted_dr.dr_inputs);
@@ -30,8 +30,9 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> String {
     hasher.update(posted_dr.replication_factor.to_be_bytes());
     hasher.update(posted_dr.tally_binary_id);
     hasher.update(posted_dr.tally_inputs);
+    hasher.finalize().into()
 
-    format!("0x{}", hex::encode(hasher.finalize()))
+    // format!("0x{}", hex::encode(hasher.finalize()))
 }
 
 pub fn hash_data_result(
@@ -39,15 +40,17 @@ pub fn hash_data_result(
     block_height: u64,
     exit_code: u8,
     result: &Bytes,
-) -> String {
+) -> Hash {
     let mut hasher = Keccak256::new();
-    hasher.update(dr.dr_id.as_bytes());
+    hasher.update(dr.dr_id);
     hasher.update(block_height.to_be_bytes());
     hasher.update(exit_code.to_be_bytes());
     hasher.update(result);
     hasher.update(dr.payback_address.clone());
     hasher.update(dr.seda_payload.clone());
-    format!("0x{}", hex::encode(hasher.finalize()))
+    hasher.finalize().into()
+
+    // format!("0x{}", hex::encode(hasher.finalize()))
 }
 
 pub fn validate_sender(
@@ -63,4 +66,21 @@ pub fn validate_sender(
         Some(sender) => Ok(deps.api.addr_validate(&sender)?),
         None => Ok(caller),
     }
+}
+
+pub fn string_to_hash(input: &str) -> Hash {
+    to_binary(input).unwrap().0.try_into().unwrap()
+
+    // input.as_bytes().try_into().unwrap()
+
+    // hex::decode(input).unwrap().try_into().unwrap()
+    // hex::decode(input[2..].to_string()).unwrap().try_into().unwrap()
+
+    // input[2..].as_bytes().try_into().unwrap()
+}
+
+pub fn hash_to_string(input: Hash) -> String {
+    // String::from_utf8(input.to_vec()).unwrap()
+
+    hex::encode(input)
 }
