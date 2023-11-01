@@ -2,6 +2,7 @@ use crate::tests::utils::{calculate_dr_id_and_args, get_dr_id, proper_instantiat
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
+use data_requests::utils::string_to_hash;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
@@ -45,7 +46,7 @@ fn post_data_request() {
 
     // non-existent data request should fail
     let msg = ProxyQueryMsg::GetDataRequest {
-        dr_id: "non-existent".to_string(),
+        dr_id: string_to_hash("non-existent"),
     };
     let res: GetDataRequestResponse = app
         .wrap()
