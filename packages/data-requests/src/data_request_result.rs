@@ -45,13 +45,13 @@ pub mod data_request_results {
         }
 
         // find the data request from the pool (if it exists, otherwise error)
-        let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id.clone())?;
+        let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         if dr.commits.contains_key(&sender.to_string()) {
             return Err(AlreadyCommitted);
         }
-        dr.commits.insert(sender.to_string(), commitment.clone());
+        dr.commits.insert(sender.to_string(), commitment);
 
-        DATA_REQUESTS_POOL.update(deps.storage, dr_id.clone(), &dr)?;
+        DATA_REQUESTS_POOL.update(deps.storage, dr_id, &dr)?;
 
         Ok(Response::new()
             .add_attribute("action", "commit_data_result")
@@ -79,7 +79,7 @@ pub mod data_request_results {
         }
 
         // find the data request from the committed pool (if it exists, otherwise error)
-        let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id.clone())?;
+        let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         let committed_dr_results = dr.clone().commits;
 
         if u16::try_from(committed_dr_results.len()).unwrap() < dr.replication_factor {
@@ -92,10 +92,7 @@ pub mod data_request_results {
             return Err(AlreadyRevealed);
         }
 
-        let committed_dr_result = committed_dr_results
-            .get(&sender.to_string())
-            .unwrap()
-            .clone();
+        let committed_dr_result = *committed_dr_results.get(&sender.to_string()).unwrap();
 
         let calculated_dr_result = compute_hash(&reveal.reveal, &reveal.salt);
         if calculated_dr_result != committed_dr_result {
@@ -104,7 +101,7 @@ pub mod data_request_results {
 
         dr.reveals.insert(sender.to_string(), reveal.clone());
 
-        DATA_REQUESTS_POOL.update(deps.storage, dr_id.clone(), &dr)?;
+        DATA_REQUESTS_POOL.update(deps.storage, dr_id, &dr)?;
 
         let mut response = Response::new()
             .add_attribute("action", "reveal_data_result")
@@ -128,18 +125,18 @@ pub mod data_request_results {
             // save the data result
             let result_id = hash_data_result(&dr, block_height, exit_code, &result);
             let dr_result = DataResult {
-                result_id: result_id.clone(),
-                dr_id: dr_id.clone(),
+                result_id,
+                dr_id,
                 block_height,
                 exit_code,
                 result: result.clone(),
                 payback_address: payback_address.clone(),
                 seda_payload: seda_payload.clone(),
             };
-            DATA_RESULTS.save(deps.storage, dr_id.clone(), &dr_result)?;
+            DATA_RESULTS.save(deps.storage, dr_id, &dr_result)?;
 
             // remove from the pool
-            DATA_REQUESTS_POOL.remove(deps.storage, dr_id.clone())?;
+            DATA_REQUESTS_POOL.remove(deps.storage, dr_id)?;
 
             response = response.add_event(Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION),
@@ -232,10 +229,7 @@ pub mod data_request_results {
         let mut hasher = Keccak256::new();
         hasher.update(reveal.as_bytes());
         hasher.update(salt.as_bytes());
-        // let digest = hasher.finalize();
         hasher.finalize().into()
-
-        // format!("0x{}", hex::encode(digest))
     }
 }
 
@@ -245,8 +239,8 @@ mod data_request_result_tests {
     use crate::helpers::instantiate_dr_contract;
     use crate::utils::string_to_hash;
     use common::msg::DataRequestsExecuteMsg;
+    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, to_binary};
 
     #[test]
     #[should_panic(expected = "NotProxy")]
@@ -260,9 +254,7 @@ mod data_request_result_tests {
 
         // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
         let msg = DataRequestsExecuteMsg::CommitDataResult {
-            // dr_id: "dr_id".to_string(),
             dr_id: string_to_hash("dr_id"),
-
             commitment: string_to_hash("commitment"),
             sender: Some("someone".to_string()),
         };
