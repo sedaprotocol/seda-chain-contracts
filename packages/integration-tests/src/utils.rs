@@ -218,7 +218,6 @@ pub fn get_dr_id(res: AppResponse) -> Hash {
         .data
         .unwrap();
 
-    // format!("0x{}", hex::encode(binary))
     binary.0.try_into().unwrap()
 }
 
@@ -226,8 +225,6 @@ pub fn calculate_commitment(reveal: &str, salt: &str) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(reveal.as_bytes());
     hasher.update(salt.as_bytes());
-    // let digest = hasher.finalize();
-    // format!("0x{}", hex::encode(digest))
     hasher.finalize().into()
 }
 
