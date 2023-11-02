@@ -6,7 +6,11 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::hash_to_string};
+    use crate::{
+        contract::CONTRACT_VERSION,
+        state::DATA_REQUESTS_POOL,
+        utils::{hash_to_string, string_to_hash},
+    };
     use common::{error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
@@ -21,7 +25,7 @@ pub mod data_requests {
     /// Internal function to return whether a data request or result exists with the given id.
     fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
         DATA_REQUESTS_POOL
-            .may_load(deps.storage, dr_id.clone())
+            .may_load(deps.storage, dr_id)
             .ok()
             .flatten()
             .is_some()
@@ -38,21 +42,21 @@ pub mod data_requests {
         posted_dr: PostDataRequestArgs,
     ) -> Result<Response, ContractError> {
         // require the data request id to be unique
-        if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id.clone()) {
+        if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
         // require dr_binary_id and tally_binary_id to be non-empty
-        if posted_dr.dr_binary_id.is_empty() {
+        if posted_dr.dr_binary_id == string_to_hash("") {
             return Err(ContractError::EmptyArg("dr_binary_id".to_string()));
         }
-        if posted_dr.tally_binary_id.is_empty() {
+        if posted_dr.tally_binary_id == string_to_hash("") {
             return Err(ContractError::EmptyArg("tally_binary_id".to_string()));
         }
 
         let dr_inputs = DataRequestInputs {
-            dr_binary_id: posted_dr.dr_binary_id.clone(),
-            tally_binary_id: posted_dr.tally_binary_id.clone(),
+            dr_binary_id: posted_dr.dr_binary_id,
+            tally_binary_id: posted_dr.tally_binary_id,
             dr_inputs: posted_dr.dr_inputs.clone(),
             tally_inputs: posted_dr.tally_inputs.clone(),
             memo: posted_dr.memo.clone(),
@@ -77,10 +81,10 @@ pub mod data_requests {
 
         // save the data request
         let dr = DataRequest {
-            dr_id: posted_dr.dr_id.clone(),
+            dr_id: posted_dr.dr_id,
 
-            dr_binary_id: posted_dr.dr_binary_id.clone(),
-            tally_binary_id: posted_dr.tally_binary_id.clone(),
+            dr_binary_id: posted_dr.dr_binary_id,
+            tally_binary_id: posted_dr.tally_binary_id,
             dr_inputs: posted_dr.dr_inputs.clone(),
             tally_inputs: posted_dr.tally_inputs.clone(),
             memo: posted_dr.memo.clone(),
@@ -94,14 +98,11 @@ pub mod data_requests {
             commits: HashMap::new(),
             reveals: HashMap::new(),
         };
-        DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id.clone(), dr)?;
+        DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id, dr)?;
 
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            // .set_data(cosmwasm_std::Binary::from(hex::decode(
-            //     posted_dr.dr_id[2..].to_string().clone(),
-            // )?))
-            .set_data(Binary::from(hex::decode(hash_to_string(posted_dr.dr_id))?))
+            .set_data(Binary::from(posted_dr.dr_id.to_vec()))
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &hash_to_string(posted_dr.dr_id)),
