@@ -6,12 +6,8 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{
-        contract::CONTRACT_VERSION,
-        state::DATA_REQUESTS_POOL,
-        utils::{hash_to_string, string_to_hash},
-    };
-    use common::{error::ContractError, msg::PostDataRequestArgs};
+    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::hash_to_string};
+    use common::{consts::ZERO_HASH, error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
@@ -47,10 +43,10 @@ pub mod data_requests {
         }
 
         // require dr_binary_id and tally_binary_id to be non-empty
-        if posted_dr.dr_binary_id == string_to_hash("") {
+        if posted_dr.dr_binary_id == ZERO_HASH {
             return Err(ContractError::EmptyArg("dr_binary_id".to_string()));
         }
-        if posted_dr.tally_binary_id == string_to_hash("") {
+        if posted_dr.tally_binary_id == ZERO_HASH {
             return Err(ContractError::EmptyArg("tally_binary_id".to_string()));
         }
 
@@ -181,6 +177,7 @@ mod dr_tests {
     use crate::helpers::get_drs_from_pool;
     use crate::helpers::instantiate_dr_contract;
     use crate::utils::string_to_hash;
+    use common::consts::ZERO_HASH;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
@@ -368,7 +365,7 @@ mod dr_tests {
 
         // calculate args then modify the dr_binary_id to be empty
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
-        posted_dr.dr_binary_id = string_to_hash("");
+        posted_dr.dr_binary_id = ZERO_HASH;
 
         let msg = ExecuteMsg::PostDataRequest { posted_dr };
         let info = mock_info("anyone", &coins(2, "token"));
