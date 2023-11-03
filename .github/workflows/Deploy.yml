@@ -5,6 +5,7 @@ on:
         type: choice
         options:
           - devnet
+          - testnet
       contract:
         type: choice
         options:
@@ -52,6 +53,8 @@ jobs:
     needs: [check_pass, check_proxy]
     if: ${{ needs.check_pass.outputs.is_allowed == 'true' && needs.check_proxy.outputs.proxy_ok == 'true' }}
     name: Deploy
+    environment:
+      name: ${{ github.event.inputs.network }}
     runs-on: ubuntu-latest
     steps:
       - name: Output Contract Name
@@ -60,12 +63,10 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          case "${{ github.event.inputs.network }}" in
-            devnet)
-              echo "Setting NODE_URL for devnet"
-              echo "NODE_URL=${{ secrets.TESTNET_NODE_URL }}" >> $GITHUB_ENV
-              ;;
-          esac
+          echo "NODE_URL=${{ secrets.NODE_URL }}" >> $GITHUB_ENV
+          echo "DEV_ACCOUNT=${{ secrets.DEV_ACCOUNT }}" >> $GITHUB_ENV
+          echo "KEYRING_FILE_ID=${{ secrets.KEYRING_FILE_ID }}" >> $GITHUB_ENV
+          echo "CHAIN_ID=seda-${{ github.event.inputs.network }}" >> $GITHUB_ENV
 
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -98,7 +99,7 @@ jobs:
       - name: Download and decrypt keys
         env:
           KEYRING_PASSWORD: ${{ secrets.KEYRING_PASSWORD }}
-          KEYRING_FILE_ID: ${{ secrets.KEYRING_FILE_ID }}
+          KEYRING_FILE_ID: ${{ env.KEYRING_FILE_ID }}
         run: |
           keyringFileId=${{ env.KEYRING_FILE_ID }}
           keyringFileName=keyring.tar.gz.enc
@@ -110,12 +111,14 @@ jobs:
 
       - name: Store contract on chain
         env:
-          DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
+          DEV_ACCOUNT: ${{ env.DEV_ACCOUNT }}
+          CHAIN_ID: ${{ env.CHAIN_ID }}
         id: store
         run: |
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
-          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/${{ github.event.inputs.contract }}.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          chainId=${{ env.CHAIN_ID }}
+          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/${{ github.event.inputs.contract }}.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"
           echo "txhash=$TXHASH" >> $GITHUB_ENV
@@ -134,16 +137,18 @@ jobs:
 
       - name: Instantiate contract
         env:
-          DEV_ACCOUNT: ${{ secrets.DEV_ACCOUNT }}
+          DEV_ACCOUNT: ${{ env.DEV_ACCOUNT }}
+          CHAIN_ID: ${{ env.CHAIN_ID }}
         id: instantiate
         run: |
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
+          chainId=${{ env.CHAIN_ID }}
           if [[ "${{ github.event.inputs.contract }}" != "proxy_contract" ]]; then
             proxy=${{ github.event.inputs.proxy }}
-            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda", "proxy": ${{ toJSON(github.event.inputs.proxy) }} }' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda", "proxy": ${{ toJSON(github.event.inputs.proxy) }} }' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
           else
-            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda"}' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+            OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.code_id }} '{"token":"aseda"}' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label ${{ env.code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
           fi
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "Instantiate transaction is $TXHASH"
