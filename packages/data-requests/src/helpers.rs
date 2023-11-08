@@ -25,8 +25,8 @@ pub fn calculate_dr_id_and_args(
 ) -> (Hash, PostDataRequestArgs) {
     let dr_binary_id: Hash = string_to_hash("dr_binary_id");
     let tally_binary_id: Hash = string_to_hash("tally_binary_id");
-    let dr_inputs: Bytes = Vec::new();
-    let tally_inputs: Bytes = Vec::new();
+    let dr_inputs: Bytes = "dr_inputs".as_bytes().to_vec();
+    let tally_inputs: Bytes = "tally_inputs".as_bytes().to_vec();
 
     // set by dr creator
     let gas_price: u128 = 10;
