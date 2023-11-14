@@ -78,6 +78,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetResolvedDataResult { dr_id } => to_binary(
             &data_request_results::get_resolved_data_result(deps, dr_id)?,
         ),
+        QueryMsg::QuerySeedRequest {} => to_binary(&data_request_results::get_seed(deps)?),
     }
 }
 

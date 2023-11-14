@@ -6,7 +6,7 @@ use common::msg::{
     GetStakingConfigResponse, IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
 };
 use common::state::Reveal;
-use common::types::Hash;
+use common::{msg::QuerySeedResponse, types::Hash};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -70,6 +70,10 @@ pub enum ProxyQueryMsg {
     IsDataRequestExecutorEligible { executor: Addr },
     #[returns(GetStakingConfigResponse)]
     GetStakingConfig,
+
+    // Custom
+    #[returns(QuerySeedResponse)]
+    QuerySeedRequest,
 }
 
 #[cw_serde]

@@ -6,16 +6,19 @@ use common::types::Hash;
 
 pub mod data_request_results {
 
+    use std::ops::Deref;
+
     use common::error::ContractError::{
         self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
         RevealNotStarted, RevealStarted,
     };
-    use cosmwasm_std::{Addr, Env, Event};
+    use cosmwasm_std::{Addr, Env, Event, QuerierWrapper};
     use sha3::{Digest, Keccak256};
 
     use common::msg::{
         GetCommittedDataResultsResponse, GetCommittedExecutorsResponse,
-        GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
+        GetResolvedDataResultResponse, GetRevealedDataResultsResponse, QuerySeedResponse,
+        SpecialQueryMsg, SpecialQueryWrapper,
     };
     use common::state::{DataResult, Reveal};
     use common::types::Bytes;
@@ -230,6 +233,20 @@ pub mod data_request_results {
             executors.push(key.clone())
         }
         Ok(GetCommittedExecutorsResponse { value: executors })
+    }
+
+    pub fn get_seed(deps: Deps) -> StdResult<QuerySeedResponse> {
+        let req = SpecialQueryWrapper {
+            query_data: SpecialQueryMsg::QuerySeedRequest {},
+        }
+        .into();
+        let wrapper: QuerierWrapper<'_, SpecialQueryWrapper> =
+            QuerierWrapper::new(deps.querier.deref());
+        let response: QuerySeedResponse = wrapper.query(&req).unwrap();
+        Ok(QuerySeedResponse {
+            block_height: response.block_height,
+            seed: response.seed,
+        })
     }
 
     /// Computes hash given a reveal and salt

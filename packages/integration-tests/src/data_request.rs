@@ -1,5 +1,5 @@
 use crate::tests::utils::{calculate_dr_id_and_args, get_dr_id, proper_instantiate, USER};
-use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
+use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse, QuerySeedResponse};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use data_requests::utils::string_to_hash;
@@ -55,4 +55,20 @@ fn post_data_request() {
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
     assert!(res.value.is_none());
+}
+
+#[test]
+fn get_seed() {
+    let (app, proxy_contract) = proper_instantiate();
+
+    let req = ProxyQueryMsg::QuerySeedRequest {};
+    let res: QuerySeedResponse = app
+        .wrap()
+        .query_wasm_smart(proxy_contract.addr(), &req)
+        .unwrap();
+
+    println!("block_height {}", res.block_height);
+    println!("seed {}", res.seed);
+
+    assert!(!res.seed.is_empty());
 }
