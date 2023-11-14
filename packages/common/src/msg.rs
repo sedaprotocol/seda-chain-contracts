@@ -1,7 +1,9 @@
 use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal, StakingConfig};
 use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, CustomQuery};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[cw_serde]
@@ -78,6 +80,8 @@ pub enum DataRequestsQueryMsg {
     GetRevealedDataResults { dr_id: Hash },
     #[returns(GetResolvedDataResultResponse)]
     GetResolvedDataResult { dr_id: Hash },
+    #[returns(QuerySeedResponse)]
+    QuerySeedRequest {},
 }
 
 #[cw_serde]
@@ -156,3 +160,25 @@ pub struct InstantiateMsg {
     pub token: String,
     pub proxy: String,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SpecialQueryMsg {
+    QuerySeedRequest {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct QuerySeedResponse {
+    pub block_height: u64,
+    pub seed: String,
+}
+
+/// SpecialQueryWrapper is an override of QueryRequest::Custom to access seda-specific modules
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SpecialQueryWrapper {
+    pub query_data: SpecialQueryMsg,
+}
+
+impl CustomQuery for SpecialQueryWrapper {}

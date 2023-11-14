@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
@@ -8,14 +10,15 @@ use common::{
     msg::{
         DataRequestsExecuteMsg, GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
         GetContractResponse, GetDataRequestExecutorResponse, GetDataRequestResponse,
-        GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
+        GetDataRequestsFromPoolResponse, QuerySeedResponse, GetResolvedDataResultResponse,
         GetRevealedDataResultResponse, GetRevealedDataResultsResponse, GetStakingConfigResponse,
-        IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
+        IsDataRequestExecutorEligibleResponse, SpecialQueryMsg, SpecialQueryWrapper,
+        StakingExecuteMsg,
     },
 };
 use cosmwasm_std::{
-    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
-    Response, StdResult, SubMsg, WasmMsg, WasmQuery,
+    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QuerierWrapper,
+    QueryRequest, Reply, Response, StdResult, SubMsg, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 use cw_utils::parse_reply_execute_data;
@@ -311,6 +314,16 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
                     msg: to_binary(&msg)?,
                 }))?;
             Ok(to_binary(&query_response)?)
+        }
+        ProxyQueryMsg::QuerySeedRequest => {
+            let req = SpecialQueryWrapper {
+                query_data: SpecialQueryMsg::QuerySeedRequest {},
+            }
+            .into();
+            let wrapper: QuerierWrapper<'_, SpecialQueryWrapper> =
+                QuerierWrapper::new(deps.querier.deref());
+            let response: QuerySeedResponse = wrapper.query(&req).unwrap();
+            Ok(to_binary(&response)?)
         }
     }
 }
