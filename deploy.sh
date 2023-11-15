@@ -137,3 +137,7 @@ echo $OUTPUT
 TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
 echo $TXHASH
 
+echo "------------------------------------------\n"
+echo "PROXY_CONTRACT_ADDRESS: " $PROXY_CONTRACT_ADDRESS
+echo "DRs_CONTRACT_ADDRESS: " $DRs_CONTRACT_ADDRESS
+echo "STAKING_CONTRACT_ADDRESS: " $STAKING_CONTRACT_ADDRESS
