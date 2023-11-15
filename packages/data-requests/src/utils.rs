@@ -2,7 +2,7 @@ use common::error::ContractError;
 use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
 use common::types::{Bytes, Hash};
-use cosmwasm_std::{to_binary, Addr, DepsMut, QueryRequest, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, DepsMut, QueryRequest, WasmQuery, to_json_binary};
 use sha3::{Digest, Keccak256};
 
 use crate::state::{DataRequestInputs, PROXY_CONTRACT};
@@ -15,7 +15,7 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
     let query_response: IsDataRequestExecutorEligibleResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: PROXY_CONTRACT.load(deps.storage)?.to_string(),
-            msg: to_binary(&msg)?,
+            msg: to_json_binary(&msg)?,
         }))?;
     Ok(query_response.value)
 }

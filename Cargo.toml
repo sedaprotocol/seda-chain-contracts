@@ -21,9 +21,11 @@ overflow-checks = true
 [workspace.dependencies]
 anyhow = "1.0.75"
 common = { path = "./packages/common" }
+cosmwasm = "0.5"
 cosmwasm-schema = "1.2"
-cosmwasm-std = { version = "1.4", features = ["staking"] }
+cosmwasm-std = { version = "1.4", features = ["staking", "abort"] }
 cosmwasm-storage = "1.1.3"
+cosmwasm-vm = "1.5"
 cw-storage-plus = "1.1"
 cw2 = "1.1"
 cw-utils = "1.0.1"

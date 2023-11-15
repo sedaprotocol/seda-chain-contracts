@@ -1,6 +1,6 @@
 use common::error::ContractError;
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
 use crate::executors_registry::data_request_executors;
@@ -14,7 +14,7 @@ use common::msg::{GetStakingConfigResponse, StakingQueryMsg as QueryMsg};
 use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
 use common::state::StakingConfig;
 
-use cosmwasm_std::StdResult;
+use cosmwasm_std::{to_json_binary, StdResult};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "staking";
@@ -73,13 +73,13 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetDataRequestExecutor { executor } => to_binary(
+        QueryMsg::GetDataRequestExecutor { executor } => to_json_binary(
             &data_request_executors::get_data_request_executor(deps, executor)?,
         ),
-        QueryMsg::IsDataRequestExecutorEligible { executor } => to_binary(
+        QueryMsg::IsDataRequestExecutorEligible { executor } => to_json_binary(
             &data_request_executors::is_data_request_executor_eligible(deps, executor)?,
         ),
-        QueryMsg::GetStakingConfig => to_binary(&GetStakingConfigResponse {
+        QueryMsg::GetStakingConfig => to_json_binary(&GetStakingConfigResponse {
             value: CONFIG.load(deps.storage)?,
         }),
     }

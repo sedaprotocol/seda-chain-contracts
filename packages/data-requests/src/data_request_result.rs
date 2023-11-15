@@ -16,9 +16,9 @@ pub mod data_request_results {
     use sha3::{Digest, Keccak256};
 
     use common::msg::{
-        GetCommittedDataResultsResponse, GetCommittedExecutorsResponse, QuerySeedResponse,
-        GetResolvedDataResultResponse, GetRevealedDataResultsResponse, SpecialQueryMsg,
-        SpecialQueryWrapper,
+        GetCommittedDataResultsResponse, GetCommittedExecutorsResponse,
+        GetResolvedDataResultResponse, GetRevealedDataResultsResponse, QuerySeedResponse,
+        SpecialQueryMsg, SpecialQueryWrapper,
     };
     use common::state::{DataResult, Reveal};
     use common::types::Bytes;
