@@ -161,22 +161,22 @@ pub struct InstantiateMsg {
     pub proxy: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+
 pub enum SpecialQueryMsg {
     QuerySeedRequest {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+
 pub struct QuerySeedResponse {
     pub block_height: u64,
     pub seed: String,
 }
 
 /// SpecialQueryWrapper is an override of QueryRequest::Custom to access seda-specific modules
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+
 pub struct SpecialQueryWrapper {
     pub query_data: SpecialQueryMsg,
 }

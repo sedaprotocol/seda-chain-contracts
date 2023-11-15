@@ -41,9 +41,9 @@ pub enum ProxyExecuteMsg {
 pub enum ProxyQueryMsg {
     // Proxy
     #[returns(GetContractResponse)]
-    GetDataRequestsContract,
+    GetDataRequestsContract{},
     #[returns(GetContractResponse)]
-    GetStakingContract,
+    GetStakingContract{},
     // DataRequests
     #[returns(GetDataRequestResponse)]
     GetDataRequest { dr_id: Hash },
@@ -73,7 +73,7 @@ pub enum ProxyQueryMsg {
 
     // Custom
     #[returns(QuerySeedResponse)]
-    QuerySeedRequest,
+    QuerySeedRequest{},
 }
 
 #[cw_serde]

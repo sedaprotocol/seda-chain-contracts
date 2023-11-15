@@ -317,7 +317,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
-        ProxyQueryMsg::QuerySeedRequest => {
+        ProxyQueryMsg::QuerySeedRequest{} => {
             let req = SpecialQueryWrapper {
                 query_data: SpecialQueryMsg::QuerySeedRequest {},
             }
