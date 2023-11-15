@@ -4,7 +4,7 @@
 
 
 CHAIN_ID="sedachain"
-DEV_ACCOUNT="seda1gt05eqfhk9acsxvzynafjackjvg26a2y08jllv"
+DEV_ACCOUNT="seda10j9eatey68t072858rmunffygvtpwaz67se2gf"
 RPC_URL="http://127.0.0.1:26657"
 
 
