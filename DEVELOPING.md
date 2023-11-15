@@ -26,7 +26,7 @@ RUST_BACKTRACE=1 cargo unit-test
 
 # auto-generate json schema
 cargo schema -p data-requests
-cargo schema -p proxy
+cargo schema -p proxy-contract
 cargo schema -p staking
 ```
 

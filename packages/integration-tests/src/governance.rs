@@ -62,7 +62,7 @@ fn sudo_set_staking_config() {
     let initial_config = res.value;
 
     // query staking contract address on proxy
-    let msg = ProxyQueryMsg::GetStakingContract;
+    let msg = ProxyQueryMsg::GetStakingContract{};
     let res: GetContractResponse = app
         .wrap()
         .query_wasm_smart(proxy_contract.addr(), &msg)
