@@ -1,4 +1,4 @@
-use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response};
+use cosmwasm_std::{from_json, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query, sudo};
 use crate::msg::StakingSudoMsg;
@@ -50,7 +50,7 @@ pub fn helper_get_executor(deps: DepsMut, executor: Addr) -> GetDataRequestExecu
         StakingQueryMsg::GetDataRequestExecutor { executor },
     )
     .unwrap();
-    let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+    let value: GetDataRequestExecutorResponse = from_json(&res).unwrap();
     value
 }
 

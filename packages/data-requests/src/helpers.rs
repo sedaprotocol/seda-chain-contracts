@@ -16,7 +16,7 @@ use cosmwasm_std::testing::mock_env;
 use crate::contract::{instantiate, query};
 use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg};
 use common::{error::ContractError, msg::GetDataRequestResponse};
-use cosmwasm_std::from_binary;
+use cosmwasm_std::from_json;
 
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
@@ -141,7 +141,7 @@ pub fn get_dr(deps: DepsMut, dr_id: Hash) -> GetDataRequestResponse {
         common::msg::DataRequestsQueryMsg::GetDataRequest { dr_id },
     )
     .unwrap();
-    let value: GetDataRequestResponse = from_binary(&res).unwrap();
+    let value: GetDataRequestResponse = from_json(&res).unwrap();
     value
 }
 
@@ -156,6 +156,6 @@ pub fn get_drs_from_pool(
         common::msg::DataRequestsQueryMsg::GetDataRequestsFromPool { position, limit },
     )
     .unwrap();
-    let value: GetDataRequestsFromPoolResponse = from_binary(&res).unwrap();
+    let value: GetDataRequestsFromPoolResponse = from_json(&res).unwrap();
     value
 }

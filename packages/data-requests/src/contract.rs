@@ -2,8 +2,9 @@ use common::error::ContractError;
 use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
 use common::msg::DataRequestsQueryMsg as QueryMsg;
 use common::msg::InstantiateMsg;
+use cosmwasm_std::to_json_binary;
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
 use crate::data_request::data_requests;
@@ -58,27 +59,27 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetDataRequest { dr_id } => {
-            to_binary(&data_requests::get_data_request(deps, dr_id)?)
+            to_json_binary(&data_requests::get_data_request(deps, dr_id)?)
         }
-        QueryMsg::GetDataRequestsFromPool { position, limit } => to_binary(
+        QueryMsg::GetDataRequestsFromPool { position, limit } => to_json_binary(
             &data_requests::get_data_requests_from_pool(deps, position, limit)?,
         ),
-        QueryMsg::GetCommittedDataResult { dr_id, executor } => to_binary(
+        QueryMsg::GetCommittedDataResult { dr_id, executor } => to_json_binary(
             &data_request_results::get_committed_data_result(deps, dr_id, executor)?,
         ),
-        QueryMsg::GetCommittedDataResults { dr_id } => to_binary(
+        QueryMsg::GetCommittedDataResults { dr_id } => to_json_binary(
             &data_request_results::get_committed_data_results(deps, dr_id)?,
         ),
-        QueryMsg::GetRevealedDataResult { dr_id, executor } => to_binary(
+        QueryMsg::GetRevealedDataResult { dr_id, executor } => to_json_binary(
             &data_request_results::get_revealed_data_result(deps, dr_id, executor)?,
         ),
-        QueryMsg::GetRevealedDataResults { dr_id } => to_binary(
+        QueryMsg::GetRevealedDataResults { dr_id } => to_json_binary(
             &data_request_results::get_revealed_data_results(deps, dr_id)?,
         ),
-        QueryMsg::GetResolvedDataResult { dr_id } => to_binary(
+        QueryMsg::GetResolvedDataResult { dr_id } => to_json_binary(
             &data_request_results::get_resolved_data_result(deps, dr_id)?,
         ),
-        QueryMsg::QuerySeedRequest {} => to_binary(&data_request_results::get_seed(deps)?),
+        QueryMsg::QuerySeedRequest {} => to_json_binary(&data_request_results::get_seed(deps)?),
     }
 }
 
