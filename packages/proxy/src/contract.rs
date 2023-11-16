@@ -5,6 +5,7 @@ use cosmwasm_std::entry_point;
 
 use crate::state::TOKEN;
 use crate::utils::get_attached_funds;
+use common::querier::SpecialQuerier;
 use common::{
     error::ContractError,
     msg::{
@@ -12,8 +13,8 @@ use common::{
         GetContractResponse, GetDataRequestExecutorResponse, GetDataRequestResponse,
         GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
         GetRevealedDataResultResponse, GetRevealedDataResultsResponse, GetStakingConfigResponse,
-        IsDataRequestExecutorEligibleResponse, QuerySeedResponse, SpecialQueryMsg,
-        SpecialQueryWrapper, StakingExecuteMsg,
+        IsDataRequestExecutorEligibleResponse, QuerySeedResponse, SpecialQueryWrapper,
+        StakingExecuteMsg,
     },
 };
 use cosmwasm_std::{
@@ -317,14 +318,12 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
-        ProxyQueryMsg::QuerySeedRequest{} => {
-            let req = SpecialQueryWrapper {
-                query_data: SpecialQueryMsg::QuerySeedRequest {},
-            }
-            .into();
-            let wrapper: QuerierWrapper<'_, SpecialQueryWrapper> =
+        ProxyQueryMsg::QuerySeedRequest {} => {
+            let querier_wrapper: QuerierWrapper<'_, SpecialQueryWrapper> =
                 QuerierWrapper::new(deps.querier.deref());
-            let response: QuerySeedResponse = wrapper.query(&req).unwrap();
+            let special_querier: SpecialQuerier = SpecialQuerier::new(&querier_wrapper);
+            let response: QuerySeedResponse = special_querier.query_seed()?;
+
             Ok(to_json_binary(&response)?)
         }
     }
