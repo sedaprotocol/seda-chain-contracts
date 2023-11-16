@@ -1,9 +1,7 @@
 use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal, StakingConfig};
 use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, CustomQuery};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_std::{Addr, CustomQuery, CustomMsg};
 use std::collections::HashMap;
 
 #[cw_serde]
@@ -182,3 +180,5 @@ pub struct SpecialQueryWrapper {
 }
 
 impl CustomQuery for SpecialQueryWrapper {}
+
+impl CustomMsg for SpecialQueryMsg {}
