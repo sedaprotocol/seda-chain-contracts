@@ -1,11 +1,10 @@
+use crate::state::{DataRequestInputs, PROXY_CONTRACT};
 use common::error::ContractError;
 use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
 use common::state::DataRequest;
 use common::types::{Bytes, Hash};
 use cosmwasm_std::{to_json_binary, Addr, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
-
-use crate::state::{DataRequestInputs, PROXY_CONTRACT};
 
 pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, ContractError> {
     // query proxy contract to see if this executor is eligible
@@ -32,6 +31,13 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     hasher.update(posted_dr.replication_factor.to_be_bytes());
     hasher.update(posted_dr.tally_binary_id);
     hasher.update(posted_dr.tally_inputs);
+    hasher.finalize().into()
+}
+
+pub fn hash_seed(seed: String, dr_id: Hash) -> Hash {
+    let mut hasher = Keccak256::new();
+    hasher.update(seed);
+    hasher.update(dr_id);
     hasher.finalize().into()
 }
 
