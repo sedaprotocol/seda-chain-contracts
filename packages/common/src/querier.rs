@@ -1,9 +1,10 @@
 use cosmwasm_std::{
-    from_json, to_json_vec, ContractResult, QuerierWrapper, StdError, StdResult, SystemResult, QueryRequest,
+    from_json, to_json_vec, ContractResult, QuerierWrapper, QueryRequest, StdError, StdResult,
+    SystemResult,
 };
 
-use crate::msg::{QuerySeedResponse, SpecialQueryWrapper};
 use crate::msg::SpecialQueryMsg::QuerySeedRequest;
+use crate::msg::{QuerySeedResponse, SpecialQueryWrapper};
 pub struct SpecialQuerier<'a> {
     querier: &'a QuerierWrapper<'a, SpecialQueryWrapper>,
 }
@@ -14,9 +15,8 @@ impl<'a> SpecialQuerier<'a> {
     }
 
     pub fn query_seed(&self) -> StdResult<QuerySeedResponse> {
-        
-        let request = QueryRequest::Custom(QuerySeedRequest{});
-        
+        let request = QueryRequest::Custom(QuerySeedRequest {});
+
         let req_vec = to_json_vec(&request)?;
 
         match self.querier.raw_query(&req_vec) {
@@ -28,6 +28,5 @@ impl<'a> SpecialQuerier<'a> {
             )),
             SystemResult::Ok(ContractResult::Ok(value)) => Ok(from_json(value)?),
         }
-
     }
 }

@@ -6,7 +6,12 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::{hash_seed, hash_to_string}, data_request_result::data_request_results::get_seed};
+    use crate::{
+        contract::CONTRACT_VERSION,
+        data_request_result::data_request_results::get_seed,
+        state::DATA_REQUESTS_POOL,
+        utils::{hash_seed, hash_to_string},
+    };
     use common::{consts::ZERO_HASH, error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
@@ -74,13 +79,13 @@ pub mod data_requests {
                 posted_dr.dr_id,
             ));
         }
-        let dr_id = posted_dr.dr_id.clone();
-        let block_seed = hash_seed(get_seed(deps.as_ref())?.seed, dr_id.clone());
+        let dr_id = posted_dr.dr_id;
+        let seed_hash = hash_seed(get_seed(deps.as_ref())?.seed, dr_id);
         // save the data request
         let dr = DataRequest {
             dr_id,
-            dr_binary_id: posted_dr.dr_binary_id.clone(),
-            tally_binary_id: posted_dr.tally_binary_id.clone(),
+            dr_binary_id: posted_dr.dr_binary_id,
+            tally_binary_id: posted_dr.tally_binary_id,
             dr_inputs: posted_dr.dr_inputs.clone(),
             tally_inputs: posted_dr.tally_inputs.clone(),
             memo: posted_dr.memo.clone(),
@@ -91,7 +96,7 @@ pub mod data_requests {
             payback_address: posted_dr.payback_address.clone(),
             commits: HashMap::new(),
             reveals: HashMap::new(),
-            block_seed,
+            seed_hash,
         };
         DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id, dr)?;
 

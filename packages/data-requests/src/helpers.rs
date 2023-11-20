@@ -77,11 +77,15 @@ pub fn calculate_dr_id_and_args(
     (constructed_dr_id, posted_dr)
 }
 
-pub fn construct_dr(deps: Deps, constructed_dr_id: String, dr_args: PostDataRequestArgs) -> DataRequest {
+pub fn construct_dr(
+    deps: Deps,
+    constructed_dr_id: Hash,
+    dr_args: PostDataRequestArgs,
+) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, Reveal> = HashMap::new();
     let payback_address: Bytes = Vec::new();
-    let block_seed = hash_seed(get_seed(deps).unwrap().seed, constructed_dr_id.clone());
+    let seed_hash = hash_seed(get_seed(deps).unwrap().seed, constructed_dr_id.clone());
     DataRequest {
         dr_id: constructed_dr_id,
 
@@ -97,7 +101,7 @@ pub fn construct_dr(deps: Deps, constructed_dr_id: String, dr_args: PostDataRequ
         commits,
         reveals,
         payback_address,
-        block_seed,
+        seed_hash,
     }
 }
 
