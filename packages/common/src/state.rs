@@ -41,8 +41,8 @@ pub struct DataRequest {
     pub commits: HashMap<String, Commitment>,
     /// Reveals submitted by executors
     pub reveals: HashMap<String, Reveal>,
-    /// Random seed fetched from chain
-    pub block_seed: Hash,
+    /// hash(random seed fetched from chain, dr_id)
+    pub seed_hash: Hash,
 }
 
 /// Represents a resolved data result

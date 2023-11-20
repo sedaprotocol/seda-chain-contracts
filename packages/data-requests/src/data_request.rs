@@ -82,12 +82,11 @@ pub mod data_requests {
             ));
         }
         let dr_id = posted_dr.dr_id;
-        let block_seed = hash_seed(get_seed(deps.as_ref())?.seed, dr_id);
+        let seed_hash = hash_seed(get_seed(deps.as_ref())?.seed, dr_id);
         // save the data request
         let dr = DataRequest {
             version: posted_dr.version,
-            dr_id: posted_dr.dr_id,
-
+            dr_id,
             dr_binary_id: posted_dr.dr_binary_id,
             tally_binary_id: posted_dr.tally_binary_id,
             dr_inputs: posted_dr.dr_inputs.clone(),
@@ -102,7 +101,7 @@ pub mod data_requests {
             payback_address: posted_dr.payback_address.clone(),
             commits: HashMap::new(),
             reveals: HashMap::new(),
-            block_seed,
+            seed_hash,
         };
         DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id, dr)?;
 

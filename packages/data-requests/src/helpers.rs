@@ -108,7 +108,7 @@ pub fn construct_dr(
     };
 
     let payback_address: Bytes = Vec::new();
-    let block_seed = hash_seed(get_seed(deps).unwrap().seed, constructed_dr_id.clone());
+    let seed_hash = hash_seed(get_seed(deps).unwrap().seed, constructed_dr_id.clone());
     DataRequest {
         version,
         dr_id: constructed_dr_id,
@@ -126,7 +126,7 @@ pub fn construct_dr(
         commits,
         reveals,
         payback_address,
-        block_seed,
+        seed_hash,
     }
 }
 
