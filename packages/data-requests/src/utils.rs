@@ -4,7 +4,6 @@ use common::state::DataRequest;
 use common::types::{Bytes, Hash};
 use cosmwasm_std::{to_binary, Addr, DepsMut, QueryRequest, WasmQuery, to_json_binary};
 use sha3::{Digest, Keccak256};
-
 use crate::state::{DataRequestInputs, PROXY_CONTRACT};
 
 pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, ContractError> {
@@ -31,6 +30,14 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     hasher.update(posted_dr.tally_binary_id);
     hasher.update(posted_dr.tally_inputs);
     hasher.finalize().into()
+}
+
+pub fn hash_seed(seed: String, dr_id: String) -> String {
+    let mut hasher = Keccak256::new();
+    hasher.update(seed);
+    hasher.update(dr_id);
+
+    format!("0x{}", hex::encode(hasher.finalize()))
 }
 
 pub fn hash_data_result(

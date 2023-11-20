@@ -6,7 +6,7 @@ use common::state::DataRequest;
 use common::types::Hash;
 
 pub mod data_requests {
-    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::hash_to_string};
+    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::{hash_seed, hash_to_string}, data_request_result::data_request_results::get_seed};
     use common::{consts::ZERO_HASH, error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
@@ -74,25 +74,24 @@ pub mod data_requests {
                 posted_dr.dr_id,
             ));
         }
-
+        let dr_id = posted_dr.dr_id.clone();
+        let block_seed = hash_seed(get_seed(deps.as_ref())?.seed, dr_id.clone());
         // save the data request
         let dr = DataRequest {
-            dr_id: posted_dr.dr_id,
-
-            dr_binary_id: posted_dr.dr_binary_id,
-            tally_binary_id: posted_dr.tally_binary_id,
+            dr_id,
+            dr_binary_id: posted_dr.dr_binary_id.clone(),
+            tally_binary_id: posted_dr.tally_binary_id.clone(),
             dr_inputs: posted_dr.dr_inputs.clone(),
             tally_inputs: posted_dr.tally_inputs.clone(),
             memo: posted_dr.memo.clone(),
             replication_factor: posted_dr.replication_factor,
-
             gas_price: posted_dr.gas_price,
             gas_limit: posted_dr.gas_limit,
-
             seda_payload: posted_dr.seda_payload.clone(),
             payback_address: posted_dr.payback_address.clone(),
             commits: HashMap::new(),
             reveals: HashMap::new(),
+            block_seed,
         };
         DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id, dr)?;
 
@@ -219,7 +218,7 @@ mod dr_tests {
         let (constructed_dr_id, dr_args) = calculate_dr_id_and_args(1, 3);
 
         assert_eq!(
-            Some(construct_dr(constructed_dr_id, dr_args)),
+            Some(construct_dr(deps.as_ref(), constructed_dr_id, dr_args)),
             received_value.value
         );
 
@@ -266,9 +265,9 @@ mod dr_tests {
 
         let (constructed_dr_id3, dr_args3) = calculate_dr_id_and_args(3, 3);
 
-        let constructed_dr1 = construct_dr(constructed_dr_id1, dr_args1);
-        let constructed_dr2 = construct_dr(constructed_dr_id2, dr_args2);
-        let constructed_dr3 = construct_dr(constructed_dr_id3, dr_args3);
+        let constructed_dr1 = construct_dr(deps.as_ref(), constructed_dr_id1, dr_args1);
+        let constructed_dr2 = construct_dr(deps.as_ref(), constructed_dr_id2, dr_args2);
+        let constructed_dr3 = construct_dr(deps.as_ref(), constructed_dr_id3, dr_args3);
 
         // fetch all three data requests
 

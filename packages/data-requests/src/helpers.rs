@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
+use crate::data_request_result::data_request_results::get_seed;
 use crate::state::DataRequestInputs;
-use crate::utils::{hash_data_request, string_to_hash};
+use crate::utils::{hash_data_request, hash_seed, string_to_hash};
 use common::msg::PostDataRequestArgs;
 use common::state::{DataRequest, Reveal};
 use common::types::Hash;
@@ -15,7 +16,7 @@ use cosmwasm_std::testing::mock_env;
 use crate::contract::{instantiate, query};
 use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg};
 use common::{error::ContractError, msg::GetDataRequestResponse};
-use cosmwasm_std::from_json;
+use cosmwasm_std::{from_json, Deps};
 
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
@@ -76,10 +77,11 @@ pub fn calculate_dr_id_and_args(
     (constructed_dr_id, posted_dr)
 }
 
-pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs) -> DataRequest {
+pub fn construct_dr(deps: Deps, constructed_dr_id: String, dr_args: PostDataRequestArgs) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, Reveal> = HashMap::new();
     let payback_address: Bytes = Vec::new();
+    let block_seed = hash_seed(get_seed(deps).unwrap().seed, constructed_dr_id.clone());
     DataRequest {
         dr_id: constructed_dr_id,
 
@@ -95,6 +97,7 @@ pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs) -> Da
         commits,
         reveals,
         payback_address,
+        block_seed,
     }
 }
 
