@@ -42,19 +42,6 @@ instantiate_contract() {
 
 }
 
-# # wasm_execute EXECUTE_MSG
-# wasm_execute() {
-
-#     OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS $1 --from $DEV_ACCOUNT  --keyring-backend test --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
-#     echo $OUTPUT
-
-#     TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-#     echo $TXHASH
-
-#     sleep 10
-# }
-
-
 
 # Upload Proxy contract
 store_contract "proxy_contract"
