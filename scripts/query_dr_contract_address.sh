@@ -1,25 +1,10 @@
+#!/usr/bin/env bash
 
+# usage: bash scripts/query_dr_contract_address.sh -c "sedachain" -d "seda12nmulx864e9ggymhf3tmavrmr6lse9l3qr4f4q" -r "http://127.0.0.1:26657" -p seda1pwmxy357dhuy9hcnl0kdq0h89gkgls7zz4uswfwnl60f0f6fr2asgkclep
 
+source scripts/common.sh
 
-#!/bin/bash
-
-CHAIN_ID="sedachain"
-DEV_ACCOUNT="seda1qslt6t9fhmpl24azuxktesspfwkf6v9d2jpa5x"
-RPC_URL="http://127.0.0.1:26657"
-PROXY_CONTRACT_ADDRESS="seda14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9snnh0yy"
-
-OUTPUT="$(seda-chaind query wasm contract-state smart $PROXY_CONTRACT_ADDRESS '{"get_data_requests_contract":{}}' --node $RPC_URL --output json --chain-id $CHAIN_ID)"
-echo $OUTPUT
-
-
-
-
-
-
-
-
-
-
+wasm_query '{"get_data_requests_contract":{}}'
 
 
 
