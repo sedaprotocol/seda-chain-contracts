@@ -8,7 +8,7 @@ pub mod data_request_results {
 
     use common::error::ContractError::{
         self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
-        RevealNotStarted,
+        RevealNotStarted, RevealStarted,
     };
     use cosmwasm_std::{Addr, Env, Event};
     use sha3::{Digest, Keccak256};
@@ -49,6 +49,13 @@ pub mod data_request_results {
         if dr.commits.contains_key(&sender.to_string()) {
             return Err(AlreadyCommitted);
         }
+
+        // error if reveal stage has started (replication factor reached)
+        if u16::try_from(dr.commits.len()).unwrap() >= dr.replication_factor {
+            return Err(RevealStarted);
+        }
+
+        // add the commitment to the data request
         dr.commits.insert(sender.to_string(), commitment);
 
         DATA_REQUESTS_POOL.update(deps.storage, dr_id, &dr)?;
