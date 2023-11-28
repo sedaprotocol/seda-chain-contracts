@@ -142,6 +142,20 @@ fn commit_reveal_result() {
         .unwrap();
     assert!(res.value.is_some());
 
+    // can't add another commitment since replication factor is reached
+    let commitment3 = calculate_commitment("4000", EXECUTOR_3);
+    let msg = ProxyExecuteMsg::CommitDataResult {
+        dr_id,
+        commitment: commitment3,
+    };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    let res = app.execute(Addr::unchecked(EXECUTOR_3), cosmos_msg);
+    assert_eq!(
+        res.unwrap_err().downcast_ref::<ContractError>(),
+        Some(&ContractError::RevealStarted)
+    );
+
+    // exeuctor 1 reveals data result
     helper_reveal_result(
         &mut app,
         proxy_contract.clone(),

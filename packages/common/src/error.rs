@@ -28,6 +28,8 @@ pub enum ContractError {
     AlreadyCommitted,
     #[error("RevealNotStarted: Reveal stage has not started yet")]
     RevealNotStarted,
+    #[error("RevealStarted: Cannot commit after reveal stage has started")]
+    RevealStarted,
     #[error("NotCommitted: Executor has not committed on this data request")]
     NotCommitted,
     #[error("AlreadyRevealed: Executor has already revealed on this data request")]
