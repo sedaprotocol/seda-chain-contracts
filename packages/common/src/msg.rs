@@ -17,6 +17,7 @@ pub struct PostDataRequestArgs {
     pub replication_factor: u16,
     pub gas_price: u128,
     pub gas_limit: u128,
+    pub tally_gas_limit: u128,
     pub seda_payload: Bytes,
     pub payback_address: Bytes,
 }

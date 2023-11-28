@@ -61,6 +61,7 @@ pub mod data_requests {
 
             gas_price: posted_dr.gas_price,
             gas_limit: posted_dr.gas_limit,
+            tally_gas_limit: posted_dr.tally_gas_limit,
 
             seda_payload: posted_dr.seda_payload.clone(),
             payback_address: posted_dr.payback_address.clone(),
@@ -90,6 +91,7 @@ pub mod data_requests {
 
             gas_price: posted_dr.gas_price,
             gas_limit: posted_dr.gas_limit,
+            tally_gas_limit: posted_dr.tally_gas_limit,
 
             seda_payload: posted_dr.seda_payload.clone(),
             payback_address: posted_dr.payback_address.clone(),
