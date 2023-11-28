@@ -8,6 +8,7 @@ use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
+/// Properties of a data request used to calculate its ID hash
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequestInputs {
     // DR definition
@@ -25,8 +26,10 @@ pub struct DataRequestInputs {
     pub replication_factor: u16,
     /// Amount of SEDA tokens per gas unit
     pub gas_price: u128,
-    /// Maximum of gas units to be used
+    /// Maximum of gas units to be used by data request executors to resolve a data request
     pub gas_limit: u128,
+    /// Maximum gas units to be used in Tally WASM binary execution
+    pub tally_gas_limit: u128,
     /// Public info attached to DR
     pub memo: Bytes,
 

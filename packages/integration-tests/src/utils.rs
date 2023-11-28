@@ -278,6 +278,7 @@ pub fn calculate_dr_id_and_args(
     // set by dr creator
     let gas_price: u128 = 10;
     let gas_limit: u128 = 10;
+    let tally_gas_limit: u128 = 10;
 
     // set by relayer and SEDA protocol
     let seda_payload: Bytes = Vec::new();
@@ -308,6 +309,7 @@ pub fn calculate_dr_id_and_args(
 
         gas_price,
         gas_limit,
+        tally_gas_limit,
 
         seda_payload: seda_payload.clone(),
         payback_address: payback_address.clone(),
@@ -325,6 +327,7 @@ pub fn calculate_dr_id_and_args(
         replication_factor,
         gas_price,
         gas_limit,
+        tally_gas_limit,
         seda_payload,
         payback_address,
     };
