@@ -32,7 +32,7 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     hasher.finalize().into()
 }
 
-pub fn hash_seed(seed: String, dr_id: Hash) -> Hash {
+pub fn hash_seed(seed: &str, dr_id: &Hash) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(seed);
     hasher.update(dr_id);

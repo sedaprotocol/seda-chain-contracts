@@ -86,7 +86,7 @@ pub mod data_requests {
             ));
         }
         let dr_id = posted_dr.dr_id;
-        let seed_hash = hash_seed(get_seed(deps.as_ref())?.seed, dr_id);
+        let seed_hash = hash_seed(&get_seed(deps.as_ref())?.seed, &dr_id);
         // save the data request
         let dr = DataRequest {
             dr_id,

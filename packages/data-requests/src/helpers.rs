@@ -89,10 +89,8 @@ pub fn construct_dr(
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, Reveal> = HashMap::new();
     let payback_address: Bytes = Vec::new();
-    let seed_hash = hash_seed(
-        get_seed(deps.into_empty()).unwrap().seed,
-        constructed_dr_id.clone(),
-    );
+    let deps = deps.into_empty();
+    let seed_hash = hash_seed(&get_seed(deps).unwrap().seed, &constructed_dr_id);
     DataRequest {
         dr_id: constructed_dr_id,
 
