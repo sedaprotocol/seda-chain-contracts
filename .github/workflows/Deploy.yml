@@ -67,6 +67,7 @@ jobs:
           echo "DEV_ACCOUNT=${{ secrets.DEV_ACCOUNT }}" >> $GITHUB_ENV
           echo "KEYRING_FILE_ID=${{ secrets.KEYRING_FILE_ID }}" >> $GITHUB_ENV
           echo "CHAIN_ID=seda-${{ github.event.inputs.network }}" >> $GITHUB_ENV
+          echo "MNEMONIC=${{ secrets.MNEMONIC }}" >> $GITHUB_ENV
 
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -96,18 +97,26 @@ jobs:
           tar -xvf seda-chaind-x86-64.tar.gz
           chmod +x seda-chaind
 
-      - name: Download and decrypt keys
+      - name: Import key
         env:
-          KEYRING_PASSWORD: ${{ secrets.KEYRING_PASSWORD }}
-          KEYRING_FILE_ID: ${{ env.KEYRING_FILE_ID }}
+          MNEMONIC: ${{ env.MNEMONIC }}
         run: |
-          keyringFileId=${{ env.KEYRING_FILE_ID }}
-          keyringFileName=keyring.tar.gz.enc
-          curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=${keyringFileId}" > /dev/null
-          code="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"
-          curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${code}&id=${keyringFileId}" -o ${keyringFileName}
-          openssl enc -d -aes-256-cbc -k "$KEYRING_PASSWORD" -salt -pbkdf2 -iter 100000 -in keyring.tar.gz.enc -out keyring.tar.gz
-          tar -xvf keyring.tar.gz
+          sudo apt-get install -y expect
+          output=$(expect -c "
+            spawn ./seda-chaind keys add dev_account --recover --keyring-backend test --keyring-dir .
+            expect {
+              \"> Enter your bip39 mnemonic\" {
+                send \"$MNEMONIC\r\"
+              }
+              timeout {
+                send_user \"Timed out waiting for enter mnemonic prompt\r\"
+                exit 1
+              }
+            }
+            expect eof
+          ")
+          echo "$output"
+
 
       - name: Store contract on chain
         env:
