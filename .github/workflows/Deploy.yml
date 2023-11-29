@@ -85,17 +85,15 @@ jobs:
           --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
           cosmwasm/rust-optimizer:0.12.11
 
-      - name: Download seda-chaind binary and make executable
-        env:
-          SEDACHAIND_FILE_ID: ${{ secrets.SEDACHAIND_FILE_ID }}
+      - name: Download seda-chaind binary
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repo: sedaprotocol/seda-chain
+
+      - name: Move seda-chaind to current directory
         run: |
-          sedachaindFileId=${{ env.SEDACHAIND_FILE_ID }}
-          sedachaindFileName=seda-chaind-x86-64.tar.gz
-          curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=${sedachaindFileId}" > /dev/null
-          code="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"
-          curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${code}&id=${sedachaindFileId}" -o ${sedachaindFileName}
-          tar -xvf seda-chaind-x86-64.tar.gz
-          chmod +x seda-chaind
+          cp /opt/hostedtoolcache/sedaprotocol/seda-chain/latest/linux-x64/seda-chaind .
 
       - name: Import key
         env:
