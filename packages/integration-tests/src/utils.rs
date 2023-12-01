@@ -10,6 +10,7 @@ use data_requests::utils::hash_data_request;
 use data_requests::utils::string_to_hash;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
+use semver::{BuildMetadata, Prerelease, Version};
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
@@ -258,7 +259,9 @@ pub fn helper_post_dr(
     posted_dr: PostDataRequestArgs,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
-    let msg = ProxyExecuteMsg::PostDataRequest { posted_dr };
+    let msg = ProxyExecuteMsg::PostDataRequest {
+        posted_dr: Box::new(posted_dr),
+    };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
 }
@@ -303,7 +306,16 @@ pub fn calculate_dr_id_and_args(
     };
     let constructed_dr_id = hash_data_request(constructed_dr_input);
 
+    let version = Version {
+        major: 1,
+        minor: 0,
+        patch: 0,
+        pre: Prerelease::EMPTY,
+        build: BuildMetadata::EMPTY,
+    };
+
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
+        version,
         dr_id: constructed_dr_id.clone(),
         dr_binary_id,
         tally_binary_id,

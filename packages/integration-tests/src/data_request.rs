@@ -11,7 +11,9 @@ fn post_data_request() {
 
     let (_, posted_dr) = calculate_dr_id_and_args(1, 3);
     // post the data request
-    let msg = ProxyExecuteMsg::PostDataRequest { posted_dr };
+    let msg = ProxyExecuteMsg::PostDataRequest {
+        posted_dr: Box::new(posted_dr),
+    };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     let res = app
         .execute(Addr::unchecked(USER), cosmos_msg.clone())

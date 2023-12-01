@@ -97,7 +97,9 @@ pub fn execute(
                 .add_submessage(SubMsg::reply_on_success(
                     CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                        msg: to_binary(&DataRequestsExecuteMsg::PostDataRequest { posted_dr })?,
+                        msg: to_binary(&DataRequestsExecuteMsg::PostDataRequest {
+                            posted_dr: *posted_dr,
+                        })?,
                         funds: vec![],
                     }),
                     POST_DATA_REQUEST_REPLY_ID,
