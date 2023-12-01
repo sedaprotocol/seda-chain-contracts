@@ -289,8 +289,16 @@ pub fn calculate_dr_id_and_args(
     hasher.update(chain_id.to_be_bytes());
     hasher.update(nonce.to_be_bytes());
     let memo = hasher.finalize().to_vec();
+    let version = Version {
+        major: 1,
+        minor: 0,
+        patch: 0,
+        pre: Prerelease::EMPTY,
+        build: BuildMetadata::EMPTY,
+    };
 
     let constructed_dr_input = DataRequestInputs {
+        version: version.clone(),
         dr_binary_id: dr_binary_id.clone(),
         tally_binary_id: tally_binary_id.clone(),
         dr_inputs: dr_inputs.clone(),
@@ -305,14 +313,6 @@ pub fn calculate_dr_id_and_args(
         payback_address: payback_address.clone(),
     };
     let constructed_dr_id = hash_data_request(constructed_dr_input);
-
-    let version = Version {
-        major: 1,
-        minor: 0,
-        patch: 0,
-        pre: Prerelease::EMPTY,
-        build: BuildMetadata::EMPTY,
-    };
 
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         version,

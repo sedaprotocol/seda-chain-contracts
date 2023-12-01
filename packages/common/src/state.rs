@@ -1,5 +1,6 @@
 use crate::types::{Bytes, Commitment, Hash};
 use schemars::JsonSchema;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -11,7 +12,7 @@ pub struct DataRequest {
 
     // DR definition
     /// Semantic Version String
-    // pub version: Version,
+    pub version: Version,
     /// Identifier of DR WASM binary
     pub dr_binary_id: Hash,
     /// Inputs for DR WASM binary
@@ -48,7 +49,7 @@ pub struct DataResult {
 
     // DR Result
     /// Semantic Version String
-    // pub version: Version,
+    pub version: Version,
 
     /// Data Request Identifier
     pub dr_id: Hash,

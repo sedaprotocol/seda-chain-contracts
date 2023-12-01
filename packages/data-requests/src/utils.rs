@@ -22,6 +22,7 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
 
 pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     let mut hasher = Keccak256::new();
+    hasher.update(posted_dr.version.to_string());
     hasher.update(posted_dr.dr_binary_id);
     hasher.update(posted_dr.dr_inputs);
     hasher.update(posted_dr.gas_limit.to_be_bytes());
@@ -40,6 +41,7 @@ pub fn hash_data_result(
     result: &Bytes,
 ) -> Hash {
     let mut hasher = Keccak256::new();
+    hasher.update(dr.version.to_string());
     hasher.update(dr.dr_id);
     hasher.update(block_height.to_be_bytes());
     hasher.update(exit_code.to_be_bytes());

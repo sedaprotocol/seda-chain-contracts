@@ -51,6 +51,7 @@ pub mod data_requests {
         }
 
         let dr_inputs = DataRequestInputs {
+            version: posted_dr.version.clone(),
             dr_binary_id: posted_dr.dr_binary_id,
             tally_binary_id: posted_dr.tally_binary_id,
             dr_inputs: posted_dr.dr_inputs.clone(),
@@ -77,6 +78,7 @@ pub mod data_requests {
 
         // save the data request
         let dr = DataRequest {
+            version: posted_dr.version,
             dr_id: posted_dr.dr_id,
 
             dr_binary_id: posted_dr.dr_binary_id,
