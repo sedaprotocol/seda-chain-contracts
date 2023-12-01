@@ -5,13 +5,14 @@ use common::types::{Bytes, Hash};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequestInputs {
     // DR definition
     /// Semantic Version String
-    // pub version: Version,
+    pub version: Version,
     /// Identifier of DR WASM binary
     pub dr_binary_id: Hash,
     /// Inputs for DR WASM binary

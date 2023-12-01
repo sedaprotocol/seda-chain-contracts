@@ -125,6 +125,7 @@ pub mod data_request_results {
             // save the data result
             let result_id = hash_data_result(&dr, block_height, exit_code, &result);
             let dr_result = DataResult {
+                version: dr.version,
                 result_id,
                 dr_id,
                 block_height,
