@@ -27,6 +27,7 @@ pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
     hasher.update(posted_dr.dr_inputs);
     hasher.update(posted_dr.gas_limit.to_be_bytes());
     hasher.update(posted_dr.gas_price.to_be_bytes());
+    hasher.update(posted_dr.tally_gas_limit.to_be_bytes());
     hasher.update(posted_dr.memo);
     hasher.update(posted_dr.replication_factor.to_be_bytes());
     hasher.update(posted_dr.tally_binary_id);

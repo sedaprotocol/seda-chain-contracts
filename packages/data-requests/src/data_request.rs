@@ -337,7 +337,6 @@ mod dr_tests {
 
         let (constructed_dr_id, _) = calculate_dr_id_and_args(1, 3);
 
-        println!("constructed_dr_id1: {:#?}", constructed_dr_id);
         println!("0x{}", hex::encode(constructed_dr_id));
     }
 
