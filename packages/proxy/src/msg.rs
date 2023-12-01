@@ -25,7 +25,7 @@ pub enum ProxyExecuteMsg {
     // Delegated calls to contracts
 
     // DataRequests
-    PostDataRequest { posted_dr: PostDataRequestArgs },
+    PostDataRequest { posted_dr: Box<PostDataRequestArgs> },
     CommitDataResult { dr_id: Hash, commitment: Hash },
     RevealDataResult { dr_id: Hash, reveal: Reveal },
     // Staking

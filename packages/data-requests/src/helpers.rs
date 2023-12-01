@@ -7,6 +7,7 @@ use common::state::{DataRequest, Reveal};
 use common::types::Hash;
 use common::types::{Bytes, Commitment};
 
+use semver::{BuildMetadata, Prerelease, Version};
 use sha3::Digest;
 use sha3::Keccak256;
 
@@ -59,7 +60,16 @@ pub fn calculate_dr_id_and_args(
     };
     let constructed_dr_id = hash_data_request(constructed_dr_input);
 
+    let version = Version {
+        major: 1,
+        minor: 0,
+        patch: 0,
+        pre: Prerelease::EMPTY,
+        build: BuildMetadata::EMPTY,
+    };
+
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
+        version,
         dr_id: constructed_dr_id.clone(),
         dr_binary_id,
         tally_binary_id,

@@ -2,10 +2,12 @@ use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal, Staking
 use crate::types::{Bytes, Commitment, Hash, Memo};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
+use semver::Version;
 use std::collections::HashMap;
 
 #[cw_serde]
 pub struct PostDataRequestArgs {
+    pub version: Version,
     pub dr_id: Hash,
     pub dr_binary_id: Hash,
     pub tally_binary_id: Hash,
