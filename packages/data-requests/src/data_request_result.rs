@@ -252,32 +252,32 @@ pub mod data_request_results {
     }
 }
 
-// #[cfg(test)]
-// mod data_request_result_tests {
-//     use crate::contract::execute;
-//     use crate::helpers::instantiate_dr_contract;
-//     use crate::utils::string_to_hash;
-//     use common::msg::DataRequestsExecuteMsg;
-//     use cosmwasm_std::coins;
-//     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+#[cfg(test)]
+mod data_request_result_tests {
+    use crate::contract::execute;
+    use crate::helpers::{instantiate_dr_contract, mock_dependencies};
+    use crate::utils::string_to_hash;
+    use common::msg::DataRequestsExecuteMsg;
+    use cosmwasm_std::coins;
+    use cosmwasm_std::testing::{mock_env, mock_info};
 
-//     #[test]
-//     #[should_panic(expected = "NotProxy")]
-//     fn only_proxy_can_pass_caller() {
-//         let mut deps = mock_dependencies();
+    #[test]
+    #[should_panic(expected = "NotProxy")]
+    fn only_proxy_can_pass_caller() {
+        let mut deps = mock_dependencies();
 
-//         let info = mock_info("creator", &coins(2, "token"));
+        let info = mock_info("creator", &coins(2, "token"));
 
-//         // instantiate contract
-//         instantiate_dr_contract(deps.as_mut(), info).unwrap();
+        // instantiate contract
+        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
 
-//         // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
-//         let msg = DataRequestsExecuteMsg::CommitDataResult {
-//             dr_id: string_to_hash("dr_id"),
-//             commitment: string_to_hash("commitment"),
-//             sender: Some("someone".to_string()),
-//         };
-//         let info = mock_info("anyone", &[]);
-//         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-//     }
-// }
+        // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
+        let msg = DataRequestsExecuteMsg::CommitDataResult {
+            dr_id: string_to_hash("dr_id"),
+            commitment: string_to_hash("commitment"),
+            sender: Some("someone".to_string()),
+        };
+        let info = mock_info("anyone", &[]);
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+}
