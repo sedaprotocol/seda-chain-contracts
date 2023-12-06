@@ -14,7 +14,7 @@ use sha3::Keccak256;
 use cosmwasm_std::testing::mock_env;
 
 use crate::contract::{instantiate, query};
-use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg};
+use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg, SpecialQueryWrapper};
 use common::{error::ContractError, msg::GetDataRequestResponse};
 use cosmwasm_std::{from_json, Deps};
 
@@ -78,14 +78,14 @@ pub fn calculate_dr_id_and_args(
 }
 
 pub fn construct_dr(
-    deps: Deps,
+    deps: Deps<SpecialQueryWrapper>,
     constructed_dr_id: Hash,
     dr_args: PostDataRequestArgs,
 ) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, Reveal> = HashMap::new();
     let payback_address: Bytes = Vec::new();
-    let seed_hash = hash_seed(get_seed(deps).unwrap().seed, constructed_dr_id.clone());
+    let seed_hash = hash_seed(get_seed(deps.into_empty()).unwrap().seed, constructed_dr_id.clone());
     DataRequest {
         dr_id: constructed_dr_id,
 
@@ -116,9 +116,9 @@ pub fn instantiate_dr_contract(
     instantiate(deps, mock_env(), info, msg)
 }
 
-pub fn get_dr(deps: DepsMut, dr_id: Hash) -> GetDataRequestResponse {
+pub fn get_dr(deps: DepsMut<SpecialQueryWrapper>, dr_id: Hash) -> GetDataRequestResponse {
     let res = query(
-        deps.as_ref(),
+        deps.into_empty().as_ref(),
         mock_env(),
         common::msg::DataRequestsQueryMsg::GetDataRequest { dr_id },
     )

@@ -12,7 +12,7 @@ pub mod data_requests {
         state::DATA_REQUESTS_POOL,
         utils::{hash_seed, hash_to_string},
     };
-    use common::{consts::ZERO_HASH, error::ContractError, msg::PostDataRequestArgs};
+    use common::{consts::ZERO_HASH, error::ContractError, msg::{PostDataRequestArgs, SpecialQueryWrapper}};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
@@ -38,10 +38,12 @@ pub mod data_requests {
     }
     /// Posts a data request to the pool
     pub fn post_data_request(
-        deps: DepsMut,
+        deps: DepsMut<SpecialQueryWrapper>,
         _info: MessageInfo,
         posted_dr: PostDataRequestArgs,
     ) -> Result<Response, ContractError> {
+        let deps = deps.into_empty();
+
         // require the data request id to be unique
         if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
@@ -182,17 +184,77 @@ mod dr_tests {
     use crate::helpers::instantiate_dr_contract;
     use crate::utils::string_to_hash;
     use common::consts::ZERO_HASH;
+    use common::msg::SpecialQueryWrapper;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
-    use common::msg::GetDataRequestResponse;
-    use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use common::msg::{GetDataRequestResponse, QuerySeedResponse};
+    use cosmwasm_std::to_binary;
+    // use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::{coins, from_json, OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult};
+    use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
+
+    /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
+    /// this uses our CustomQuerier.
+    pub fn mock_dependencies() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier, SpecialQueryWrapper> {
+        let custom_querier: WasmMockQuerier =
+            WasmMockQuerier::new(MockQuerier::new(&[(MOCK_CONTRACT_ADDR, &[])]));
+        // let custom_querier: WasmMockQuerier = WasmMockQuerier::new();
+
+        OwnedDeps {
+            api: MockApi::default(),
+            storage: MockStorage::default(),
+            querier: custom_querier,
+            custom_query_type: std::marker::PhantomData,
+        }
+    }
+
+    pub struct WasmMockQuerier {
+        base: MockQuerier<SpecialQueryWrapper>,
+    }
+
+    impl WasmMockQuerier {
+        pub fn new(base: MockQuerier<SpecialQueryWrapper>) -> Self {
+            WasmMockQuerier {
+                base,
+            }
+        }
+        
+        pub fn handle_query(&self, request: &QueryRequest<SpecialQueryWrapper>) -> QuerierResult {
+            match &request {
+                QueryRequest::Custom(SpecialQueryWrapper { query_data }) => {
+                    let res = QuerySeedResponse { 
+                        seed: "seed".to_string(),
+                        block_height: 1,
+                    };
+                    SystemResult::Ok(to_binary(&res).into())
+                }
+                _ => self.base.handle_query(request),
+            }
+        }
+    }
+
+    impl Querier for WasmMockQuerier {
+        fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
+            // MockQuerier doesn't support Custom, so we ignore it completely here
+            let request: QueryRequest<SpecialQueryWrapper> = match from_json(bin_request) {
+                Ok(v) => v,
+                Err(e) => {
+                    return SystemResult::Err(SystemError::InvalidRequest {
+                        error: format!("Parsing query request: {}", e),
+                        request: bin_request.into(),
+                    })
+                }
+            };
+            self.handle_query(&request)
+        }
+    }
+
     #[test]
     fn post_data_request() {
         let mut deps = mock_dependencies();
         let info = mock_info("creator", &coins(2, "token"));
 
-        instantiate_dr_contract(deps.as_mut(), info.clone()).unwrap();
+        instantiate_dr_contract(deps.as_mut().into_empty(), info.clone()).unwrap();
 
         // data request with id 0x69... does not yet exist
         let value: GetDataRequestResponse = get_dr(
