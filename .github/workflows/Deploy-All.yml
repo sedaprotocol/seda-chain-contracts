@@ -108,7 +108,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.proxy_store_tx_hash }} --node ${nodeUrl} --output json)"
-          CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+          CODE_ID=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "proxy_code_id=$CODE_ID" >> $GITHUB_ENV
 
@@ -133,7 +133,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.proxy_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
-          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
           echo "proxy_address=$CONTRACT_ADDRESS" >> $GITHUB_ENV
       
@@ -161,7 +161,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.dr_store_tx_hash }} --node ${nodeUrl} --output json)"
-          CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+          CODE_ID=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "dr_code_id=$CODE_ID" >> $GITHUB_ENV
 
@@ -186,7 +186,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.dr_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
-          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
           echo "dr_address=$CONTRACT_ADDRESS" >> $GITHUB_ENV
       
@@ -214,7 +214,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.staking_store_tx_hash }} --node ${nodeUrl} --output json)"
-          CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+          CODE_ID=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "staking_code_id=$CODE_ID" >> $GITHUB_ENV
 
@@ -239,7 +239,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.staking_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
-          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
           echo "staking_address=$CONTRACT_ADDRESS" >> $GITHUB_ENV
 

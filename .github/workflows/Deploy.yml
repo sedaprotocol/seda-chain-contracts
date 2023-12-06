@@ -131,7 +131,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${nodeUrl} --output json)"
-          CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+          CODE_ID=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "code_id=$CODE_ID" >> $GITHUB_ENV
 
@@ -161,5 +161,5 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           OUTPUT="$(./seda-chaind query tx ${{ env.txhash }} --node ${nodeUrl} --output json)"
-          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+          CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"

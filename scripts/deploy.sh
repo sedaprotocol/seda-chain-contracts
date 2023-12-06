@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# usage: bash scripts/deploy.sh -c "sedachain" -d "seda12nmulx864e9ggymhf3tmavrmr6lse9l3qr4f4q" -r "http://127.0.0.1:26657"
+# usage: bash scripts/deploy.sh -c "sedachain" -d "seda1nj34hdtnhmzgkvq6r0272tdpqhnga2ct50zsvw" -r "http://127.0.0.1:26657"
 
 source scripts/common.sh
 
@@ -19,8 +19,7 @@ store_contract(){
     OUTPUT=$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)
     echo $OUTPUT
 
-    CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-  
+    CODE_ID=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 }
 
 # instantiate_contract CODE_ID INSTANTIATE_MSG LABEL
@@ -37,7 +36,7 @@ instantiate_contract() {
     OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
     echo $OUTPUT
 
-    CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+    CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
 
 
 }
