@@ -29,7 +29,7 @@ wasm_execute() {
 # wasm_query <QUERY_MSG>
 wasm_query() {
 
-    OUTPUT="$(seda-chaind query wasm contract-state smart $PROXY_CONTRACT_ADDRESS $1 --node $RPC_URL --output json --chain-id $CHAIN_ID)"
+    OUTPUT="$(seda-chaind query wasm contract-state smart $PROXY_CONTRACT_ADDRESS $1 --node $RPC_URL --output json)"
     echo $OUTPUT
 
     sleep 10
