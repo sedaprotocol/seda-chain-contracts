@@ -15,11 +15,15 @@ use sha3::Keccak256;
 use cosmwasm_std::testing::mock_env;
 
 use crate::contract::{instantiate, query};
-use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg, SpecialQueryWrapper};
+use common::msg::{
+    GetDataRequestsFromPoolResponse, InstantiateMsg, QuerySeedResponse, SpecialQueryWrapper,
+};
 use common::{error::ContractError, msg::GetDataRequestResponse};
-use cosmwasm_std::{from_json, Deps};
-
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::{
+    from_json, to_json_binary, Deps, DepsMut, MessageInfo, OwnedDeps, Querier, QuerierResult,
+    QueryRequest, Response, SystemError, SystemResult,
+};
 
 pub fn calculate_dr_id_and_args(
     nonce: u128,
@@ -108,7 +112,10 @@ pub fn construct_dr(
     };
 
     let payback_address: Bytes = Vec::new();
-    let seed_hash = hash_seed(get_seed(deps.into_empty()).unwrap().seed, constructed_dr_id.clone());
+    let seed_hash = hash_seed(
+        get_seed(deps.into_empty()).unwrap().seed,
+        constructed_dr_id.clone(),
+    );
     DataRequest {
         version,
         dr_id: constructed_dr_id,
@@ -165,4 +172,58 @@ pub fn get_drs_from_pool(
     .unwrap();
     let value: GetDataRequestsFromPoolResponse = from_json(&res).unwrap();
     value
+}
+
+/// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
+/// this uses our CustomQuerier.
+pub fn mock_dependencies() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier, SpecialQueryWrapper>
+{
+    let custom_querier: WasmMockQuerier =
+        WasmMockQuerier::new(MockQuerier::new(&[(MOCK_CONTRACT_ADDR, &[])]));
+
+    OwnedDeps {
+        api: MockApi::default(),
+        storage: MockStorage::default(),
+        querier: custom_querier,
+        custom_query_type: std::marker::PhantomData,
+    }
+}
+
+pub struct WasmMockQuerier {
+    base: MockQuerier<SpecialQueryWrapper>,
+}
+
+impl WasmMockQuerier {
+    pub fn new(base: MockQuerier<SpecialQueryWrapper>) -> Self {
+        WasmMockQuerier { base }
+    }
+
+    pub fn handle_query(&self, request: &QueryRequest<SpecialQueryWrapper>) -> QuerierResult {
+        match &request {
+            QueryRequest::Custom(SpecialQueryWrapper { query_data: _ }) => {
+                let res = QuerySeedResponse {
+                    seed: "seed".to_string(),
+                    block_height: 1,
+                };
+                SystemResult::Ok(to_json_binary(&res).into())
+            }
+            _ => self.base.handle_query(request),
+        }
+    }
+}
+
+impl Querier for WasmMockQuerier {
+    fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
+        // MockQuerier doesn't support Custom, so we ignore it completely here
+        let request: QueryRequest<SpecialQueryWrapper> = match from_json(bin_request) {
+            Ok(v) => v,
+            Err(e) => {
+                return SystemResult::Err(SystemError::InvalidRequest {
+                    error: format!("Parsing query request: {}", e),
+                    request: bin_request.into(),
+                })
+            }
+        };
+        self.handle_query(&request)
+    }
 }

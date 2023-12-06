@@ -12,7 +12,11 @@ pub mod data_requests {
         state::DATA_REQUESTS_POOL,
         utils::{hash_seed, hash_to_string},
     };
-    use common::{consts::ZERO_HASH, error::ContractError, msg::{PostDataRequestArgs, SpecialQueryWrapper}};
+    use common::{
+        consts::ZERO_HASH,
+        error::ContractError,
+        msg::{PostDataRequestArgs, SpecialQueryWrapper},
+    };
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
@@ -182,77 +186,17 @@ mod dr_tests {
 
     use super::*;
     use crate::contract::execute;
-    use crate::helpers::calculate_dr_id_and_args;
-    use crate::helpers::construct_dr;
-    use crate::helpers::get_dr;
-    use crate::helpers::get_drs_from_pool;
-    use crate::helpers::instantiate_dr_contract;
+    use crate::helpers::{
+        calculate_dr_id_and_args, construct_dr, get_dr, get_drs_from_pool, instantiate_dr_contract,
+        mock_dependencies,
+    };
     use crate::utils::string_to_hash;
     use common::consts::ZERO_HASH;
-    use common::msg::SpecialQueryWrapper;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
-    use common::msg::{GetDataRequestResponse, QuerySeedResponse};
-    use cosmwasm_std::to_binary;
-    // use cosmwasm_std::testing::mock_dependencies;
-    use cosmwasm_std::{coins, from_json, OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult};
-    use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
-
-    /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
-    /// this uses our CustomQuerier.
-    pub fn mock_dependencies() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier, SpecialQueryWrapper> {
-        let custom_querier: WasmMockQuerier =
-            WasmMockQuerier::new(MockQuerier::new(&[(MOCK_CONTRACT_ADDR, &[])]));
-        // let custom_querier: WasmMockQuerier = WasmMockQuerier::new();
-
-        OwnedDeps {
-            api: MockApi::default(),
-            storage: MockStorage::default(),
-            querier: custom_querier,
-            custom_query_type: std::marker::PhantomData,
-        }
-    }
-
-    pub struct WasmMockQuerier {
-        base: MockQuerier<SpecialQueryWrapper>,
-    }
-
-    impl WasmMockQuerier {
-        pub fn new(base: MockQuerier<SpecialQueryWrapper>) -> Self {
-            WasmMockQuerier {
-                base,
-            }
-        }
-        
-        pub fn handle_query(&self, request: &QueryRequest<SpecialQueryWrapper>) -> QuerierResult {
-            match &request {
-                QueryRequest::Custom(SpecialQueryWrapper { query_data }) => {
-                    let res = QuerySeedResponse { 
-                        seed: "seed".to_string(),
-                        block_height: 1,
-                    };
-                    SystemResult::Ok(to_binary(&res).into())
-                }
-                _ => self.base.handle_query(request),
-            }
-        }
-    }
-
-    impl Querier for WasmMockQuerier {
-        fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
-            // MockQuerier doesn't support Custom, so we ignore it completely here
-            let request: QueryRequest<SpecialQueryWrapper> = match from_json(bin_request) {
-                Ok(v) => v,
-                Err(e) => {
-                    return SystemResult::Err(SystemError::InvalidRequest {
-                        error: format!("Parsing query request: {}", e),
-                        request: bin_request.into(),
-                    })
-                }
-            };
-            self.handle_query(&request)
-        }
-    }
+    use common::msg::GetDataRequestResponse;
+    use cosmwasm_std::coins;
+    use cosmwasm_std::testing::{mock_env, mock_info};
 
     #[test]
     fn post_data_request() {
@@ -306,7 +250,7 @@ mod dr_tests {
         let mut deps = mock_dependencies();
         let info: MessageInfo = mock_info("creator", &coins(2, "token"));
 
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
 
         let (_, dr_args1) = calculate_dr_id_and_args(1, 3);
 
@@ -344,7 +288,7 @@ mod dr_tests {
         // fetch all three data requests
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut(), None, None);
+            get_drs_from_pool(deps.as_mut().into_empty(), None, None);
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -360,7 +304,7 @@ mod dr_tests {
         // fetch data requests with limit of 2
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut(), None, Some(2));
+            get_drs_from_pool(deps.as_mut().into_empty(), None, Some(2));
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -372,7 +316,7 @@ mod dr_tests {
         // fetch a single data request
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut(), Some(1), Some(1));
+            get_drs_from_pool(deps.as_mut().into_empty(), Some(1), Some(1));
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -384,7 +328,7 @@ mod dr_tests {
         // fetch all data requests starting from id 1
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut(), Some(1), None);
+            get_drs_from_pool(deps.as_mut().into_empty(), Some(1), None);
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -400,7 +344,7 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
 
         let (constructed_dr_id, _) = calculate_dr_id_and_args(1, 3);
 
@@ -414,7 +358,7 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
 
         // calculate args then modify the dr_id to be incorrect
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
@@ -432,7 +376,7 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
 
         // calculate args then modify the dr_binary_id to be empty
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
