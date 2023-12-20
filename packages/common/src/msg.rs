@@ -22,6 +22,7 @@ pub struct PostDataRequestArgs {
     pub payback_address: Bytes,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[cw_serde]
 pub enum DataRequestsExecuteMsg {
     PostDataRequest {
