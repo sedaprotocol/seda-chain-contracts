@@ -164,13 +164,11 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-
 pub enum SpecialQueryMsg {
     QuerySeedRequest {},
 }
 
 #[cw_serde]
-
 pub struct QuerySeedResponse {
     pub block_height: u64,
     pub seed: String,
@@ -178,7 +176,6 @@ pub struct QuerySeedResponse {
 
 /// SpecialQueryWrapper is an override of QueryRequest::Custom to access seda-specific modules
 #[cw_serde]
-
 pub struct SpecialQueryWrapper {
     pub query_data: SpecialQueryMsg,
 }
