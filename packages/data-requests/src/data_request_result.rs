@@ -6,19 +6,23 @@ use common::types::Hash;
 
 pub mod data_request_results {
 
-    use std::ops::Deref;
+    #[cfg(all(not(feature = "multi-contract-test"), not(test)))]
+    use {
+        common::msg::{SpecialQueryMsg, SpecialQueryWrapper},
+        cosmwasm_std::QuerierWrapper,
+        std::ops::Deref,
+    };
 
     use common::error::ContractError::{
         self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
         RevealNotStarted, RevealStarted,
     };
-    use cosmwasm_std::{Addr, Env, Event, QuerierWrapper};
+    use cosmwasm_std::{Addr, Env, Event};
     use sha3::{Digest, Keccak256};
 
     use common::msg::{
         GetCommittedDataResultsResponse, GetCommittedExecutorsResponse,
         GetResolvedDataResultResponse, GetRevealedDataResultsResponse, QuerySeedResponse,
-        SpecialQueryMsg, SpecialQueryWrapper,
     };
     use common::state::{DataResult, Reveal};
     use common::types::Bytes;
@@ -36,13 +40,12 @@ pub mod data_request_results {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
     /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn commit_result(
-        deps: DepsMut<SpecialQueryWrapper>,
+        deps: DepsMut,
         info: MessageInfo,
         dr_id: Hash,
         commitment: Hash,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let deps = deps.into_empty();
         let sender = validate_sender(&deps, info.sender, sender)?;
         if !check_eligibility(&deps, sender.clone())? {
             return Err(IneligibleExecutor);
@@ -77,14 +80,13 @@ pub mod data_request_results {
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn reveal_result(
-        deps: DepsMut<SpecialQueryWrapper>,
+        deps: DepsMut,
         info: MessageInfo,
         env: Env,
         dr_id: Hash,
         reveal: Reveal,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let deps = deps.into_empty();
         let sender = validate_sender(&deps, info.sender, sender)?;
         if !check_eligibility(&deps, sender.clone())? {
             return Err(IneligibleExecutor);
@@ -237,6 +239,8 @@ pub mod data_request_results {
         Ok(GetCommittedExecutorsResponse { value: executors })
     }
 
+    // get_seed from custom module
+    #[cfg(all(not(feature = "multi-contract-test"), not(test)))]
     pub fn get_seed(deps: Deps) -> StdResult<QuerySeedResponse> {
         let req = SpecialQueryWrapper {
             query_data: SpecialQueryMsg::QuerySeedRequest {},
@@ -248,6 +252,17 @@ pub mod data_request_results {
         Ok(QuerySeedResponse {
             block_height: response.block_height,
             seed: response.seed,
+        })
+    }
+
+    // mocked get_seed for unit tests and cw-multi-test
+    #[cfg(any(feature = "multi-contract-test", test))]
+    pub fn get_seed(_: Deps) -> StdResult<QuerySeedResponse> {
+        use common::consts::ZERO_HASH;
+
+        Ok(QuerySeedResponse {
+            block_height: 1,
+            seed: hex::encode(ZERO_HASH),
         })
     }
 
@@ -263,11 +278,11 @@ pub mod data_request_results {
 #[cfg(test)]
 mod data_request_result_tests {
     use crate::contract::execute;
-    use crate::helpers::{instantiate_dr_contract, mock_dependencies};
+    use crate::helpers::instantiate_dr_contract;
     use crate::utils::string_to_hash;
     use common::msg::DataRequestsExecuteMsg;
     use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_env, mock_info};
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 
     #[test]
     #[should_panic(expected = "NotProxy")]
@@ -277,7 +292,7 @@ mod data_request_result_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
 
         // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
         let msg = DataRequestsExecuteMsg::CommitDataResult {

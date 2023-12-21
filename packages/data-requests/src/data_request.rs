@@ -12,11 +12,7 @@ pub mod data_requests {
         state::DATA_REQUESTS_POOL,
         utils::{hash_seed, hash_to_string},
     };
-    use common::{
-        consts::ZERO_HASH,
-        error::ContractError,
-        msg::{PostDataRequestArgs, SpecialQueryWrapper},
-    };
+    use common::{consts::ZERO_HASH, error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
@@ -42,12 +38,10 @@ pub mod data_requests {
     }
     /// Posts a data request to the pool
     pub fn post_data_request(
-        deps: DepsMut<SpecialQueryWrapper>,
+        deps: DepsMut,
         _info: MessageInfo,
         posted_dr: PostDataRequestArgs,
     ) -> Result<Response, ContractError> {
-        let deps = deps.into_empty();
-
         // require the data request id to be unique
         if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
@@ -186,24 +180,24 @@ mod dr_tests {
 
     use super::*;
     use crate::contract::execute;
-    use crate::helpers::{
-        calculate_dr_id_and_args, construct_dr, get_dr, get_drs_from_pool, instantiate_dr_contract,
-        mock_dependencies,
-    };
+    use crate::helpers::calculate_dr_id_and_args;
+    use crate::helpers::construct_dr;
+    use crate::helpers::get_dr;
+    use crate::helpers::get_drs_from_pool;
+    use crate::helpers::instantiate_dr_contract;
     use crate::utils::string_to_hash;
     use common::consts::ZERO_HASH;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
     use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_env, mock_info};
-
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     #[test]
     fn post_data_request() {
         let mut deps = mock_dependencies();
         let info = mock_info("creator", &coins(2, "token"));
 
-        instantiate_dr_contract(deps.as_mut().into_empty(), info.clone()).unwrap();
+        instantiate_dr_contract(deps.as_mut(), info.clone()).unwrap();
 
         // data request with id 0x69... does not yet exist
         let value: GetDataRequestResponse = get_dr(
@@ -250,7 +244,7 @@ mod dr_tests {
         let mut deps = mock_dependencies();
         let info: MessageInfo = mock_info("creator", &coins(2, "token"));
 
-        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
 
         let (_, dr_args1) = calculate_dr_id_and_args(1, 3);
 
@@ -288,7 +282,7 @@ mod dr_tests {
         // fetch all three data requests
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut().into_empty(), None, None);
+            get_drs_from_pool(deps.as_mut(), None, None);
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -304,7 +298,7 @@ mod dr_tests {
         // fetch data requests with limit of 2
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut().into_empty(), None, Some(2));
+            get_drs_from_pool(deps.as_mut(), None, Some(2));
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -316,7 +310,7 @@ mod dr_tests {
         // fetch a single data request
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut().into_empty(), Some(1), Some(1));
+            get_drs_from_pool(deps.as_mut(), Some(1), Some(1));
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -328,7 +322,7 @@ mod dr_tests {
         // fetch all data requests starting from id 1
 
         let response: GetDataRequestsFromPoolResponse =
-            get_drs_from_pool(deps.as_mut().into_empty(), Some(1), None);
+            get_drs_from_pool(deps.as_mut(), Some(1), None);
 
         assert_eq!(
             GetDataRequestsFromPoolResponse {
@@ -344,7 +338,7 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
 
         let (constructed_dr_id, _) = calculate_dr_id_and_args(1, 3);
 
@@ -358,7 +352,7 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
 
         // calculate args then modify the dr_id to be incorrect
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
@@ -376,7 +370,7 @@ mod dr_tests {
         let info = mock_info("creator", &coins(2, "token"));
 
         // instantiate contract
-        instantiate_dr_contract(deps.as_mut().into_empty(), info).unwrap();
+        instantiate_dr_contract(deps.as_mut(), info).unwrap();
 
         // calculate args then modify the dr_binary_id to be empty
         let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);

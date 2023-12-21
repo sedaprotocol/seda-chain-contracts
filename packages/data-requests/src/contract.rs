@@ -2,7 +2,6 @@ use common::error::ContractError;
 use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
 use common::msg::DataRequestsQueryMsg as QueryMsg;
 use common::msg::InstantiateMsg;
-use common::msg::SpecialQueryWrapper;
 use cosmwasm_std::to_json_binary;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
@@ -34,7 +33,7 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut<SpecialQueryWrapper>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,

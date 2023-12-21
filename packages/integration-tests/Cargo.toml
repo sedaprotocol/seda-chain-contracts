@@ -37,7 +37,7 @@ cw-utils = { workspace = true }
 hex = { workspace = true }
 proxy-contract = { workspace = true }
 schemars = { workspace = true }
-data-requests = { workspace = true }
+data-requests = { workspace = true, features = ["multi-contract-test"]}
 staking = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
