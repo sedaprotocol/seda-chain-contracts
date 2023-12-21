@@ -7,7 +7,6 @@ use common::types::Hash;
 
 pub mod data_requests {
     use crate::{
-        contract::CONTRACT_VERSION,
         data_request_result::data_request_results::get_seed,
         state::DATA_REQUESTS_POOL,
         utils::{hash_seed, hash_to_string},
@@ -85,7 +84,7 @@ pub mod data_requests {
         let seed_hash = hash_seed(get_seed(deps.as_ref())?.seed, dr_id);
         // save the data request
         let dr = DataRequest {
-            version: posted_dr.version,
+            version: posted_dr.version.clone(),
             dr_id,
             dr_binary_id: posted_dr.dr_binary_id,
             tally_binary_id: posted_dr.tally_binary_id,
@@ -109,7 +108,7 @@ pub mod data_requests {
             .add_attribute("action", "post_data_request")
             .set_data(Binary::from(posted_dr.dr_id.to_vec()))
             .add_event(Event::new("seda-data-request").add_attributes([
-                ("version", CONTRACT_VERSION),
+                ("version", &posted_dr.version.to_string()),
                 ("dr_id", &hash_to_string(posted_dr.dr_id)),
                 ("dr_binary_id", &hash_to_string(posted_dr.dr_binary_id)),
                 (
