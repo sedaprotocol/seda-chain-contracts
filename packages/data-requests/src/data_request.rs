@@ -139,6 +139,7 @@ pub mod data_requests {
                     "payback_address",
                     &serde_json::to_string(&posted_dr.payback_address).unwrap(),
                 ),
+                ("seed_hash", &hash_to_string(seed_hash)),
             ])))
     }
 
