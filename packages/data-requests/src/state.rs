@@ -31,7 +31,7 @@ pub struct DataRequestInputs {
     /// Maximum gas units to be used in Tally WASM binary execution
     pub tally_gas_limit: u128,
     /// Public info attached to DR
-    pub memo: Bytes,
+    pub memo: Hash,
 
     // Execution Information
     /// Payback address set by the relayer

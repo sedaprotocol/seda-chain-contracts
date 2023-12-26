@@ -60,7 +60,7 @@ pub fn calculate_dr_id_and_args(
         tally_binary_id: tally_binary_id.clone(),
         dr_inputs: dr_inputs.clone(),
         tally_inputs: tally_inputs.clone(),
-        memo: memo.clone(),
+        memo: memo.clone().try_into().unwrap(),
         replication_factor,
 
         gas_price,

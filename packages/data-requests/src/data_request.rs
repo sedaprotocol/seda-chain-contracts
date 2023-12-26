@@ -60,7 +60,7 @@ pub mod data_requests {
             tally_binary_id: posted_dr.tally_binary_id,
             dr_inputs: posted_dr.dr_inputs.clone(),
             tally_inputs: posted_dr.tally_inputs.clone(),
-            memo: posted_dr.memo.clone(),
+            memo: posted_dr.memo.clone().try_into().unwrap(),
             replication_factor: posted_dr.replication_factor,
 
             gas_price: posted_dr.gas_price,
