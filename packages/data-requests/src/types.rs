@@ -1,3 +1,4 @@
+use alloy_sol_types::sol;
 use cosmwasm_std::{StdError, Storage};
 use cw_storage_plus::{Item, Map, PrimaryKey};
 use serde::de::DeserializeOwned;
@@ -91,5 +92,47 @@ where
         // Remove the item using its key
         self.items.remove(store, key);
         Ok(())
+    }
+}
+
+// Inputs to hash functions using Solidity ABI encoding
+sol! {
+    struct DataRequestHashInputs {
+        /// Semantic Version
+        string version;
+        /// Identifier of DR WASM binary
+        bytes32 dr_binary_id;
+        // /// Inputs for DR WASM binary
+        bytes dr_inputs;
+        /// Maximum of gas units to be used by data request executors
+        uint128 gas_limit;
+        /// Amount of SEDA tokens per gas unit
+        uint128 gas_price;
+        /// Maximum of gas units to be used in the tallying process
+        uint128 tally_gas_limit;
+        /// Public info attached to DR
+        bytes32 memo;
+        /// Amount of required DR executors
+        uint16 replication_factor;
+        /// Identifier of Tally WASM binary
+        bytes32 tally_binary_id;
+        /// Inputs for Tally WASM binary
+        bytes tally_inputs;
+    }
+    struct DataResultHashInputs {
+        /// Semantic Version
+        string version;
+        /// Identifier of the data request
+        bytes32 dr_id;
+        /// Block Height at which data request was finalized
+        uint128 block_height;
+        /// Exit code of Tally WASM binary execution
+        uint8 exit_code;
+        /// Result from Tally WASM binary execution
+        bytes result;
+        /// Payback address set by the relayer
+        bytes payback_address;
+        /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
+        bytes seda_payload;
     }
 }
