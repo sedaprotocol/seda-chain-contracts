@@ -19,6 +19,7 @@ incremental = false
 overflow-checks = true
 
 [workspace.dependencies]
+alloy-sol-types = "0.5.3"
 anyhow = "1.0.75"
 common = { path = "./packages/common" }
 cosmwasm-schema = "1.5"
