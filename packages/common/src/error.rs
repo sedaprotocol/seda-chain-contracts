@@ -14,6 +14,12 @@ pub enum ContractError {
     NoFunds,
     #[error("ExecutorHasTokens: Executor has staked tokens or tokens pending withdrawal")]
     ExecutorHasTokens,
+    #[error("NotAdmin: Only admin can transfer ownership")]
+    NotAdmin,
+    #[error("NotPendingOwner: Only pending admin can accept ownership")]
+    NotPendingOwner,
+    #[error("NoPendingAdmin: No pending admin found")]
+    NoPendingAdminFound,
 
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
