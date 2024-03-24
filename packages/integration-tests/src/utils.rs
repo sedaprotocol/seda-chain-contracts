@@ -169,6 +169,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     let msg = common::msg::InstantiateMsg {
         token: NATIVE_DENOM.to_string(),
         proxy: proxy_contract_addr.to_string(),
+        admin: ADMIN.to_string(),
     };
     let staking_contract_addr = app
         .instantiate_contract(
@@ -186,6 +187,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     let msg = common::msg::InstantiateMsg {
         token: NATIVE_DENOM.to_string(),
         proxy: proxy_contract_addr.to_string(),
+        admin: ADMIN.to_string(),
     };
     let data_requests_contract_addr = app
         .instantiate_contract(

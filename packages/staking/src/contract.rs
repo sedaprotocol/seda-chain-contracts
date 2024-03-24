@@ -6,11 +6,14 @@ use cw2::set_contract_version;
 use crate::executors_registry::data_request_executors;
 use crate::msg::StakingSudoMsg;
 use crate::staking::staking;
-use crate::state::{CONFIG, PROXY_CONTRACT, TOKEN};
+use crate::state::{ADMIN, CONFIG, PENDING_ADMIN, PROXY_CONTRACT, TOKEN};
 use common::consts::{
     INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER,
 };
-use common::msg::{GetStakingConfigResponse, StakingQueryMsg as QueryMsg};
+use common::msg::{
+    GetAdminResponse, GetPendingOwnerResponse, GetStakingConfigResponse,
+    StakingQueryMsg as QueryMsg,
+};
 use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
 use common::state::StakingConfig;
 
@@ -30,7 +33,8 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
     PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
-
+    ADMIN.save(deps.storage, &deps.api.addr_validate(&msg.admin)?)?;
+    PENDING_ADMIN.save(deps.storage, &None)?;
     let init_config = StakingConfig {
         minimum_stake_to_register: INITIAL_MINIMUM_STAKE_TO_REGISTER,
         minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
@@ -67,6 +71,10 @@ pub fn execute(
         ExecuteMsg::Withdraw { amount, sender } => {
             staking::withdraw(deps, env, info, amount, sender)
         }
+        ExecuteMsg::TransferOwnership { new_admin } => {
+            staking::transfer_ownership(deps, env, info, new_admin)
+        }
+        ExecuteMsg::AcceptOwnership {} => staking::accept_ownership(deps, env, info),
     }
 }
 
@@ -81,6 +89,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         ),
         QueryMsg::GetStakingConfig => to_binary(&GetStakingConfigResponse {
             value: CONFIG.load(deps.storage)?,
+        }),
+        QueryMsg::GetAdmin => to_binary(&GetAdminResponse {
+            value: ADMIN.load(deps.storage)?,
+        }),
+        QueryMsg::GetPendingOwner => to_binary(&GetPendingOwnerResponse {
+            value: PENDING_ADMIN.load(deps.storage)?,
         }),
     }
 }
@@ -98,12 +112,14 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: StakingSudoMsg) -> Result<Response, C
 #[cfg(test)]
 mod init_tests {
     use crate::helpers::{
-        helper_register_executor, helper_set_staking_config, instantiate_staking_contract,
+        helper_accept_ownership, helper_get_admin, helper_get_pending_owner,
+        helper_register_executor, helper_set_staking_config, helper_transfer_ownership,
+        instantiate_staking_contract,
     };
     use common::error::ContractError;
     use common::state::StakingConfig;
-    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
+    use cosmwasm_std::{coins, Addr};
 
     #[test]
     fn proper_initialization() {
@@ -143,6 +159,68 @@ mod init_tests {
             Some("sender".to_string()),
         )
         .unwrap();
+    }
+
+    #[test]
+    fn two_step_transfer_ownership() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &coins(1000, "token"));
+        let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+
+        let admin = helper_get_admin(deps.as_mut()).value;
+        assert_eq!(admin, "admin");
+
+        let pending_admin = helper_get_pending_owner(deps.as_mut()).value;
+        assert_eq!(pending_admin, None);
+
+        // new-admin accepts ownership before admin calls transfer_ownership
+        let info = mock_info("new-admin", &coins(2, "token"));
+
+        let res = helper_accept_ownership(deps.as_mut(), info);
+        assert_eq!(
+            res.is_err_and(|x| x == ContractError::NoPendingAdminFound),
+            true
+        );
+
+        // non-admin initiates transfering ownership
+        let info = mock_info("non-admin", &coins(2, "token"));
+
+        let res = helper_transfer_ownership(deps.as_mut(), info, "new_admin".to_string());
+        assert_eq!(res.is_err_and(|x| x == ContractError::NotAdmin), true);
+
+        // admin initiates transfering ownership
+        let info = mock_info("admin", &coins(2, "token"));
+
+        let res = helper_transfer_ownership(deps.as_mut(), info, "new_admin".to_string());
+        assert!(res.is_ok());
+
+        let admin = helper_get_admin(deps.as_mut()).value;
+        assert_eq!(admin, "admin");
+
+        let pending_admin = helper_get_pending_owner(deps.as_mut()).value;
+        assert_eq!(pending_admin, Some(Addr::unchecked("new_admin")));
+
+        // non-admin accepts ownership
+        let info = mock_info("non-admin", &coins(2, "token"));
+
+        let res = helper_accept_ownership(deps.as_mut(), info);
+        assert_eq!(
+            res.is_err_and(|x| x == ContractError::NotPendingOwner),
+            true
+        );
+
+        // new admin accepts ownership
+        let info = mock_info("new_admin", &coins(2, "token"));
+
+        let res = helper_accept_ownership(deps.as_mut(), info);
+        assert!(res.is_ok());
+
+        let admin = helper_get_admin(deps.as_mut()).value;
+        assert_eq!(admin, Addr::unchecked("new_admin"));
+
+        let pending_admin = helper_get_pending_owner(deps.as_mut()).value;
+        assert_eq!(pending_admin, None);
     }
 
     #[test]

@@ -11,7 +11,11 @@ pub mod staking {
     use common::error::ContractError;
     use cosmwasm_std::{coins, BankMsg, Event};
 
-    use crate::{contract::CONTRACT_VERSION, utils::apply_validator_eligibility};
+    use crate::{
+        contract::CONTRACT_VERSION,
+        state::{ADMIN, PENDING_ADMIN},
+        utils::apply_validator_eligibility,
+    };
 
     use super::*;
 
@@ -164,6 +168,50 @@ pub mod staking {
                     ("amount_withdrawn", &amount.to_string()),
                 ]),
             ]))
+    }
+
+    /// Transfer contract ownership to a new admin
+    pub fn transfer_ownership(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        new_admin: String,
+    ) -> Result<Response, ContractError> {
+        if info.sender != ADMIN.load(deps.storage)? {
+            return Err(ContractError::NotAdmin);
+        }
+
+        PENDING_ADMIN.save(deps.storage, &Some(deps.api.addr_validate(&new_admin)?))?;
+        Ok(Response::new()
+            .add_attribute("action", "transfer_ownership")
+            .add_events([Event::new("seda-transfer-ownership").add_attributes([
+                ("version", CONTRACT_VERSION),
+                ("sender", info.sender.as_ref()),
+                ("new_admin", &new_admin),
+            ])]))
+    }
+
+    /// Accept contract ownership
+    pub fn accept_ownership(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+    ) -> Result<Response, ContractError> {
+        let pending_admin = PENDING_ADMIN.load(deps.storage)?;
+        if pending_admin.is_none() {
+            return Err(ContractError::NoPendingAdminFound);
+        }
+        if pending_admin.is_some_and(|owner| owner != info.sender) {
+            return Err(ContractError::NotPendingOwner);
+        }
+        ADMIN.save(deps.storage, &info.sender)?;
+        PENDING_ADMIN.save(deps.storage, &None)?;
+        Ok(Response::new()
+            .add_attribute("action", "accept-ownership")
+            .add_events([Event::new("seda-accept-ownership").add_attributes([
+                ("version", CONTRACT_VERSION),
+                ("new_admin", info.sender.as_ref()),
+            ])]))
     }
 }
 

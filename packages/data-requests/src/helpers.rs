@@ -130,6 +130,7 @@ pub fn instantiate_dr_contract(
     let msg = InstantiateMsg {
         token: "token".to_string(),
         proxy: "proxy".to_string(),
+        admin: "admin".to_string(),
     };
     instantiate(deps, mock_env(), info, msg)
 }

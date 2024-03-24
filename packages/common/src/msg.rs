@@ -60,6 +60,10 @@ pub enum StakingExecuteMsg {
         amount: u128,
         sender: Option<String>,
     },
+    TransferOwnership {
+        new_admin: String,
+    },
+    AcceptOwnership {},
 }
 
 #[cw_serde]
@@ -93,6 +97,10 @@ pub enum StakingQueryMsg {
     IsDataRequestExecutorEligible { executor: Addr },
     #[returns(GetStakingConfigResponse)]
     GetStakingConfig,
+    #[returns(GetAdminResponse)]
+    GetAdmin,
+    #[returns(GetPendingOwnerResponse)]
+    GetPendingOwner,
 }
 
 #[cw_serde]
@@ -159,4 +167,15 @@ pub struct GetStakingConfigResponse {
 pub struct InstantiateMsg {
     pub token: String,
     pub proxy: String,
+    pub admin: String,
+}
+
+#[cw_serde]
+pub struct GetAdminResponse {
+    pub value: Addr,
+}
+
+#[cw_serde]
+pub struct GetPendingOwnerResponse {
+    pub value: Option<Addr>,
 }
