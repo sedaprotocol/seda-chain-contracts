@@ -17,7 +17,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ProxyExecuteMsg {
-    // Admin
+    // Owner
     // These can only be called if these are not already set. Otherwise, a sudo message must be used.
     SetDataRequests { contract: String },
     SetStaking { contract: String },

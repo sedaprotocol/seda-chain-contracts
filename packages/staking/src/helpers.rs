@@ -1,8 +1,7 @@
-use common::msg::{GetAdminResponse, GetPendingOwnerResponse};
+use common::msg::{GetOwnerResponse, GetPendingOwnerResponse};
 use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response};
 
-use crate::contract::{execute, instantiate, query, sudo};
-use crate::msg::StakingSudoMsg;
+use crate::contract::{execute, instantiate, query};
 use common::state::StakingConfig;
 use common::{
     error::ContractError,
@@ -18,7 +17,7 @@ pub fn instantiate_staking_contract(
     let msg = InstantiateMsg {
         token: "token".to_string(),
         proxy: "proxy".to_string(),
-        admin: "admin".to_string(),
+        owner: "owner".to_string(),
     };
     instantiate(deps, mock_env(), info, msg)
 }
@@ -39,9 +38,9 @@ pub fn helper_register_executor(
 pub fn helper_transfer_ownership(
     deps: DepsMut,
     info: MessageInfo,
-    new_admin: String,
+    new_owner: String,
 ) -> Result<Response, ContractError> {
-    let msg = StakingExecuteMsg::TransferOwnership { new_admin };
+    let msg = StakingExecuteMsg::TransferOwnership { new_owner };
     execute(deps, mock_env(), info, msg)
 }
 pub fn helper_accept_ownership(
@@ -70,9 +69,9 @@ pub fn helper_get_executor(deps: DepsMut, executor: Addr) -> GetDataRequestExecu
     let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
     value
 }
-pub fn helper_get_admin(deps: DepsMut) -> GetAdminResponse {
-    let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetAdmin {}).unwrap();
-    let value: GetAdminResponse = from_binary(&res).unwrap();
+pub fn helper_get_owner(deps: DepsMut) -> GetOwnerResponse {
+    let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetOwner {}).unwrap();
+    let value: GetOwnerResponse = from_binary(&res).unwrap();
     value
 }
 
@@ -117,8 +116,9 @@ pub fn helper_withdraw(
 
 pub fn helper_set_staking_config(
     deps: DepsMut,
+    info: MessageInfo,
     config: StakingConfig,
 ) -> Result<Response, ContractError> {
-    let msg = StakingSudoMsg::SetStakingConfig { config };
-    sudo(deps, mock_env(), msg)
+    let msg = StakingExecuteMsg::SetStakingConfig { config };
+    execute(deps, mock_env(), info, msg)
 }

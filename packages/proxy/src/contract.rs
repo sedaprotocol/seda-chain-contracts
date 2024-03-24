@@ -52,7 +52,7 @@ pub fn execute(
     msg: ProxyExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        // Admin
+        // Owner
         ProxyExecuteMsg::SetDataRequests { contract } => {
             // This can only be called if not already set. Otherwise, a sudo message must be used.
 

@@ -16,11 +16,11 @@ pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<Addr, bool> =
 /// Address of proxy contract which has permission to set the sender on one's behalf
 pub const PROXY_CONTRACT: Item<Addr> = Item::new("proxy_contract");
 
-/// Address of staking contract admin
-pub const ADMIN: Item<Addr> = Item::new("admin");
+/// Address of staking contract owner
+pub const OWNER: Item<Addr> = Item::new("owner");
 
-/// Address of pending staking contract admin
-pub const PENDING_ADMIN: Item<Option<Addr>> = Item::new("pending_admin");
+/// Address of pending staking contract owner
+pub const PENDING_OWNER: Item<Option<Addr>> = Item::new("pending_owner");
 
 /// Governance-controlled configuration parameters
 pub const CONFIG: Item<StakingConfig> = Item::new("config");
