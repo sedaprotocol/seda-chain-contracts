@@ -19,7 +19,7 @@ pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 pub const EXECUTOR_2: &str = "executor2";
 pub const EXECUTOR_3: &str = "executor3";
-const ADMIN: &str = "admin";
+const OWNER: &str = "owner";
 pub const NATIVE_DENOM: &str = "seda";
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
@@ -73,17 +73,6 @@ impl CwTemplateContract {
             msg,
         })
     }
-
-    pub fn sudo_staking<T: Into<staking::msg::StakingSudoMsg>>(
-        &self,
-        msg: T,
-    ) -> cw_multi_test::SudoMsg {
-        let msg = to_binary(&msg.into()).unwrap();
-        cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
-            contract_addr: self.addr().into(),
-            msg,
-        })
-    }
 }
 
 pub fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
@@ -111,8 +100,7 @@ pub fn staking_template() -> Box<dyn Contract<Empty>> {
         staking::contract::execute,
         staking::contract::instantiate,
         staking::contract::query,
-    )
-    .with_sudo(staking::contract::sudo);
+    );
     Box::new(contract)
 }
 
@@ -155,7 +143,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     let proxy_contract_addr = app
         .instantiate_contract(
             proxy_contract_template_id,
-            Addr::unchecked(ADMIN),
+            Addr::unchecked(OWNER),
             &msg,
             &[],
             "test",
@@ -169,12 +157,12 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     let msg = common::msg::InstantiateMsg {
         token: NATIVE_DENOM.to_string(),
         proxy: proxy_contract_addr.to_string(),
-        admin: ADMIN.to_string(),
+        owner: OWNER.to_string(),
     };
     let staking_contract_addr = app
         .instantiate_contract(
             staking_template_id,
-            Addr::unchecked(ADMIN),
+            Addr::unchecked(OWNER),
             &msg,
             &[],
             "test",
@@ -187,12 +175,12 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     let msg = common::msg::InstantiateMsg {
         token: NATIVE_DENOM.to_string(),
         proxy: proxy_contract_addr.to_string(),
-        admin: ADMIN.to_string(),
+        owner: OWNER.to_string(),
     };
     let data_requests_contract_addr = app
         .instantiate_contract(
             data_requests_template_id,
-            Addr::unchecked(ADMIN),
+            Addr::unchecked(OWNER),
             &msg,
             &[],
             "test",
@@ -205,12 +193,12 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
         contract: staking_contract_addr.to_string(),
     };
     let cosmos_msg = proxy_template_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(ADMIN), cosmos_msg).unwrap();
+    app.execute(Addr::unchecked(OWNER), cosmos_msg).unwrap();
     let msg = proxy_contract::msg::ProxyExecuteMsg::SetDataRequests {
         contract: data_requests_contract_addr.to_string(),
     };
     let cosmos_msg = proxy_template_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(ADMIN), cosmos_msg).unwrap();
+    app.execute(Addr::unchecked(OWNER), cosmos_msg).unwrap();
 
     (app, proxy_template_contract)
 }
