@@ -1,7 +1,7 @@
 use crate::enumerable_map;
 use crate::types::EnumerableMap;
 use common::state::{DataRequest, DataResult};
-use common::types::{Bytes, Hash};
+use common::types::{Bytes, Hash, Memo};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -31,7 +31,7 @@ pub struct DataRequestInputs {
     /// Maximum gas units to be used in Tally WASM binary execution
     pub tally_gas_limit: u128,
     /// Public info attached to DR
-    pub memo: Bytes,
+    pub memo: Memo,
 
     // Execution Information
     /// Payback address set by the relayer

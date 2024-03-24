@@ -1,4 +1,4 @@
-use crate::types::{Bytes, Commitment, Hash};
+use crate::types::{Bytes, Commitment, Hash, Memo};
 use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -30,7 +30,7 @@ pub struct DataRequest {
     /// Maximum gas units to be used in Tally WASM binary execution
     pub tally_gas_limit: u128,
     /// Public info attached to DR
-    pub memo: Bytes,
+    pub memo: Memo,
 
     // Execution Information
     /// Payback address set by the relayer
