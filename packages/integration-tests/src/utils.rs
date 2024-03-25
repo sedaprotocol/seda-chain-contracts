@@ -2,7 +2,9 @@ use common::msg::PostDataRequestArgs;
 use common::state::Reveal;
 use common::types::Bytes;
 use common::types::Hash;
-use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
+use cosmwasm_std::{
+    to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg,
+};
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
 use data_requests::state::DataRequestInputs;
@@ -36,7 +38,7 @@ impl CwTemplateContract {
         &self,
         msg: T,
     ) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
@@ -54,7 +56,7 @@ impl CwTemplateContract {
             denom: NATIVE_DENOM.to_string(),
             amount: amount.into(),
         };
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
@@ -67,7 +69,7 @@ impl CwTemplateContract {
         &self,
         msg: T,
     ) -> cw_multi_test::SudoMsg {
-        let msg = to_binary(&msg.into()).unwrap();
+        let msg = to_json_binary(&msg.into()).unwrap();
         cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
             contract_addr: self.addr().into(),
             msg,
