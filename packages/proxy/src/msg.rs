@@ -1,3 +1,5 @@
+#[cfg(feature = "fuzzing")]
+use arbitrary::Arbitrary;
 #[allow(unused_imports)]
 use common::msg::{
     GetCommittedDataResultResponse, GetCommittedDataResultsResponse, GetContractResponse,
@@ -10,6 +12,7 @@ use common::types::Hash;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
+#[cfg_attr(feature = "fuzzing", derive(Arbitrary))]
 #[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
