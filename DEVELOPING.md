@@ -1,6 +1,5 @@
 # Developing
 
-
 ## Environment set up
 
 - Install [rustup][1]. Once installed, make sure you have the wasm32 target:
@@ -44,6 +43,34 @@ cargo +nightly fmt
 cargo clippy
 ```
 
+## Fuzzing
+
+To install fuzzing deps you can run:
+
+```sh
+make install-fuzz-deps
+```
+
+To list fuzz targets you can run:
+
+```sh
+make fuzz-list
+```
+
+To run a fuzz target indefinately:
+
+```sh
+FUZZ_TARGET=proxy-instantiate make fuzz-run
+```
+
+To run a fuzz target for a specifed amount of time:
+
+```sh
+TIME=1h FUZZ_TARGET=proxy-instantiate make fuzz-run-timeout
+```
+
+**NOTE**: The first time you do a `fuzz-run` command takes a very long time to build...
+
 ## Preparing the Wasm bytecode for production
 
 Before we upload it to a chain, we need to ensure the smallest output size possible,
@@ -63,6 +90,7 @@ docker run --rm -v "$(pwd)":/code \
 ```
 
 Or, If you're on an arm64 machine, you should use a docker image built with arm64.
+
 ```sh
 docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
@@ -82,9 +110,8 @@ This project utilizes [`cargo-crev`](https://github.com/crev-dev/cargo-crev), a 
 
 Additionally, one may use [`cosmwasm-verify`](https://github.com/CosmWasm/cosmwasm-verify) to reproduce the build for verification. See the repository link for use.
 
-
-
 ## Uploading contracts and setting up cross-dependencies
+
 To deploy and set up all contracts, the Proxy must first be instantiated followed by all of the other contracts, since the Proxy address is used as an argument when instantiating the other contracts. After all contracts are instantiated and to complete the circular dependency, the other contracts must then be set on the Proxy via Execute calls.
 
 ```bash
@@ -92,6 +119,7 @@ CHAIN_ID=seda-devnet | seda-testnet
 ```
 
 Upload Proxy contract
+
 ```bash
 OUTPUT="$(seda-chaind tx wasm store ./artifacts/proxy_contract.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
 
@@ -102,8 +130,8 @@ OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
 PROXY_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 ```
 
-
 Instantiate Proxy
+
 ```bash
 OUTPUT=$(seda-chaind tx wasm instantiate $PROXY_CODE_ID '{"token":"aseda"}' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label proxy$PROXY_CODE_ID --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)
 
@@ -115,6 +143,7 @@ PROXY_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type
 ```
 
 Upload DataRequests contract
+
 ```bash
 OUTPUT="$(seda-chaind tx wasm store artifacts/data_requests.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
 
@@ -135,9 +164,10 @@ TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
 OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
 
 DRs_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-  ```
+```
 
 Upload Staking contract
+
 ```bash
 OUTPUT="$(seda-chaind tx wasm store artifacts/staking.wasm --node $RPC_URL --from $DEV_ACCOUNT --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
 
@@ -148,8 +178,8 @@ OUTPUT="$(seda-chaind query tx $TXHASH --node $RPC_URL --output json)"
 STAKING_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 ```
 
-
 Instantiate Staking
+
 ```bash
 OUTPUT=$(seda-chaind tx wasm instantiate $STAKING_CODE_ID '{"token":"aseda", "proxy":  "'$PROXY_CONTRACT_ADDRESS'" }' --no-admin --from $DEV_ACCOUNT --node $RPC_URL --label staking$staking_code_id --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)
 
@@ -161,6 +191,7 @@ STAKING_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.ty
 ```
 
 Set DataRequests on Proxy
+
 ```bash
 OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS '{"set_data_requests":{"contract": "'$DRs_CONTRACT_ADDRESS'" }}' --from $DEV_ACCOUNT --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
 
@@ -168,14 +199,15 @@ TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
 ```
 
 Set Staking on Proxy
+
 ```bash
 OUTPUT="$(seda-chaind tx wasm execute $PROXY_CONTRACT_ADDRESS '{"set_staking":{"contract": "'$STAKING_CONTRACT_ADDRESS'" }}' --from $DEV_ACCOUNT --node $RPC_URL --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json --chain-id $CHAIN_ID)"
 
 TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
 ```
 
-
 ## License
+
 Contents of this repository are open source under [MIT License](LICENSE).
 
 [1]: https://rustup.rs/
