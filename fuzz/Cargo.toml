@@ -1,0 +1,21 @@
+[package]
+name = "fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { workspace = true }
+cosmwasm-std = { workspace = true }
+cw-multi-test = { workspace = true }
+proxy-contract = { workspace = true, features = ["library", "fuzzing"] }
+
+[[bin]]
+name = "proxy-instantiate"
+path = "fuzz_targets/proxy_instantiate.rs"
+test = false
+doc = false
+bench = false
