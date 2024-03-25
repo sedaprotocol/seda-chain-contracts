@@ -43,7 +43,7 @@ pub enum DataRequestsExecuteMsg {
 #[cw_serde]
 pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
-        p2p_multi_address: Option<String>,
+        memo: Option<String>,
         sender: Option<String>,
     },
     UnregisterDataRequestExecutor {
@@ -66,6 +66,14 @@ pub enum StakingExecuteMsg {
     AcceptOwnership {},
     SetStakingConfig {
         config: StakingConfig,
+    },
+    AddToAllowlist {
+        sender: Option<String>,
+        address: Addr,
+    },
+    RemoveFromAllowlist {
+        sender: Option<String>,
+        address: Addr,
     },
 }
 

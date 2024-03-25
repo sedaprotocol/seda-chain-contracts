@@ -44,10 +44,7 @@ pub mod staking {
                 Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
-                    (
-                        "p2p_multi_address",
-                        &executor.p2p_multi_address.unwrap_or_default(),
-                    ),
+                    ("memo", &executor.memo.unwrap_or_default()),
                     ("tokens_staked", &executor.tokens_staked.to_string()),
                     (
                         "tokens_pending_withdrawal",
@@ -95,10 +92,7 @@ pub mod staking {
                 Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
-                    (
-                        "p2p_multi_address",
-                        &executor.p2p_multi_address.unwrap_or_default(),
-                    ),
+                    ("memo", &executor.memo.unwrap_or_default()),
                     ("tokens_staked", &executor.tokens_staked.to_string()),
                     (
                         "tokens_pending_withdrawal",
@@ -152,10 +146,7 @@ pub mod staking {
                 Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
                     ("executor", sender.as_ref()),
-                    (
-                        "p2p_multi_address",
-                        &executor.p2p_multi_address.unwrap_or_default(),
-                    ),
+                    ("memo", &executor.memo.unwrap_or_default()),
                     ("tokens_staked", &executor.tokens_staked.to_string()),
                     (
                         "tokens_pending_withdrawal",
@@ -292,7 +283,7 @@ mod staking_tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    p2p_multi_address: Some("address".to_string()),
+                    memo: Some("address".to_string()),
                     tokens_staked: 1,
                     tokens_pending_withdrawal: 0
                 })
@@ -314,7 +305,7 @@ mod staking_tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    p2p_multi_address: Some("address".to_string()),
+                    memo: Some("address".to_string()),
                     tokens_staked: 3,
                     tokens_pending_withdrawal: 0
                 })
@@ -337,7 +328,7 @@ mod staking_tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    p2p_multi_address: Some("address".to_string()),
+                    memo: Some("address".to_string()),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 1
                 })
@@ -361,7 +352,7 @@ mod staking_tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    p2p_multi_address: Some("address".to_string()),
+                    memo: Some("address".to_string()),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 0
                 })
@@ -406,7 +397,7 @@ mod staking_tests {
         // register a data request executor
         let info = mock_info("anyone", &coins(1, "token"));
         let msg = ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address: Some("address".to_string()),
+            memo: Some("address".to_string()),
             sender: None,
         };
         execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();

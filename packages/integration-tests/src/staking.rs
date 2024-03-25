@@ -15,7 +15,7 @@ fn deposit_stake_withdraw() {
     send_tokens(&mut app, USER, EXECUTOR_1, 3);
 
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        p2p_multi_address: Some("address".to_string()),
+        memo: Some("address".to_string()),
     };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
@@ -36,7 +36,7 @@ fn deposit_stake_withdraw() {
         res,
         GetDataRequestExecutorResponse {
             value: Some(DataRequestExecutor {
-                p2p_multi_address: Some("address".to_string()),
+                memo: Some("address".to_string()),
                 tokens_staked: 1,
                 tokens_pending_withdrawal: 0
             })
@@ -61,7 +61,7 @@ fn deposit_stake_withdraw() {
         res,
         GetDataRequestExecutorResponse {
             value: Some(DataRequestExecutor {
-                p2p_multi_address: Some("address".to_string()),
+                memo: Some("address".to_string()),
                 tokens_staked: 3,
                 tokens_pending_withdrawal: 0
             })
@@ -86,7 +86,7 @@ fn deposit_stake_withdraw() {
         res,
         GetDataRequestExecutorResponse {
             value: Some(DataRequestExecutor {
-                p2p_multi_address: Some("address".to_string()),
+                memo: Some("address".to_string()),
                 tokens_staked: 1,
                 tokens_pending_withdrawal: 2
             })
@@ -119,7 +119,7 @@ fn deposit_stake_withdraw() {
         res,
         GetDataRequestExecutorResponse {
             value: Some(DataRequestExecutor {
-                p2p_multi_address: Some("address".to_string()),
+                memo: Some("address".to_string()),
                 tokens_staked: 1,
                 tokens_pending_withdrawal: 0
             })

@@ -20,6 +20,8 @@ pub enum ContractError {
     NotPendingOwner,
     #[error("NoPendingOwnerFound: No pending owner found")]
     NoPendingOwnerFound,
+    #[error("NotOnAllowlist: Address is not on the allowlist")]
+    NotOnAllowlist,
 
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]

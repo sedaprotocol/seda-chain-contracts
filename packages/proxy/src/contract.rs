@@ -130,7 +130,7 @@ pub fn execute(
             .add_attribute("action", "reveal_data_result")),
 
         // Staking
-        ProxyExecuteMsg::RegisterDataRequestExecutor { p2p_multi_address } => {
+        ProxyExecuteMsg::RegisterDataRequestExecutor { memo } => {
             // require token deposit
             let token = TOKEN.load(deps.storage)?;
             let amount = get_attached_funds(&info.funds, &token)?;
@@ -139,7 +139,7 @@ pub fn execute(
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
-                        p2p_multi_address,
+                        memo,
                         sender: Some(info.sender.to_string()),
                     })?,
                     funds: vec![Coin {
@@ -196,6 +196,26 @@ pub fn execute(
                 funds: vec![],
             }))
             .add_attribute("action", "withdraw")),
+        ProxyExecuteMsg::AddToAllowlist { address } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: STAKING.load(deps.storage)?.to_string(),
+                msg: to_json_binary(&StakingExecuteMsg::AddToAllowlist {
+                    sender: Some(info.sender.to_string()),
+                    address,
+                })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "add_to_allowlist")),
+        ProxyExecuteMsg::RemoveFromAllowlist { address } => Ok(Response::new()
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: STAKING.load(deps.storage)?.to_string(),
+                msg: to_json_binary(&StakingExecuteMsg::RemoveFromAllowlist {
+                    sender: Some(info.sender.to_string()),
+                    address,
+                })?,
+                funds: vec![],
+            }))
+            .add_attribute("action", "remove_from_allowlist")),
     }
 }
 

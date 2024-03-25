@@ -34,7 +34,7 @@ fn commit_reveal_result() {
     send_tokens(&mut app, USER, EXECUTOR_2, 1);
     send_tokens(&mut app, USER, EXECUTOR_3, 1);
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        p2p_multi_address: Some("address".to_string()),
+        memo: Some("address".to_string()),
     };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
@@ -286,7 +286,7 @@ fn pop_and_swap_in_pool() {
     send_tokens(&mut app, USER, EXECUTOR_1, 1);
     send_tokens(&mut app, USER, EXECUTOR_2, 1);
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        p2p_multi_address: Some("address".to_string()),
+        memo: Some("address".to_string()),
     };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)

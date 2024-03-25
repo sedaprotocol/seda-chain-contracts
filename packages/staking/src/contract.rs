@@ -1,3 +1,4 @@
+use crate::allowlist::allow_list;
 use crate::executors_registry::data_request_executors;
 use crate::staking::staking;
 use crate::state::{CONFIG, OWNER, PENDING_OWNER, PROXY_CONTRACT, TOKEN};
@@ -37,6 +38,7 @@ pub fn instantiate(
     let init_config = StakingConfig {
         minimum_stake_to_register: INITIAL_MINIMUM_STAKE_TO_REGISTER,
         minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
+        allowlist_enabled: false,
     };
     CONFIG.save(deps.storage, &init_config)?;
 
@@ -51,15 +53,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::RegisterDataRequestExecutor {
-            p2p_multi_address,
-            sender,
-        } => data_request_executors::register_data_request_executor(
-            deps,
-            info,
-            p2p_multi_address,
-            sender,
-        ),
+        ExecuteMsg::RegisterDataRequestExecutor { memo, sender } => {
+            data_request_executors::register_data_request_executor(deps, info, memo, sender)
+        }
         ExecuteMsg::UnregisterDataRequestExecutor { sender } => {
             data_request_executors::unregister_data_request_executor(deps, info, sender)
         }
@@ -76,6 +72,12 @@ pub fn execute(
         ExecuteMsg::AcceptOwnership {} => staking::accept_ownership(deps, env, info),
         ExecuteMsg::SetStakingConfig { config } => {
             staking::set_staking_config(deps, env, info, config)
+        }
+        ExecuteMsg::AddToAllowlist { address, sender } => {
+            allow_list::add_to_allowlist(deps, info, sender, address)
+        }
+        ExecuteMsg::RemoveFromAllowlist { address, sender } => {
+            allow_list::remove_from_allowlist(deps, info, sender, address)
         }
     }
 }
@@ -225,6 +227,7 @@ mod init_tests {
         let new_config = StakingConfig {
             minimum_stake_to_register: 100,
             minimum_stake_for_committee_eligibility: 200,
+            allowlist_enabled: false,
         };
 
         // non-owner sets staking config

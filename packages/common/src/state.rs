@@ -79,7 +79,7 @@ pub struct Reveal {
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequestExecutor {
-    pub p2p_multi_address: Option<String>,
+    pub memo: Option<String>,
     pub tokens_staked: u128,
     pub tokens_pending_withdrawal: u128,
 }
@@ -91,4 +91,6 @@ pub struct StakingConfig {
     pub minimum_stake_to_register: u128,
     /// Minimum amount of SEDA tokens required to be eligible for committee inclusion
     pub minimum_stake_for_committee_eligibility: u128,
+    /// Whether the allowlist is enabled
+    pub allowlist_enabled: bool,
 }

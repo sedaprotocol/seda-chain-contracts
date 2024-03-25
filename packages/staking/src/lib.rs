@@ -1,3 +1,4 @@
+pub mod allowlist;
 pub mod contract;
 pub mod executors_registry;
 pub mod staking;
