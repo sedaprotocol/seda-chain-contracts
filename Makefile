@@ -12,8 +12,14 @@ fuzz-list:
 
 # Run the specified fuzz target
 fuzz-run:
-	@cargo +nightly-2024-01-21 fuzz run $(FUZZ_TARGET)
+	@cargo +nightly-2024-01-21 fuzz run $(FUZZ_TARGET) --release
 
 # Run the specified fuzz target
 fuzz-run-timeout:
-	@timeout $(TIME) cargo +nightly-2024-01-21 fuzz run $(FUZZ_TARGET)
+	@timeout $(TIME) cargo +nightly-2024-01-21 fuzz run $(FUZZ_TARGET) --release
+
+fuzz-reproduce:
+	@cargo +nightly-2024-01-21 fuzz tmin $(FUZZ_TARGET) $(ARTIFACT_PATH) --release
+
+fuzz-minify:
+	@cargo +nightly-2024-01-21 fuzz tmin $(FUZZ_TARGET) $(ARTIFACT_PATH) --release
