@@ -25,13 +25,10 @@ pub fn instantiate_staking_contract(
 pub fn helper_register_executor(
     deps: DepsMut,
     info: MessageInfo,
-    p2p_multi_address: Option<String>,
+    memo: Option<String>,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let msg = StakingExecuteMsg::RegisterDataRequestExecutor {
-        p2p_multi_address,
-        sender,
-    };
+    let msg = StakingExecuteMsg::RegisterDataRequestExecutor { memo, sender };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -120,5 +117,31 @@ pub fn helper_set_staking_config(
     config: StakingConfig,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::SetStakingConfig { config };
+    execute(deps, mock_env(), info, msg)
+}
+
+pub fn helper_add_to_allowlist(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+    sender: Option<String>,
+) -> Result<Response, ContractError> {
+    let msg = StakingExecuteMsg::AddToAllowlist {
+        address: Addr::unchecked(address),
+        sender,
+    };
+    execute(deps, mock_env(), info, msg)
+}
+
+pub fn helper_remove_from_allowlist(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+    sender: Option<String>,
+) -> Result<Response, ContractError> {
+    let msg = StakingExecuteMsg::RemoveFromAllowlist {
+        address: Addr::unchecked(address),
+        sender,
+    };
     execute(deps, mock_env(), info, msg)
 }

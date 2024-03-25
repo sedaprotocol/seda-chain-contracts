@@ -24,3 +24,6 @@ pub const PENDING_OWNER: Item<Option<Addr>> = Item::new("pending_owner");
 
 /// Governance-controlled configuration parameters
 pub const CONFIG: Item<StakingConfig> = Item::new("config");
+
+/// Allowlist of addresses that can register as a data request executor
+pub const ALLOWLIST: Map<Addr, bool> = Map::new("allowlist");

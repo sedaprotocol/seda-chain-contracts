@@ -32,11 +32,13 @@ pub enum ProxyExecuteMsg {
     CommitDataResult { dr_id: Hash, commitment: Hash },
     RevealDataResult { dr_id: Hash, reveal: Reveal },
     // Staking
-    RegisterDataRequestExecutor { p2p_multi_address: Option<String> },
+    RegisterDataRequestExecutor { memo: Option<String> },
     UnregisterDataRequestExecutor {},
     DepositAndStake,
     Unstake { amount: u128 },
     Withdraw { amount: u128 },
+    AddToAllowlist { address: Addr },
+    RemoveFromAllowlist { address: Addr },
 }
 
 #[cw_serde]

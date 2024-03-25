@@ -12,7 +12,8 @@ pub mod data_request_executors {
     use cosmwasm_std::{Addr, Event};
 
     use crate::{
-        contract::CONTRACT_VERSION, state::ELIGIBLE_DATA_REQUEST_EXECUTORS,
+        contract::CONTRACT_VERSION,
+        state::{ALLOWLIST, ELIGIBLE_DATA_REQUEST_EXECUTORS},
         utils::apply_validator_eligibility,
     };
 
@@ -22,10 +23,19 @@ pub mod data_request_executors {
     pub fn register_data_request_executor(
         deps: DepsMut,
         info: MessageInfo,
-        p2p_multi_address: Option<String>,
+        memo: Option<String>,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
+
+        // if allowlist is on, check if the sender is in the allowlist
+        let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
+        if allowlist_enabled {
+            let is_allowed = ALLOWLIST.may_load(deps.storage, sender.clone())?;
+            if is_allowed.is_none() {
+                return Err(ContractError::NotOnAllowlist);
+            }
+        }
 
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
@@ -40,7 +50,7 @@ pub mod data_request_executors {
         }
 
         let executor = DataRequestExecutor {
-            p2p_multi_address: p2p_multi_address.clone(),
+            memo: memo.clone(),
             tokens_staked: amount,
             tokens_pending_withdrawal: 0,
         };
@@ -53,7 +63,7 @@ pub mod data_request_executors {
             .add_event(Event::new("seda-data-request-executor").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("executor", sender.as_ref()),
-                ("p2p_multi_address", &p2p_multi_address.unwrap_or_default()),
+                ("memo", &memo.unwrap_or_default()),
                 ("tokens_staked", &amount.to_string()),
                 ("tokens_pending_withdrawal", "0"),
             ])))
@@ -147,7 +157,7 @@ mod executers_tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    p2p_multi_address: Some("address".to_string()),
+                    memo: Some("address".to_string()),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 0
                 })
@@ -176,7 +186,7 @@ mod executers_tests {
             value,
             GetDataRequestExecutorResponse {
                 value: Some(DataRequestExecutor {
-                    p2p_multi_address: Some("address".to_string()),
+                    memo: Some("address".to_string()),
                     tokens_staked: 2,
                     tokens_pending_withdrawal: 0
                 })
