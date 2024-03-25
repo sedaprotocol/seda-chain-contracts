@@ -14,7 +14,7 @@ use common::{
     },
 };
 use cosmwasm_std::{
-    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
+    to_json_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
     Response, StdResult, SubMsg, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
@@ -97,7 +97,7 @@ pub fn execute(
                 .add_submessage(SubMsg::reply_on_success(
                     CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                        msg: to_binary(&DataRequestsExecuteMsg::PostDataRequest {
+                        msg: to_json_binary(&DataRequestsExecuteMsg::PostDataRequest {
                             posted_dr: *posted_dr,
                         })?,
                         funds: vec![],
@@ -109,7 +109,7 @@ pub fn execute(
         ProxyExecuteMsg::CommitDataResult { dr_id, commitment } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&DataRequestsExecuteMsg::CommitDataResult {
+                msg: to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
                     sender: Some(info.sender.to_string()),
@@ -120,7 +120,7 @@ pub fn execute(
         ProxyExecuteMsg::RevealDataResult { dr_id, reveal } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                msg: to_binary(&DataRequestsExecuteMsg::RevealDataResult {
+                msg: to_json_binary(&DataRequestsExecuteMsg::RevealDataResult {
                     dr_id,
                     reveal,
                     sender: Some(info.sender.to_string()),
@@ -138,7 +138,7 @@ pub fn execute(
             Ok(Response::new()
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
+                    msg: to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
                         p2p_multi_address,
                         sender: Some(info.sender.to_string()),
                     })?,
@@ -152,7 +152,7 @@ pub fn execute(
         ProxyExecuteMsg::UnregisterDataRequestExecutor {} => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
+                msg: to_json_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
@@ -166,7 +166,7 @@ pub fn execute(
             Ok(Response::new()
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_binary(&StakingExecuteMsg::DepositAndStake {
+                    msg: to_json_binary(&StakingExecuteMsg::DepositAndStake {
                         sender: Some(info.sender.to_string()),
                     })?,
                     funds: vec![Coin {
@@ -179,7 +179,7 @@ pub fn execute(
         ProxyExecuteMsg::Unstake { amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_binary(&StakingExecuteMsg::Unstake {
+                msg: to_json_binary(&StakingExecuteMsg::Unstake {
                     amount,
                     sender: Some(info.sender.to_string()),
                 })?,
@@ -189,7 +189,7 @@ pub fn execute(
         ProxyExecuteMsg::Withdraw { amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_binary(&StakingExecuteMsg::Withdraw {
+                msg: to_json_binary(&StakingExecuteMsg::Withdraw {
                     amount,
                     sender: Some(info.sender.to_string()),
                 })?,
@@ -208,14 +208,14 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let response: StdResult<GetContractResponse> = Ok(GetContractResponse {
                 value: contract.to_string(),
             });
-            to_binary(&response?)
+            to_json_binary(&response?)
         }
         ProxyQueryMsg::GetStakingContract {} => {
             let contract = STAKING.load(deps.storage)?;
             let response: StdResult<GetContractResponse> = Ok(GetContractResponse {
                 value: contract.to_string(),
             });
-            to_binary(&response?)
+            to_json_binary(&response?)
         }
 
         // DataRequests
@@ -223,9 +223,9 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetDataRequestResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetDataRequestsFromPool {
             position: _position,
@@ -234,9 +234,9 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetDataRequestsFromPoolResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetCommittedDataResult {
             dr_id: _dr_id,
@@ -245,17 +245,17 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetCommittedDataResultResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetCommittedDataResults { dr_id: _dr_id } => {
             let query_response: GetCommittedDataResultsResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetRevealedDataResult {
             dr_id: _dr_id,
@@ -264,25 +264,25 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetRevealedDataResultResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetRevealedDataResults { dr_id: _dr_id } => {
             let query_response: GetRevealedDataResultsResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetResolvedDataResult { dr_id: _dr_id } => {
             let query_response: GetResolvedDataResultResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
 
         // Staking
@@ -292,9 +292,9 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetDataRequestExecutorResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::IsDataRequestExecutorEligible {
             executor: _executor,
@@ -302,17 +302,17 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: IsDataRequestExecutorEligibleResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetStakingConfig => {
             let query_response: GetStakingConfigResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_binary(&msg)?,
+                    msg: to_json_binary(&msg)?,
                 }))?;
-            Ok(to_binary(&query_response)?)
+            Ok(to_json_binary(&query_response)?)
         }
     }
 }

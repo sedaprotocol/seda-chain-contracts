@@ -13,7 +13,9 @@ use common::msg::{InstantiateMsg, StakingExecuteMsg as ExecuteMsg};
 use common::state::StakingConfig;
 use cosmwasm_std::StdResult;
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+};
 use cw2::set_contract_version;
 
 // version info for migration info
@@ -81,19 +83,19 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetDataRequestExecutor { executor } => to_binary(
+        QueryMsg::GetDataRequestExecutor { executor } => to_json_binary(
             &data_request_executors::get_data_request_executor(deps, executor)?,
         ),
-        QueryMsg::IsDataRequestExecutorEligible { executor } => to_binary(
+        QueryMsg::IsDataRequestExecutorEligible { executor } => to_json_binary(
             &data_request_executors::is_data_request_executor_eligible(deps, executor)?,
         ),
-        QueryMsg::GetStakingConfig => to_binary(&GetStakingConfigResponse {
+        QueryMsg::GetStakingConfig => to_json_binary(&GetStakingConfigResponse {
             value: CONFIG.load(deps.storage)?,
         }),
-        QueryMsg::GetOwner => to_binary(&GetOwnerResponse {
+        QueryMsg::GetOwner => to_json_binary(&GetOwnerResponse {
             value: OWNER.load(deps.storage)?,
         }),
-        QueryMsg::GetPendingOwner => to_binary(&GetPendingOwnerResponse {
+        QueryMsg::GetPendingOwner => to_json_binary(&GetPendingOwnerResponse {
             value: PENDING_OWNER.load(deps.storage)?,
         }),
     }

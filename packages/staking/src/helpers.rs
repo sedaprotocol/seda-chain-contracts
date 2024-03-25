@@ -1,5 +1,5 @@
 use common::msg::{GetOwnerResponse, GetPendingOwnerResponse};
-use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response};
+use cosmwasm_std::{from_json, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query};
 use common::state::StakingConfig;
@@ -66,12 +66,12 @@ pub fn helper_get_executor(deps: DepsMut, executor: Addr) -> GetDataRequestExecu
         StakingQueryMsg::GetDataRequestExecutor { executor },
     )
     .unwrap();
-    let value: GetDataRequestExecutorResponse = from_binary(&res).unwrap();
+    let value: GetDataRequestExecutorResponse = from_json(&res).unwrap();
     value
 }
 pub fn helper_get_owner(deps: DepsMut) -> GetOwnerResponse {
     let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetOwner {}).unwrap();
-    let value: GetOwnerResponse = from_binary(&res).unwrap();
+    let value: GetOwnerResponse = from_json(&res).unwrap();
     value
 }
 
@@ -82,7 +82,7 @@ pub fn helper_get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
         StakingQueryMsg::GetPendingOwner {},
     )
     .unwrap();
-    let value: GetPendingOwnerResponse = from_binary(&res).unwrap();
+    let value: GetPendingOwnerResponse = from_json(&res).unwrap();
     value
 }
 pub fn helper_deposit_and_stake(
