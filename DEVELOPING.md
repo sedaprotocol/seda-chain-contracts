@@ -57,10 +57,11 @@ To list fuzz targets you can run:
 make fuzz-list
 ```
 
-> **NOTE**: The first time you do a `fuzz-run` command takes a very long time to build...
-> This does cause the make command to timeout... not sure how to workaround that?
+> [!NOTE]
+> The first time you do a `fuzz-run` command takes a very long time to build...
+> This does cause the make command to timeout... not sure how to workaround that...
 
-To run a fuzz target indefinately:
+To run a fuzz target indefinitely:
 
 ```sh
 FUZZ_TARGET=proxy-instantiate make fuzz-run
