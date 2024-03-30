@@ -7,7 +7,7 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
 fn post_data_request() {
-    let (mut app, proxy_contract) = proper_instantiate();
+    let (mut app, proxy_contract, _) = proper_instantiate();
 
     let (_, posted_dr) = calculate_dr_id_and_args(1, 3);
     // post the data request

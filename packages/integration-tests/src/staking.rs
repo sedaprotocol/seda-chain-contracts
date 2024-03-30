@@ -9,7 +9,7 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
 fn deposit_stake_withdraw() {
-    let (mut app, proxy_contract) = proper_instantiate();
+    let (mut app, proxy_contract, _) = proper_instantiate();
 
     // send tokens from USER to executor1 so it can register
     send_tokens(&mut app, USER, EXECUTOR_1, 3);
@@ -133,4 +133,54 @@ fn deposit_stake_withdraw() {
         .amount
         .u128();
     assert_eq!(balance_after, 2);
+}
+
+#[test]
+#[should_panic(expected = "NoFunds")]
+fn no_funds_provided() {
+    let (mut app, proxy_contract, _) = proper_instantiate();
+
+    // send tokens from USER to executor1 so it can register
+    send_tokens(&mut app, USER, EXECUTOR_1, 3);
+
+    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
+        memo: Some("address".to_string()),
+    };
+    let cosmos_msg = proxy_contract
+        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
+        .unwrap();
+    // register executor
+    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+        .unwrap();
+
+    let msg = ProxyExecuteMsg::DepositAndStake {};
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+
+    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+        .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "InsufficientFunds")]
+fn insufficient_funds() {
+    let (mut app, proxy_contract, _) = proper_instantiate();
+
+    // send tokens from USER to executor1 so it can register
+    send_tokens(&mut app, USER, EXECUTOR_1, 3);
+
+    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
+        memo: Some("address".to_string()),
+    };
+    let cosmos_msg = proxy_contract
+        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
+        .unwrap();
+    // register executor
+    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+        .unwrap();
+
+    // unstaking more than staked tokens should fail
+    let msg = ProxyExecuteMsg::Unstake { amount: 5 };
+    let cosmos_msg = proxy_contract.call(msg).unwrap();
+    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+        .unwrap();
 }

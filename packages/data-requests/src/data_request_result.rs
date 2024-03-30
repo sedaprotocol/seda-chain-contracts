@@ -22,10 +22,10 @@ pub mod data_request_results {
 
     use crate::contract::CONTRACT_VERSION;
     use crate::state::DATA_REQUESTS_POOL;
-    use crate::utils::hash_to_string;
+    use crate::utils::{caller_is_proxy, hash_to_string};
     use crate::{
         state::DATA_RESULTS,
-        utils::{check_eligibility, hash_data_result, validate_sender},
+        utils::{check_eligibility, hash_data_result},
     };
 
     use super::*;
@@ -37,9 +37,10 @@ pub mod data_request_results {
         info: MessageInfo,
         dr_id: Hash,
         commitment: Hash,
-        sender: Option<String>,
+        sender: String,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
+        let sender = deps.api.addr_validate(&sender)?;
+        caller_is_proxy(&deps, info.sender)?;
         if !check_eligibility(&deps, sender.clone())? {
             return Err(IneligibleExecutor);
         }
@@ -78,9 +79,10 @@ pub mod data_request_results {
         env: Env,
         dr_id: Hash,
         reveal: Reveal,
-        sender: Option<String>,
+        sender: String,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
+        let sender = deps.api.addr_validate(&sender)?;
+        caller_is_proxy(&deps, info.sender)?;
         if !check_eligibility(&deps, sender.clone())? {
             return Err(IneligibleExecutor);
         }
@@ -264,7 +266,7 @@ mod data_request_result_tests {
         let msg = DataRequestsExecuteMsg::CommitDataResult {
             dr_id: string_to_hash("dr_id"),
             commitment: string_to_hash("commitment"),
-            sender: Some("someone".to_string()),
+            sender: "someone".to_string(),
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();

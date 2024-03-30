@@ -139,7 +139,7 @@ mod init_tests {
             deps.as_mut(),
             info,
             Some("address".to_string()),
-            Some("sender".to_string()),
+            "sender".to_string(),
         );
         assert_eq!(res.is_err_and(|x| x == ContractError::NotProxy), true);
 
@@ -150,7 +150,7 @@ mod init_tests {
             deps.as_mut(),
             info,
             Some("address".to_string()),
-            Some("sender".to_string()),
+            "sender".to_string(),
         )
         .unwrap();
     }

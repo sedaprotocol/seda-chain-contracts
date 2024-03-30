@@ -65,18 +65,11 @@ pub fn hash_data_result(
     hasher.finalize().into()
 }
 
-pub fn validate_sender(
-    deps: &DepsMut,
-    caller: Addr,
-    sender: Option<String>,
-) -> Result<Addr, ContractError> {
-    // if a sender is passed, caller must be the proxy contract
-    match sender {
-        Some(_sender) if caller != PROXY_CONTRACT.load(deps.storage)? => {
-            Err(ContractError::NotProxy {})
-        }
-        Some(sender) => Ok(deps.api.addr_validate(&sender)?),
-        None => Ok(caller),
+pub fn caller_is_proxy(deps: &DepsMut, caller: Addr) -> Result<(), ContractError> {
+    if caller != PROXY_CONTRACT.load(deps.storage)? {
+        Err(ContractError::NotProxy {})
+    } else {
+        Ok(())
     }
 }
 

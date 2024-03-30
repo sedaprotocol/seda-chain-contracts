@@ -1,10 +1,10 @@
 use cosmwasm_schema::write_api;
 
-use proxy_contract::msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg};
+use proxy_contract::msg::{ProxyExecuteMsg, ProxyInstantiateMsg, ProxyQueryMsg, ProxySudoMsg};
 
 fn main() {
     write_api! {
-        instantiate: InstantiateMsg,
+        instantiate: ProxyInstantiateMsg,
         execute: ProxyExecuteMsg,
         query: ProxyQueryMsg,
         sudo: ProxySudoMsg,

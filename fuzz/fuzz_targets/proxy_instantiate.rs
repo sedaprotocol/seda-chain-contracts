@@ -3,7 +3,7 @@
 use cosmwasm_std::{Addr, Coin, Empty, Uint128};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use libfuzzer_sys::fuzz_target;
-use proxy_contract::msg::InstantiateMsg;
+use proxy_contract::msg::ProxyInstantiateMsg;
 
 const ADMIN: &str = "admin";
 pub const NATIVE_DENOM: &str = "seda";
@@ -41,7 +41,7 @@ fn proxy_contract_template() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-fuzz_target!(|msg: InstantiateMsg| {
+fuzz_target!(|msg: ProxyInstantiateMsg| {
     // fuzzed code goes here
     let mut app = mock_app();
 

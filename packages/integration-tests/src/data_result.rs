@@ -17,7 +17,7 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
 fn commit_reveal_result() {
-    let (mut app, proxy_contract) = proper_instantiate();
+    let (mut app, proxy_contract, _) = proper_instantiate();
 
     // executor 1 should be ineligible to register
     let msg = ProxyQueryMsg::IsDataRequestExecutorEligible {
@@ -247,7 +247,7 @@ fn commit_reveal_result() {
 
 #[test]
 fn ineligible_post_data_result() {
-    let (mut app, proxy_contract) = proper_instantiate();
+    let (mut app, proxy_contract, _) = proper_instantiate();
 
     let (_, posted_dr) = calculate_dr_id_and_args(1, 2);
 
@@ -280,7 +280,7 @@ fn ineligible_post_data_result() {
 
 #[test]
 fn pop_and_swap_in_pool() {
-    let (mut app, proxy_contract) = proper_instantiate();
+    let (mut app, proxy_contract, _) = proper_instantiate();
 
     // send tokens from USER to executor1 and executor2 so they can register
     send_tokens(&mut app, USER, EXECUTOR_1, 1);

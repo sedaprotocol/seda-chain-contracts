@@ -7,7 +7,7 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg};
 
 #[test]
 fn sudo_set_contract_address() {
-    let (mut app, proxy_contract) = proper_instantiate();
+    let (mut app, proxy_contract, _) = proper_instantiate();
 
     // query initial contract address
     let msg = ProxyQueryMsg::GetDataRequestsContract {};

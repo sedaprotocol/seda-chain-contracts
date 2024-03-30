@@ -21,15 +21,15 @@ pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 pub const EXECUTOR_2: &str = "executor2";
 pub const EXECUTOR_3: &str = "executor3";
-const OWNER: &str = "owner";
+pub const OWNER: &str = "owner";
 pub const NATIVE_DENOM: &str = "seda";
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct CwTemplateContract(pub Addr);
+pub struct ProxyCwTemplateContract(pub Addr);
 
-impl CwTemplateContract {
+impl ProxyCwTemplateContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }
@@ -69,6 +69,53 @@ impl CwTemplateContract {
         &self,
         msg: T,
     ) -> cw_multi_test::SudoMsg {
+        let msg = to_json_binary(&msg.into()).unwrap();
+        cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
+            contract_addr: self.addr().into(),
+            message: msg,
+        })
+    }
+}
+
+/// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
+/// for working with this.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct StakingCwTemplateContract(pub Addr);
+
+impl StakingCwTemplateContract {
+    pub fn addr(&self) -> Addr {
+        self.0.clone()
+    }
+
+    pub fn call<T: Into<common::msg::StakingExecuteMsg>>(&self, msg: T) -> StdResult<CosmosMsg> {
+        let msg = to_json_binary(&msg.into())?;
+        Ok(WasmMsg::Execute {
+            contract_addr: self.addr().into(),
+            msg,
+            funds: vec![],
+        }
+        .into())
+    }
+
+    pub fn _call_with_deposit<T: Into<common::msg::StakingExecuteMsg>>(
+        &self,
+        msg: T,
+        amount: u128,
+    ) -> StdResult<CosmosMsg> {
+        let coin = Coin {
+            denom: NATIVE_DENOM.to_string(),
+            amount: amount.into(),
+        };
+        let msg = to_json_binary(&msg.into())?;
+        Ok(WasmMsg::Execute {
+            contract_addr: self.addr().into(),
+            msg,
+            funds: vec![coin],
+        }
+        .into())
+    }
+
+    pub fn _sudo<T: Into<common::msg::StakingExecuteMsg>>(&self, msg: T) -> cw_multi_test::SudoMsg {
         let msg = to_json_binary(&msg.into()).unwrap();
         cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
             contract_addr: self.addr().into(),
@@ -134,12 +181,12 @@ pub fn send_tokens(app: &mut App, from: &str, to: &str, amount: u128) {
     app.execute(Addr::unchecked(from), cosmos_msg).unwrap();
 }
 
-pub fn proper_instantiate() -> (App, CwTemplateContract) {
+pub fn proper_instantiate() -> (App, ProxyCwTemplateContract, StakingCwTemplateContract) {
     let mut app = mock_app();
 
     // instantiate proxy-contract
     let proxy_contract_template_id = app.store_code(proxy_contract_template());
-    let msg = proxy_contract::msg::InstantiateMsg {
+    let msg = proxy_contract::msg::ProxyInstantiateMsg {
         token: NATIVE_DENOM.to_string(),
     };
     let proxy_contract_addr = app
@@ -152,7 +199,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
             None,
         )
         .unwrap();
-    let proxy_template_contract = CwTemplateContract(proxy_contract_addr.clone());
+    let proxy_template_contract = ProxyCwTemplateContract(proxy_contract_addr.clone());
 
     // instantiate staking
     let staking_template_id = app.store_code(staking_template());
@@ -171,6 +218,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
             None,
         )
         .unwrap();
+    let staking_template_contract = StakingCwTemplateContract(staking_contract_addr.clone());
 
     // instantiate data-requests
     let data_requests_template_id = app.store_code(data_requests_template());
@@ -202,7 +250,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
     let cosmos_msg = proxy_template_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(OWNER), cosmos_msg).unwrap();
 
-    (app, proxy_template_contract)
+    (app, proxy_template_contract, staking_template_contract)
 }
 
 pub fn get_dr_id(res: AppResponse) -> Hash {
@@ -223,7 +271,7 @@ pub fn calculate_commitment(reveal: &str, salt: &str) -> Hash {
 
 pub fn helper_commit_result(
     app: &mut App,
-    proxy_contract: CwTemplateContract,
+    proxy_contract: ProxyCwTemplateContract,
     dr_id: Hash,
     commitment: Hash,
     sender: Addr,
@@ -235,7 +283,7 @@ pub fn helper_commit_result(
 
 pub fn helper_reveal_result(
     app: &mut App,
-    proxy_contract: CwTemplateContract,
+    proxy_contract: ProxyCwTemplateContract,
     dr_id: Hash,
     reveal: Reveal,
     sender: Addr,
@@ -247,7 +295,7 @@ pub fn helper_reveal_result(
 
 pub fn helper_post_dr(
     app: &mut App,
-    proxy_contract: CwTemplateContract,
+    proxy_contract: ProxyCwTemplateContract,
     posted_dr: PostDataRequestArgs,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {

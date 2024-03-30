@@ -21,7 +21,7 @@ use cw2::set_contract_version;
 use cw_utils::parse_reply_execute_data;
 
 use crate::{
-    msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg},
+    msg::{ProxyExecuteMsg, ProxyInstantiateMsg, ProxyQueryMsg, ProxySudoMsg},
     state::{CONTRACT_CREATOR, DATA_REQUESTS, STAKING},
 };
 
@@ -36,7 +36,7 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    msg: ProxyInstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
@@ -112,7 +112,7 @@ pub fn execute(
                 msg: to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                 })?,
                 funds: vec![],
             }))
@@ -123,7 +123,7 @@ pub fn execute(
                 msg: to_json_binary(&DataRequestsExecuteMsg::RevealDataResult {
                     dr_id,
                     reveal,
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                 })?,
                 funds: vec![],
             }))
@@ -140,7 +140,7 @@ pub fn execute(
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
                         memo,
-                        sender: Some(info.sender.to_string()),
+                        sender: info.sender.to_string(),
                     })?,
                     funds: vec![Coin {
                         denom: token,
@@ -153,7 +153,7 @@ pub fn execute(
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                 })?,
                 funds: vec![],
             }))
@@ -167,7 +167,7 @@ pub fn execute(
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::DepositAndStake {
-                        sender: Some(info.sender.to_string()),
+                        sender: info.sender.to_string(),
                     })?,
                     funds: vec![Coin {
                         denom: token,
@@ -181,7 +181,7 @@ pub fn execute(
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::Unstake {
                     amount,
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                 })?,
                 funds: vec![],
             }))
@@ -191,7 +191,7 @@ pub fn execute(
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::Withdraw {
                     amount,
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                 })?,
                 funds: vec![],
             }))
@@ -200,7 +200,7 @@ pub fn execute(
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::AddToAllowlist {
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                     address,
                 })?,
                 funds: vec![],
@@ -210,7 +210,7 @@ pub fn execute(
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::RemoveFromAllowlist {
-                    sender: Some(info.sender.to_string()),
+                    sender: info.sender.to_string(),
                     address,
                 })?,
                 funds: vec![],
@@ -375,7 +375,7 @@ mod init_tests {
     fn contract_already_set() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
+        let msg = ProxyInstantiateMsg {
             token: "token".to_string(),
         };
         let info = mock_info("creator", &coins(1000, "token"));
@@ -399,7 +399,7 @@ mod init_tests {
     fn no_funds_provided() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
+        let msg = ProxyInstantiateMsg {
             token: "token".to_string(),
         };
         let info = mock_info("creator", &coins(1000, "token"));
@@ -421,7 +421,7 @@ mod init_tests {
     fn not_contract_creator() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg {
+        let msg = ProxyInstantiateMsg {
             token: "token".to_string(),
         };
         let info = mock_info("creator", &coins(1000, "token"));

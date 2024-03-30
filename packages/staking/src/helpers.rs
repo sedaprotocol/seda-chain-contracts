@@ -26,12 +26,11 @@ pub fn helper_register_executor(
     deps: DepsMut,
     info: MessageInfo,
     memo: Option<String>,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::RegisterDataRequestExecutor { memo, sender };
     execute(deps, mock_env(), info, msg)
 }
-
 pub fn helper_transfer_ownership(
     deps: DepsMut,
     info: MessageInfo,
@@ -50,7 +49,7 @@ pub fn helper_accept_ownership(
 pub fn helper_unregister_executor(
     deps: DepsMut,
     info: MessageInfo,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::UnregisterDataRequestExecutor { sender };
     execute(deps, mock_env(), info, msg)
@@ -85,7 +84,7 @@ pub fn helper_get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
 pub fn helper_deposit_and_stake(
     deps: DepsMut,
     info: MessageInfo,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::DepositAndStake { sender };
     execute(deps, mock_env(), info, msg)
@@ -95,7 +94,7 @@ pub fn helper_unstake(
     deps: DepsMut,
     info: MessageInfo,
     amount: u128,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::Unstake { amount, sender };
     execute(deps, mock_env(), info, msg)
@@ -105,7 +104,7 @@ pub fn helper_withdraw(
     deps: DepsMut,
     info: MessageInfo,
     amount: u128,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::Withdraw { amount, sender };
     execute(deps, mock_env(), info, msg)
@@ -124,7 +123,7 @@ pub fn helper_add_to_allowlist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::AddToAllowlist {
         address: Addr::unchecked(address),
@@ -137,7 +136,7 @@ pub fn helper_remove_from_allowlist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
-    sender: Option<String>,
+    sender: String,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::RemoveFromAllowlist {
         address: Addr::unchecked(address),

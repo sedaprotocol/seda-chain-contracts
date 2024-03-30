@@ -31,12 +31,12 @@ pub enum DataRequestsExecuteMsg {
     CommitDataResult {
         dr_id: Hash,
         commitment: Hash,
-        sender: Option<String>,
+        sender: String,
     },
     RevealDataResult {
         dr_id: Hash,
         reveal: Reveal,
-        sender: Option<String>,
+        sender: String,
     },
 }
 
@@ -44,21 +44,21 @@ pub enum DataRequestsExecuteMsg {
 pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
         memo: Option<String>,
-        sender: Option<String>,
+        sender: String,
     },
     UnregisterDataRequestExecutor {
-        sender: Option<String>,
+        sender: String,
     },
     DepositAndStake {
-        sender: Option<String>,
+        sender: String,
     },
     Unstake {
         amount: u128,
-        sender: Option<String>,
+        sender: String,
     },
     Withdraw {
         amount: u128,
-        sender: Option<String>,
+        sender: String,
     },
     TransferOwnership {
         new_owner: String,
@@ -68,11 +68,11 @@ pub enum StakingExecuteMsg {
         config: StakingConfig,
     },
     AddToAllowlist {
-        sender: Option<String>,
+        sender: String,
         address: Addr,
     },
     RemoveFromAllowlist {
-        sender: Option<String>,
+        sender: String,
         address: Addr,
     },
 }

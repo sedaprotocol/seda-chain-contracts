@@ -14,7 +14,7 @@ use cosmwasm_std::Addr;
 
 #[cfg_attr(feature = "fuzzing", derive(Arbitrary))]
 #[cw_serde]
-pub struct InstantiateMsg {
+pub struct ProxyInstantiateMsg {
     pub token: String,
 }
 
