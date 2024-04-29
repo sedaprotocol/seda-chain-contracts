@@ -31,8 +31,10 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 common = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
+cosmwasm-crypto = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw2 = { workspace = true }
+hex = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -1,15 +1,17 @@
-use alloy_sol_types::SolType;
 use common::error::ContractError;
-use common::msg::{IsDataRequestExecutorEligibleResponse, StakingQueryMsg};
+use common::msg::StakingQueryMsg;
+use common::msg::{IsDataRequestExecutorEligibleResponse, PostDataRequestArgs};
 use common::state::DataRequest;
-use common::types::{Bytes, Hash};
+use common::types::{Bytes, Hash, Secpk256k1PublicKey};
 use cosmwasm_std::{to_json_binary, Addr, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
-use crate::state::{DataRequestInputs, PROXY_CONTRACT};
-use crate::types::{DataRequestHashInputs, DataResultHashInputs};
+use crate::state::PROXY_CONTRACT;
 
-pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, ContractError> {
+pub fn check_eligibility(
+    deps: &DepsMut,
+    dr_executor: Secpk256k1PublicKey,
+) -> Result<bool, ContractError> {
     // query proxy contract to see if this executor is eligible
     let msg = StakingQueryMsg::IsDataRequestExecutorEligible {
         executor: dr_executor,
@@ -22,47 +24,64 @@ pub fn check_eligibility(deps: &DepsMut, dr_executor: Addr) -> Result<bool, Cont
     Ok(query_response.value)
 }
 
-pub fn hash_data_request(posted_dr: DataRequestInputs) -> Hash {
-    let data_requests_hash_inputs = DataRequestHashInputs {
-        version: posted_dr.version.to_string(),
-        dr_binary_id: alloy_sol_types::private::FixedBytes(posted_dr.dr_binary_id),
-        dr_inputs: posted_dr.dr_inputs,
-        gas_limit: posted_dr.gas_limit,
-        gas_price: posted_dr.gas_price,
-        tally_gas_limit: posted_dr.tally_gas_limit,
-        memo: posted_dr.memo,
-        replication_factor: posted_dr.replication_factor,
-        tally_binary_id: alloy_sol_types::private::FixedBytes(posted_dr.tally_binary_id),
-        tally_inputs: posted_dr.tally_inputs,
-    };
-    let mut hasher = Keccak256::new();
-    hasher.update(DataRequestHashInputs::abi_encode_params(
-        &data_requests_hash_inputs,
-    ));
-    hasher.finalize().into()
+pub fn hash_data_request(posted_dr: &PostDataRequestArgs) -> Hash {
+    // hash non-fixed-length inputs
+    let mut dr_inputs_hasher = Keccak256::new();
+    dr_inputs_hasher.update(&posted_dr.dr_inputs);
+    let dr_inputs_hash = dr_inputs_hasher.finalize();
+
+    let mut tally_inputs_hasher = Keccak256::new();
+    tally_inputs_hasher.update(&posted_dr.tally_inputs);
+    let tally_inputs_hash = tally_inputs_hasher.finalize();
+
+    let mut memo_hasher = Keccak256::new();
+    memo_hasher.update(&posted_dr.memo);
+    let memo_hash = memo_hasher.finalize();
+
+    // hash data request
+    let mut dr_hasher = Keccak256::new();
+    dr_hasher.update(posted_dr.version.to_string().as_bytes());
+    dr_hasher.update(posted_dr.dr_binary_id);
+    dr_hasher.update(dr_inputs_hash);
+    dr_hasher.update(posted_dr.tally_binary_id);
+    dr_hasher.update(tally_inputs_hash);
+    dr_hasher.update(posted_dr.replication_factor.to_be_bytes());
+    dr_hasher.update(posted_dr.gas_price.to_be_bytes());
+    dr_hasher.update(posted_dr.gas_limit.to_be_bytes());
+    dr_hasher.update(memo_hash);
+    dr_hasher.finalize().into()
 }
 
 pub fn hash_data_result(
     dr: &DataRequest,
     block_height: u64,
     exit_code: u8,
+    gas_used: u128,
     result: &Bytes,
 ) -> Hash {
-    let data_results_hash_inputs = DataResultHashInputs {
-        version: dr.version.to_string(),
-        dr_id: alloy_sol_types::private::FixedBytes(dr.dr_id),
-        block_height: block_height.into(),
-        exit_code,
-        result: result.clone(),
-        payback_address: dr.payback_address.clone(),
-        seda_payload: dr.seda_payload.clone(),
-    };
+    // hash non-fixed-length inputs
+    let mut results_hasher = Keccak256::new();
+    results_hasher.update(result); // TODO check this
+    let results_hash = results_hasher.finalize();
 
-    let mut hasher = Keccak256::new();
-    hasher.update(DataResultHashInputs::abi_encode_params(
-        &data_results_hash_inputs,
-    ));
-    hasher.finalize().into()
+    let mut payback_address_hasher = Keccak256::new();
+    payback_address_hasher.update(&dr.payback_address);
+    let payback_address_hash = payback_address_hasher.finalize();
+
+    let mut seda_payload_hasher = Keccak256::new();
+    seda_payload_hasher.update(&dr.seda_payload);
+    let seda_payload_hash = seda_payload_hasher.finalize();
+
+    // hash data result
+    let mut dr_hasher = Keccak256::new();
+    dr_hasher.update(dr.id);
+    dr_hasher.update(block_height.to_be_bytes());
+    dr_hasher.update(exit_code.to_be_bytes());
+    dr_hasher.update(results_hash);
+    dr_hasher.update(gas_used.to_be_bytes());
+    dr_hasher.update(payback_address_hash);
+    dr_hasher.update(seda_payload_hash);
+    dr_hasher.finalize().into()
 }
 
 pub fn validate_sender(

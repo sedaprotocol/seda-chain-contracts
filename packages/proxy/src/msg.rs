@@ -7,8 +7,8 @@ use common::msg::{
     GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
     GetStakingConfigResponse, IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
 };
-use common::state::Reveal;
-use common::types::Hash;
+use common::state::RevealBody;
+use common::types::{Bytes, Hash, Secpk256k1PublicKey};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -22,23 +22,62 @@ pub struct InstantiateMsg {
 pub enum ProxyExecuteMsg {
     // Owner
     // These can only be called if these are not already set. Otherwise, a sudo message must be used.
-    SetDataRequests { contract: String },
-    SetStaking { contract: String },
+    SetDataRequests {
+        contract: String,
+    },
+    SetStaking {
+        contract: String,
+    },
 
     // Delegated calls to contracts
 
     // DataRequests
-    PostDataRequest { posted_dr: Box<PostDataRequestArgs> },
-    CommitDataResult { dr_id: Hash, commitment: Hash },
-    RevealDataResult { dr_id: Hash, reveal: Reveal },
+    PostDataRequest {
+        posted_dr: PostDataRequestArgs,
+        seda_payload: Bytes,
+        payback_address: Bytes,
+    },
+    CommitDataResult {
+        dr_id: Hash,
+        commitment: Hash,
+        proof: Bytes,
+        public_key: Secpk256k1PublicKey,
+    },
+    RevealDataResult {
+        dr_id: Hash,
+        reveal: RevealBody,
+        signature: Vec<u8>,
+    },
     // Staking
-    RegisterDataRequestExecutor { memo: Option<String> },
-    UnregisterDataRequestExecutor {},
-    DepositAndStake,
-    Unstake { amount: u128 },
-    Withdraw { amount: u128 },
-    AddToAllowlist { address: Addr },
-    RemoveFromAllowlist { address: Addr },
+    RegisterDataRequestExecutor {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
+        memo: Option<String>,
+    },
+    UnregisterDataRequestExecutor {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
+    },
+    DepositAndStake {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
+    },
+    Unstake {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
+        amount: u128,
+    },
+    Withdraw {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
+        amount: u128,
+    },
+    AddToAllowlist {
+        address: Addr,
+    },
+    RemoveFromAllowlist {
+        address: Addr,
+    },
 }
 
 #[cw_serde]
@@ -72,7 +111,7 @@ pub enum ProxyQueryMsg {
     #[returns(GetDataRequestExecutorResponse)]
     GetDataRequestExecutor { executor: Addr },
     #[returns(IsDataRequestExecutorEligibleResponse)]
-    IsDataRequestExecutorEligible { executor: Addr },
+    IsDataRequestExecutorEligible { executor: Secpk256k1PublicKey },
     #[returns(GetStakingConfigResponse)]
     GetStakingConfig,
 }

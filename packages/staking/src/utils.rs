@@ -1,11 +1,11 @@
-use common::error::ContractError;
+use common::{error::ContractError, types::Secpk256k1PublicKey};
 use cosmwasm_std::{Addr, Coin, DepsMut};
 
 use crate::state::{CONFIG, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT};
 
 pub fn apply_validator_eligibility(
     deps: DepsMut,
-    sender: Addr,
+    public_key: Secpk256k1PublicKey,
     tokens_staked: u128,
 ) -> Result<(), ContractError> {
     if tokens_staked
@@ -13,11 +13,11 @@ pub fn apply_validator_eligibility(
             .load(deps.storage)?
             .minimum_stake_for_committee_eligibility
     {
-        if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, sender.clone()) {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, sender);
+        if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, public_key.clone()) {
+            ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, public_key);
         }
     } else {
-        ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, sender, &true)?;
+        ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, public_key, &true)?;
     }
     Ok(())
 }

@@ -1,5 +1,5 @@
-use crate::state::{DataRequest, DataRequestExecutor, DataResult, Reveal, StakingConfig};
-use crate::types::{Bytes, Commitment, Hash, Memo};
+use crate::state::{DataRequest, DataRequestExecutor, DataResult, RevealBody, StakingConfig};
+use crate::types::{Bytes, Commitment, Hash, Memo, Secpk256k1PublicKey};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 use semver::Version;
@@ -8,18 +8,14 @@ use std::collections::HashMap;
 #[cw_serde]
 pub struct PostDataRequestArgs {
     pub version: Version,
-    pub dr_id: Hash,
     pub dr_binary_id: Hash,
-    pub tally_binary_id: Hash,
     pub dr_inputs: Bytes,
+    pub tally_binary_id: Hash,
     pub tally_inputs: Bytes,
-    pub memo: Memo,
     pub replication_factor: u16,
     pub gas_price: u128,
     pub gas_limit: u128,
-    pub tally_gas_limit: u128,
-    pub seda_payload: Bytes,
-    pub payback_address: Bytes,
+    pub memo: Memo,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -27,15 +23,20 @@ pub struct PostDataRequestArgs {
 pub enum DataRequestsExecuteMsg {
     PostDataRequest {
         posted_dr: PostDataRequestArgs,
+        seda_payload: Bytes,
+        payback_address: Bytes,
     },
     CommitDataResult {
         dr_id: Hash,
         commitment: Hash,
+        proof: Bytes,
+        public_key: Secpk256k1PublicKey,
         sender: Option<String>,
     },
     RevealDataResult {
         dr_id: Hash,
-        reveal: Reveal,
+        reveal: RevealBody,
+        signature: Vec<u8>,
         sender: Option<String>,
     },
 }
@@ -43,20 +44,30 @@ pub enum DataRequestsExecuteMsg {
 #[cw_serde]
 pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
         memo: Option<String>,
         sender: Option<String>,
     },
     UnregisterDataRequestExecutor {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
         sender: Option<String>,
     },
     DepositAndStake {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
         sender: Option<String>,
     },
     Unstake {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
         amount: u128,
         sender: Option<String>,
     },
     Withdraw {
+        public_key: Secpk256k1PublicKey,
+        signature: Vec<u8>,
         amount: u128,
         sender: Option<String>,
     },
@@ -88,11 +99,17 @@ pub enum DataRequestsQueryMsg {
         limit: Option<u128>,
     },
     #[returns(GetCommittedDataResultResponse)]
-    GetCommittedDataResult { dr_id: Hash, executor: Addr },
+    GetCommittedDataResult {
+        dr_id: Hash,
+        executor: Secpk256k1PublicKey,
+    },
     #[returns(GetCommittedDataResultsResponse)]
     GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]
-    GetRevealedDataResult { dr_id: Hash, executor: Addr },
+    GetRevealedDataResult {
+        dr_id: Hash,
+        executor: Secpk256k1PublicKey,
+    },
     #[returns(GetRevealedDataResultsResponse)]
     GetRevealedDataResults { dr_id: Hash },
     #[returns(GetResolvedDataResultResponse)]
@@ -103,9 +120,9 @@ pub enum DataRequestsQueryMsg {
 #[derive(QueryResponses)]
 pub enum StakingQueryMsg {
     #[returns(GetDataRequestExecutorResponse)]
-    GetDataRequestExecutor { executor: Addr },
+    GetDataRequestExecutor { executor: Secpk256k1PublicKey },
     #[returns(IsDataRequestExecutorEligibleResponse)]
-    IsDataRequestExecutorEligible { executor: Addr },
+    IsDataRequestExecutorEligible { executor: Secpk256k1PublicKey },
     #[returns(GetStakingConfigResponse)]
     GetStakingConfig,
     #[returns(GetOwnerResponse)]
@@ -131,17 +148,17 @@ pub struct GetCommittedDataResultResponse {
 
 #[cw_serde]
 pub struct GetCommittedDataResultsResponse {
-    pub value: HashMap<String, Commitment>,
+    pub value: HashMap<String, Commitment>, // key is hex::encode(public_key)
 }
 
 #[cw_serde]
 pub struct GetRevealedDataResultResponse {
-    pub value: Option<Reveal>,
+    pub value: Option<RevealBody>,
 }
 
 #[cw_serde]
 pub struct GetRevealedDataResultsResponse {
-    pub value: HashMap<String, Reveal>,
+    pub value: HashMap<String, RevealBody>, // key is hex::encode(public_key)
 }
 
 #[cw_serde]
@@ -156,7 +173,7 @@ pub struct GetDataRequestExecutorResponse {
 
 #[cw_serde]
 pub struct GetCommittedExecutorsResponse {
-    pub value: Vec<String>,
+    pub value: Vec<Secpk256k1PublicKey>,
 }
 
 #[cw_serde]

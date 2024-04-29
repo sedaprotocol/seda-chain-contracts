@@ -3,18 +3,15 @@ use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
 use common::state::DataRequest;
-use common::types::Hash;
+use common::types::{Bytes, Hash};
 
 pub mod data_requests {
     use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::hash_to_string};
-    use common::{consts::ZERO_HASH, error::ContractError, msg::PostDataRequestArgs};
+    use common::{error::ContractError, msg::PostDataRequestArgs};
     use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
-    use crate::{
-        state::{DataRequestInputs, DATA_RESULTS},
-        utils::hash_data_request,
-    };
+    use crate::{state::DATA_RESULTS, utils::hash_data_request};
 
     use super::*;
 
@@ -31,108 +28,85 @@ pub mod data_requests {
                 .flatten()
                 .is_some()
     }
+
     /// Posts a data request to the pool
     pub fn post_data_request(
         deps: DepsMut,
         _info: MessageInfo,
         posted_dr: PostDataRequestArgs,
+        seda_payload: Bytes,
+        payback_address: Bytes,
     ) -> Result<Response, ContractError> {
+        // hash the inputs to get the data request id
+        let dr_id = hash_data_request(&posted_dr);
+
         // require the data request id to be unique
-        if data_request_or_result_exists(deps.as_ref(), posted_dr.dr_id) {
+        if data_request_or_result_exists(deps.as_ref(), dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
-        // require dr_binary_id and tally_binary_id to be non-empty
-        if posted_dr.dr_binary_id == ZERO_HASH {
-            return Err(ContractError::EmptyArg("dr_binary_id".to_string()));
-        }
-        if posted_dr.tally_binary_id == ZERO_HASH {
-            return Err(ContractError::EmptyArg("tally_binary_id".to_string()));
-        }
-
-        let dr_inputs = DataRequestInputs {
-            version: posted_dr.version.clone(),
-            dr_binary_id: posted_dr.dr_binary_id,
-            tally_binary_id: posted_dr.tally_binary_id,
-            dr_inputs: posted_dr.dr_inputs.clone(),
-            tally_inputs: posted_dr.tally_inputs.clone(),
-            memo: posted_dr.memo.clone(),
-            replication_factor: posted_dr.replication_factor,
-
-            gas_price: posted_dr.gas_price,
-            gas_limit: posted_dr.gas_limit,
-            tally_gas_limit: posted_dr.tally_gas_limit,
-
-            seda_payload: posted_dr.seda_payload.clone(),
-            payback_address: posted_dr.payback_address.clone(),
-        };
-
-        let reconstructed_dr_id = hash_data_request(dr_inputs);
-
-        // check if the reconstructed dr_id matches the given dr_id
-        if reconstructed_dr_id != posted_dr.dr_id {
-            return Err(ContractError::InvalidDataRequestId(
-                reconstructed_dr_id,
-                posted_dr.dr_id,
-            ));
-        }
+        // TODO: check that the payback address is valid
 
         // save the data request
         let dr = DataRequest {
-            version: posted_dr.version,
-            dr_id: posted_dr.dr_id,
+            id: dr_id,
+            version: posted_dr.clone().version,
+            dr_binary_id: posted_dr.clone().dr_binary_id,
+            dr_inputs: posted_dr.clone().dr_inputs,
+            tally_binary_id: posted_dr.clone().tally_binary_id,
+            tally_inputs: posted_dr.clone().tally_inputs,
+            replication_factor: posted_dr.clone().replication_factor,
+            gas_price: posted_dr.clone().gas_price,
+            gas_limit: posted_dr.clone().gas_limit,
+            memo: posted_dr.clone().memo,
 
-            dr_binary_id: posted_dr.dr_binary_id,
-            tally_binary_id: posted_dr.tally_binary_id,
-            dr_inputs: posted_dr.dr_inputs.clone(),
-            tally_inputs: posted_dr.tally_inputs.clone(),
-            memo: posted_dr.memo.clone(),
-            replication_factor: posted_dr.replication_factor,
-
-            gas_price: posted_dr.gas_price,
-            gas_limit: posted_dr.gas_limit,
-            tally_gas_limit: posted_dr.tally_gas_limit,
-
-            seda_payload: posted_dr.seda_payload.clone(),
-            payback_address: posted_dr.payback_address.clone(),
+            payback_address: payback_address.clone(),
+            seda_payload: seda_payload.clone(),
             commits: HashMap::new(),
             reveals: HashMap::new(),
         };
-        DATA_REQUESTS_POOL.add(deps.storage, posted_dr.dr_id, dr)?;
+        DATA_REQUESTS_POOL.add(deps.storage, dr_id, dr)?;
 
+        // TODO: review this event
         Ok(Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(Binary::from(posted_dr.dr_id.to_vec()))
+            .set_data(Binary::from(dr_id.to_vec()))
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", &hash_to_string(posted_dr.dr_id)),
-                ("dr_binary_id", &hash_to_string(posted_dr.dr_binary_id)),
+                ("dr_id", &hash_to_string(dr_id)),
+                (
+                    "dr_binary_id",
+                    &hash_to_string(posted_dr.clone().dr_binary_id),
+                ),
                 (
                     "tally_binary_id",
-                    &hash_to_string(posted_dr.tally_binary_id),
+                    &hash_to_string(posted_dr.clone().tally_binary_id),
                 ),
                 (
                     "dr_inputs",
-                    &serde_json::to_string(&posted_dr.dr_inputs).unwrap(),
+                    &serde_json::to_string(&posted_dr.clone().dr_inputs).unwrap(),
                 ),
                 (
                     "tally_inputs",
-                    &serde_json::to_string(&posted_dr.tally_inputs).unwrap(),
+                    &serde_json::to_string(&posted_dr.clone().tally_inputs).unwrap(),
                 ),
-                ("memo", &serde_json::to_string(&posted_dr.memo).unwrap()),
+                (
+                    "memo",
+                    &serde_json::to_string(&posted_dr.clone().memo).unwrap(),
+                ),
                 (
                     "replication_factor",
-                    &posted_dr.replication_factor.to_string(),
+                    &posted_dr.clone().replication_factor.to_string(),
                 ),
-                ("gas_price", &posted_dr.gas_price.to_string()),
-                ("gas_limit", &posted_dr.gas_limit.to_string()),
+                ("gas_price", &posted_dr.clone().gas_price.to_string()),
+                ("gas_limit", &posted_dr.clone().gas_limit.to_string()),
                 (
                     "seda_payload",
-                    &serde_json::to_string(&posted_dr.seda_payload).unwrap(),
+                    &serde_json::to_string(&seda_payload).unwrap(),
                 ),
                 (
                     "payback_address",
-                    &serde_json::to_string(&posted_dr.payback_address).unwrap(),
+                    &serde_json::to_string(&payback_address).unwrap(),
                 ),
             ])))
     }
@@ -181,7 +155,6 @@ mod dr_tests {
     use crate::helpers::get_drs_from_pool;
     use crate::helpers::instantiate_dr_contract;
     use crate::utils::string_to_hash;
-    use common::consts::ZERO_HASH;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
@@ -205,7 +178,11 @@ mod dr_tests {
 
         let info = mock_info("anyone", &coins(2, "token"));
 
-        let msg = ExecuteMsg::PostDataRequest { posted_dr: dr_args };
+        let msg = ExecuteMsg::PostDataRequest {
+            posted_dr: dr_args,
+            seda_payload: vec![],
+            payback_address: vec![],
+        };
         // someone posts a data request
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone()).unwrap();
 
@@ -223,7 +200,7 @@ mod dr_tests {
         let (constructed_dr_id, dr_args) = calculate_dr_id_and_args(1, 3);
 
         assert_eq!(
-            Some(construct_dr(constructed_dr_id, dr_args)),
+            Some(construct_dr(constructed_dr_id, dr_args, vec![])),
             received_value.value
         );
 
@@ -251,16 +228,22 @@ mod dr_tests {
         let info = mock_info("anyone", &coins(2, "token"));
         let msg = ExecuteMsg::PostDataRequest {
             posted_dr: dr_args1,
+            seda_payload: vec![],
+            payback_address: vec![],
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         let msg = ExecuteMsg::PostDataRequest {
             posted_dr: dr_args2,
+            seda_payload: vec![],
+            payback_address: vec![],
         };
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
         let msg = ExecuteMsg::PostDataRequest {
             posted_dr: dr_args3,
+            seda_payload: vec![],
+            payback_address: vec![],
         };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -270,9 +253,9 @@ mod dr_tests {
 
         let (constructed_dr_id3, dr_args3) = calculate_dr_id_and_args(3, 3);
 
-        let constructed_dr1 = construct_dr(constructed_dr_id1, dr_args1);
-        let constructed_dr2 = construct_dr(constructed_dr_id2, dr_args2);
-        let constructed_dr3 = construct_dr(constructed_dr_id3, dr_args3);
+        let constructed_dr1 = construct_dr(constructed_dr_id1, dr_args1, vec![]);
+        let constructed_dr2 = construct_dr(constructed_dr_id2, dr_args2, vec![]);
+        let constructed_dr3 = construct_dr(constructed_dr_id3, dr_args3, vec![]);
 
         // fetch all three data requests
 
@@ -338,41 +321,5 @@ mod dr_tests {
         let (constructed_dr_id, _) = calculate_dr_id_and_args(1, 3);
 
         println!("0x{}", hex::encode(constructed_dr_id));
-    }
-
-    #[test]
-    #[should_panic(expected = "InvalidDataRequestId")]
-    fn invalid_data_request_id() {
-        let mut deps = mock_dependencies();
-        let info = mock_info("creator", &coins(2, "token"));
-
-        // instantiate contract
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
-
-        // calculate args then modify the dr_id to be incorrect
-        let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
-        posted_dr.dr_id = string_to_hash("invalid hash");
-
-        let msg = ExecuteMsg::PostDataRequest { posted_dr };
-        let info = mock_info("anyone", &coins(2, "token"));
-        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "EmptyArg")]
-    fn empty_arg() {
-        let mut deps = mock_dependencies();
-        let info = mock_info("creator", &coins(2, "token"));
-
-        // instantiate contract
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
-
-        // calculate args then modify the dr_binary_id to be empty
-        let (_, mut posted_dr) = calculate_dr_id_and_args(1, 3);
-        posted_dr.dr_binary_id = ZERO_HASH;
-
-        let msg = ExecuteMsg::PostDataRequest { posted_dr };
-        let info = mock_info("anyone", &coins(2, "token"));
-        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
 }

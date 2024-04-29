@@ -1,44 +1,9 @@
 use crate::enumerable_map;
 use crate::types::EnumerableMap;
 use common::state::{DataRequest, DataResult};
-use common::types::{Bytes, Hash, Memo};
+use common::types::Hash;
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use semver::Version;
-use serde::{Deserialize, Serialize};
-
-/// Properties of a data request used to calculate its ID hash
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct DataRequestInputs {
-    // DR definition
-    /// Semantic Version String
-    pub version: Version,
-    /// Identifier of DR WASM binary
-    pub dr_binary_id: Hash,
-    /// Inputs for DR WASM binary
-    pub dr_inputs: Bytes,
-    /// Identifier of Tally WASM binary
-    pub tally_binary_id: Hash,
-    /// Inputs for Tally WASM binary
-    pub tally_inputs: Bytes,
-    /// Amount of required DR executors
-    pub replication_factor: u16,
-    /// Amount of SEDA tokens per gas unit
-    pub gas_price: u128,
-    /// Maximum of gas units to be used by data request executors to resolve a data request
-    pub gas_limit: u128,
-    /// Maximum gas units to be used in Tally WASM binary execution
-    pub tally_gas_limit: u128,
-    /// Public info attached to DR
-    pub memo: Memo,
-
-    // Execution Information
-    /// Payback address set by the relayer
-    pub payback_address: Bytes,
-    /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
-    pub seda_payload: Bytes,
-}
 
 /// Upon posting a data request, it is added to this map with a ID
 pub const DATA_REQUESTS_POOL: EnumerableMap<Hash, DataRequest> =
@@ -48,7 +13,6 @@ pub const DATA_REQUESTS_POOL: EnumerableMap<Hash, DataRequest> =
 pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results_pool");
 
 /// Address of the token used for deposit for posting a data request
-// TODO: implement deposit for posting data requests
 pub const TOKEN: Item<String> = Item::new("token");
 
 /// Address of proxy contract which has permission to set the sender on one's behalf

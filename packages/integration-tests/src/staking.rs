@@ -16,6 +16,8 @@ fn deposit_stake_withdraw() {
 
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
         memo: Some("address".to_string()),
+        public_key: vec![],
+        signature: vec![],
     };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
@@ -44,7 +46,10 @@ fn deposit_stake_withdraw() {
     );
 
     // deposit 2 more
-    let msg = ProxyExecuteMsg::DepositAndStake {};
+    let msg = ProxyExecuteMsg::DepositAndStake {
+        public_key: vec![],
+        signature: vec![],
+    };
     let cosmos_msg = proxy_contract.call_with_deposit(msg, 2).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
         .unwrap();
@@ -69,7 +74,11 @@ fn deposit_stake_withdraw() {
     );
 
     // unstake 2
-    let msg = ProxyExecuteMsg::Unstake { amount: 2 };
+    let msg = ProxyExecuteMsg::Unstake {
+        amount: 2,
+        public_key: vec![],
+        signature: vec![],
+    };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
         .unwrap();
@@ -102,7 +111,11 @@ fn deposit_stake_withdraw() {
     assert_eq!(balance_before, 0);
 
     // withdraw 2
-    let msg = ProxyExecuteMsg::Withdraw { amount: 2 };
+    let msg = ProxyExecuteMsg::Withdraw {
+        amount: 2,
+        public_key: vec![],
+        signature: vec![],
+    };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
         .unwrap();

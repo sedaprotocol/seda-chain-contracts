@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
-use crate::state::DataRequestInputs;
 use crate::utils::{hash_data_request, string_to_hash};
 use common::msg::PostDataRequestArgs;
-use common::state::{DataRequest, Reveal};
+use common::state::{DataRequest, RevealBody};
 use common::types::Hash;
 use common::types::{Bytes, Commitment};
 
@@ -32,11 +31,6 @@ pub fn calculate_dr_id_and_args(
     // set by dr creator
     let gas_price: u128 = 10;
     let gas_limit: u128 = 10;
-    let tally_gas_limit: u128 = 10;
-
-    // set by relayer and SEDA protocol
-    let seda_payload: Bytes = Vec::new();
-    let payback_address: Bytes = Vec::new();
 
     // memo
     let chain_id: u128 = 31337;
@@ -53,7 +47,7 @@ pub fn calculate_dr_id_and_args(
         build: BuildMetadata::EMPTY,
     };
 
-    let constructed_dr_input = DataRequestInputs {
+    let constructed_dr_input = PostDataRequestArgs {
         version: version.clone(),
         dr_binary_id: dr_binary_id.clone(),
         tally_binary_id: tally_binary_id.clone(),
@@ -61,19 +55,13 @@ pub fn calculate_dr_id_and_args(
         tally_inputs: tally_inputs.clone(),
         memo: memo.clone(),
         replication_factor,
-
         gas_price,
         gas_limit,
-        tally_gas_limit,
-
-        seda_payload: seda_payload.clone(),
-        payback_address: payback_address.clone(),
     };
-    let constructed_dr_id = hash_data_request(constructed_dr_input);
+    let constructed_dr_id = hash_data_request(&constructed_dr_input);
 
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         version,
-        dr_id: constructed_dr_id.clone(),
         dr_binary_id,
         tally_binary_id,
         dr_inputs,
@@ -82,17 +70,18 @@ pub fn calculate_dr_id_and_args(
         replication_factor,
         gas_price,
         gas_limit,
-        tally_gas_limit,
-        seda_payload,
-        payback_address,
     };
 
     (constructed_dr_id, posted_dr)
 }
 
-pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs) -> DataRequest {
+pub fn construct_dr(
+    constructed_dr_id: Hash,
+    dr_args: PostDataRequestArgs,
+    seda_payload: Bytes,
+) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
-    let reveals: HashMap<String, Reveal> = HashMap::new();
+    let reveals: HashMap<String, RevealBody> = HashMap::new();
 
     let version = Version {
         major: 1,
@@ -105,7 +94,7 @@ pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs) -> Da
     let payback_address: Bytes = Vec::new();
     DataRequest {
         version,
-        dr_id: constructed_dr_id,
+        id: constructed_dr_id,
 
         dr_binary_id: dr_args.dr_binary_id,
         tally_binary_id: dr_args.tally_binary_id,
@@ -115,8 +104,7 @@ pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs) -> Da
         replication_factor: dr_args.replication_factor,
         gas_price: dr_args.gas_price,
         gas_limit: dr_args.gas_limit,
-        tally_gas_limit: dr_args.tally_gas_limit,
-        seda_payload: dr_args.seda_payload,
+        seda_payload,
         commits,
         reveals,
         payback_address,

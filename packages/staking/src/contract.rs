@@ -1,4 +1,5 @@
 use crate::allowlist::allow_list;
+use crate::config::config;
 use crate::executors_registry::data_request_executors;
 use crate::staking::staking;
 use crate::state::{CONFIG, OWNER, PENDING_OWNER, PROXY_CONTRACT, TOKEN};
@@ -53,25 +54,44 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::RegisterDataRequestExecutor { memo, sender } => {
-            data_request_executors::register_data_request_executor(deps, info, memo, sender)
-        }
-        ExecuteMsg::UnregisterDataRequestExecutor { sender } => {
-            data_request_executors::unregister_data_request_executor(deps, info, sender)
-        }
-        ExecuteMsg::DepositAndStake { sender } => {
-            staking::deposit_and_stake(deps, env, info, sender)
-        }
-        ExecuteMsg::Unstake { amount, sender } => staking::unstake(deps, env, info, amount, sender),
-        ExecuteMsg::Withdraw { amount, sender } => {
-            staking::withdraw(deps, env, info, amount, sender)
-        }
+        ExecuteMsg::RegisterDataRequestExecutor {
+            public_key,
+            signature,
+            memo,
+            sender,
+        } => data_request_executors::register_data_request_executor(
+            deps, info, public_key, signature, memo, sender,
+        ),
+        ExecuteMsg::UnregisterDataRequestExecutor {
+            public_key,
+            signature,
+            sender,
+        } => data_request_executors::unregister_data_request_executor(
+            deps, info, public_key, signature, sender,
+        ),
+        ExecuteMsg::DepositAndStake {
+            public_key,
+            signature,
+            sender,
+        } => staking::deposit_and_stake(deps, env, info, public_key, signature, sender),
+        ExecuteMsg::Unstake {
+            public_key,
+            signature,
+            amount,
+            sender,
+        } => staking::unstake(deps, env, info, public_key, signature, amount, sender),
+        ExecuteMsg::Withdraw {
+            public_key,
+            signature,
+            amount,
+            sender,
+        } => staking::withdraw(deps, env, info, public_key, signature, amount, sender),
         ExecuteMsg::TransferOwnership { new_owner } => {
-            staking::transfer_ownership(deps, env, info, new_owner)
+            config::transfer_ownership(deps, env, info, new_owner)
         }
-        ExecuteMsg::AcceptOwnership {} => staking::accept_ownership(deps, env, info),
+        ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
         ExecuteMsg::SetStakingConfig { config } => {
-            staking::set_staking_config(deps, env, info, config)
+            config::set_staking_config(deps, env, info, config)
         }
         ExecuteMsg::AddToAllowlist { address, sender } => {
             allow_list::add_to_allowlist(deps, info, sender, address)
@@ -138,7 +158,9 @@ mod init_tests {
         let res = helper_register_executor(
             deps.as_mut(),
             info,
-            Some("address".to_string()),
+            vec![0; 33],
+            vec![0; 33],
+            None,
             Some("sender".to_string()),
         );
         assert_eq!(res.is_err_and(|x| x == ContractError::NotProxy), true);
@@ -149,7 +171,9 @@ mod init_tests {
         let _res = helper_register_executor(
             deps.as_mut(),
             info,
-            Some("address".to_string()),
+            vec![0; 33],
+            vec![0; 33],
+            None,
             Some("sender".to_string()),
         )
         .unwrap();

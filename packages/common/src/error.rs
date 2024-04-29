@@ -1,4 +1,3 @@
-use crate::types::Hash;
 use cosmwasm_std::StdError;
 use cw_utils::ParseReplyError;
 use hex::FromHexError;
@@ -22,12 +21,12 @@ pub enum ContractError {
     NoPendingOwnerFound,
     #[error("NotOnAllowlist: Address is not on the allowlist")]
     NotOnAllowlist,
+    #[error("InvalidSignature: Invalid signature")]
+    InvalidSignature,
 
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(u128, u128),
-    #[error("InvalidDataRequestId: Invalid data request id, expected: {0:#?}, actual: {1:#?}")]
-    InvalidDataRequestId(Hash, Hash),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
     #[error("IneligibleExecutor: Caller is not an eligible data request executor")]

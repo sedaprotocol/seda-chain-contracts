@@ -80,7 +80,8 @@ mod executers_tests {
 
         // alice tries to register a data request executor, but she's not on the allowlist
         let info = mock_info("alice", &coins(100, "token"));
-        let res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None);
+        let res =
+            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
         assert_eq!(res.is_err_and(|x| x == ContractError::NotOnAllowlist), true);
 
         // add alice to the allowlist
@@ -90,16 +91,31 @@ mod executers_tests {
 
         // now alice can register a data request executor
         let info = mock_info("alice", &coins(100, "token"));
-        let res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None);
+        let res =
+            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
         assert!(res.is_ok());
 
         // alice unstakes, withdraws, then unregisters herself
         let info = mock_info("alice", &coins(0, "token"));
-        let _res = helper_unstake(deps.as_mut(), info.clone(), 100, None);
+        let _res = helper_unstake(
+            deps.as_mut(),
+            info.clone(),
+            vec![0; 33],
+            vec![0; 33],
+            100,
+            None,
+        );
         let info = mock_info("alice", &coins(0, "token"));
-        let _res = helper_withdraw(deps.as_mut(), info.clone(), 100, None);
+        let _res = helper_withdraw(
+            deps.as_mut(),
+            info.clone(),
+            vec![0; 33],
+            vec![0; 33],
+            100,
+            None,
+        );
         let info = mock_info("alice", &coins(0, "token"));
-        let res = helper_unregister_executor(deps.as_mut(), info, None);
+        let res = helper_unregister_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None);
         println!("{:?}", res);
         assert!(res.is_ok());
 
@@ -110,7 +126,8 @@ mod executers_tests {
 
         // now alice can't register a data request executor
         let info = mock_info("alice", &coins(2, "token"));
-        let res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None);
+        let res =
+            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
         assert_eq!(res.is_err_and(|x| x == ContractError::NotOnAllowlist), true);
 
         // update the config to disable the allowlist
@@ -125,7 +142,8 @@ mod executers_tests {
 
         // now alice can register a data request executor
         let info = mock_info("alice", &coins(100, "token"));
-        let res = helper_register_executor(deps.as_mut(), info, Some("address".to_string()), None);
+        let res =
+            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
         assert!(res.is_ok());
     }
 }

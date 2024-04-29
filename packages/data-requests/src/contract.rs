@@ -40,19 +40,27 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::PostDataRequest { posted_dr } => {
-            data_requests::post_data_request(deps, info, posted_dr)
-        }
+        ExecuteMsg::PostDataRequest {
+            posted_dr,
+            seda_payload,
+            payback_address,
+        } => data_requests::post_data_request(deps, info, posted_dr, seda_payload, payback_address),
+
         ExecuteMsg::CommitDataResult {
             dr_id,
             commitment,
+            proof,
+            public_key,
             sender,
-        } => data_request_results::commit_result(deps, info, dr_id, commitment, sender),
+        } => data_request_results::commit_result(
+            deps, info, dr_id, commitment, proof, public_key, sender,
+        ),
         ExecuteMsg::RevealDataResult {
             dr_id,
             reveal,
+            signature,
             sender,
-        } => data_request_results::reveal_result(deps, info, env, dr_id, reveal, sender),
+        } => data_request_results::reveal_result(deps, info, env, dr_id, reveal, signature, sender),
     }
 }
 

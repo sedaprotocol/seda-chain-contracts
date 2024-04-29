@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataRequest {
     /// Identifier
-    pub dr_id: Hash,
+    pub id: Hash,
 
     // DR definition
     /// Semantic Version String
@@ -27,8 +27,6 @@ pub struct DataRequest {
     pub gas_price: u128,
     /// Maximum of gas units to be used by data request executors to resolve a data request
     pub gas_limit: u128,
-    /// Maximum gas units to be used in Tally WASM binary execution
-    pub tally_gas_limit: u128,
     /// Public info attached to DR
     pub memo: Memo,
 
@@ -39,16 +37,13 @@ pub struct DataRequest {
     pub seda_payload: Bytes,
     /// Commitments submitted by executors
     pub commits: HashMap<String, Commitment>,
-    /// Reveals submitted by executors
-    pub reveals: HashMap<String, Reveal>,
+    /// Reveals submitted by executors  
+    pub reveals: HashMap<String, RevealBody>,
 }
 
 /// Represents a resolved data result
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct DataResult {
-    /// Identifier
-    pub result_id: Hash,
-
     // DR Result
     /// Semantic Version String
     pub version: Version,
@@ -69,11 +64,13 @@ pub struct DataResult {
     pub seda_payload: Bytes,
 }
 
-/// A revealed data request with an attached reveal and salt
+/// A revealed data request result that is hashed and signed by the executor
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct Reveal {
-    pub reveal: String,
-    pub salt: String,
+pub struct RevealBody {
+    pub salt: [u8; 32],
+    pub exit_code: u8,
+    pub gas_used: u128,
+    pub reveal: Bytes,
 }
 
 /// A data request executor with staking info and optional p2p multi address

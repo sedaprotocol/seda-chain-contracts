@@ -9,10 +9,12 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 fn post_data_request() {
     let (mut app, proxy_contract) = proper_instantiate();
 
-    let (_, posted_dr) = calculate_dr_id_and_args(1, 3);
+    let posted_dr = calculate_dr_id_and_args(1, 3);
     // post the data request
     let msg = ProxyExecuteMsg::PostDataRequest {
-        posted_dr: Box::new(posted_dr),
+        posted_dr: posted_dr,
+        seda_payload: "".into(),
+        payback_address: "".into(),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     let res = app
@@ -44,7 +46,7 @@ fn post_data_request() {
         .query_wasm_smart(proxy_contract.addr(), &msg)
         .unwrap();
     assert_eq!(res.value.len(), 1);
-    assert_eq!(res.value.first().unwrap().dr_id, dr_id.clone());
+    assert_eq!(res.value.first().unwrap().id, dr_id.clone());
 
     // non-existent data request should fail
     let msg = ProxyQueryMsg::GetDataRequest {

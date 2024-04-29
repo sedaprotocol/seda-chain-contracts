@@ -1,14 +1,13 @@
 use common::msg::PostDataRequestArgs;
-use common::state::Reveal;
+use common::state::RevealBody;
 use common::types::Bytes;
 use common::types::Hash;
+use common::types::Secpk256k1PublicKey;
 use cosmwasm_std::{
     to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg,
 };
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
-use data_requests::state::DataRequestInputs;
-use data_requests::utils::hash_data_request;
 use data_requests::utils::string_to_hash;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
@@ -23,6 +22,12 @@ pub const EXECUTOR_2: &str = "executor2";
 pub const EXECUTOR_3: &str = "executor3";
 const OWNER: &str = "owner";
 pub const NATIVE_DENOM: &str = "seda";
+
+// TODO: replace with actual public key
+pub const EXECUTOR_1_PUBLIC_KEY: [u8; 33] = [
+    4, 16, 33, 180, 87, 201, 212, 51, 116, 66, 131, 168, 106, 91, 191, 79, 37, 55, 151, 221, 69,
+    34, 229, 16, 1, 146, 198, 52, 51, 41, 121, 63, 75,
+];
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -226,9 +231,16 @@ pub fn helper_commit_result(
     proxy_contract: CwTemplateContract,
     dr_id: Hash,
     commitment: Hash,
+    proof: Bytes,
+    public_key: Secpk256k1PublicKey,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
-    let msg = ProxyExecuteMsg::CommitDataResult { dr_id, commitment };
+    let msg = ProxyExecuteMsg::CommitDataResult {
+        dr_id,
+        commitment,
+        proof,
+        public_key,
+    };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
 }
@@ -237,10 +249,15 @@ pub fn helper_reveal_result(
     app: &mut App,
     proxy_contract: CwTemplateContract,
     dr_id: Hash,
-    reveal: Reveal,
+    reveal: RevealBody,
+    signature: Vec<u8>,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
-    let msg = ProxyExecuteMsg::RevealDataResult { dr_id, reveal };
+    let msg = ProxyExecuteMsg::RevealDataResult {
+        dr_id,
+        reveal,
+        signature,
+    };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
 }
@@ -252,16 +269,15 @@ pub fn helper_post_dr(
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
     let msg = ProxyExecuteMsg::PostDataRequest {
-        posted_dr: Box::new(posted_dr),
+        posted_dr: posted_dr,
+        seda_payload: Vec::new(),
+        payback_address: Vec::new(),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())
 }
 
-pub fn calculate_dr_id_and_args(
-    nonce: u128,
-    replication_factor: u16,
-) -> (Hash, PostDataRequestArgs) {
+pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let dr_binary_id: Hash = string_to_hash("dr_binary_id");
     let tally_binary_id: Hash = string_to_hash("tally_binary_id");
     let dr_inputs: Bytes = Vec::new();
@@ -271,10 +287,6 @@ pub fn calculate_dr_id_and_args(
     let gas_price: u128 = 10;
     let gas_limit: u128 = 10;
     let tally_gas_limit: u128 = 10;
-
-    // set by relayer and SEDA protocol
-    let seda_payload: Bytes = Vec::new();
-    let payback_address: Bytes = Vec::new();
 
     // memo
     let chain_id: u128 = 31337;
@@ -290,27 +302,8 @@ pub fn calculate_dr_id_and_args(
         build: BuildMetadata::EMPTY,
     };
 
-    let constructed_dr_input = DataRequestInputs {
-        version: version.clone(),
-        dr_binary_id: dr_binary_id.clone(),
-        tally_binary_id: tally_binary_id.clone(),
-        dr_inputs: dr_inputs.clone(),
-        tally_inputs: tally_inputs.clone(),
-        memo: memo.clone(),
-        replication_factor,
-
-        gas_price,
-        gas_limit,
-        tally_gas_limit,
-
-        seda_payload: seda_payload.clone(),
-        payback_address: payback_address.clone(),
-    };
-    let constructed_dr_id = hash_data_request(constructed_dr_input);
-
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         version,
-        dr_id: constructed_dr_id.clone(),
         dr_binary_id,
         tally_binary_id,
         dr_inputs,
@@ -319,10 +312,7 @@ pub fn calculate_dr_id_and_args(
         replication_factor,
         gas_price,
         gas_limit,
-        tally_gas_limit,
-        seda_payload,
-        payback_address,
     };
 
-    (constructed_dr_id, posted_dr)
+    posted_dr
 }

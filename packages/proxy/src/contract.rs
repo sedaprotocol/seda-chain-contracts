@@ -89,7 +89,11 @@ pub fn execute(
         // Delegated calls to contracts
 
         // DataRequests
-        ProxyExecuteMsg::PostDataRequest { posted_dr } => {
+        ProxyExecuteMsg::PostDataRequest {
+            posted_dr,
+            seda_payload,
+            payback_address,
+        } => {
             // we create a submessage here rather than a fire-and-forget
             // message to the DataRequest contract in order to return the dr_id
             // in the data field of this call on the Proxy contract.
@@ -98,7 +102,9 @@ pub fn execute(
                     CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
                         msg: to_json_binary(&DataRequestsExecuteMsg::PostDataRequest {
-                            posted_dr: *posted_dr,
+                            posted_dr,
+                            seda_payload,
+                            payback_address,
                         })?,
                         funds: vec![],
                     }),
@@ -106,23 +112,35 @@ pub fn execute(
                 ))
                 .add_attribute("action", "post_data_request"))
         }
-        ProxyExecuteMsg::CommitDataResult { dr_id, commitment } => Ok(Response::new()
+        ProxyExecuteMsg::CommitDataResult {
+            dr_id,
+            commitment,
+            proof,
+            public_key,
+        } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
+                    proof,
+                    public_key,
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
             }))
             .add_attribute("action", "commit_data_result")),
-        ProxyExecuteMsg::RevealDataResult { dr_id, reveal } => Ok(Response::new()
+        ProxyExecuteMsg::RevealDataResult {
+            dr_id,
+            reveal,
+            signature,
+        } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&DataRequestsExecuteMsg::RevealDataResult {
                     dr_id,
                     reveal,
+                    signature,
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
@@ -130,7 +148,11 @@ pub fn execute(
             .add_attribute("action", "reveal_data_result")),
 
         // Staking
-        ProxyExecuteMsg::RegisterDataRequestExecutor { memo } => {
+        ProxyExecuteMsg::RegisterDataRequestExecutor {
+            public_key,
+            signature,
+            memo,
+        } => {
             // require token deposit
             let token = TOKEN.load(deps.storage)?;
             let amount = get_attached_funds(&info.funds, &token)?;
@@ -139,6 +161,8 @@ pub fn execute(
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
+                        public_key,
+                        signature,
                         memo,
                         sender: Some(info.sender.to_string()),
                     })?,
@@ -149,16 +173,24 @@ pub fn execute(
                 }))
                 .add_attribute("action", "register_data_request_executor"))
         }
-        ProxyExecuteMsg::UnregisterDataRequestExecutor {} => Ok(Response::new()
+        ProxyExecuteMsg::UnregisterDataRequestExecutor {
+            public_key,
+            signature,
+        } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
+                    public_key,
+                    signature,
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
             }))
             .add_attribute("action", "unregister_data_request_executor")),
-        ProxyExecuteMsg::DepositAndStake {} => {
+        ProxyExecuteMsg::DepositAndStake {
+            public_key,
+            signature,
+        } => {
             // require token deposit
             let token = TOKEN.load(deps.storage)?;
             let amount = get_attached_funds(&info.funds, &token)?;
@@ -167,6 +199,8 @@ pub fn execute(
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::DepositAndStake {
+                        public_key,
+                        signature,
                         sender: Some(info.sender.to_string()),
                     })?,
                     funds: vec![Coin {
@@ -176,20 +210,32 @@ pub fn execute(
                 }))
                 .add_attribute("action", "deposit_and_stake"))
         }
-        ProxyExecuteMsg::Unstake { amount } => Ok(Response::new()
+        ProxyExecuteMsg::Unstake {
+            public_key,
+            signature,
+            amount,
+        } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::Unstake {
+                    public_key,
+                    signature,
                     amount,
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
             }))
             .add_attribute("action", "unstake")),
-        ProxyExecuteMsg::Withdraw { amount } => Ok(Response::new()
+        ProxyExecuteMsg::Withdraw {
+            public_key,
+            signature,
+            amount,
+        } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::Withdraw {
+                    public_key,
+                    signature,
                     amount,
                     sender: Some(info.sender.to_string()),
                 })?,
@@ -411,7 +457,10 @@ mod init_tests {
         let info = mock_info("creator", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let msg = ProxyExecuteMsg::DepositAndStake;
+        let msg = ProxyExecuteMsg::DepositAndStake {
+            public_key: vec![0; 33],
+            signature: vec![0; 33],
+        };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
