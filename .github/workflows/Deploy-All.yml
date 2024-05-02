@@ -60,15 +60,16 @@ jobs:
           --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
           cosmwasm/rust-optimizer:0.14.0
 
-      - name: Download seda-chaind binary
+      - name: Download sedad binary
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          extension-matching: disable
           repo: sedaprotocol/seda-chain
+          platform: sedad
 
-      - name: Move seda-chaind to current directory
+      - name: Move sedad to current directory
         run: |
-          cp /opt/hostedtoolcache/sedaprotocol/seda-chain/latest/linux-x64/seda-chaind .
+          cp /opt/hostedtoolcache/sedaprotocol/seda-chain/latest/linux-x64/sedad .
 
       - name: Import key
         env:
@@ -76,7 +77,7 @@ jobs:
         run: |
           sudo apt-get install -y expect
           output=$(expect -c "
-            spawn ./seda-chaind keys add dev_account --recover --keyring-backend test --keyring-dir .
+            spawn ./sedad keys add dev_account --recover --keyring-backend test --keyring-dir .
             expect {
               \"> Enter your bip39 mnemonic\" {
                 send \"$MNEMONIC\r\"
@@ -101,7 +102,7 @@ jobs:
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/proxy_contract.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./sedad tx wasm store ./artifacts/proxy_contract.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"
           echo "proxy_store_tx_hash=$TXHASH" >> $GITHUB_ENV
@@ -113,7 +114,7 @@ jobs:
         id: query-proxy
         run: |
           nodeUrl=${{ env.NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.proxy_store_tx_hash }} --node ${nodeUrl} --output json)"
+          OUTPUT="$(./sedad query tx ${{ env.proxy_store_tx_hash }} --node ${nodeUrl} --output json)"
           CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "proxy_code_id=$CODE_ID" >> $GITHUB_ENV
@@ -127,7 +128,7 @@ jobs:
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.proxy_code_id }} '{"token":"aseda"}' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label proxy${{ env.proxy_code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+          OUTPUT=$(./sedad tx wasm instantiate ${{ env.proxy_code_id }} '{"token":"aseda"}' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label proxy${{ env.proxy_code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "Instantiate transaction is $TXHASH"
           echo "proxy_instantiate_tx_hash=$TXHASH" >> $GITHUB_ENV
@@ -138,7 +139,7 @@ jobs:
       - name: Find the Proxy address
         run: |
           nodeUrl=${{ env.NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.proxy_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
+          OUTPUT="$(./sedad query tx ${{ env.proxy_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
           CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
           echo "proxy_address=$CONTRACT_ADDRESS" >> $GITHUB_ENV
@@ -154,7 +155,7 @@ jobs:
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/data_requests.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./sedad tx wasm store ./artifacts/data_requests.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"
           echo "dr_store_tx_hash=$TXHASH" >> $GITHUB_ENV
@@ -166,7 +167,7 @@ jobs:
         id: query-dr
         run: |
           nodeUrl=${{ env.NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.dr_store_tx_hash }} --node ${nodeUrl} --output json)"
+          OUTPUT="$(./sedad query tx ${{ env.dr_store_tx_hash }} --node ${nodeUrl} --output json)"
           CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "dr_code_id=$CODE_ID" >> $GITHUB_ENV
@@ -180,7 +181,7 @@ jobs:
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.dr_code_id }} '{"token":"aseda", "proxy": ${{ toJSON(env.proxy_address) }} }' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label dr${{ env.dr_code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+          OUTPUT=$(./sedad tx wasm instantiate ${{ env.dr_code_id }} '{"token":"aseda", "proxy": ${{ toJSON(env.proxy_address) }} }' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label dr${{ env.dr_code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "Instantiate transaction is $TXHASH"
           echo "dr_instantiate_tx_hash=$TXHASH" >> $GITHUB_ENV
@@ -191,7 +192,7 @@ jobs:
       - name: Find the DataRequests address
         run: |
           nodeUrl=${{ env.NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.dr_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
+          OUTPUT="$(./sedad query tx ${{ env.dr_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
           CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
           echo "dr_address=$CONTRACT_ADDRESS" >> $GITHUB_ENV
@@ -207,7 +208,7 @@ jobs:
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT="$(./seda-chaind tx wasm store ./artifacts/staking.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./sedad tx wasm store ./artifacts/staking.wasm --node ${nodeUrl} --from ${devAccount} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo $OUTPUT | jq -r '.txhash')
           echo "Store transaction is $TXHASH"
           echo "staking_store_tx_hash=$TXHASH" >> $GITHUB_ENV
@@ -219,7 +220,7 @@ jobs:
         id: query-staking
         run: |
           nodeUrl=${{ env.NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.staking_store_tx_hash }} --node ${nodeUrl} --output json)"
+          OUTPUT="$(./sedad query tx ${{ env.staking_store_tx_hash }} --node ${nodeUrl} --output json)"
           CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
           echo "Code ID is $CODE_ID"
           echo "staking_code_id=$CODE_ID" >> $GITHUB_ENV
@@ -233,7 +234,7 @@ jobs:
           nodeUrl=${{ env.NODE_URL }}
           devAccount=${{ env.DEV_ACCOUNT }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT=$(./seda-chaind tx wasm instantiate ${{ env.staking_code_id }} '{"token":"aseda", "proxy": ${{ toJSON(env.proxy_address) }} }' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label staking${{ env.staking_code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
+          OUTPUT=$(./sedad tx wasm instantiate ${{ env.staking_code_id }} '{"token":"aseda", "proxy": ${{ toJSON(env.proxy_address) }} }' --no-admin --from ${devAccount} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --label staking${{ env.staking_code_id }} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "Instantiate transaction is $TXHASH"
           echo "staking_instantiate_tx_hash=$TXHASH" >> $GITHUB_ENV
@@ -244,7 +245,7 @@ jobs:
       - name: Find the Staking address
         run: |
           nodeUrl=${{ env.NODE_URL }}
-          OUTPUT="$(./seda-chaind query tx ${{ env.staking_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
+          OUTPUT="$(./sedad query tx ${{ env.staking_instantiate_tx_hash }} --node ${nodeUrl} --output json)"
           CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
           echo "Contract address is $CONTRACT_ADDRESS"
           echo "staking_address=$CONTRACT_ADDRESS" >> $GITHUB_ENV
@@ -255,7 +256,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT="$(./seda-chaind tx wasm execute ${{ env.proxy_address }} '{"set_data_requests":{"contract": ${{ toJSON(env.dr_address) }} }}' --from ${{ env.DEV_ACCOUNT }} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./sedad tx wasm execute ${{ env.proxy_address }} '{"set_data_requests":{"contract": ${{ toJSON(env.dr_address) }} }}' --from ${{ env.DEV_ACCOUNT }} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "SetDataRequests transaction is $TXHASH"
 
@@ -266,7 +267,7 @@ jobs:
         run: |
           nodeUrl=${{ env.NODE_URL }}
           chainId=${{ env.CHAIN_ID }}
-          OUTPUT="$(./seda-chaind tx wasm execute ${{ env.proxy_address }} '{"set_staking":{"contract": ${{ toJSON(env.staking_address) }} }}' --from ${{ env.DEV_ACCOUNT }} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
+          OUTPUT="$(./sedad tx wasm execute ${{ env.proxy_address }} '{"set_staking":{"contract": ${{ toJSON(env.staking_address) }} }}' --from ${{ env.DEV_ACCOUNT }} --node ${nodeUrl} --keyring-dir . --keyring-backend test --chain-id=${chainId} --gas-prices 0.1aseda --gas auto --gas-adjustment 1.3 -y --output json)"
           TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
           echo "SetStaking transaction is $TXHASH"
 
