@@ -83,7 +83,7 @@ jobs:
           docker run --rm -v $GITHUB_WORKSPACE:/code \
           --mount type=volume,source=contract_cache,target=/code/target \
           --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-          cosmwasm/rust-optimizer:0.12.11
+          cosmwasm/rust-optimizer:0.14.0
 
       - name: Download seda-chaind binary
         uses: jaxxstorm/action-install-gh-release@v1.10.0
