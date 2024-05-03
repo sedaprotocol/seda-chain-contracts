@@ -23,10 +23,9 @@ overflow-checks = true
 anyhow = "1.0.81"
 arbitrary = "1.3"
 common = { path = "./packages/common" }
-cosmwasm-crypto ="1.5.3"
+cosmwasm-crypto = "1.5.3"
 cosmwasm-schema = "1.5"
 cosmwasm-std = { version = "1.5" }
-cosmwasm-storage = "1.5.2"
 cw-multi-test = "1.0.0"
 cw-storage-plus = "1.2.0"
 cw2 = "1.1.2"
