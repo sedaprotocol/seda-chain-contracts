@@ -96,7 +96,10 @@ pub enum ProxyQueryMsg {
         limit: Option<u128>,
     },
     #[returns(GetCommittedDataResultResponse)]
-    GetCommittedDataResult { dr_id: Hash, executor: Addr },
+    GetCommittedDataResult {
+        dr_id: Hash,
+        executor: Secpk256k1PublicKey,
+    },
     #[returns(GetCommittedDataResultsResponse)]
     GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]

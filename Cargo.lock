@@ -525,6 +525,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "common",
+ "cosmwasm-crypto",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-multi-test",
@@ -533,6 +534,7 @@ dependencies = [
  "cw2",
  "data-requests",
  "hex",
+ "k256",
  "proxy-contract",
  "schemars",
  "semver",

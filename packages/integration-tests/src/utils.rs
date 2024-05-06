@@ -1,3 +1,4 @@
+use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use common::msg::PostDataRequestArgs;
 use common::state::RevealBody;
 use common::types::Bytes;
@@ -9,6 +10,7 @@ use cosmwasm_std::{
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
 use data_requests::utils::string_to_hash;
+use k256::ecdsa::RecoveryId;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use semver::{BuildMetadata, Prerelease, Version};
@@ -16,18 +18,46 @@ use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
 
+use k256::{
+    ecdsa::{SigningKey, VerifyingKey},
+    elliptic_curve::rand_core::OsRng,
+};
+
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 pub const EXECUTOR_2: &str = "executor2";
-pub const EXECUTOR_3: &str = "executor3";
 const OWNER: &str = "owner";
 pub const NATIVE_DENOM: &str = "seda";
 
-// TODO: replace with actual public key
-pub const EXECUTOR_1_PUBLIC_KEY: [u8; 33] = [
-    4, 16, 33, 180, 87, 201, 212, 51, 116, 66, 131, 168, 106, 91, 191, 79, 37, 55, 151, 221, 69,
-    34, 229, 16, 1, 146, 198, 52, 51, 41, 121, 63, 75,
-];
+pub struct TestExecutor {
+    pub name: &'static str,
+    pub signing_key: SigningKey,
+    pub verifying_key: VerifyingKey,
+    pub public_key: Secpk256k1PublicKey,
+}
+
+impl TestExecutor {
+    pub fn new(name: &'static str) -> Self {
+        let signing_key = SigningKey::random(&mut OsRng); // Serialize with `::to_bytes()`
+        let verifying_key = VerifyingKey::from(&signing_key);
+        TestExecutor {
+            name,
+            signing_key,
+            verifying_key,
+            public_key: verifying_key.to_sec1_bytes().to_vec(),
+        }
+    }
+
+    pub fn sign(&mut self, msg: &[&[u8]]) -> (Vec<u8>, RecoveryId) {
+        let mut hasher = Keccak256::new();
+        for m in msg {
+            hasher.update(m);
+        }
+        let hash = hasher.finalize();
+        let (signature, rid) = self.signing_key.sign_recoverable(hash.as_ref()).unwrap();
+        (signature.to_vec(), rid)
+    }
+}
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -76,7 +106,7 @@ impl CwTemplateContract {
     ) -> cw_multi_test::SudoMsg {
         let msg = to_json_binary(&msg.into()).unwrap();
         cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
-            contract_addr: self.addr().into(),
+            contract_addr: self.addr(),
             message: msg,
         })
     }
@@ -226,19 +256,40 @@ pub fn calculate_commitment(reveal: &str, salt: &str) -> Hash {
     hasher.finalize().into()
 }
 
+pub fn helper_reg_dr_executor(
+    app: &mut App,
+    proxy_contract: CwTemplateContract,
+    executor: &mut TestExecutor,
+    memo: Option<String>,
+) -> Result<AppResponse, anyhow::Error> {
+    let contract_call_bytes = "register_data_request_executor".as_bytes();
+    let (signature, _) = if let Some(m) = memo.as_ref() {
+        executor.sign(&[&contract_call_bytes, m.as_bytes()])
+    } else {
+        executor.sign(&[&contract_call_bytes])
+    };
+    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
+        public_key: executor.public_key.clone(),
+        signature,
+        memo,
+    };
+    let cosmos_msg = proxy_contract
+        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
+        .unwrap();
+    app.execute(Addr::unchecked(executor.name), cosmos_msg.clone())
+}
+
 pub fn helper_commit_result(
     app: &mut App,
     proxy_contract: CwTemplateContract,
     dr_id: Hash,
     commitment: Hash,
-    proof: Bytes,
     public_key: Secpk256k1PublicKey,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
     let msg = ProxyExecuteMsg::CommitDataResult {
         dr_id,
         commitment,
-        proof,
         public_key,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
@@ -269,7 +320,7 @@ pub fn helper_post_dr(
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
     let msg = ProxyExecuteMsg::PostDataRequest {
-        posted_dr: posted_dr,
+        posted_dr,
         seda_payload: Vec::new(),
         payback_address: Vec::new(),
     };
@@ -286,7 +337,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     // set by dr creator
     let gas_price: u128 = 10;
     let gas_limit: u128 = 10;
-    let tally_gas_limit: u128 = 10;
+    let _tally_gas_limit: u128 = 10;
 
     // memo
     let chain_id: u128 = 31337;
