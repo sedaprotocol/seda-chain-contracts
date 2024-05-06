@@ -38,7 +38,6 @@ pub mod data_request_results {
         info: MessageInfo,
         dr_id: Hash,
         commitment: Hash,
-        _proof: Bytes,
         public_key: Secpk256k1PublicKey,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -301,7 +300,6 @@ mod data_request_result_tests {
             dr_id: string_to_hash("dr_id"),
             commitment: string_to_hash("commitment"),
             sender: Some("someone".to_string()),
-            proof: vec![],
             public_key: vec![],
         };
         let info = mock_info("anyone", &[]);

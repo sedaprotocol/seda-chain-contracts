@@ -115,7 +115,6 @@ pub fn execute(
         ProxyExecuteMsg::CommitDataResult {
             dr_id,
             commitment,
-            proof,
             public_key,
         } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -123,7 +122,6 @@ pub fn execute(
                 msg: to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
-                    proof,
                     public_key,
                     sender: Some(info.sender.to_string()),
                 })?,

@@ -40,7 +40,6 @@ pub enum ProxyExecuteMsg {
     CommitDataResult {
         dr_id: Hash,
         commitment: Hash,
-        proof: Bytes,
         public_key: Secpk256k1PublicKey,
     },
     RevealDataResult {
