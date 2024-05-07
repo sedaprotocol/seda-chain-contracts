@@ -53,7 +53,7 @@ impl TestExecutor {
         hasher.finalize().into()
     }
 
-    pub fn sign<I>(&mut self, msg: I) -> Signature
+    pub fn sign<I>(&self, msg: I) -> Signature
     where
         I: IntoIterator<Item = Vec<u8>>,
     {
@@ -291,7 +291,7 @@ pub fn reveal_hash(reveal: &RevealBody, salt: Option<&'static str>) -> (Hash, Ve
 pub fn helper_reg_dr_executor(
     app: &mut App,
     proxy_contract: CwTemplateContract,
-    executor: &mut TestExecutor,
+    executor: &TestExecutor,
     memo: Option<String>,
 ) -> Result<AppResponse, anyhow::Error> {
     let contract_call_bytes = "register_data_request_executor".as_bytes().to_vec();

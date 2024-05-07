@@ -5,7 +5,7 @@ use sha3::{Digest, Keccak256};
 
 #[test]
 pub fn recover_pub_key_from_sig() {
-    let mut executor = TestExecutor::new("test");
+    let executor = TestExecutor::new("test");
 
     let mut hasher = Keccak256::new();
     hasher.update("hello world".as_bytes());

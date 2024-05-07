@@ -114,7 +114,7 @@ pub enum ProxyQueryMsg {
 
     // Staking
     #[returns(GetDataRequestExecutorResponse)]
-    GetDataRequestExecutor { executor: Addr },
+    GetDataRequestExecutor { executor: Secpk256k1PublicKey },
     #[returns(IsDataRequestExecutorEligibleResponse)]
     IsDataRequestExecutorEligible { executor: Secpk256k1PublicKey },
     #[returns(GetStakingConfigResponse)]

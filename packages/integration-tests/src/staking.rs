@@ -1,6 +1,6 @@
-use crate::tests::utils::{proper_instantiate, send_tokens, EXECUTOR_1, NATIVE_DENOM, USER};
+use crate::tests::utils::{proper_instantiate, send_tokens, TestExecutor, NATIVE_DENOM, USER};
 
-use common::{msg::GetDataRequestExecutorResponse, state::DataRequestExecutor, types::Signature};
+use common::{msg::GetDataRequestExecutorResponse, state::DataRequestExecutor};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 
@@ -11,23 +11,25 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 fn deposit_stake_withdraw() {
     let (mut app, proxy_contract) = proper_instantiate();
 
+    let exec = TestExecutor::new("foo");
+
     // send tokens from USER to executor1 so it can register
-    send_tokens(&mut app, USER, EXECUTOR_1, 3);
+    send_tokens(&mut app, USER, exec.name, 3);
 
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
         memo: Some("address".to_string()),
-        public_key: vec![],
-        signature: Signature::new([0; 65]),
+        public_key: exec.public_key.clone(),
+        signature: exec.sign(["register_data_request_executor".as_bytes().to_vec()]),
     };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
         .unwrap();
     // register executor
-    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
         .unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
-        executor: Addr::unchecked(EXECUTOR_1),
+        executor: exec.public_key.clone(),
     };
     let res: GetDataRequestExecutorResponse = app
         .wrap()
@@ -47,15 +49,15 @@ fn deposit_stake_withdraw() {
 
     // deposit 2 more
     let msg = ProxyExecuteMsg::DepositAndStake {
-        public_key: vec![],
-        signature: Signature::new([0; 65]),
+        public_key: exec.public_key.clone(),
+        signature: exec.sign(["deposit_and_stake".as_bytes().to_vec()]),
     };
     let cosmos_msg = proxy_contract.call_with_deposit(msg, 2).unwrap();
-    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
         .unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
-        executor: Addr::unchecked(EXECUTOR_1),
+        executor: exec.public_key.clone(),
     };
     let res: GetDataRequestExecutorResponse = app
         .wrap()
@@ -76,15 +78,15 @@ fn deposit_stake_withdraw() {
     // unstake 2
     let msg = ProxyExecuteMsg::Unstake {
         amount: 2,
-        public_key: vec![],
-        signature: Signature::new([0; 65]),
+        public_key: exec.public_key.clone(),
+        signature: exec.sign(["unstake".as_bytes().to_vec()]),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
         .unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
-        executor: Addr::unchecked(EXECUTOR_1),
+        executor: exec.public_key.clone(),
     };
     let res: GetDataRequestExecutorResponse = app
         .wrap()
@@ -104,7 +106,7 @@ fn deposit_stake_withdraw() {
 
     let balance_before = app
         .wrap()
-        .query_balance(EXECUTOR_1, NATIVE_DENOM)
+        .query_balance(exec.name, NATIVE_DENOM)
         .unwrap()
         .amount
         .u128();
@@ -113,15 +115,15 @@ fn deposit_stake_withdraw() {
     // withdraw 2
     let msg = ProxyExecuteMsg::Withdraw {
         amount: 2,
-        public_key: vec![],
-        signature: Signature::new([0; 65]),
+        public_key: exec.public_key.clone(),
+        signature: exec.sign(["withdraw".as_bytes().to_vec()]),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
+    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
         .unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
-        executor: Addr::unchecked(EXECUTOR_1),
+        executor: exec.public_key.clone(),
     };
     let res: GetDataRequestExecutorResponse = app
         .wrap()
@@ -141,7 +143,7 @@ fn deposit_stake_withdraw() {
 
     let balance_after = app
         .wrap()
-        .query_balance(EXECUTOR_1, NATIVE_DENOM)
+        .query_balance(exec.name, NATIVE_DENOM)
         .unwrap()
         .amount
         .u128();

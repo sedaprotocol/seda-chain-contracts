@@ -20,9 +20,9 @@ use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 fn commit_reveal_result() {
     let (mut app, proxy_contract) = proper_instantiate();
 
-    let mut exec_1 = TestExecutor::new("exec_1");
-    let mut exec_2 = TestExecutor::new("exec_2");
-    let mut exec_3 = TestExecutor::new("exec_3");
+    let exec_1 = TestExecutor::new("exec_1");
+    let exec_2 = TestExecutor::new("exec_2");
+    let exec_3 = TestExecutor::new("exec_3");
 
     // executor 1 should be ineligible to register
     let msg = ProxyQueryMsg::IsDataRequestExecutorEligible {
@@ -41,9 +41,9 @@ fn commit_reveal_result() {
 
     // register executors
     let memo = Some("address".to_string());
-    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &mut exec_1, memo.clone()).unwrap();
-    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &mut exec_2, memo.clone()).unwrap();
-    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &mut exec_3, memo.clone()).unwrap();
+    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &exec_1, memo.clone()).unwrap();
+    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &exec_2, memo.clone()).unwrap();
+    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &exec_3, memo.clone()).unwrap();
 
     // check if executors are eligible register
     // executor 1 should be eligible to register
