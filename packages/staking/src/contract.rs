@@ -132,6 +132,7 @@ mod init_tests {
     };
     use common::error::ContractError;
     use common::state::StakingConfig;
+    use common::types::Signature;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
     use cosmwasm_std::{coins, Addr};
 
@@ -159,11 +160,11 @@ mod init_tests {
             deps.as_mut(),
             info,
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             None,
             Some("sender".to_string()),
         );
-        assert_eq!(res.is_err_and(|x| x == ContractError::NotProxy), true);
+        assert!(res.is_err_and(|x| x == ContractError::NotProxy));
 
         // register a data request executor from the proxy
         let info = mock_info("proxy", &coins(2, "token"));
@@ -172,7 +173,7 @@ mod init_tests {
             deps.as_mut(),
             info,
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             None,
             Some("sender".to_string()),
         )
@@ -196,16 +197,13 @@ mod init_tests {
         let info = mock_info("new-owner", &coins(2, "token"));
 
         let res = helper_accept_ownership(deps.as_mut(), info);
-        assert_eq!(
-            res.is_err_and(|x| x == ContractError::NoPendingOwnerFound),
-            true
-        );
+        assert!(res.is_err_and(|x| x == ContractError::NoPendingOwnerFound),);
 
         // non-owner initiates transfering ownership
         let info = mock_info("non-owner", &coins(2, "token"));
 
         let res = helper_transfer_ownership(deps.as_mut(), info, "new_owner".to_string());
-        assert_eq!(res.is_err_and(|x| x == ContractError::NotOwner), true);
+        assert!(res.is_err_and(|x| x == ContractError::NotOwner));
 
         // owner initiates transfering ownership
         let info = mock_info("owner", &coins(2, "token"));
@@ -223,10 +221,7 @@ mod init_tests {
         let info = mock_info("non-owner", &coins(2, "token"));
 
         let res = helper_accept_ownership(deps.as_mut(), info);
-        assert_eq!(
-            res.is_err_and(|x| x == ContractError::NotPendingOwner),
-            true
-        );
+        assert!(res.is_err_and(|x| x == ContractError::NotPendingOwner));
 
         // new owner accepts ownership
         let info = mock_info("new_owner", &coins(2, "token"));
@@ -258,7 +253,7 @@ mod init_tests {
         let info = mock_info("non-owner", &coins(0, "token"));
 
         let res = helper_set_staking_config(deps.as_mut(), info, new_config.clone());
-        assert_eq!(res.is_err_and(|x| x == ContractError::NotOwner), true);
+        assert!(res.is_err_and(|x| x == ContractError::NotOwner));
 
         // owner sets staking config
         let info = mock_info("owner", &coins(0, "token"));

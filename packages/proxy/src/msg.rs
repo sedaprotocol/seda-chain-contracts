@@ -8,7 +8,7 @@ use common::msg::{
     GetStakingConfigResponse, IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
 };
 use common::state::RevealBody;
-use common::types::{Bytes, Hash, Secpk256k1PublicKey};
+use common::types::{Bytes, Hash, Secpk256k1PublicKey, Signature};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -45,30 +45,30 @@ pub enum ProxyExecuteMsg {
     RevealDataResult {
         dr_id: Hash,
         reveal: RevealBody,
-        signature: Vec<u8>,
+        signature: Signature,
     },
     // Staking
     RegisterDataRequestExecutor {
         public_key: Secpk256k1PublicKey,
-        signature: Vec<u8>,
+        signature: Signature,
         memo: Option<String>,
     },
     UnregisterDataRequestExecutor {
         public_key: Secpk256k1PublicKey,
-        signature: Vec<u8>,
+        signature: Signature,
     },
     DepositAndStake {
         public_key: Secpk256k1PublicKey,
-        signature: Vec<u8>,
+        signature: Signature,
     },
     Unstake {
         public_key: Secpk256k1PublicKey,
-        signature: Vec<u8>,
+        signature: Signature,
         amount: u128,
     },
     Withdraw {
         public_key: Secpk256k1PublicKey,
-        signature: Vec<u8>,
+        signature: Signature,
         amount: u128,
     },
     AddToAllowlist {
@@ -103,7 +103,10 @@ pub enum ProxyQueryMsg {
     #[returns(GetCommittedDataResultsResponse)]
     GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]
-    GetRevealedDataResult { dr_id: Hash, executor: Addr },
+    GetRevealedDataResult {
+        dr_id: Hash,
+        executor: Secpk256k1PublicKey,
+    },
     #[returns(GetRevealedDataResultsResponse)]
     GetRevealedDataResults { dr_id: Hash },
     #[returns(GetResolvedDataResultResponse)]

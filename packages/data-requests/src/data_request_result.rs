@@ -1,4 +1,3 @@
-use cosmwasm_crypto::secp256k1_recover_pubkey;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
@@ -7,6 +6,7 @@ use common::types::Hash;
 
 pub mod data_request_results {
 
+    use common::crypto::recover_pubkey;
     use common::error::ContractError::{
         self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
         RevealNotStarted, RevealStarted,
@@ -19,7 +19,7 @@ pub mod data_request_results {
         GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
     };
     use common::state::{DataResult, RevealBody};
-    use common::types::{Bytes, Secpk256k1PublicKey};
+    use common::types::{Bytes, Secpk256k1PublicKey, Signature};
 
     use crate::contract::CONTRACT_VERSION;
     use crate::state::DATA_REQUESTS_POOL;
@@ -84,7 +84,7 @@ pub mod data_request_results {
         env: Env,
         dr_id: Hash,
         reveal_body: RevealBody,
-        signature: Vec<u8>,
+        signature: Signature,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
@@ -98,8 +98,7 @@ pub mod data_request_results {
         let reveal_body_hash = compute_hash(reveal_body.clone());
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey =
-            secp256k1_recover_pubkey(&reveal_body_hash, &signature, 0).unwrap();
+        let public_key: Secpk256k1PublicKey = recover_pubkey(reveal_body_hash, signature);
 
         // find the data request from the committed pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;

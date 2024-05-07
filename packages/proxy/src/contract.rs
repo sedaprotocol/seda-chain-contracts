@@ -411,6 +411,7 @@ pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, Contract
 #[cfg(test)]
 mod init_tests {
     use super::*;
+    use common::types::Signature;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 
@@ -457,7 +458,7 @@ mod init_tests {
 
         let msg = ProxyExecuteMsg::DepositAndStake {
             public_key: vec![0; 33],
-            signature: vec![0; 33],
+            signature: Signature::new([0; 65]),
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();

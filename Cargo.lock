@@ -119,6 +119,7 @@ dependencies = [
  "cosmwasm-std",
  "cw-utils",
  "hex",
+ "k256",
  "schemars",
  "semver",
  "serde",

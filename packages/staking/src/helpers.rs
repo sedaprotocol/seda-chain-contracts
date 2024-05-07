@@ -1,5 +1,5 @@
 use common::msg::{GetOwnerResponse, GetPendingOwnerResponse};
-use common::types::Secpk256k1PublicKey;
+use common::types::{Secpk256k1PublicKey, Signature};
 use cosmwasm_std::{from_json, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query};
@@ -27,7 +27,7 @@ pub fn helper_register_executor(
     deps: DepsMut,
     info: MessageInfo,
     public_key: Secpk256k1PublicKey,
-    signature: Vec<u8>,
+    signature: Signature,
     memo: Option<String>,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -59,7 +59,7 @@ pub fn helper_unregister_executor(
     deps: DepsMut,
     info: MessageInfo,
     public_key: Secpk256k1PublicKey,
-    signature: Vec<u8>,
+    signature: Signature,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::UnregisterDataRequestExecutor {
@@ -80,12 +80,12 @@ pub fn helper_get_executor(
         StakingQueryMsg::GetDataRequestExecutor { executor },
     )
     .unwrap();
-    let value: GetDataRequestExecutorResponse = from_json(&res).unwrap();
+    let value: GetDataRequestExecutorResponse = from_json(res).unwrap();
     value
 }
 pub fn helper_get_owner(deps: DepsMut) -> GetOwnerResponse {
     let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetOwner {}).unwrap();
-    let value: GetOwnerResponse = from_json(&res).unwrap();
+    let value: GetOwnerResponse = from_json(res).unwrap();
     value
 }
 
@@ -96,14 +96,14 @@ pub fn helper_get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
         StakingQueryMsg::GetPendingOwner {},
     )
     .unwrap();
-    let value: GetPendingOwnerResponse = from_json(&res).unwrap();
+    let value: GetPendingOwnerResponse = from_json(res).unwrap();
     value
 }
 pub fn helper_deposit_and_stake(
     deps: DepsMut,
     info: MessageInfo,
     public_key: Secpk256k1PublicKey,
-    signature: Vec<u8>,
+    signature: Signature,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::DepositAndStake {
@@ -118,7 +118,7 @@ pub fn helper_unstake(
     deps: DepsMut,
     info: MessageInfo,
     public_key: Secpk256k1PublicKey,
-    signature: Vec<u8>,
+    signature: Signature,
     amount: u128,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -135,7 +135,7 @@ pub fn helper_withdraw(
     deps: DepsMut,
     info: MessageInfo,
     public_key: Secpk256k1PublicKey,
-    signature: Vec<u8>,
+    signature: Signature,
     amount: u128,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {

@@ -8,7 +8,10 @@ use crate::utils::{get_attached_funds, validate_sender};
 
 #[allow(clippy::module_inception)]
 pub mod staking {
-    use common::{error::ContractError, types::Secpk256k1PublicKey};
+    use common::{
+        error::ContractError,
+        types::{Secpk256k1PublicKey, Signature},
+    };
     use cosmwasm_std::{coins, BankMsg, Event};
 
     use crate::{contract::CONTRACT_VERSION, state::CONFIG, utils::apply_validator_eligibility};
@@ -21,7 +24,7 @@ pub mod staking {
         _env: Env,
         info: MessageInfo,
         public_key: Secpk256k1PublicKey,
-        _signature: Vec<u8>,
+        _signature: Signature,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
@@ -75,7 +78,7 @@ pub mod staking {
         _env: Env,
         info: MessageInfo,
         public_key: Secpk256k1PublicKey,
-        _signature: Vec<u8>,
+        _signature: Signature,
         amount: u128,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -136,7 +139,7 @@ pub mod staking {
         _env: Env,
         info: MessageInfo,
         public_key: Secpk256k1PublicKey,
-        _signature: Vec<u8>,
+        _signature: Signature,
         amount: u128,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -213,6 +216,7 @@ mod staking_tests {
     use common::msg::GetDataRequestExecutorResponse;
     use common::msg::StakingExecuteMsg as ExecuteMsg;
     use common::state::DataRequestExecutor;
+    use common::types::Signature;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     #[test]
@@ -229,7 +233,7 @@ mod staking_tests {
             deps.as_mut(),
             info,
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             Some("address".to_string()),
             None,
         );
@@ -242,7 +246,7 @@ mod staking_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             Some("address".to_string()),
             None,
         );
@@ -266,9 +270,14 @@ mod staking_tests {
 
         // the data request executor stakes 2 more tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let _res =
-            helper_deposit_and_stake(deps.as_mut(), info.clone(), vec![0; 33], vec![0; 33], None)
-                .unwrap();
+        let _res = helper_deposit_and_stake(
+            deps.as_mut(),
+            info.clone(),
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+        )
+        .unwrap();
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
             .load(&deps.storage, vec![0; 33])
             .unwrap();
@@ -294,7 +303,7 @@ mod staking_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             1,
             None,
         );
@@ -322,7 +331,7 @@ mod staking_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             1,
             None,
         );
@@ -347,7 +356,15 @@ mod staking_tests {
         );
 
         // unstake 2 more
-        helper_unstake(deps.as_mut(), info, vec![0; 33], vec![0; 33], 2, None).unwrap();
+        helper_unstake(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            2,
+            None,
+        )
+        .unwrap();
 
         // assert executer is no longer eligible for committe inclusion
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, vec![0; 33]);
@@ -365,7 +382,7 @@ mod staking_tests {
         let msg = ExecuteMsg::DepositAndStake {
             sender: None,
             public_key: vec![0; 33],
-            signature: vec![0; 33],
+            signature: Signature::new([0; 65]),
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -384,7 +401,7 @@ mod staking_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             Some("address".to_string()),
             None,
         )
@@ -396,7 +413,7 @@ mod staking_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             2,
             None,
         )

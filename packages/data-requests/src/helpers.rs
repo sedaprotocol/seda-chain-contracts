@@ -49,8 +49,8 @@ pub fn calculate_dr_id_and_args(
 
     let constructed_dr_input = PostDataRequestArgs {
         version: version.clone(),
-        dr_binary_id: dr_binary_id.clone(),
-        tally_binary_id: tally_binary_id.clone(),
+        dr_binary_id,
+        tally_binary_id,
         dr_inputs: dr_inputs.clone(),
         tally_inputs: tally_inputs.clone(),
         memo: memo.clone(),
@@ -130,7 +130,7 @@ pub fn get_dr(deps: DepsMut, dr_id: Hash) -> GetDataRequestResponse {
         common::msg::DataRequestsQueryMsg::GetDataRequest { dr_id },
     )
     .unwrap();
-    let value: GetDataRequestResponse = from_json(&res).unwrap();
+    let value: GetDataRequestResponse = from_json(res).unwrap();
     value
 }
 
@@ -145,6 +145,6 @@ pub fn get_drs_from_pool(
         common::msg::DataRequestsQueryMsg::GetDataRequestsFromPool { position, limit },
     )
     .unwrap();
-    let value: GetDataRequestsFromPoolResponse = from_json(&res).unwrap();
+    let value: GetDataRequestsFromPoolResponse = from_json(res).unwrap();
     value
 }

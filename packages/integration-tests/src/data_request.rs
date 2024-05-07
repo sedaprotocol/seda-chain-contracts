@@ -12,7 +12,7 @@ fn post_data_request() {
     let posted_dr = calculate_dr_id_and_args(1, 3);
     // post the data request
     let msg = ProxyExecuteMsg::PostDataRequest {
-        posted_dr: posted_dr,
+        posted_dr,
         seda_payload: "".into(),
         payback_address: "".into(),
     };
@@ -27,9 +27,7 @@ fn post_data_request() {
     // should be able to fetch data request
     let dr_id = get_dr_id(res);
 
-    let msg = ProxyQueryMsg::GetDataRequest {
-        dr_id: dr_id.clone(),
-    };
+    let msg = ProxyQueryMsg::GetDataRequest { dr_id };
     let res: GetDataRequestResponse = app
         .wrap()
         .query_wasm_smart(proxy_contract.addr(), &msg)

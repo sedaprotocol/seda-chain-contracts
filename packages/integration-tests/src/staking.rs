@@ -1,6 +1,6 @@
 use crate::tests::utils::{proper_instantiate, send_tokens, EXECUTOR_1, NATIVE_DENOM, USER};
 
-use common::{msg::GetDataRequestExecutorResponse, state::DataRequestExecutor};
+use common::{msg::GetDataRequestExecutorResponse, state::DataRequestExecutor, types::Signature};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 
@@ -17,7 +17,7 @@ fn deposit_stake_withdraw() {
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
         memo: Some("address".to_string()),
         public_key: vec![],
-        signature: vec![],
+        signature: Signature::new([0; 65]),
     };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
@@ -48,7 +48,7 @@ fn deposit_stake_withdraw() {
     // deposit 2 more
     let msg = ProxyExecuteMsg::DepositAndStake {
         public_key: vec![],
-        signature: vec![],
+        signature: Signature::new([0; 65]),
     };
     let cosmos_msg = proxy_contract.call_with_deposit(msg, 2).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
@@ -77,7 +77,7 @@ fn deposit_stake_withdraw() {
     let msg = ProxyExecuteMsg::Unstake {
         amount: 2,
         public_key: vec![],
-        signature: vec![],
+        signature: Signature::new([0; 65]),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())
@@ -114,7 +114,7 @@ fn deposit_stake_withdraw() {
     let msg = ProxyExecuteMsg::Withdraw {
         amount: 2,
         public_key: vec![],
-        signature: vec![],
+        signature: Signature::new([0; 65]),
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(EXECUTOR_1), cosmos_msg.clone())

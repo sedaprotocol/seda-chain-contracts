@@ -10,7 +10,9 @@ use common::state::DataRequestExecutor;
 use common::types::Secpk256k1PublicKey;
 
 pub mod data_request_executors {
-    use common::{error::ContractError, msg::IsDataRequestExecutorEligibleResponse};
+    use common::{
+        error::ContractError, msg::IsDataRequestExecutorEligibleResponse, types::Signature,
+    };
     use cosmwasm_std::Event;
 
     use crate::{
@@ -26,7 +28,7 @@ pub mod data_request_executors {
         deps: DepsMut,
         info: MessageInfo,
         public_key: Secpk256k1PublicKey,
-        _signature: Vec<u8>,
+        _signature: Signature,
         memo: Option<String>,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -87,7 +89,7 @@ pub mod data_request_executors {
         deps: DepsMut,
         info: MessageInfo,
         public_key: Secpk256k1PublicKey,
-        _signature: Vec<u8>,
+        _signature: Signature,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
@@ -152,6 +154,7 @@ mod executers_tests {
     use crate::helpers::helper_withdraw;
     use crate::helpers::instantiate_staking_contract;
     use common::error::ContractError;
+    use common::types::Signature;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
@@ -174,7 +177,7 @@ mod executers_tests {
             deps.as_mut(),
             info,
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             Some("memo".to_string()),
             None,
         )
@@ -209,7 +212,7 @@ mod executers_tests {
             deps.as_mut(),
             info,
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             Some("memo".to_string()),
             None,
         )
@@ -231,11 +234,14 @@ mod executers_tests {
 
         // can't unregister the data request executor if it has staked tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let res = helper_unregister_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None);
-        assert_eq!(
-            res.is_err_and(|x| x == ContractError::ExecutorHasTokens),
-            true
+        let res = helper_unregister_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
         );
+        assert!(res.is_err_and(|x| x == ContractError::ExecutorHasTokens));
 
         // unstake and withdraw all tokens
         let info = mock_info("anyone", &coins(0, "token"));
@@ -244,7 +250,7 @@ mod executers_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             2,
             None,
         );
@@ -253,15 +259,21 @@ mod executers_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             2,
             None,
         );
 
         // unregister the data request executor
         let info = mock_info("anyone", &coins(2, "token"));
-        let _res = helper_unregister_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None)
-            .unwrap();
+        let _res = helper_unregister_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+        )
+        .unwrap();
 
         // fetching data request executor after unregistering should return None
         let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);

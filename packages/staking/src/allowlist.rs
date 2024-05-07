@@ -58,6 +58,7 @@ mod executers_tests {
     use crate::helpers::instantiate_staking_contract;
     use common::error::ContractError;
     use common::state::StakingConfig;
+    use common::types::Signature;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
@@ -80,9 +81,15 @@ mod executers_tests {
 
         // alice tries to register a data request executor, but she's not on the allowlist
         let info = mock_info("alice", &coins(100, "token"));
-        let res =
-            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
-        assert_eq!(res.is_err_and(|x| x == ContractError::NotOnAllowlist), true);
+        let res = helper_register_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+            None,
+        );
+        assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
         // add alice to the allowlist
         let info = mock_info("owner", &coins(0, "token"));
@@ -91,8 +98,14 @@ mod executers_tests {
 
         // now alice can register a data request executor
         let info = mock_info("alice", &coins(100, "token"));
-        let res =
-            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
+        let res = helper_register_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+            None,
+        );
         assert!(res.is_ok());
 
         // alice unstakes, withdraws, then unregisters herself
@@ -101,7 +114,7 @@ mod executers_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             100,
             None,
         );
@@ -110,12 +123,18 @@ mod executers_tests {
             deps.as_mut(),
             info.clone(),
             vec![0; 33],
-            vec![0; 33],
+            Signature::new([0; 65]),
             100,
             None,
         );
         let info = mock_info("alice", &coins(0, "token"));
-        let res = helper_unregister_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None);
+        let res = helper_unregister_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+        );
         println!("{:?}", res);
         assert!(res.is_ok());
 
@@ -126,9 +145,15 @@ mod executers_tests {
 
         // now alice can't register a data request executor
         let info = mock_info("alice", &coins(2, "token"));
-        let res =
-            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
-        assert_eq!(res.is_err_and(|x| x == ContractError::NotOnAllowlist), true);
+        let res = helper_register_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+            None,
+        );
+        assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
         // update the config to disable the allowlist
         let info = mock_info("owner", &coins(0, "token"));
@@ -142,8 +167,14 @@ mod executers_tests {
 
         // now alice can register a data request executor
         let info = mock_info("alice", &coins(100, "token"));
-        let res =
-            helper_register_executor(deps.as_mut(), info, vec![0; 33], vec![0; 33], None, None);
+        let res = helper_register_executor(
+            deps.as_mut(),
+            info,
+            vec![0; 33],
+            Signature::new([0; 65]),
+            None,
+            None,
+        );
         assert!(res.is_ok());
     }
 }

@@ -7,6 +7,7 @@ edition = "2021"
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
 cw-utils = { workspace = true }
+k256 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

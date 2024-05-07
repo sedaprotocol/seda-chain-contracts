@@ -188,14 +188,10 @@ mod dr_tests {
 
         // expect an error when trying to post it again
         let res = execute(deps.as_mut(), mock_env(), info, msg);
-        assert_eq!(
-            res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists),
-            true
-        );
+        assert!(res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists));
 
         // should be able to fetch data request with id 0x69...
-        let received_value: GetDataRequestResponse =
-            get_dr(deps.as_mut(), constructed_dr_id.clone());
+        let received_value: GetDataRequestResponse = get_dr(deps.as_mut(), constructed_dr_id);
 
         let (constructed_dr_id, dr_args) = calculate_dr_id_and_args(1, 3);
 

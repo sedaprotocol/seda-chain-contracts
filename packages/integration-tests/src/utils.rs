@@ -4,13 +4,13 @@ use common::state::RevealBody;
 use common::types::Bytes;
 use common::types::Hash;
 use common::types::Secpk256k1PublicKey;
+use common::types::Signature;
 use cosmwasm_std::{
     to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg,
 };
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
 use data_requests::utils::string_to_hash;
-use k256::ecdsa::RecoveryId;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use semver::{BuildMetadata, Prerelease, Version};
@@ -25,7 +25,6 @@ use k256::{
 
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
-pub const EXECUTOR_2: &str = "executor2";
 const OWNER: &str = "owner";
 pub const NATIVE_DENOM: &str = "seda";
 
@@ -48,14 +47,27 @@ impl TestExecutor {
         }
     }
 
-    pub fn sign(&mut self, msg: &[&[u8]]) -> (Vec<u8>, RecoveryId) {
+    pub fn salt(&self) -> Hash {
+        let mut hasher = Keccak256::new();
+        hasher.update(self.name);
+        hasher.finalize().into()
+    }
+
+    pub fn sign<I>(&mut self, msg: I) -> Signature
+    where
+        I: IntoIterator<Item = Vec<u8>>,
+    {
         let mut hasher = Keccak256::new();
         for m in msg {
             hasher.update(m);
         }
         let hash = hasher.finalize();
         let (signature, rid) = self.signing_key.sign_recoverable(hash.as_ref()).unwrap();
-        (signature.to_vec(), rid)
+
+        let mut sig: [u8; 65] = [0; 65];
+        sig[0..64].copy_from_slice(&signature.to_bytes());
+        sig[64] = rid.into();
+        Signature::new(sig)
     }
 }
 
@@ -249,11 +261,31 @@ pub fn get_dr_id(res: AppResponse) -> Hash {
     binary.0.try_into().unwrap()
 }
 
-pub fn calculate_commitment(reveal: &str, salt: &str) -> Hash {
-    let mut hasher = Keccak256::new();
-    hasher.update(reveal.as_bytes());
-    hasher.update(salt.as_bytes());
-    hasher.finalize().into()
+// So we can have the hash and the bytes to sign it.
+pub fn reveal_hash(reveal: &RevealBody, salt: Option<&'static str>) -> (Hash, Vec<Vec<u8>>) {
+    let mut reveal_hasher = Keccak256::new();
+    reveal_hasher.update(&reveal.reveal);
+    let reveal_hash = reveal_hasher.finalize();
+
+    let salt = if let Some(salt_str) = salt {
+        string_to_hash(salt_str)
+    } else {
+        reveal.salt
+    };
+
+    let mut reveal_body_hasher = Keccak256::new();
+    reveal_body_hasher.update(salt);
+    reveal_body_hasher.update(reveal.exit_code.to_be_bytes());
+    reveal_body_hasher.update(reveal.gas_used.to_be_bytes());
+    reveal_body_hasher.update(reveal_hash);
+
+    let bytes = vec![
+        reveal.salt.to_vec(),
+        reveal.exit_code.to_be_bytes().to_vec(),
+        reveal.gas_used.to_be_bytes().to_vec(),
+        reveal_hash.to_vec(),
+    ];
+    (reveal_body_hasher.finalize().into(), bytes)
 }
 
 pub fn helper_reg_dr_executor(
@@ -262,11 +294,11 @@ pub fn helper_reg_dr_executor(
     executor: &mut TestExecutor,
     memo: Option<String>,
 ) -> Result<AppResponse, anyhow::Error> {
-    let contract_call_bytes = "register_data_request_executor".as_bytes();
-    let (signature, _) = if let Some(m) = memo.as_ref() {
-        executor.sign(&[&contract_call_bytes, m.as_bytes()])
+    let contract_call_bytes = "register_data_request_executor".as_bytes().to_vec();
+    let signature = if let Some(m) = memo.as_ref() {
+        executor.sign([contract_call_bytes, m.as_bytes().to_vec()])
     } else {
-        executor.sign(&[&contract_call_bytes])
+        executor.sign([contract_call_bytes])
     };
     let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
         public_key: executor.public_key.clone(),
@@ -301,7 +333,7 @@ pub fn helper_reveal_result(
     proxy_contract: CwTemplateContract,
     dr_id: Hash,
     reveal: RevealBody,
-    signature: Vec<u8>,
+    signature: Signature,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
     let msg = ProxyExecuteMsg::RevealDataResult {
