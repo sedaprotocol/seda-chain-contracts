@@ -49,25 +49,20 @@ pub enum ProxyExecuteMsg {
     },
     // Staking
     RegisterDataRequestExecutor {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         memo: Option<String>,
     },
     UnregisterDataRequestExecutor {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
     },
     DepositAndStake {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
     },
     Unstake {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         amount: u128,
     },
     Withdraw {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         amount: u128,
     },

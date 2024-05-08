@@ -43,29 +43,24 @@ pub enum DataRequestsExecuteMsg {
 #[cw_serde]
 pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         memo: Option<String>,
         sender: Option<String>,
     },
     UnregisterDataRequestExecutor {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         sender: Option<String>,
     },
     DepositAndStake {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         sender: Option<String>,
     },
     Unstake {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         amount: u128,
         sender: Option<String>,
     },
     Withdraw {
-        public_key: Secpk256k1PublicKey,
         signature: Signature,
         amount: u128,
         sender: Option<String>,

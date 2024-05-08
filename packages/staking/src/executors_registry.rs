@@ -11,7 +11,10 @@ use common::types::Secpk256k1PublicKey;
 
 pub mod data_request_executors {
     use common::{
-        error::ContractError, msg::IsDataRequestExecutorEligibleResponse, types::Signature,
+        crypto::{hash, recover_pubkey},
+        error::ContractError,
+        msg::IsDataRequestExecutorEligibleResponse,
+        types::Signature,
     };
     use cosmwasm_std::Event;
 
@@ -27,8 +30,7 @@ pub mod data_request_executors {
     pub fn register_data_request_executor(
         deps: DepsMut,
         info: MessageInfo,
-        public_key: Secpk256k1PublicKey,
-        _signature: Signature,
+        signature: Signature,
         memo: Option<String>,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -44,12 +46,28 @@ pub mod data_request_executors {
         }
 
         // TODO: do we even need to verify signature here, if we already check the caller can sign using the public key in every other call?
-        // TODO: verify the signature contains the sender address (to prove ownership of the public key)
         // let expected_message_hash = sender.as_bytes(); // TODO hash this
         // let is_signature_valid = secp256k1_verify(&expected_message, &signature, &public_key).unwrap();
         // if !is_signature_valid {
         //     return Err(ContractError::InvalidSignature);
         // }
+
+        // compute message hash
+        let message_hash = if let Some(m) = memo.as_ref() {
+            hash([
+                "register_data_request_executor".as_bytes(),
+                sender.as_bytes(),
+                m.as_bytes(),
+            ])
+        } else {
+            hash([
+                "register_data_request_executor".as_bytes(),
+                sender.as_bytes(),
+            ])
+        };
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
 
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
@@ -88,8 +106,7 @@ pub mod data_request_executors {
     pub fn unregister_data_request_executor(
         deps: DepsMut,
         info: MessageInfo,
-        public_key: Secpk256k1PublicKey,
-        _signature: Signature,
+        signature: Signature,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
@@ -103,7 +120,14 @@ pub mod data_request_executors {
             }
         }
 
-        // TODO: verify signature
+        // compute message hash
+        let message_hash = hash([
+            "unregister_data_request_executor".as_bytes(),
+            sender.as_bytes(),
+        ]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
 
         // require that the executor has no staked or tokens pending withdrawal
         let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
@@ -154,7 +178,7 @@ mod executers_tests {
     use crate::helpers::helper_withdraw;
     use crate::helpers::instantiate_staking_contract;
     use common::error::ContractError;
-    use common::types::Signature;
+    use common::test_utils::TestExecutor;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
@@ -165,27 +189,24 @@ mod executers_tests {
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
+        let exec = TestExecutor::new("anyone");
         // fetching data request executor for an address that doesn't exist should return None
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(value, GetDataRequestExecutorResponse { value: None });
 
         // someone registers a data request executor
         let info = mock_info("anyone", &coins(2, "token"));
 
-        let _res = helper_register_executor(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            Some("memo".to_string()),
-            None,
-        )
-        .unwrap();
+        let _res =
+            helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None)
+                .unwrap();
 
         // should be able to fetch the data request executor
 
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
         assert_eq!(
             value,
             GetDataRequestExecutorResponse {
@@ -207,19 +228,15 @@ mod executers_tests {
 
         // someone registers a data request executor
         let info = mock_info("anyone", &coins(2, "token"));
+        let exec = TestExecutor::new("anyone");
 
-        let _res = helper_register_executor(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            Some("memo".to_string()),
-            None,
-        )
-        .unwrap();
+        let _res =
+            helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None)
+                .unwrap();
 
         // should be able to fetch the data request executor
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(
             value,
@@ -234,49 +251,23 @@ mod executers_tests {
 
         // can't unregister the data request executor if it has staked tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let res = helper_unregister_executor(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            None,
-        );
+        let res = helper_unregister_executor(deps.as_mut(), info, &exec, None);
         assert!(res.is_err_and(|x| x == ContractError::ExecutorHasTokens));
 
         // unstake and withdraw all tokens
         let info = mock_info("anyone", &coins(0, "token"));
 
-        let _res = helper_unstake(
-            deps.as_mut(),
-            info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
-            2,
-            None,
-        );
+        let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 2, None);
         let info = mock_info("anyone", &coins(0, "token"));
-        let _res = helper_withdraw(
-            deps.as_mut(),
-            info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
-            2,
-            None,
-        );
+        let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 2, None);
 
         // unregister the data request executor
         let info = mock_info("anyone", &coins(2, "token"));
-        let _res = helper_unregister_executor(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            None,
-        )
-        .unwrap();
+        let _res = helper_unregister_executor(deps.as_mut(), info, &exec, None).unwrap();
 
         // fetching data request executor after unregistering should return None
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(value, GetDataRequestExecutorResponse { value: None });
     }

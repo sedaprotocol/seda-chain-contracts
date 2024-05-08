@@ -9,6 +9,7 @@ use crate::utils::{get_attached_funds, validate_sender};
 #[allow(clippy::module_inception)]
 pub mod staking {
     use common::{
+        crypto::{hash, recover_pubkey},
         error::ContractError,
         types::{Secpk256k1PublicKey, Signature},
     };
@@ -23,8 +24,7 @@ pub mod staking {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        public_key: Secpk256k1PublicKey,
-        _signature: Signature,
+        signature: Signature,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
@@ -42,7 +42,11 @@ pub mod staking {
         }
 
         // TODO: do we even need to verify signature for a deposit?
-        // TODO: verify signature
+        // compute message hash
+        let message_hash = hash(["deposit_and_stake".as_bytes(), sender.as_bytes()]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
 
         // update staked tokens for executor
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
@@ -77,8 +81,7 @@ pub mod staking {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        public_key: Secpk256k1PublicKey,
-        _signature: Signature,
+        signature: Signature,
         amount: u128,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -93,7 +96,15 @@ pub mod staking {
             }
         }
 
-        // TODO: verify signature
+        // compute message hash
+        let message_hash = hash([
+            "unstake".as_bytes(),
+            &amount.to_be_bytes(),
+            sender.as_bytes(),
+        ]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
 
         // error if amount is greater than staked tokens
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
@@ -138,8 +149,7 @@ pub mod staking {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        public_key: Secpk256k1PublicKey,
-        _signature: Signature,
+        signature: Signature,
         amount: u128,
         sender: Option<String>,
     ) -> Result<Response, ContractError> {
@@ -154,7 +164,15 @@ pub mod staking {
             }
         }
 
-        // TODO: verify signature
+        // compute message hash
+        let message_hash = hash([
+            "withdraw".as_bytes(),
+            &amount.to_be_bytes(),
+            sender.as_bytes(),
+        ]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
@@ -216,7 +234,7 @@ mod staking_tests {
     use common::msg::GetDataRequestExecutorResponse;
     use common::msg::StakingExecuteMsg as ExecuteMsg;
     use common::state::DataRequestExecutor;
-    use common::types::Signature;
+    use common::test_utils::TestExecutor;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     #[test]
@@ -228,12 +246,12 @@ mod staking_tests {
 
         // cant register without depositing tokens
         let info = mock_info("anyone", &coins(0, "token"));
+        let exec = TestExecutor::new("anyone");
 
         let res = helper_register_executor(
             deps.as_mut(),
             info,
-            vec![0; 33],
-            Signature::new([0; 65]),
+            &exec,
             Some("address".to_string()),
             None,
         );
@@ -245,17 +263,17 @@ mod staking_tests {
         let _res = helper_register_executor(
             deps.as_mut(),
             info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
+            &exec,
             Some("address".to_string()),
             None,
         );
         let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
-            .load(&deps.storage, vec![0; 33]) // Convert Addr to Vec<u8>
+            .load(&deps.storage, exec.public_key.clone()) // Convert Addr to Vec<u8>
             .unwrap();
         assert!(executor_is_eligible);
         // data request executor's stake should be 1
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(
             value,
@@ -270,20 +288,14 @@ mod staking_tests {
 
         // the data request executor stakes 2 more tokens
         let info = mock_info("anyone", &coins(2, "token"));
-        let _res = helper_deposit_and_stake(
-            deps.as_mut(),
-            info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
-            None,
-        )
-        .unwrap();
+        let _res = helper_deposit_and_stake(deps.as_mut(), info.clone(), &exec, None).unwrap();
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-            .load(&deps.storage, vec![0; 33])
+            .load(&deps.storage, exec.public_key.clone())
             .unwrap();
         assert!(executor_is_eligible);
         // data request executor's stake should be 3
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(
             value,
@@ -299,20 +311,14 @@ mod staking_tests {
         // the data request executor unstakes 1
         let info = mock_info("anyone", &coins(0, "token"));
 
-        let _res = helper_unstake(
-            deps.as_mut(),
-            info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
-            1,
-            None,
-        );
+        let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 1, None);
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-            .load(&deps.storage, vec![0; 33])
+            .load(&deps.storage, exec.public_key.clone())
             .unwrap();
         assert!(executor_is_eligible);
         // data request executor's stake should be 1 and pending 1
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(
             value,
@@ -327,22 +333,16 @@ mod staking_tests {
 
         // the data request executor withdraws 1
         let info = mock_info("anyone", &coins(0, "token"));
-        let _res = helper_withdraw(
-            deps.as_mut(),
-            info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
-            1,
-            None,
-        );
+        let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 1, None);
 
         let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-            .load(&deps.storage, vec![0; 33])
+            .load(&deps.storage, exec.public_key.clone())
             .unwrap();
         assert!(executor_is_eligible);
 
         // data request executor's stake should be 1 and pending 0
-        let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), vec![0; 33]);
+        let value: GetDataRequestExecutorResponse =
+            helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
         assert_eq!(
             value,
@@ -356,18 +356,11 @@ mod staking_tests {
         );
 
         // unstake 2 more
-        helper_unstake(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            2,
-            None,
-        )
-        .unwrap();
+        helper_unstake(deps.as_mut(), info, &exec, 2, None).unwrap();
 
         // assert executer is no longer eligible for committe inclusion
-        let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, vec![0; 33]);
+        let executor_is_eligible =
+            ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, exec.public_key.clone());
         assert!(!executor_is_eligible);
     }
 
@@ -378,11 +371,14 @@ mod staking_tests {
 
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+        let exec = TestExecutor::new("anyone");
 
         let msg = ExecuteMsg::DepositAndStake {
             sender: None,
-            public_key: vec![0; 33],
-            signature: Signature::new([0; 65]),
+            signature: exec.sign([
+                "register_data_request_executor".as_bytes().to_vec(),
+                "anyone".as_bytes().to_vec(),
+            ]),
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -395,13 +391,13 @@ mod staking_tests {
 
         let info = mock_info("alice", &coins(1, "token"));
         let _res = instantiate_staking_contract(deps.as_mut(), info.clone()).unwrap();
+        let alice = TestExecutor::new("alice");
 
         // register a data request executor
         helper_register_executor(
             deps.as_mut(),
             info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
+            &alice,
             Some("address".to_string()),
             None,
         )
@@ -409,14 +405,6 @@ mod staking_tests {
 
         // try unstaking more than staked
         let info = mock_info("alice", &coins(0, "token"));
-        helper_unstake(
-            deps.as_mut(),
-            info.clone(),
-            vec![0; 33],
-            Signature::new([0; 65]),
-            2,
-            None,
-        )
-        .unwrap();
+        helper_unstake(deps.as_mut(), info.clone(), &alice, 2, None).unwrap();
     }
 }

@@ -1,7 +1,7 @@
 use crate::tests::utils::{calculate_dr_id_and_args, helper_reg_dr_executor};
 use crate::tests::utils::{
     get_dr_id, helper_commit_result, helper_post_dr, helper_reveal_result, proper_instantiate,
-    reveal_hash, send_tokens, TestExecutor, USER,
+    reveal_hash, send_tokens, USER,
 };
 use common::error::ContractError;
 use common::msg::{
@@ -9,7 +9,7 @@ use common::msg::{
     GetRevealedDataResultResponse, IsDataRequestExecutorEligibleResponse,
 };
 use common::state::RevealBody;
-// use common::types::Signature;
+use common::test_utils::TestExecutor;
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use data_requests::utils::string_to_hash;
@@ -460,7 +460,6 @@ fn pop_and_swap_in_pool() {
         .unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 2);
-    // TODO
     assert_eq!(fetched_drs[0].id, dr_id_3);
     assert_eq!(fetched_drs[1].id, dr_id_2);
 

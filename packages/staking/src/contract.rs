@@ -55,37 +55,28 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterDataRequestExecutor {
-            public_key,
             signature,
             memo,
             sender,
         } => data_request_executors::register_data_request_executor(
-            deps, info, public_key, signature, memo, sender,
+            deps, info, signature, memo, sender,
         ),
-        ExecuteMsg::UnregisterDataRequestExecutor {
-            public_key,
-            signature,
-            sender,
-        } => data_request_executors::unregister_data_request_executor(
-            deps, info, public_key, signature, sender,
-        ),
-        ExecuteMsg::DepositAndStake {
-            public_key,
-            signature,
-            sender,
-        } => staking::deposit_and_stake(deps, env, info, public_key, signature, sender),
+        ExecuteMsg::UnregisterDataRequestExecutor { signature, sender } => {
+            data_request_executors::unregister_data_request_executor(deps, info, signature, sender)
+        }
+        ExecuteMsg::DepositAndStake { signature, sender } => {
+            staking::deposit_and_stake(deps, env, info, signature, sender)
+        }
         ExecuteMsg::Unstake {
-            public_key,
             signature,
             amount,
             sender,
-        } => staking::unstake(deps, env, info, public_key, signature, amount, sender),
+        } => staking::unstake(deps, env, info, signature, amount, sender),
         ExecuteMsg::Withdraw {
-            public_key,
             signature,
             amount,
             sender,
-        } => staking::withdraw(deps, env, info, public_key, signature, amount, sender),
+        } => staking::withdraw(deps, env, info, signature, amount, sender),
         ExecuteMsg::TransferOwnership { new_owner } => {
             config::transfer_ownership(deps, env, info, new_owner)
         }
@@ -132,7 +123,7 @@ mod init_tests {
     };
     use common::error::ContractError;
     use common::state::StakingConfig;
-    use common::types::Signature;
+    use common::test_utils::TestExecutor;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
     use cosmwasm_std::{coins, Addr};
 
@@ -155,29 +146,18 @@ mod init_tests {
 
         // register a data request executor, while passing a sender
         let info = mock_info("anyone", &coins(2, "token"));
+        let exec = TestExecutor::new("sender");
 
-        let res = helper_register_executor(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            None,
-            Some("sender".to_string()),
-        );
+        let res =
+            helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string()));
         assert!(res.is_err_and(|x| x == ContractError::NotProxy));
 
         // register a data request executor from the proxy
         let info = mock_info("proxy", &coins(2, "token"));
 
-        let _res = helper_register_executor(
-            deps.as_mut(),
-            info,
-            vec![0; 33],
-            Signature::new([0; 65]),
-            None,
-            Some("sender".to_string()),
-        )
-        .unwrap();
+        let _res =
+            helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string()))
+                .unwrap();
     }
 
     #[test]

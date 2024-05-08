@@ -36,3 +36,6 @@ cw2 = { workspace = true }
 cw-utils = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+common = { workspace = true, features = ["testing"] }

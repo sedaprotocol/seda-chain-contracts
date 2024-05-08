@@ -1,10 +1,13 @@
-use crate::tests::utils::{proper_instantiate, send_tokens, TestExecutor, NATIVE_DENOM, USER};
+use crate::tests::utils::{
+    helper_reg_dr_executor, proper_instantiate, send_tokens, NATIVE_DENOM, USER,
+};
 
+use common::test_utils::TestExecutor;
 use common::{msg::GetDataRequestExecutorResponse, state::DataRequestExecutor};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 
-use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
+use cw_storage_plus::Endian;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
@@ -16,17 +19,13 @@ fn deposit_stake_withdraw() {
     // send tokens from USER to executor1 so it can register
     send_tokens(&mut app, USER, exec.name, 3);
 
-    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        memo: Some("address".to_string()),
-        public_key: exec.public_key.clone(),
-        signature: exec.sign(["register_data_request_executor".as_bytes().to_vec()]),
-    };
-    let cosmos_msg = proxy_contract
-        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
-        .unwrap();
-    // register executor
-    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
-        .unwrap();
+    helper_reg_dr_executor(
+        &mut app,
+        proxy_contract.clone(),
+        &exec,
+        Some("address".to_string()),
+    )
+    .unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
         executor: exec.public_key.clone(),
@@ -48,13 +47,15 @@ fn deposit_stake_withdraw() {
     );
 
     // deposit 2 more
+    let sender = Addr::unchecked(exec.name);
     let msg = ProxyExecuteMsg::DepositAndStake {
-        public_key: exec.public_key.clone(),
-        signature: exec.sign(["deposit_and_stake".as_bytes().to_vec()]),
+        signature: exec.sign([
+            "deposit_and_stake".as_bytes().to_vec(),
+            sender.as_bytes().to_vec(),
+        ]),
     };
     let cosmos_msg = proxy_contract.call_with_deposit(msg, 2).unwrap();
-    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
-        .unwrap();
+    app.execute(sender.clone(), cosmos_msg.clone()).unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
         executor: exec.public_key.clone(),
@@ -76,14 +77,18 @@ fn deposit_stake_withdraw() {
     );
 
     // unstake 2
+    let amount = 2;
+    let amount_bytes: [u8; 16] = amount.to_be_bytes();
     let msg = ProxyExecuteMsg::Unstake {
-        amount: 2,
-        public_key: exec.public_key.clone(),
-        signature: exec.sign(["unstake".as_bytes().to_vec()]),
+        signature: exec.sign([
+            "unstake".as_bytes().to_vec(),
+            amount_bytes.to_vec(),
+            sender.as_bytes().to_vec(),
+        ]),
+        amount,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
-    app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())
-        .unwrap();
+    app.execute(sender.clone(), cosmos_msg.clone()).unwrap();
 
     let msg = ProxyQueryMsg::GetDataRequestExecutor {
         executor: exec.public_key.clone(),
@@ -113,10 +118,15 @@ fn deposit_stake_withdraw() {
     assert_eq!(balance_before, 0);
 
     // withdraw 2
+    let amount = 2;
+    let amount_bytes: [u8; 16] = amount.to_be_bytes();
     let msg = ProxyExecuteMsg::Withdraw {
-        amount: 2,
-        public_key: exec.public_key.clone(),
-        signature: exec.sign(["withdraw".as_bytes().to_vec()]),
+        signature: exec.sign([
+            "withdraw".as_bytes().to_vec(),
+            amount_bytes.to_vec(),
+            sender.as_bytes().to_vec(),
+        ]),
+        amount,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(Addr::unchecked(exec.name), cosmos_msg.clone())

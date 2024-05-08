@@ -146,11 +146,7 @@ pub fn execute(
             .add_attribute("action", "reveal_data_result")),
 
         // Staking
-        ProxyExecuteMsg::RegisterDataRequestExecutor {
-            public_key,
-            signature,
-            memo,
-        } => {
+        ProxyExecuteMsg::RegisterDataRequestExecutor { signature, memo } => {
             // require token deposit
             let token = TOKEN.load(deps.storage)?;
             let amount = get_attached_funds(&info.funds, &token)?;
@@ -159,7 +155,6 @@ pub fn execute(
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
-                        public_key,
                         signature,
                         memo,
                         sender: Some(info.sender.to_string()),
@@ -171,24 +166,17 @@ pub fn execute(
                 }))
                 .add_attribute("action", "register_data_request_executor"))
         }
-        ProxyExecuteMsg::UnregisterDataRequestExecutor {
-            public_key,
-            signature,
-        } => Ok(Response::new()
+        ProxyExecuteMsg::UnregisterDataRequestExecutor { signature } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
-                    public_key,
                     signature,
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
             }))
             .add_attribute("action", "unregister_data_request_executor")),
-        ProxyExecuteMsg::DepositAndStake {
-            public_key,
-            signature,
-        } => {
+        ProxyExecuteMsg::DepositAndStake { signature } => {
             // require token deposit
             let token = TOKEN.load(deps.storage)?;
             let amount = get_attached_funds(&info.funds, &token)?;
@@ -197,7 +185,6 @@ pub fn execute(
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
                     msg: to_json_binary(&StakingExecuteMsg::DepositAndStake {
-                        public_key,
                         signature,
                         sender: Some(info.sender.to_string()),
                     })?,
@@ -208,15 +195,10 @@ pub fn execute(
                 }))
                 .add_attribute("action", "deposit_and_stake"))
         }
-        ProxyExecuteMsg::Unstake {
-            public_key,
-            signature,
-            amount,
-        } => Ok(Response::new()
+        ProxyExecuteMsg::Unstake { signature, amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::Unstake {
-                    public_key,
                     signature,
                     amount,
                     sender: Some(info.sender.to_string()),
@@ -224,15 +206,10 @@ pub fn execute(
                 funds: vec![],
             }))
             .add_attribute("action", "unstake")),
-        ProxyExecuteMsg::Withdraw {
-            public_key,
-            signature,
-            amount,
-        } => Ok(Response::new()
+        ProxyExecuteMsg::Withdraw { signature, amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&StakingExecuteMsg::Withdraw {
-                    public_key,
                     signature,
                     amount,
                     sender: Some(info.sender.to_string()),
@@ -411,7 +388,7 @@ pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, Contract
 #[cfg(test)]
 mod init_tests {
     use super::*;
-    use common::types::Signature;
+    use common::test_utils::TestExecutor;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 
@@ -456,9 +433,12 @@ mod init_tests {
         let info = mock_info("creator", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
+        let exec = TestExecutor::new("sender");
         let msg = ProxyExecuteMsg::DepositAndStake {
-            public_key: vec![0; 33],
-            signature: Signature::new([0; 65]),
+            signature: exec.sign([
+                "deposit_and_stake".as_bytes().to_vec(),
+                "sender".as_bytes().to_vec(),
+            ]),
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();

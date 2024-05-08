@@ -1,5 +1,6 @@
 use common::msg::{GetOwnerResponse, GetPendingOwnerResponse};
-use common::types::{Secpk256k1PublicKey, Signature};
+use common::test_utils::TestExecutor;
+use common::types::Secpk256k1PublicKey;
 use cosmwasm_std::{from_json, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query};
@@ -26,13 +27,27 @@ pub fn instantiate_staking_contract(
 pub fn helper_register_executor(
     deps: DepsMut,
     info: MessageInfo,
-    public_key: Secpk256k1PublicKey,
-    signature: Signature,
+    exec: &TestExecutor,
     memo: Option<String>,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
+    let sender_unwrapped = sender
+        .clone()
+        .map(Addr::unchecked)
+        .unwrap_or(info.sender.clone());
+    let signature = if let Some(m) = memo.as_ref() {
+        exec.sign([
+            "register_data_request_executor".as_bytes().to_vec(),
+            sender_unwrapped.as_bytes().to_vec(),
+            m.as_bytes().to_vec(),
+        ])
+    } else {
+        exec.sign([
+            "register_data_request_executor".as_bytes().to_vec(),
+            sender_unwrapped.as_bytes().to_vec(),
+        ])
+    };
     let msg = StakingExecuteMsg::RegisterDataRequestExecutor {
-        public_key,
         signature,
         memo,
         sender,
@@ -58,15 +73,18 @@ pub fn helper_accept_ownership(
 pub fn helper_unregister_executor(
     deps: DepsMut,
     info: MessageInfo,
-    public_key: Secpk256k1PublicKey,
-    signature: Signature,
+    exec: &TestExecutor,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let msg = StakingExecuteMsg::UnregisterDataRequestExecutor {
-        public_key,
-        signature,
-        sender,
-    };
+    let sender_unwrapped = sender
+        .clone()
+        .map(Addr::unchecked)
+        .unwrap_or(info.sender.clone());
+    let signature = exec.sign([
+        "unregister_data_request_executor".as_bytes().to_vec(),
+        sender_unwrapped.as_bytes().to_vec(),
+    ]);
+    let msg = StakingExecuteMsg::UnregisterDataRequestExecutor { signature, sender };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -102,28 +120,38 @@ pub fn helper_get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
 pub fn helper_deposit_and_stake(
     deps: DepsMut,
     info: MessageInfo,
-    public_key: Secpk256k1PublicKey,
-    signature: Signature,
+    exec: &TestExecutor,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let msg = StakingExecuteMsg::DepositAndStake {
-        public_key,
-        signature,
-        sender,
-    };
+    let sender_unwrapped = sender
+        .clone()
+        .map(Addr::unchecked)
+        .unwrap_or(info.sender.clone());
+    let signature = exec.sign([
+        "deposit_and_stake".as_bytes().to_vec(),
+        sender_unwrapped.as_bytes().to_vec(),
+    ]);
+    let msg = StakingExecuteMsg::DepositAndStake { signature, sender };
     execute(deps, mock_env(), info, msg)
 }
 
 pub fn helper_unstake(
     deps: DepsMut,
     info: MessageInfo,
-    public_key: Secpk256k1PublicKey,
-    signature: Signature,
+    exec: &TestExecutor,
     amount: u128,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
+    let sender_unwrapped = sender
+        .clone()
+        .map(Addr::unchecked)
+        .unwrap_or(info.sender.clone());
+    let signature = exec.sign([
+        "unstake".as_bytes().to_vec(),
+        amount.to_be_bytes().to_vec(),
+        sender_unwrapped.as_bytes().to_vec(),
+    ]);
     let msg = StakingExecuteMsg::Unstake {
-        public_key,
         signature,
         amount,
         sender,
@@ -134,13 +162,20 @@ pub fn helper_unstake(
 pub fn helper_withdraw(
     deps: DepsMut,
     info: MessageInfo,
-    public_key: Secpk256k1PublicKey,
-    signature: Signature,
+    exec: &TestExecutor,
     amount: u128,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
+    let sender_unwrapped = sender
+        .clone()
+        .map(Addr::unchecked)
+        .unwrap_or(info.sender.clone());
+    let signature = exec.sign([
+        "withdraw".as_bytes().to_vec(),
+        amount.to_be_bytes().to_vec(),
+        sender_unwrapped.as_bytes().to_vec(),
+    ]);
     let msg = StakingExecuteMsg::Withdraw {
-        public_key,
         signature,
         amount,
         sender,

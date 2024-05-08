@@ -18,12 +18,6 @@ pub type Secpk256k1PublicKey = Vec<u8>;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Signature(pub(crate) [u8; 65]);
 
-impl Signature {
-    pub fn new(signature: [u8; 65]) -> Self {
-        Self(signature)
-    }
-}
-
 impl Serialize for Signature {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -88,5 +82,11 @@ impl JsonSchema for Signature {
             ..Default::default()
         };
         schema.into()
+    }
+}
+
+impl From<[u8; 65]> for Signature {
+    fn from(bytes: [u8; 65]) -> Self {
+        Signature(bytes)
     }
 }

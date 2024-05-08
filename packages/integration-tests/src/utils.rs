@@ -1,6 +1,7 @@
 use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use common::msg::PostDataRequestArgs;
 use common::state::RevealBody;
+use common::test_utils::TestExecutor;
 use common::types::Bytes;
 use common::types::Hash;
 use common::types::Secpk256k1PublicKey;
@@ -18,58 +19,10 @@ use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
 
-use k256::{
-    ecdsa::{SigningKey, VerifyingKey},
-    elliptic_curve::rand_core::OsRng,
-};
-
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
 const OWNER: &str = "owner";
 pub const NATIVE_DENOM: &str = "seda";
-
-pub struct TestExecutor {
-    pub name: &'static str,
-    pub signing_key: SigningKey,
-    pub verifying_key: VerifyingKey,
-    pub public_key: Secpk256k1PublicKey,
-}
-
-impl TestExecutor {
-    pub fn new(name: &'static str) -> Self {
-        let signing_key = SigningKey::random(&mut OsRng); // Serialize with `::to_bytes()`
-        let verifying_key = VerifyingKey::from(&signing_key);
-        TestExecutor {
-            name,
-            signing_key,
-            verifying_key,
-            public_key: verifying_key.to_sec1_bytes().to_vec(),
-        }
-    }
-
-    pub fn salt(&self) -> Hash {
-        let mut hasher = Keccak256::new();
-        hasher.update(self.name);
-        hasher.finalize().into()
-    }
-
-    pub fn sign<I>(&self, msg: I) -> Signature
-    where
-        I: IntoIterator<Item = Vec<u8>>,
-    {
-        let mut hasher = Keccak256::new();
-        for m in msg {
-            hasher.update(m);
-        }
-        let hash = hasher.finalize();
-        let (signature, rid) = self.signing_key.sign_recoverable(hash.as_ref()).unwrap();
-
-        let mut sig: [u8; 65] = [0; 65];
-        sig[0..64].copy_from_slice(&signature.to_bytes());
-        sig[64] = rid.into();
-        Signature::new(sig)
-    }
-}
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -294,21 +247,22 @@ pub fn helper_reg_dr_executor(
     executor: &TestExecutor,
     memo: Option<String>,
 ) -> Result<AppResponse, anyhow::Error> {
+    let sender = Addr::unchecked(executor.name);
     let contract_call_bytes = "register_data_request_executor".as_bytes().to_vec();
     let signature = if let Some(m) = memo.as_ref() {
-        executor.sign([contract_call_bytes, m.as_bytes().to_vec()])
+        executor.sign([
+            contract_call_bytes,
+            sender.as_bytes().to_vec(),
+            m.as_bytes().to_vec(),
+        ])
     } else {
-        executor.sign([contract_call_bytes])
+        executor.sign([contract_call_bytes, sender.as_bytes().to_vec()])
     };
-    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        public_key: executor.public_key.clone(),
-        signature,
-        memo,
-    };
+    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor { signature, memo };
     let cosmos_msg = proxy_contract
         .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
         .unwrap();
-    app.execute(Addr::unchecked(executor.name), cosmos_msg.clone())
+    app.execute(sender, cosmos_msg.clone())
 }
 
 pub fn helper_commit_result(

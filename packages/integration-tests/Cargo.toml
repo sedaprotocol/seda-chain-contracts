@@ -45,5 +45,7 @@ serde_json = { workspace = true }
 sha3 = { workspace = true }
 thiserror = { workspace = true }
 semver = { workspace = true }
+
 [dev-dependencies]
 cw-multi-test.workspace = true
+common = { workspace = true, features = ["testing"] }
