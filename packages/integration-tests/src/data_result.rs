@@ -3,8 +3,6 @@ use crate::tests::utils::{
     get_dr_id, helper_commit_result, helper_post_dr, helper_reveal_result, proper_instantiate,
     reveal_hash, send_tokens, TestExecutor, USER,
 };
-use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
-// use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
 use common::error::ContractError;
 use common::msg::{
     GetCommittedDataResultResponse, GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
@@ -324,26 +322,11 @@ fn pop_and_swap_in_pool() {
     // send tokens from USER to executor1 and executor2 so they can register
     send_tokens(&mut app, USER, exec_1.name, 1);
     send_tokens(&mut app, USER, exec_2.name, 1);
-    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        memo: Some("address".to_string()),
-        public_key: exec_1.public_key.clone(),
-        signature: exec_1.sign(["address".as_bytes().to_vec()]),
-    };
-    let cosmos_msg = proxy_contract
-        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
-        .unwrap();
-    app.execute(Addr::unchecked(exec_1.name), cosmos_msg.clone())
-        .unwrap();
-    let msg = ProxyExecuteMsg::RegisterDataRequestExecutor {
-        memo: Some("address".to_string()),
-        public_key: exec_2.public_key.clone(),
-        signature: exec_2.sign(["address".as_bytes().to_vec()]),
-    };
-    let cosmos_msg = proxy_contract
-        .call_with_deposit(msg, INITIAL_MINIMUM_STAKE_TO_REGISTER)
-        .unwrap();
-    app.execute(Addr::unchecked(exec_2.name), cosmos_msg.clone())
-        .unwrap();
+
+    // register executors
+    let memo = Some("address".to_string());
+    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &exec_1, memo.clone()).unwrap();
+    helper_reg_dr_executor(&mut app, proxy_contract.clone(), &exec_2, memo.clone()).unwrap();
 
     // post three drs
 
@@ -386,10 +369,9 @@ fn pop_and_swap_in_pool() {
         .unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 3);
-    // TODO
-    // assert_eq!(fetched_drs[0].dr_id, dr_id_1);
-    // assert_eq!(fetched_drs[1].dr_id, dr_id_2);
-    // assert_eq!(fetched_drs[2].dr_id, dr_id_3);
+    assert_eq!(fetched_drs[0].id, dr_id_1);
+    assert_eq!(fetched_drs[1].id, dr_id_2);
+    assert_eq!(fetched_drs[2].id, dr_id_3);
 
     // `GetDataRequestsFromPool` with position = 0 and limit = 1 should return dr 1
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
@@ -402,7 +384,7 @@ fn pop_and_swap_in_pool() {
         .unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
-    // assert_eq!(fetched_drs[0].dr_id, dr_id_1); // TODO
+    assert_eq!(fetched_drs[0].id, dr_id_1);
 
     // resolve dr 1
 
@@ -479,8 +461,8 @@ fn pop_and_swap_in_pool() {
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 2);
     // TODO
-    // assert_eq!(fetched_drs[0].dr_id, dr_id_3);
-    // assert_eq!(fetched_drs[1].dr_id, dr_id_2);
+    assert_eq!(fetched_drs[0].id, dr_id_3);
+    assert_eq!(fetched_drs[1].id, dr_id_2);
 
     // `GetDataRequestsFromPool` with position = 1 should return dr 2
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
@@ -493,7 +475,7 @@ fn pop_and_swap_in_pool() {
         .unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
-    // assert_eq!(fetched_drs[0].dr_id, dr_id_2); // TODO
+    assert_eq!(fetched_drs[0].id, dr_id_2);
 
     // `GetDataRequestsFromPool` with limit = 1 should return dr 3
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
