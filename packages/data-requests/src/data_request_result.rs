@@ -43,8 +43,6 @@ pub mod data_request_results {
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
 
-        // TODO: verify proof is signed by public key
-
         if !check_eligibility(&deps, public_key.clone())? {
             return Err(IneligibleExecutor);
         }
@@ -89,16 +87,14 @@ pub mod data_request_results {
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
 
-        // TODO: verify proof is signed by public key, then check eligibility
-        // if !check_eligibility(&deps, public_key)? {
-        //     return Err(IneligibleExecutor);
-        // }
-
         // compute hash of reveal body
         let reveal_body_hash = compute_hash(reveal_body.clone());
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(reveal_body_hash, signature);
+        let public_key: Secpk256k1PublicKey = recover_pubkey(reveal_body_hash, signature)?;
+        if !check_eligibility(&deps, public_key.clone())? {
+            return Err(IneligibleExecutor);
+        }
 
         // find the data request from the committed pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;

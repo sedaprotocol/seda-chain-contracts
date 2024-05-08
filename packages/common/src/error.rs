@@ -23,6 +23,8 @@ pub enum ContractError {
     NotOnAllowlist,
     #[error("InvalidSignature: Invalid signature")]
     InvalidSignature,
+    #[error("InvalidSignatureRecoveryId: Invalid signature recovery ID")]
+    InvalidSignatureRecoveryId,
 
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]

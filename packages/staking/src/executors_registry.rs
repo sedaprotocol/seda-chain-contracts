@@ -1,6 +1,5 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
-// use cosmwasm_crypto::secp256k1_verify; // TODO
 
 use crate::state::{CONFIG, DATA_REQUEST_EXECUTORS, TOKEN};
 use crate::utils::{get_attached_funds, validate_sender};
@@ -45,13 +44,6 @@ pub mod data_request_executors {
             }
         }
 
-        // TODO: do we even need to verify signature here, if we already check the caller can sign using the public key in every other call?
-        // let expected_message_hash = sender.as_bytes(); // TODO hash this
-        // let is_signature_valid = secp256k1_verify(&expected_message, &signature, &public_key).unwrap();
-        // if !is_signature_valid {
-        //     return Err(ContractError::InvalidSignature);
-        // }
-
         // compute message hash
         let message_hash = if let Some(m) = memo.as_ref() {
             hash([
@@ -67,7 +59,7 @@ pub mod data_request_executors {
         };
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
@@ -127,7 +119,7 @@ pub mod data_request_executors {
         ]);
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // require that the executor has no staked or tokens pending withdrawal
         let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;

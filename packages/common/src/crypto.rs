@@ -1,21 +1,28 @@
 use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use sha3::{Digest, Keccak256};
 
-use crate::types::{Secpk256k1PublicKey, Signature as Sig};
+use crate::{
+    error::ContractError,
+    types::{Secpk256k1PublicKey, Signature as Sig},
+};
 
-pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Secpk256k1PublicKey {
+pub fn recover_pubkey(
+    msg_hash: [u8; 32],
+    signature: Sig,
+) -> Result<Secpk256k1PublicKey, ContractError> {
     let rs = signature.0[0..64].into();
     let id = match signature.0[64] {
         0 => RecoveryId::new(false, false),
         1 => RecoveryId::new(true, false),
-        _ => todo!("ERROR"),
+        _ => return Err(ContractError::InvalidSignatureRecoveryId),
     };
 
-    let sig = Signature::from_bytes(rs).expect("TODO");
+    let sig = Signature::from_bytes(rs).map_err(|_| ContractError::InvalidSignature)?;
 
     // Recover
-    let pubkey = VerifyingKey::recover_from_msg(&msg_hash, &sig, id).expect("TODO");
-    pubkey.to_sec1_bytes().to_vec()
+    let pubkey = VerifyingKey::recover_from_msg(&msg_hash, &sig, id)
+        .map_err(|_| ContractError::InvalidSignature)?;
+    Ok(pubkey.to_sec1_bytes().to_vec())
 }
 
 pub fn hash<'a, I>(iter: I) -> [u8; 32]

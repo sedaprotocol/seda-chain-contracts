@@ -487,7 +487,7 @@ fn pop_and_swap_in_pool() {
         .unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
-    // assert_eq!(fetched_drs[0].dr_id, dr_id_3); // TODO
+    assert_eq!(fetched_drs[0].id, dr_id_3);
 
     // `GetDataRequestsFromPool` with position = 2 or 3 should return empty array
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {

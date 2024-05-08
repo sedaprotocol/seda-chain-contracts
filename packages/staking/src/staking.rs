@@ -46,7 +46,7 @@ pub mod staking {
         let message_hash = hash(["deposit_and_stake".as_bytes(), sender.as_bytes()]);
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // update staked tokens for executor
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
@@ -104,7 +104,7 @@ pub mod staking {
         ]);
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // error if amount is greater than staked tokens
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
@@ -172,7 +172,7 @@ pub mod staking {
         ]);
 
         // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature);
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;

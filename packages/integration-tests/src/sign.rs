@@ -12,7 +12,7 @@ pub fn recover_pub_key_from_sig() {
 
     let sig = executor.sign(["hello world".as_bytes().to_vec()]);
 
-    let pk = recover_pubkey(hash.into(), sig);
+    let pk = recover_pubkey(hash.into(), sig).unwrap();
 
     assert_eq!(pk, executor.public_key);
 }

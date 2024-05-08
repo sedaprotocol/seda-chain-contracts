@@ -61,12 +61,8 @@ pub fn hash_data_result(
 ) -> Hash {
     // hash non-fixed-length inputs
     let mut results_hasher = Keccak256::new();
-    results_hasher.update(result); // TODO check this
+    results_hasher.update(result);
     let results_hash = results_hasher.finalize();
-
-    let mut payback_address_hasher = Keccak256::new();
-    payback_address_hasher.update(&dr.payback_address);
-    let payback_address_hash = payback_address_hasher.finalize();
 
     let mut seda_payload_hasher = Keccak256::new();
     seda_payload_hasher.update(&dr.seda_payload);
@@ -74,12 +70,13 @@ pub fn hash_data_result(
 
     // hash data result
     let mut dr_hasher = Keccak256::new();
+    dr_hasher.update(dr.version.to_string().as_bytes());
     dr_hasher.update(dr.id);
     dr_hasher.update(block_height.to_be_bytes());
     dr_hasher.update(exit_code.to_be_bytes());
     dr_hasher.update(results_hash);
     dr_hasher.update(gas_used.to_be_bytes());
-    dr_hasher.update(payback_address_hash);
+    dr_hasher.update(&dr.payback_address);
     dr_hasher.update(seda_payload_hash);
     dr_hasher.finalize().into()
 }
