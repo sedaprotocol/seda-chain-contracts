@@ -13,7 +13,7 @@ pub mod data_request_executors {
         crypto::{hash, recover_pubkey},
         error::ContractError,
         msg::IsDataRequestExecutorEligibleResponse,
-        types::Signature,
+        types::{Signature, SimpleHash},
     };
     use cosmwasm_std::Event;
 
@@ -49,7 +49,7 @@ pub mod data_request_executors {
             hash([
                 "register_data_request_executor".as_bytes(),
                 sender.as_bytes(),
-                m.as_bytes(),
+                &m.simple_hash(),
             ])
         } else {
             hash([

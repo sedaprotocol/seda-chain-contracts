@@ -6,6 +6,7 @@ use common::types::Bytes;
 use common::types::Hash;
 use common::types::Secpk256k1PublicKey;
 use common::types::Signature;
+use common::types::SimpleHash;
 use cosmwasm_std::{
     to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg,
 };
@@ -253,7 +254,7 @@ pub fn helper_reg_dr_executor(
         executor.sign([
             contract_call_bytes,
             sender.as_bytes().to_vec(),
-            m.as_bytes().to_vec(),
+            m.simple_hash().to_vec(),
         ])
     } else {
         executor.sign([contract_call_bytes, sender.as_bytes().to_vec()])

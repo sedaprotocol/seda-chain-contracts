@@ -8,6 +8,7 @@ use serde::{
     ser::SerializeTuple,
     Deserialize, Deserializer, Serialize, Serializer,
 };
+use sha3::{Digest, Keccak256};
 
 pub type Bytes = Vec<u8>;
 pub type Commitment = Hash;
@@ -15,6 +16,17 @@ pub type Memo = Vec<u8>;
 pub type Hash = [u8; 32];
 pub type Secpk256k1PublicKey = Vec<u8>;
 
+pub trait SimpleHash {
+    fn simple_hash(&self) -> Hash;
+}
+
+impl SimpleHash for String {
+    fn simple_hash(&self) -> Hash {
+        let mut hasher = Keccak256::new();
+        hasher.update(self.as_bytes());
+        hasher.finalize().into()
+    }
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct Signature(pub(crate) [u8; 65]);
 

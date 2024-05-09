@@ -1,6 +1,6 @@
 use common::msg::{GetOwnerResponse, GetPendingOwnerResponse};
 use common::test_utils::TestExecutor;
-use common::types::Secpk256k1PublicKey;
+use common::types::{Secpk256k1PublicKey, SimpleHash};
 use cosmwasm_std::{from_json, Addr, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query};
@@ -39,7 +39,7 @@ pub fn helper_register_executor(
         exec.sign([
             "register_data_request_executor".as_bytes().to_vec(),
             sender_unwrapped.as_bytes().to_vec(),
-            m.as_bytes().to_vec(),
+            m.simple_hash().to_vec(),
         ])
     } else {
         exec.sign([
