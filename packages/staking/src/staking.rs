@@ -376,7 +376,7 @@ mod staking_tests {
         let msg = ExecuteMsg::DepositAndStake {
             sender: None,
             signature: exec.sign([
-                "register_data_request_executor".as_bytes().to_vec(),
+                "deposit_and_stake".as_bytes().to_vec(),
                 "anyone".as_bytes().to_vec(),
             ]),
         };
