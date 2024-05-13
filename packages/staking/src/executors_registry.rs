@@ -72,7 +72,7 @@ pub mod data_request_executors {
         };
         DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
-        apply_validator_eligibility(deps, public_key.clone(), amount)?;
+        apply_validator_eligibility(deps, &public_key, amount)?;
 
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")

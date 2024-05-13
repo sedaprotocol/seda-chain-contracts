@@ -5,15 +5,15 @@ use crate::state::{CONFIG, ELIGIBLE_DATA_REQUEST_EXECUTORS, PROXY_CONTRACT};
 
 pub fn apply_validator_eligibility(
     deps: DepsMut,
-    public_key: Secpk256k1PublicKey,
+    public_key: &Secpk256k1PublicKey,
     tokens_staked: u128,
 ) -> Result<(), ContractError> {
     if tokens_staked < CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility {
-        if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, &public_key) {
-            ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, &public_key);
+        if ELIGIBLE_DATA_REQUEST_EXECUTORS.has(deps.storage, public_key) {
+            ELIGIBLE_DATA_REQUEST_EXECUTORS.remove(deps.storage, public_key);
         }
     } else {
-        ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &true)?;
+        ELIGIBLE_DATA_REQUEST_EXECUTORS.save(deps.storage, public_key, &true)?;
     }
     Ok(())
 }

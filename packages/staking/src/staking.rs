@@ -52,14 +52,14 @@ pub mod staking {
         executor.tokens_staked += amount;
         DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
-        apply_validator_eligibility(deps, public_key.clone(), executor.tokens_staked)?;
+        apply_validator_eligibility(deps, &public_key, executor.tokens_staked)?;
 
         Ok(Response::new()
             .add_attribute("action", "deposit_and_stake")
             .add_events([
                 Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
-                    ("executor", &hex::encode(public_key.clone())),
+                    ("executor", &hex::encode(&public_key)),
                     ("memo", &executor.memo.unwrap_or_default()),
                     ("tokens_staked", &executor.tokens_staked.to_string()),
                     (
@@ -112,13 +112,13 @@ pub mod staking {
         executor.tokens_pending_withdrawal += amount;
         DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
-        apply_validator_eligibility(deps, public_key.clone(), executor.tokens_staked)?;
+        apply_validator_eligibility(deps, &public_key, executor.tokens_staked)?;
 
         // TODO: emit when pending tokens can be withdrawn
         Ok(Response::new().add_attribute("action", "unstake").add_events([
             Event::new("seda-data-request-executor").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("executor", &hex::encode(public_key.clone())),
+                ("executor", &hex::encode(&public_key)),
                 ("memo", &executor.memo.unwrap_or_default()),
                 ("tokens_staked", &executor.tokens_staked.to_string()),
                 (
