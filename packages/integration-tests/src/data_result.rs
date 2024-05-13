@@ -59,9 +59,9 @@ fn commit_reveal_result() {
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_1,
         string_to_hash("nonexistent"),
         string_to_hash("result"),
-        exec_1.public_key.clone(),
         Addr::unchecked(exec_1.name),
     );
     assert!(res.is_err());
@@ -92,9 +92,9 @@ fn commit_reveal_result() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_1,
         dr_id,
         commitment1,
-        exec_1.public_key.clone(),
         Addr::unchecked(exec_1.name),
     )
     .unwrap();
@@ -118,9 +118,9 @@ fn commit_reveal_result() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_2,
         dr_id,
         commitment2,
-        exec_2.public_key.clone(),
         Addr::unchecked(exec_2.name),
     )
     .unwrap();
@@ -129,9 +129,9 @@ fn commit_reveal_result() {
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_2,
         dr_id,
         commitment2,
-        exec_2.public_key.clone(),
         Addr::unchecked(exec_2.name),
     );
     assert_eq!(
@@ -152,13 +152,15 @@ fn commit_reveal_result() {
 
     // can't add another commitment since replication factor is reached
     let (commitment3, _) = reveal_hash(&reveal1, Some(exec_3.name));
-    let msg = ProxyExecuteMsg::CommitDataResult {
+    let res = helper_commit_result(
+        &mut app,
+        proxy_contract.clone(),
+        &exec_3,
         dr_id,
-        commitment: commitment3,
-        public_key: exec_3.public_key.clone(),
-    };
-    let cosmos_msg = proxy_contract.call(msg).unwrap();
-    let res = app.execute(Addr::unchecked(exec_3.name), cosmos_msg);
+        commitment3,
+        Addr::unchecked(exec_3.name),
+    );
+
     assert_eq!(
         res.unwrap_err().downcast_ref::<ContractError>(),
         Some(&ContractError::RevealStarted)
@@ -300,9 +302,9 @@ fn ineligible_post_data_result() {
     let res = helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_1,
         dr_id,
         commitment1,
-        exec_1.public_key.clone(),
         Addr::unchecked(exec_1.name),
     );
 
@@ -401,9 +403,9 @@ fn pop_and_swap_in_pool() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_1,
         dr_id_1,
         commitment1,
-        exec_1.public_key.clone(),
         Addr::unchecked(exec_1.name),
     )
     .unwrap();
@@ -420,9 +422,9 @@ fn pop_and_swap_in_pool() {
     helper_commit_result(
         &mut app,
         proxy_contract.clone(),
+        &exec_2,
         dr_id_1,
         commitment2,
-        exec_2.public_key.clone(),
         Addr::unchecked(exec_2.name),
     )
     .unwrap();

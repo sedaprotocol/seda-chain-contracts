@@ -18,11 +18,18 @@ pub trait SimpleHash {
     fn simple_hash(&self) -> Hash;
 }
 
-impl SimpleHash for String {
+impl SimpleHash for &str {
     fn simple_hash(&self) -> Hash {
         let mut hasher = Keccak256::new();
         hasher.update(self.as_bytes());
         hasher.finalize().into()
+    }
+}
+
+impl SimpleHash for String {
+    fn simple_hash(&self) -> Hash {
+        let refer: &str = self.as_ref();
+        refer.simple_hash()
     }
 }
 

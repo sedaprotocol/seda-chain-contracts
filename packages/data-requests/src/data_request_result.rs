@@ -6,7 +6,7 @@ use common::types::Hash;
 
 pub mod data_request_results {
 
-    use common::crypto::recover_pubkey;
+    use common::crypto::{hash, recover_pubkey};
     use common::error::ContractError::{
         self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
         RevealNotStarted, RevealStarted,
@@ -38,11 +38,21 @@ pub mod data_request_results {
         info: MessageInfo,
         dr_id: Hash,
         commitment: Hash,
-        public_key: Secpk256k1PublicKey,
         sender: Option<String>,
+        signature: Signature,
     ) -> Result<Response, ContractError> {
         let sender = validate_sender(&deps, info.sender, sender)?;
 
+        // compute message hash
+        let message_hash = hash([
+            "commit_data_result".as_bytes(),
+            &dr_id,
+            &commitment,
+            sender.as_bytes(),
+        ]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
         if !check_eligibility(&deps, public_key.clone())? {
             return Err(IneligibleExecutor);
         }
@@ -275,8 +285,9 @@ pub mod data_request_results {
 mod data_request_result_tests {
     use crate::contract::execute;
     use crate::helpers::instantiate_dr_contract;
-    use crate::utils::string_to_hash;
     use common::msg::DataRequestsExecuteMsg;
+    use common::test_utils::TestExecutor;
+    use common::types::SimpleHash;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 
@@ -286,16 +297,27 @@ mod data_request_result_tests {
         let mut deps = mock_dependencies();
 
         let info = mock_info("creator", &coins(2, "token"));
+        let exec = TestExecutor::new("creator");
 
         // instantiate contract
         instantiate_dr_contract(deps.as_mut(), info).unwrap();
 
+        let dr_id = "dr_id".simple_hash();
+        let commitment = "commitment".simple_hash();
+        let sender = "someone".to_string();
+        let signature = exec.sign([
+            "commit_data_result".as_bytes().to_vec(),
+            dr_id.to_vec(),
+            commitment.to_vec(),
+            sender.as_bytes().to_vec(),
+        ]);
+
         // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
         let msg = DataRequestsExecuteMsg::CommitDataResult {
-            dr_id: string_to_hash("dr_id"),
-            commitment: string_to_hash("commitment"),
+            dr_id,
+            commitment,
             sender: Some("someone".to_string()),
-            public_key: vec![],
+            signature,
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();

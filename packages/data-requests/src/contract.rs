@@ -49,9 +49,9 @@ pub fn execute(
         ExecuteMsg::CommitDataResult {
             dr_id,
             commitment,
-            public_key,
             sender,
-        } => data_request_results::commit_result(deps, info, dr_id, commitment, public_key, sender),
+            signature,
+        } => data_request_results::commit_result(deps, info, dr_id, commitment, sender, signature),
         ExecuteMsg::RevealDataResult {
             dr_id,
             reveal,

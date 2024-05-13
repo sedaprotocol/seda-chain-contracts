@@ -4,7 +4,6 @@ use common::state::RevealBody;
 use common::test_utils::TestExecutor;
 use common::types::Bytes;
 use common::types::Hash;
-use common::types::Secpk256k1PublicKey;
 use common::types::Signature;
 use common::types::SimpleHash;
 use cosmwasm_std::{
@@ -269,15 +268,21 @@ pub fn helper_reg_dr_executor(
 pub fn helper_commit_result(
     app: &mut App,
     proxy_contract: CwTemplateContract,
+    executor: &TestExecutor,
     dr_id: Hash,
     commitment: Hash,
-    public_key: Secpk256k1PublicKey,
     sender: Addr,
 ) -> Result<AppResponse, anyhow::Error> {
+    let signature = executor.sign([
+        "commit_data_result".as_bytes().to_vec(),
+        dr_id.to_vec(),
+        commitment.to_vec(),
+        sender.as_bytes().to_vec(),
+    ]);
     let msg = ProxyExecuteMsg::CommitDataResult {
         dr_id,
         commitment,
-        public_key,
+        signature,
     };
     let cosmos_msg = proxy_contract.call(msg).unwrap();
     app.execute(sender, cosmos_msg.clone())

@@ -29,8 +29,8 @@ pub enum DataRequestsExecuteMsg {
     CommitDataResult {
         dr_id: Hash,
         commitment: Hash,
-        public_key: Secpk256k1PublicKey,
         sender: Option<String>,
+        signature: Signature,
     },
     RevealDataResult {
         dr_id: Hash,

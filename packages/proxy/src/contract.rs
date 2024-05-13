@@ -115,14 +115,14 @@ pub fn execute(
         ProxyExecuteMsg::CommitDataResult {
             dr_id,
             commitment,
-            public_key,
+            signature,
         } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
                 msg: to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
-                    public_key,
+                    signature,
                     sender: Some(info.sender.to_string()),
                 })?,
                 funds: vec![],
