@@ -1,8 +1,12 @@
-# Based on https://github.com/actions-rs/example/blob/master/.github/workflows/quickstart.yml
-
 on: [push, pull_request]
 
 name: Basic
+
+# Cancel in progress workflows on pull_requests.
+# https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
 
@@ -10,51 +14,50 @@ jobs:
     name: Test Suite
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+      - name: 📥 Checkout sources
+        uses: actions/checkout@v4
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - name: ☁️ Install stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: 1.72.1
           target: wasm32-unknown-unknown
-          override: true
 
-      - name: Run unit tests
+      - name: 📋 Run cargo clippy
+        run: cargo clippy -- -D warnings
+
+      - name: 🧪 Run unit tests
+        if: always()
         run: cargo test --locked
         env:
           RUST_BACKTRACE: 1
+                
+      - name: 📝 Generate Schema
+        if: always()
+        run: cargo schema --locked --package proxy-contract
 
-      - name: Compile WASM contract
+      - name: ✔️ Schema Changes
+        # fails if any changes not committed
+        run: git diff --exit-code schema
+
+      - name: 🦾 Compile WASM contract
         run: cargo wasm --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
+        
 
-  lints:
-    name: Lints
+  fmt:
+    name: fmt
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+      - name: 📥 Checkout sources
+        uses: actions/checkout@v4
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - name: ☁️ Install Nightly
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: 1.72.1
-          override: true
-          components: rustfmt, clippy
+          components: rustfmt
 
-      - name: Run cargo fmt
-        run: cargo fmt --all -- --check
-
-      - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
-
-      - name: Generate Schema
-        run: cargo schema --locked --package proxy-contract
-
-      - name: Schema Changes
-        # fails if any changes not committed
-        run: git diff --exit-code schema
+      - name: 📋 Format Check
+        run: cargo +nightly fmt -- --Check
+  
