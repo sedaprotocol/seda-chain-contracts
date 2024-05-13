@@ -154,10 +154,10 @@ mod dr_tests {
     use crate::helpers::get_dr;
     use crate::helpers::get_drs_from_pool;
     use crate::helpers::instantiate_dr_contract;
-    use crate::utils::string_to_hash;
     use common::error::ContractError;
     use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
     use common::msg::GetDataRequestResponse;
+    use common::types::SimpleHash;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     #[test]
@@ -170,7 +170,7 @@ mod dr_tests {
         // data request with id 0x69... does not yet exist
         let value: GetDataRequestResponse = get_dr(
             deps.as_mut(),
-            string_to_hash("0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f"),
+            "0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".simple_hash(),
         );
         assert_eq!(None, value.value);
 
@@ -202,7 +202,7 @@ mod dr_tests {
 
         // nonexistent data request does not yet exist
 
-        let value: GetDataRequestResponse = get_dr(deps.as_mut(), string_to_hash("nonexistent"));
+        let value: GetDataRequestResponse = get_dr(deps.as_mut(), "nonexistent".simple_hash());
 
         assert_eq!(None, value.value);
     }

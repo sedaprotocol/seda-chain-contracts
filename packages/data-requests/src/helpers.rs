@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::utils::{hash_data_request, string_to_hash};
+use crate::utils::hash_data_request;
 use common::msg::PostDataRequestArgs;
 use common::state::{DataRequest, RevealBody};
-use common::types::Hash;
 use common::types::{Bytes, Commitment};
+use common::types::{Hash, SimpleHash};
 
 use semver::{BuildMetadata, Prerelease, Version};
 use sha3::Digest;
@@ -23,8 +23,8 @@ pub fn calculate_dr_id_and_args(
     nonce: u128,
     replication_factor: u16,
 ) -> (Hash, PostDataRequestArgs) {
-    let dr_binary_id: Hash = string_to_hash("dr_binary_id");
-    let tally_binary_id: Hash = string_to_hash("tally_binary_id");
+    let dr_binary_id: Hash = "dr_binary_id".simple_hash();
+    let tally_binary_id: Hash = "tally_binary_id".simple_hash();
     let dr_inputs: Bytes = "dr_inputs".as_bytes().to_vec();
     let tally_inputs: Bytes = "tally_inputs".as_bytes().to_vec();
 

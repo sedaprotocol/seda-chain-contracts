@@ -11,7 +11,6 @@ use cosmwasm_std::{
 };
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
-use data_requests::utils::string_to_hash;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use semver::{BuildMetadata, Prerelease, Version};
@@ -221,7 +220,7 @@ pub fn reveal_hash(reveal: &RevealBody, salt: Option<&'static str>) -> (Hash, Ve
     let reveal_hash = reveal_hasher.finalize();
 
     let salt = if let Some(salt_str) = salt {
-        string_to_hash(salt_str)
+        salt_str.simple_hash()
     } else {
         reveal.salt
     };
@@ -321,8 +320,8 @@ pub fn helper_post_dr(
 }
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
-    let dr_binary_id: Hash = string_to_hash("dr_binary_id");
-    let tally_binary_id: Hash = string_to_hash("tally_binary_id");
+    let dr_binary_id: Hash = "dr_binary_id".simple_hash();
+    let tally_binary_id: Hash = "tally_binary_id".simple_hash();
     let dr_inputs: Bytes = Vec::new();
     let tally_inputs: Bytes = Vec::new();
 

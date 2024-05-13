@@ -96,12 +96,6 @@ pub fn validate_sender(
     }
 }
 
-pub fn string_to_hash(input: &str) -> Hash {
-    let mut hasher = Keccak256::new();
-    hasher.update(input.as_bytes());
-    hasher.finalize().into()
-}
-
 pub fn hash_to_string(input: Hash) -> String {
     hex::encode(input)
 }

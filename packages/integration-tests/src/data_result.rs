@@ -10,9 +10,9 @@ use common::msg::{
 };
 use common::state::RevealBody;
 use common::test_utils::TestExecutor;
+use common::types::SimpleHash;
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
-use data_requests::utils::string_to_hash;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
 
 #[test]
@@ -60,8 +60,8 @@ fn commit_reveal_result() {
         &mut app,
         proxy_contract.clone(),
         &exec_1,
-        string_to_hash("nonexistent"),
-        string_to_hash("result"),
+        "nonexistent".simple_hash(),
+        "result".simple_hash(),
         Addr::unchecked(exec_1.name),
     );
     assert!(res.is_err());
