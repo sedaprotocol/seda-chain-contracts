@@ -6,5 +6,13 @@ pub mod staking;
 pub mod state;
 pub mod utils;
 
+#[path = ""]
 #[cfg(test)]
-pub mod helpers;
+pub(crate) mod test {
+    pub mod helpers;
+
+    mod allowlist_test;
+    mod contract_test;
+    mod executors_registry_test;
+    mod staking_test;
+}

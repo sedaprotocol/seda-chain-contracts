@@ -109,7 +109,6 @@ pub mod data_request_results {
 
         // find the data request from the committed pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
-        dbg!(&dr);
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)
         let committed_dr_results = &dr.commits;
@@ -123,7 +122,7 @@ pub mod data_request_results {
         }
 
         // error if data request executor has already submitted a reveal
-        if dbg!(dr.reveals.contains_key(dbg!(&public_key_str))) {
+        if dr.reveals.contains_key(&public_key_str) {
             return Err(AlreadyRevealed);
         }
 

@@ -242,7 +242,7 @@ pub fn execute(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
-    match msg.clone() {
+    match &msg {
         // Proxy
         ProxyQueryMsg::GetDataRequestsContract {} => {
             let contract = DATA_REQUESTS.load(deps.storage)?;
