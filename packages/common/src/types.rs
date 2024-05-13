@@ -3,6 +3,7 @@ use schemars::{
     schema::{Schema, SchemaObject, SingleOrVec},
     JsonSchema,
 };
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use sha3::{Digest, Keccak256};
@@ -22,6 +23,12 @@ impl SimpleHash for String {
         let mut hasher = Keccak256::new();
         hasher.update(self.as_bytes());
         hasher.finalize().into()
+    }
+}
+
+impl SimpleHash for Version {
+    fn simple_hash(&self) -> Hash {
+        self.to_string().simple_hash()
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

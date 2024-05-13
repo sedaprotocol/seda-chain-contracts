@@ -2,7 +2,7 @@ use common::error::ContractError;
 use common::msg::StakingQueryMsg;
 use common::msg::{IsDataRequestExecutorEligibleResponse, PostDataRequestArgs};
 use common::state::DataRequest;
-use common::types::{Bytes, Hash, Secpk256k1PublicKey};
+use common::types::{Bytes, Hash, Secpk256k1PublicKey, SimpleHash};
 use cosmwasm_std::{to_json_binary, Addr, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
@@ -40,7 +40,7 @@ pub fn hash_data_request(posted_dr: &PostDataRequestArgs) -> Hash {
 
     // hash data request
     let mut dr_hasher = Keccak256::new();
-    dr_hasher.update(posted_dr.version.to_string().as_bytes());
+    dr_hasher.update(posted_dr.version.simple_hash());
     dr_hasher.update(posted_dr.dr_binary_id);
     dr_hasher.update(dr_inputs_hash);
     dr_hasher.update(posted_dr.tally_binary_id);
@@ -70,7 +70,7 @@ pub fn hash_data_result(
 
     // hash data result
     let mut dr_hasher = Keccak256::new();
-    dr_hasher.update(dr.version.to_string().as_bytes());
+    dr_hasher.update(dr.version.simple_hash());
     dr_hasher.update(dr.id);
     dr_hasher.update(block_height.to_be_bytes());
     dr_hasher.update(exit_code.to_be_bytes());
