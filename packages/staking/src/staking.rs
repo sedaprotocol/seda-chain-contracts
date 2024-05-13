@@ -34,7 +34,7 @@ pub mod staking {
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, sender.clone())?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
@@ -48,9 +48,9 @@ pub mod staking {
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // update staked tokens for executor
-        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
         executor.tokens_staked += amount;
-        DATA_REQUEST_EXECUTORS.save(deps.storage, public_key.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
         apply_validator_eligibility(deps, public_key.clone(), executor.tokens_staked)?;
 
@@ -89,7 +89,7 @@ pub mod staking {
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, sender.clone())?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
@@ -102,7 +102,7 @@ pub mod staking {
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // error if amount is greater than staked tokens
-        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
         if amount > executor.tokens_staked {
             return Err(ContractError::InsufficientFunds(executor.tokens_staked, amount));
         }
@@ -110,7 +110,7 @@ pub mod staking {
         // update the executor
         executor.tokens_staked -= amount;
         executor.tokens_pending_withdrawal += amount;
-        DATA_REQUEST_EXECUTORS.save(deps.storage, public_key.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
         apply_validator_eligibility(deps, public_key.clone(), executor.tokens_staked)?;
 
@@ -148,7 +148,7 @@ pub mod staking {
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, sender.clone())?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
@@ -164,7 +164,7 @@ pub mod staking {
         let token = TOKEN.load(deps.storage)?;
 
         // error if amount is greater than pending tokens
-        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
+        let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
         if amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_pending_withdrawal,
@@ -174,7 +174,7 @@ pub mod staking {
 
         // update the executor
         executor.tokens_pending_withdrawal -= amount;
-        DATA_REQUEST_EXECUTORS.save(deps.storage, public_key.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {

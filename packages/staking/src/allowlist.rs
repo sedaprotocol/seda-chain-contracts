@@ -23,7 +23,7 @@ pub mod allow_list {
         }
 
         // add the address to the allowlist
-        ALLOWLIST.save(deps.storage, address, &true)?;
+        ALLOWLIST.save(deps.storage, &address, &true)?;
 
         Ok(Response::new())
     }
@@ -43,7 +43,7 @@ pub mod allow_list {
         }
 
         // remove the address from the allowlist
-        ALLOWLIST.remove(deps.storage, address);
+        ALLOWLIST.remove(deps.storage, &address);
 
         Ok(Response::new())
     }

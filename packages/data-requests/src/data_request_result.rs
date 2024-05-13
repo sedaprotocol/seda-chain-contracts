@@ -185,7 +185,7 @@ pub mod data_request_results {
             };
 
             // save the data result
-            DATA_RESULTS.save(deps.storage, dr_id, &dr_result)?;
+            DATA_RESULTS.save(deps.storage, &dr_id, &dr_result)?;
         }
 
         Ok(response)
@@ -229,7 +229,7 @@ pub mod data_request_results {
 
     /// Returns a data result from the results with the given id, if it exists.
     pub fn get_resolved_data_result(deps: Deps, dr_id: Hash) -> StdResult<GetResolvedDataResultResponse> {
-        let result = DATA_RESULTS.load(deps.storage, dr_id)?;
+        let result = DATA_RESULTS.load(deps.storage, &dr_id)?;
         Ok(GetResolvedDataResultResponse { value: result })
     }
 

@@ -31,7 +31,7 @@ fn deposit_stake_withdraw() {
 
     let _res = helper_register_executor(deps.as_mut(), info.clone(), &exec, Some("address".to_string()), None);
     let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, exec.public_key.clone()) // Convert Addr to Vec<u8>
+        .load(&deps.storage, &exec.public_key) // Convert Addr to Vec<u8>
         .unwrap();
     assert!(executor_is_eligible);
     // data request executor's stake should be 1
@@ -52,7 +52,7 @@ fn deposit_stake_withdraw() {
     let info = mock_info("anyone", &coins(2, "token"));
     let _res = helper_deposit_and_stake(deps.as_mut(), info.clone(), &exec, None).unwrap();
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, exec.public_key.clone())
+        .load(&deps.storage, &exec.public_key)
         .unwrap();
     assert!(executor_is_eligible);
     // data request executor's stake should be 3
@@ -74,7 +74,7 @@ fn deposit_stake_withdraw() {
 
     let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 1, None);
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, exec.public_key.clone())
+        .load(&deps.storage, &exec.public_key)
         .unwrap();
     assert!(executor_is_eligible);
     // data request executor's stake should be 1 and pending 1
@@ -96,7 +96,7 @@ fn deposit_stake_withdraw() {
     let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 1, None);
 
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, exec.public_key.clone())
+        .load(&deps.storage, &exec.public_key)
         .unwrap();
     assert!(executor_is_eligible);
 
@@ -118,7 +118,7 @@ fn deposit_stake_withdraw() {
     helper_unstake(deps.as_mut(), info, &exec, 2, None).unwrap();
 
     // assert executer is no longer eligible for committe inclusion
-    let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, exec.public_key.clone());
+    let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, &exec.public_key);
     assert!(!executor_is_eligible);
 }
 

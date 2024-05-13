@@ -11,7 +11,7 @@ use crate::{enumerable_map, types::EnumerableMap};
 pub const DATA_REQUESTS_POOL: EnumerableMap<Hash, DataRequest> = enumerable_map!("data_request_pool");
 
 /// Upon executing a data request, the result is added to this map with a unique ID
-pub const DATA_RESULTS: Map<Hash, DataResult> = Map::new("data_results_pool");
+pub const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 /// Address of the token used for deposit for posting a data request
 pub const TOKEN: Item<String> = Item::new("token");

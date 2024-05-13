@@ -26,7 +26,7 @@ pub mod data_requests {
             .ok()
             .flatten()
             .is_some()
-            || DATA_RESULTS.may_load(deps.storage, dr_id).ok().flatten().is_some()
+            || DATA_RESULTS.may_load(deps.storage, &dr_id).ok().flatten().is_some()
     }
 
     /// Posts a data request to the pool

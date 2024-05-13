@@ -36,7 +36,7 @@ pub mod data_request_executors {
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, sender.clone())?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
@@ -70,7 +70,7 @@ pub mod data_request_executors {
             tokens_staked:             amount,
             tokens_pending_withdrawal: 0,
         };
-        DATA_REQUEST_EXECUTORS.save(deps.storage, public_key.clone(), &executor)?;
+        DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
         apply_validator_eligibility(deps, public_key.clone(), amount)?;
 
@@ -98,7 +98,7 @@ pub mod data_request_executors {
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, sender.clone())?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
@@ -111,12 +111,12 @@ pub mod data_request_executors {
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // require that the executor has no staked or tokens pending withdrawal
-        let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
+        let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
         if executor.tokens_staked > 0 || executor.tokens_pending_withdrawal > 0 {
             return Err(ContractError::ExecutorHasTokens);
         }
 
-        DATA_REQUEST_EXECUTORS.remove(deps.storage, public_key.clone());
+        DATA_REQUEST_EXECUTORS.remove(deps.storage, &public_key);
 
         Ok(Response::new()
             .add_attribute("action", "unregister_data_request_executor")
@@ -131,7 +131,7 @@ pub mod data_request_executors {
         deps: Deps,
         executor: Secpk256k1PublicKey,
     ) -> StdResult<GetDataRequestExecutorResponse> {
-        let executor = DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
+        let executor = DATA_REQUEST_EXECUTORS.may_load(deps.storage, &executor)?;
         Ok(GetDataRequestExecutorResponse { value: executor })
     }
 
@@ -140,7 +140,7 @@ pub mod data_request_executors {
         deps: Deps,
         executor: Secpk256k1PublicKey,
     ) -> StdResult<IsDataRequestExecutorEligibleResponse> {
-        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, executor)?;
+        let executor = ELIGIBLE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, &executor)?;
         Ok(IsDataRequestExecutorEligibleResponse {
             value: executor.is_some(),
         })
