@@ -3,11 +3,8 @@ use schemars::{
     schema::{Schema, SchemaObject, SingleOrVec},
     JsonSchema,
 };
-use serde::{
-    de::{SeqAccess, Visitor},
-    ser::SerializeTuple,
-    Deserialize, Deserializer, Serialize, Serializer,
-};
+use serde::{Deserialize, Serialize};
+use serde_big_array::BigArray;
 use sha3::{Digest, Keccak256};
 
 pub type Bytes = Vec<u8>;
@@ -27,53 +24,8 @@ impl SimpleHash for String {
         hasher.finalize().into()
     }
 }
-#[derive(Clone, Debug, PartialEq)]
-pub struct Signature(pub(crate) [u8; 65]);
-
-impl Serialize for Signature {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_tuple(65)?;
-        for byte in &self.0 {
-            seq.serialize_element(byte)?;
-        }
-        seq.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for Signature {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct ArrayVisitor;
-
-        impl<'de> Visitor<'de> for ArrayVisitor {
-            type Value = Signature;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("a byte array of length 65")
-            }
-
-            fn visit_seq<V>(self, mut seq: V) -> Result<Signature, V::Error>
-            where
-                V: SeqAccess<'de>,
-            {
-                let mut array = [0u8; 65];
-                for (i, byte) in array.iter_mut().enumerate() {
-                    *byte = seq
-                        .next_element()?
-                        .ok_or_else(|| serde::de::Error::invalid_length(i, &self))?;
-                }
-                Ok(Signature(array))
-            }
-        }
-
-        deserializer.deserialize_tuple(65, ArrayVisitor)
-    }
-}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Signature(#[serde(with = "BigArray")] pub(crate) [u8; 65]);
 
 impl JsonSchema for Signature {
     fn schema_name() -> String {
