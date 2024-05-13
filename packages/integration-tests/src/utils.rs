@@ -1,22 +1,18 @@
-use common::consts::INITIAL_MINIMUM_STAKE_TO_REGISTER;
-use common::msg::PostDataRequestArgs;
-use common::state::RevealBody;
-use common::test_utils::TestExecutor;
-use common::types::Bytes;
-use common::types::Hash;
-use common::types::Signature;
-use common::types::SimpleHash;
-use cosmwasm_std::{
-    to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg,
+use common::{
+    consts::INITIAL_MINIMUM_STAKE_TO_REGISTER,
+    msg::PostDataRequestArgs,
+    state::RevealBody,
+    test_utils::TestExecutor,
+    types::{Bytes, Hash, Signature, SimpleHash},
 };
+use cosmwasm_std::{to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdResult, Uint128, WasmMsg};
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
 use proxy_contract::msg::ProxyExecuteMsg;
 use schemars::JsonSchema;
 use semver::{BuildMetadata, Prerelease, Version};
 use serde::{Deserialize, Serialize};
-use sha3::Digest;
-use sha3::Keccak256;
+use sha3::{Digest, Keccak256};
 
 pub const USER: &str = "user";
 pub const EXECUTOR_1: &str = "executor1";
@@ -33,10 +29,7 @@ impl CwTemplateContract {
         self.0.clone()
     }
 
-    pub fn call<T: Into<proxy_contract::msg::ProxyExecuteMsg>>(
-        &self,
-        msg: T,
-    ) -> StdResult<CosmosMsg> {
+    pub fn call<T: Into<proxy_contract::msg::ProxyExecuteMsg>>(&self, msg: T) -> StdResult<CosmosMsg> {
         let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
@@ -52,7 +45,7 @@ impl CwTemplateContract {
         amount: u128,
     ) -> StdResult<CosmosMsg> {
         let coin = Coin {
-            denom: NATIVE_DENOM.to_string(),
+            denom:  NATIVE_DENOM.to_string(),
             amount: amount.into(),
         };
         let msg = to_json_binary(&msg.into())?;
@@ -64,14 +57,11 @@ impl CwTemplateContract {
         .into())
     }
 
-    pub fn sudo<T: Into<proxy_contract::msg::ProxySudoMsg>>(
-        &self,
-        msg: T,
-    ) -> cw_multi_test::SudoMsg {
+    pub fn sudo<T: Into<proxy_contract::msg::ProxySudoMsg>>(&self, msg: T) -> cw_multi_test::SudoMsg {
         let msg = to_json_binary(&msg.into()).unwrap();
         cw_multi_test::SudoMsg::Wasm(cw_multi_test::WasmSudo {
             contract_addr: self.addr(),
-            message: msg,
+            message:       msg,
         })
     }
 }
@@ -113,7 +103,7 @@ fn mock_app() -> App {
                 storage,
                 &Addr::unchecked(USER),
                 vec![Coin {
-                    denom: NATIVE_DENOM.to_string(),
+                    denom:  NATIVE_DENOM.to_string(),
                     amount: Uint128::new(100),
                 }],
             )
@@ -123,12 +113,12 @@ fn mock_app() -> App {
 
 pub fn send_tokens(app: &mut App, from: &str, to: &str, amount: u128) {
     let coin = Coin {
-        denom: NATIVE_DENOM.to_string(),
+        denom:  NATIVE_DENOM.to_string(),
         amount: amount.into(),
     };
     let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: to.to_string(),
-        amount: vec![coin],
+        amount:     vec![coin],
     });
     app.execute(Addr::unchecked(from), cosmos_msg).unwrap();
 }
@@ -161,14 +151,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
         owner: OWNER.to_string(),
     };
     let staking_contract_addr = app
-        .instantiate_contract(
-            staking_template_id,
-            Addr::unchecked(OWNER),
-            &msg,
-            &[],
-            "test",
-            None,
-        )
+        .instantiate_contract(staking_template_id, Addr::unchecked(OWNER), &msg, &[], "test", None)
         .unwrap();
 
     // instantiate data-requests
@@ -205,10 +188,7 @@ pub fn proper_instantiate() -> (App, CwTemplateContract) {
 }
 
 pub fn get_dr_id(res: AppResponse) -> Hash {
-    let binary = parse_execute_response_data(&res.data.unwrap().0)
-        .unwrap()
-        .data
-        .unwrap();
+    let binary = parse_execute_response_data(&res.data.unwrap().0).unwrap().data.unwrap();
 
     binary.0.try_into().unwrap()
 }
@@ -340,7 +320,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
         major: 1,
         minor: 0,
         patch: 0,
-        pre: Prerelease::EMPTY,
+        pre:   Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
 

@@ -1,25 +1,21 @@
-use common::error::ContractError;
-use common::msg::StakingQueryMsg;
-use common::msg::{IsDataRequestExecutorEligibleResponse, PostDataRequestArgs};
-use common::state::DataRequest;
-use common::types::{Hash, Secpk256k1PublicKey, SimpleHash};
+use common::{
+    error::ContractError,
+    msg::{IsDataRequestExecutorEligibleResponse, PostDataRequestArgs, StakingQueryMsg},
+    state::DataRequest,
+    types::{Hash, Secpk256k1PublicKey, SimpleHash},
+};
 use cosmwasm_std::{to_json_binary, Addr, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
 use crate::state::PROXY_CONTRACT;
 
-pub fn check_eligibility(
-    deps: &DepsMut,
-    dr_executor: Secpk256k1PublicKey,
-) -> Result<bool, ContractError> {
+pub fn check_eligibility(deps: &DepsMut, dr_executor: Secpk256k1PublicKey) -> Result<bool, ContractError> {
     // query proxy contract to see if this executor is eligible
-    let msg = StakingQueryMsg::IsDataRequestExecutorEligible {
-        executor: dr_executor,
-    };
+    let msg = StakingQueryMsg::IsDataRequestExecutorEligible { executor: dr_executor };
     let query_response: IsDataRequestExecutorEligibleResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: PROXY_CONTRACT.load(deps.storage)?.to_string(),
-            msg: to_json_binary(&msg)?,
+            msg:           to_json_binary(&msg)?,
         }))?;
     Ok(query_response.value)
 }
@@ -52,13 +48,7 @@ pub fn hash_data_request(posted_dr: &PostDataRequestArgs) -> Hash {
     dr_hasher.finalize().into()
 }
 
-pub fn hash_data_result(
-    dr: &DataRequest,
-    block_height: u64,
-    exit_code: u8,
-    gas_used: u128,
-    result: &[u8],
-) -> Hash {
+pub fn hash_data_result(dr: &DataRequest, block_height: u64, exit_code: u8, gas_used: u128, result: &[u8]) -> Hash {
     // hash non-fixed-length inputs
     let mut results_hasher = Keccak256::new();
     results_hasher.update(result);
@@ -81,16 +71,10 @@ pub fn hash_data_result(
     dr_hasher.finalize().into()
 }
 
-pub fn validate_sender(
-    deps: &DepsMut,
-    caller: Addr,
-    sender: Option<String>,
-) -> Result<Addr, ContractError> {
+pub fn validate_sender(deps: &DepsMut, caller: Addr, sender: Option<String>) -> Result<Addr, ContractError> {
     // if a sender is passed, caller must be the proxy contract
     match sender {
-        Some(_sender) if caller != PROXY_CONTRACT.load(deps.storage)? => {
-            Err(ContractError::NotProxy {})
-        }
+        Some(_sender) if caller != PROXY_CONTRACT.load(deps.storage)? => Err(ContractError::NotProxy {}),
         Some(sender) => Ok(deps.api.addr_validate(&sender)?),
         None => Ok(caller),
     }

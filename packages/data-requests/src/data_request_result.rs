@@ -1,35 +1,42 @@
+use common::{
+    msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse},
+    types::Hash,
+};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use common::msg::{GetCommittedDataResultResponse, GetRevealedDataResultResponse};
-use common::types::Hash;
-
 pub mod data_request_results {
 
-    use common::crypto::{hash, recover_pubkey};
-    use common::error::ContractError::{
-        self, AlreadyCommitted, AlreadyRevealed, IneligibleExecutor, NotCommitted, RevealMismatch,
-        RevealNotStarted, RevealStarted,
+    use common::{
+        crypto::{hash, recover_pubkey},
+        error::ContractError::{
+            self,
+            AlreadyCommitted,
+            AlreadyRevealed,
+            IneligibleExecutor,
+            NotCommitted,
+            RevealMismatch,
+            RevealNotStarted,
+            RevealStarted,
+        },
+        msg::{
+            GetCommittedDataResultsResponse,
+            GetCommittedExecutorsResponse,
+            GetResolvedDataResultResponse,
+            GetRevealedDataResultsResponse,
+        },
+        state::{DataResult, RevealBody},
+        types::{Secpk256k1PublicKey, Signature},
     };
     use cosmwasm_std::{Env, Event};
     use sha3::{Digest, Keccak256};
 
-    use common::msg::{
-        GetCommittedDataResultsResponse, GetCommittedExecutorsResponse,
-        GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
-    };
-    use common::state::{DataResult, RevealBody};
-    use common::types::{Secpk256k1PublicKey, Signature};
-
-    use crate::contract::CONTRACT_VERSION;
-    use crate::state::DATA_REQUESTS_POOL;
-    use crate::utils::hash_to_string;
-    use crate::{
-        state::DATA_RESULTS,
-        utils::{check_eligibility, hash_data_result, validate_sender},
-    };
-
     use super::*;
+    use crate::{
+        contract::CONTRACT_VERSION,
+        state::{DATA_REQUESTS_POOL, DATA_RESULTS},
+        utils::{check_eligibility, hash_data_result, hash_to_string, validate_sender},
+    };
 
     /// Posts a data result of a data request with an attached hash of the answer and salt.
     /// This removes the data request from the pool and creates a new entry in the data results.
@@ -44,12 +51,7 @@ pub mod data_request_results {
         let sender = validate_sender(&deps, info.sender, sender)?;
 
         // compute message hash
-        let message_hash = hash([
-            "commit_data_result".as_bytes(),
-            &dr_id,
-            &commitment,
-            sender.as_bytes(),
-        ]);
+        let message_hash = hash(["commit_data_result".as_bytes(), &dr_id, &commitment, sender.as_bytes()]);
 
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
@@ -74,14 +76,14 @@ pub mod data_request_results {
 
         DATA_REQUESTS_POOL.update(deps.storage, dr_id, &dr)?;
 
-        Ok(Response::new()
-            .add_attribute("action", "commit_data_result")
-            .add_event(Event::new("seda-commitment").add_attributes([
+        Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
+            Event::new("seda-commitment").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &hash_to_string(&dr_id)),
                 ("executor", sender.as_str()),
                 ("commitment", &hash_to_string(&commitment)),
-            ])))
+            ]),
+        ))
     }
 
     /// Posts a data result of a data request with an attached result.
@@ -134,17 +136,14 @@ pub mod data_request_results {
             return Err(RevealMismatch);
         }
 
-        let mut response = Response::new()
-            .add_attribute("action", "reveal_data_result")
-            .add_event(Event::new("seda-reveal").add_attributes([
+        let mut response = Response::new().add_attribute("action", "reveal_data_result").add_event(
+            Event::new("seda-reveal").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &hash_to_string(&dr_id)),
                 ("executor", sender.as_str()),
-                (
-                    "reveal",
-                    serde_json::to_string(&reveal_body).unwrap().as_str(),
-                ),
-            ]));
+                ("reveal", serde_json::to_string(&reveal_body).unwrap().as_str()),
+            ]),
+        );
 
         // add the reveal to the data request state
         let gas_used = reveal_body.gas_used;
@@ -171,14 +170,8 @@ pub mod data_request_results {
                 ("block_height", &block_height.to_string()),
                 ("exit_code", &exit_code.to_string()),
                 ("result", &serde_json::to_string(&reveal).unwrap()),
-                (
-                    "payback_address",
-                    &serde_json::to_string(&dr.payback_address).unwrap(),
-                ),
-                (
-                    "seda_payload",
-                    &serde_json::to_string(&dr.seda_payload).unwrap(),
-                ),
+                ("payback_address", &serde_json::to_string(&dr.payback_address).unwrap()),
+                ("seda_payload", &serde_json::to_string(&dr.seda_payload).unwrap()),
             ]));
 
             let dr_result = DataResult {
@@ -211,10 +204,7 @@ pub mod data_request_results {
     }
 
     /// Returns a data result from the results with the given id, if it exists.
-    pub fn get_committed_data_results(
-        deps: Deps,
-        dr_id: Hash,
-    ) -> StdResult<GetCommittedDataResultsResponse> {
+    pub fn get_committed_data_results(deps: Deps, dr_id: Hash) -> StdResult<GetCommittedDataResultsResponse> {
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         Ok(GetCommittedDataResultsResponse { value: dr.commits })
     }
@@ -228,34 +218,23 @@ pub mod data_request_results {
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         let public_key_str = hex::encode(executor);
         let reveal = dr.reveals.get(&public_key_str);
-        Ok(GetRevealedDataResultResponse {
-            value: reveal.cloned(),
-        })
+        Ok(GetRevealedDataResultResponse { value: reveal.cloned() })
     }
 
     /// Returns a data result from the results with the given id, if it exists.
-    pub fn get_revealed_data_results(
-        deps: Deps,
-        dr_id: Hash,
-    ) -> StdResult<GetRevealedDataResultsResponse> {
+    pub fn get_revealed_data_results(deps: Deps, dr_id: Hash) -> StdResult<GetRevealedDataResultsResponse> {
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         Ok(GetRevealedDataResultsResponse { value: dr.reveals })
     }
 
     /// Returns a data result from the results with the given id, if it exists.
-    pub fn get_resolved_data_result(
-        deps: Deps,
-        dr_id: Hash,
-    ) -> StdResult<GetResolvedDataResultResponse> {
+    pub fn get_resolved_data_result(deps: Deps, dr_id: Hash) -> StdResult<GetResolvedDataResultResponse> {
         let result = DATA_RESULTS.load(deps.storage, dr_id)?;
         Ok(GetResolvedDataResultResponse { value: result })
     }
 
     /// Returns a vector of committed executors
-    pub fn get_committed_executors(
-        deps: Deps,
-        dr_id: Hash,
-    ) -> StdResult<GetCommittedExecutorsResponse> {
+    pub fn get_committed_executors(deps: Deps, dr_id: Hash) -> StdResult<GetCommittedExecutorsResponse> {
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         Ok(GetCommittedExecutorsResponse {
             value: dr.commits.keys().cloned().map(|k| k.into_bytes()).collect(),

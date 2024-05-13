@@ -1,12 +1,15 @@
-use common::msg::GetDataRequestExecutorResponse;
-use common::state::DataRequestExecutor;
+use common::{
+    error::ContractError,
+    msg::GetDataRequestExecutorResponse,
+    state::DataRequestExecutor,
+    test_utils::TestExecutor,
+};
+use cosmwasm_std::{
+    coins,
+    testing::{mock_dependencies, mock_info},
+};
 
 use super::helpers::*;
-
-use common::error::ContractError;
-use common::test_utils::TestExecutor;
-use cosmwasm_std::coins;
-use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
 #[test]
 fn register_data_request_executor() {
@@ -17,29 +20,26 @@ fn register_data_request_executor() {
 
     let exec = TestExecutor::new("anyone");
     // fetching data request executor for an address that doesn't exist should return None
-    let value: GetDataRequestExecutorResponse =
-        helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(value, GetDataRequestExecutorResponse { value: None });
 
     // someone registers a data request executor
     let info = mock_info("anyone", &coins(2, "token"));
 
-    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None)
-        .unwrap();
+    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None).unwrap();
 
     // should be able to fetch the data request executor
 
-    let value: GetDataRequestExecutorResponse =
-        helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), exec.public_key.clone());
     assert_eq!(
         value,
         GetDataRequestExecutorResponse {
             value: Some(DataRequestExecutor {
-                memo: Some("memo".to_string()),
-                tokens_staked: 2,
-                tokens_pending_withdrawal: 0
-            })
+                memo:                      Some("memo".to_string()),
+                tokens_staked:             2,
+                tokens_pending_withdrawal: 0,
+            }),
         }
     );
 }
@@ -55,21 +55,19 @@ fn unregister_data_request_executor() {
     let info = mock_info("anyone", &coins(2, "token"));
     let exec = TestExecutor::new("anyone");
 
-    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None)
-        .unwrap();
+    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None).unwrap();
 
     // should be able to fetch the data request executor
-    let value: GetDataRequestExecutorResponse =
-        helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
         GetDataRequestExecutorResponse {
             value: Some(DataRequestExecutor {
-                memo: Some("memo".to_string()),
-                tokens_staked: 2,
-                tokens_pending_withdrawal: 0
-            })
+                memo:                      Some("memo".to_string()),
+                tokens_staked:             2,
+                tokens_pending_withdrawal: 0,
+            }),
         }
     );
 
@@ -90,8 +88,7 @@ fn unregister_data_request_executor() {
     let _res = helper_unregister_executor(deps.as_mut(), info, &exec, None).unwrap();
 
     // fetching data request executor after unregistering should return None
-    let value: GetDataRequestExecutorResponse =
-        helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(value, GetDataRequestExecutorResponse { value: None });
 }

@@ -1,15 +1,19 @@
-use common::error::ContractError;
-
-use common::state::StakingConfig;
-
-use crate::test::helpers::{
-    helper_accept_ownership, helper_get_owner, helper_get_pending_owner, helper_register_executor,
-    helper_set_staking_config, helper_transfer_ownership, instantiate_staking_contract,
+use common::{error::ContractError, state::StakingConfig, test_utils::TestExecutor};
+use cosmwasm_std::{
+    coins,
+    testing::{mock_dependencies, mock_info},
+    Addr,
 };
 
-use common::test_utils::TestExecutor;
-use cosmwasm_std::testing::{mock_dependencies, mock_info};
-use cosmwasm_std::{coins, Addr};
+use crate::test::helpers::{
+    helper_accept_ownership,
+    helper_get_owner,
+    helper_get_pending_owner,
+    helper_register_executor,
+    helper_set_staking_config,
+    helper_transfer_ownership,
+    instantiate_staking_contract,
+};
 
 #[test]
 fn proper_initialization() {
@@ -32,16 +36,13 @@ fn only_proxy_can_pass_caller() {
     let info = mock_info("anyone", &coins(2, "token"));
     let exec = TestExecutor::new("sender");
 
-    let res =
-        helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string()));
+    let res = helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string()));
     assert!(res.is_err_and(|x| x == ContractError::NotProxy));
 
     // register a data request executor from the proxy
     let info = mock_info("proxy", &coins(2, "token"));
 
-    let _res =
-        helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string()))
-            .unwrap();
+    let _res = helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string())).unwrap();
 }
 
 #[test]
@@ -108,9 +109,9 @@ fn set_staking_config() {
     let _res = instantiate_staking_contract(deps.as_mut(), info.clone()).unwrap();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register: 100,
+        minimum_stake_to_register:               100,
         minimum_stake_for_committee_eligibility: 200,
-        allowlist_enabled: false,
+        allowlist_enabled:                       false,
     };
 
     // non-owner sets staking config

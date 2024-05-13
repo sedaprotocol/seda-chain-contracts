@@ -7,10 +7,10 @@ use sha3::{Digest, Keccak256};
 use crate::types::{Hash, Secpk256k1PublicKey, Signature};
 
 pub struct TestExecutor {
-    pub name: &'static str,
-    pub signing_key: SigningKey,
+    pub name:          &'static str,
+    pub signing_key:   SigningKey,
     pub verifying_key: VerifyingKey,
-    pub public_key: Secpk256k1PublicKey,
+    pub public_key:    Secpk256k1PublicKey,
 }
 
 impl TestExecutor {

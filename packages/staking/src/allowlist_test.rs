@@ -1,10 +1,10 @@
-use super::helpers::*;
+use common::{error::ContractError, state::StakingConfig, test_utils::TestExecutor};
+use cosmwasm_std::{
+    coins,
+    testing::{mock_dependencies, mock_info},
+};
 
-use common::error::ContractError;
-use common::state::StakingConfig;
-use common::test_utils::TestExecutor;
-use cosmwasm_std::coins;
-use cosmwasm_std::testing::{mock_dependencies, mock_info};
+use super::helpers::*;
 
 #[test]
 pub fn allowlist_works() {
@@ -16,9 +16,9 @@ pub fn allowlist_works() {
     // update the config with allowlist enabled
     let info = mock_info("owner", &coins(0, "token"));
     let new_config = StakingConfig {
-        minimum_stake_to_register: 100,
+        minimum_stake_to_register:               100,
         minimum_stake_for_committee_eligibility: 200,
-        allowlist_enabled: true,
+        allowlist_enabled:                       true,
     };
     let res = helper_set_staking_config(deps.as_mut(), info, new_config);
     assert!(res.is_ok());
@@ -61,9 +61,9 @@ pub fn allowlist_works() {
     // update the config to disable the allowlist
     let info = mock_info("owner", &coins(0, "token"));
     let new_config = StakingConfig {
-        minimum_stake_to_register: 100,
+        minimum_stake_to_register:               100,
         minimum_stake_for_committee_eligibility: 200,
-        allowlist_enabled: false,
+        allowlist_enabled:                       false,
     };
     let res = helper_set_staking_config(deps.as_mut(), info, new_config);
     assert!(res.is_ok());

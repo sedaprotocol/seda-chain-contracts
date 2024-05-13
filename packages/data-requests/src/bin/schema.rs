@@ -1,7 +1,5 @@
+use common::msg::{DataRequestsExecuteMsg, DataRequestsQueryMsg, InstantiateMsg};
 use cosmwasm_schema::write_api;
-
-use common::msg::InstantiateMsg;
-use common::msg::{DataRequestsExecuteMsg, DataRequestsQueryMsg};
 
 fn main() {
     write_api! {

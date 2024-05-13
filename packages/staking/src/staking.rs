@@ -1,10 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::state::DATA_REQUEST_EXECUTORS;
-
-use crate::state::{ALLOWLIST, TOKEN};
-use crate::utils::{get_attached_funds, validate_sender};
+use crate::{
+    state::{ALLOWLIST, DATA_REQUEST_EXECUTORS, TOKEN},
+    utils::{get_attached_funds, validate_sender},
+};
 
 #[allow(clippy::module_inception)]
 pub mod staking {
@@ -15,9 +15,8 @@ pub mod staking {
     };
     use cosmwasm_std::{coins, BankMsg, Event};
 
-    use crate::{contract::CONTRACT_VERSION, state::CONFIG, utils::apply_validator_eligibility};
-
     use super::*;
+    use crate::{contract::CONTRACT_VERSION, state::CONFIG, utils::apply_validator_eligibility};
 
     /// Deposits and stakes tokens for a data request executor.
     pub fn deposit_and_stake(
@@ -97,11 +96,7 @@ pub mod staking {
         }
 
         // compute message hash
-        let message_hash = hash([
-            "unstake".as_bytes(),
-            &amount.to_be_bytes(),
-            sender.as_bytes(),
-        ]);
+        let message_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes(), sender.as_bytes()]);
 
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
@@ -109,10 +104,7 @@ pub mod staking {
         // error if amount is greater than staked tokens
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, public_key.clone())?;
         if amount > executor.tokens_staked {
-            return Err(ContractError::InsufficientFunds(
-                executor.tokens_staked,
-                amount,
-            ));
+            return Err(ContractError::InsufficientFunds(executor.tokens_staked, amount));
         }
 
         // update the executor
@@ -123,25 +115,23 @@ pub mod staking {
         apply_validator_eligibility(deps, public_key.clone(), executor.tokens_staked)?;
 
         // TODO: emit when pending tokens can be withdrawn
-        Ok(Response::new()
-            .add_attribute("action", "unstake")
-            .add_events([
-                Event::new("seda-data-request-executor").add_attributes([
-                    ("version", CONTRACT_VERSION),
-                    ("executor", &hex::encode(public_key.clone())),
-                    ("memo", &executor.memo.unwrap_or_default()),
-                    ("tokens_staked", &executor.tokens_staked.to_string()),
-                    (
-                        "tokens_pending_withdrawal",
-                        &executor.tokens_pending_withdrawal.to_string(),
-                    ),
-                ]),
-                Event::new("seda-data-request-executor-unstake").add_attributes([
-                    ("version", CONTRACT_VERSION),
-                    ("executor", &hex::encode(public_key)),
-                    ("amount_unstaked", &amount.to_string()),
-                ]),
-            ]))
+        Ok(Response::new().add_attribute("action", "unstake").add_events([
+            Event::new("seda-data-request-executor").add_attributes([
+                ("version", CONTRACT_VERSION),
+                ("executor", &hex::encode(public_key.clone())),
+                ("memo", &executor.memo.unwrap_or_default()),
+                ("tokens_staked", &executor.tokens_staked.to_string()),
+                (
+                    "tokens_pending_withdrawal",
+                    &executor.tokens_pending_withdrawal.to_string(),
+                ),
+            ]),
+            Event::new("seda-data-request-executor-unstake").add_attributes([
+                ("version", CONTRACT_VERSION),
+                ("executor", &hex::encode(public_key)),
+                ("amount_unstaked", &amount.to_string()),
+            ]),
+        ]))
     }
 
     /// Sends tokens back to the executor that are marked as pending withdrawal.
@@ -165,11 +155,7 @@ pub mod staking {
         }
 
         // compute message hash
-        let message_hash = hash([
-            "withdraw".as_bytes(),
-            &amount.to_be_bytes(),
-            sender.as_bytes(),
-        ]);
+        let message_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes(), sender.as_bytes()]);
 
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
@@ -193,7 +179,7 @@ pub mod staking {
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
             to_address: sender.to_string(),
-            amount: coins(amount, token),
+            amount:     coins(amount, token),
         };
 
         Ok(Response::new()

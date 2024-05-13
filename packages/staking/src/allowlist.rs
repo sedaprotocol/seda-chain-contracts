@@ -1,9 +1,12 @@
 pub mod allow_list {
-    use crate::state::{ALLOWLIST, OWNER};
-    use crate::utils::validate_sender;
     use common::error::ContractError;
     #[cfg(not(feature = "library"))]
     use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response};
+
+    use crate::{
+        state::{ALLOWLIST, OWNER},
+        utils::validate_sender,
+    };
 
     pub fn add_to_allowlist(
         deps: DepsMut,

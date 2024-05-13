@@ -1,18 +1,17 @@
-use common::error::ContractError;
-use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
-use common::msg::DataRequestsQueryMsg as QueryMsg;
-use common::msg::InstantiateMsg;
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+use common::{
+    error::ContractError,
+    msg::{DataRequestsExecuteMsg as ExecuteMsg, DataRequestsQueryMsg as QueryMsg, InstantiateMsg},
 };
+use cosmwasm_std::StdResult;
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
-use crate::data_request::data_requests;
-use crate::data_request_result::data_request_results;
-use crate::state::{DATA_REQUESTS_POOL, PROXY_CONTRACT, TOKEN};
-
-use cosmwasm_std::StdResult;
+use crate::{
+    data_request::data_requests,
+    data_request_result::data_request_results,
+    state::{DATA_REQUESTS_POOL, PROXY_CONTRACT, TOKEN},
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "data-requests";
@@ -33,12 +32,7 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::PostDataRequest {
             posted_dr,
@@ -64,36 +58,37 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetDataRequest { dr_id } => {
-            to_json_binary(&data_requests::get_data_request(deps, dr_id)?)
+        QueryMsg::GetDataRequest { dr_id } => to_json_binary(&data_requests::get_data_request(deps, dr_id)?),
+        QueryMsg::GetDataRequestsFromPool { position, limit } => {
+            to_json_binary(&data_requests::get_data_requests_from_pool(deps, position, limit)?)
         }
-        QueryMsg::GetDataRequestsFromPool { position, limit } => to_json_binary(
-            &data_requests::get_data_requests_from_pool(deps, position, limit)?,
-        ),
-        QueryMsg::GetCommittedDataResult { dr_id, executor } => to_json_binary(
-            &data_request_results::get_committed_data_result(deps, dr_id, executor)?,
-        ),
-        QueryMsg::GetCommittedDataResults { dr_id } => to_json_binary(
-            &data_request_results::get_committed_data_results(deps, dr_id)?,
-        ),
-        QueryMsg::GetRevealedDataResult { dr_id, executor } => to_json_binary(
-            &data_request_results::get_revealed_data_result(deps, dr_id, executor)?,
-        ),
-        QueryMsg::GetRevealedDataResults { dr_id } => to_json_binary(
-            &data_request_results::get_revealed_data_results(deps, dr_id)?,
-        ),
-        QueryMsg::GetResolvedDataResult { dr_id } => to_json_binary(
-            &data_request_results::get_resolved_data_result(deps, dr_id)?,
-        ),
+        QueryMsg::GetCommittedDataResult { dr_id, executor } => {
+            to_json_binary(&data_request_results::get_committed_data_result(deps, dr_id, executor)?)
+        }
+        QueryMsg::GetCommittedDataResults { dr_id } => {
+            to_json_binary(&data_request_results::get_committed_data_results(deps, dr_id)?)
+        }
+        QueryMsg::GetRevealedDataResult { dr_id, executor } => {
+            to_json_binary(&data_request_results::get_revealed_data_result(deps, dr_id, executor)?)
+        }
+        QueryMsg::GetRevealedDataResults { dr_id } => {
+            to_json_binary(&data_request_results::get_revealed_data_results(deps, dr_id)?)
+        }
+        QueryMsg::GetResolvedDataResult { dr_id } => {
+            to_json_binary(&data_request_results::get_resolved_data_result(deps, dr_id)?)
+        }
     }
 }
 
 #[cfg(test)]
 mod init_tests {
 
+    use cosmwasm_std::{
+        coins,
+        testing::{mock_dependencies, mock_info},
+    };
+
     use crate::test::helpers::instantiate_dr_contract;
-    use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_info};
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies();

@@ -1,28 +1,47 @@
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
-
-use crate::state::TOKEN;
-use crate::utils::get_attached_funds;
 use common::{
     error::ContractError,
     msg::{
-        DataRequestsExecuteMsg, GetCommittedDataResultResponse, GetCommittedDataResultsResponse,
-        GetContractResponse, GetDataRequestExecutorResponse, GetDataRequestResponse,
-        GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
-        GetRevealedDataResultResponse, GetRevealedDataResultsResponse, GetStakingConfigResponse,
-        IsDataRequestExecutorEligibleResponse, StakingExecuteMsg,
+        DataRequestsExecuteMsg,
+        GetCommittedDataResultResponse,
+        GetCommittedDataResultsResponse,
+        GetContractResponse,
+        GetDataRequestExecutorResponse,
+        GetDataRequestResponse,
+        GetDataRequestsFromPoolResponse,
+        GetResolvedDataResultResponse,
+        GetRevealedDataResultResponse,
+        GetRevealedDataResultsResponse,
+        GetStakingConfigResponse,
+        IsDataRequestExecutorEligibleResponse,
+        StakingExecuteMsg,
     },
 };
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
-    Response, StdResult, SubMsg, WasmMsg, WasmQuery,
+    to_json_binary,
+    Binary,
+    Coin,
+    CosmosMsg,
+    Deps,
+    DepsMut,
+    Env,
+    MessageInfo,
+    QueryRequest,
+    Reply,
+    Response,
+    StdResult,
+    SubMsg,
+    WasmMsg,
+    WasmQuery,
 };
 use cw2::set_contract_version;
 use cw_utils::parse_reply_execute_data;
 
 use crate::{
     msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg},
-    state::{CONTRACT_CREATOR, DATA_REQUESTS, STAKING},
+    state::{CONTRACT_CREATOR, DATA_REQUESTS, STAKING, TOKEN},
+    utils::get_attached_funds,
 };
 
 // version info
@@ -45,12 +64,7 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: ProxyExecuteMsg,
-) -> Result<Response, ContractError> {
+pub fn execute(deps: DepsMut, _env: Env, info: MessageInfo, msg: ProxyExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         // Owner
         ProxyExecuteMsg::SetDataRequests { contract } => {
@@ -101,12 +115,12 @@ pub fn execute(
                 .add_submessage(SubMsg::reply_on_success(
                     CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                        msg: to_json_binary(&DataRequestsExecuteMsg::PostDataRequest {
+                        msg:           to_json_binary(&DataRequestsExecuteMsg::PostDataRequest {
                             posted_dr,
                             seda_payload,
                             payback_address,
                         })?,
-                        funds: vec![],
+                        funds:         vec![],
                     }),
                     POST_DATA_REQUEST_REPLY_ID,
                 ))
@@ -119,13 +133,13 @@ pub fn execute(
         } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
+                msg:           to_json_binary(&DataRequestsExecuteMsg::CommitDataResult {
                     dr_id,
                     commitment,
                     signature,
                     sender: Some(info.sender.to_string()),
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "commit_data_result")),
         ProxyExecuteMsg::RevealDataResult {
@@ -135,13 +149,13 @@ pub fn execute(
         } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&DataRequestsExecuteMsg::RevealDataResult {
+                msg:           to_json_binary(&DataRequestsExecuteMsg::RevealDataResult {
                     dr_id,
                     reveal,
                     signature,
                     sender: Some(info.sender.to_string()),
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "reveal_data_result")),
 
@@ -154,13 +168,13 @@ pub fn execute(
             Ok(Response::new()
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
+                    msg:           to_json_binary(&StakingExecuteMsg::RegisterDataRequestExecutor {
                         signature,
                         memo,
                         sender: Some(info.sender.to_string()),
                     })?,
-                    funds: vec![Coin {
-                        denom: token,
+                    funds:         vec![Coin {
+                        denom:  token,
                         amount: amount.into(),
                     }],
                 }))
@@ -169,11 +183,11 @@ pub fn execute(
         ProxyExecuteMsg::UnregisterDataRequestExecutor { signature } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
+                msg:           to_json_binary(&StakingExecuteMsg::UnregisterDataRequestExecutor {
                     signature,
                     sender: Some(info.sender.to_string()),
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "unregister_data_request_executor")),
         ProxyExecuteMsg::DepositAndStake { signature } => {
@@ -184,12 +198,12 @@ pub fn execute(
             Ok(Response::new()
                 .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&StakingExecuteMsg::DepositAndStake {
+                    msg:           to_json_binary(&StakingExecuteMsg::DepositAndStake {
                         signature,
                         sender: Some(info.sender.to_string()),
                     })?,
-                    funds: vec![Coin {
-                        denom: token,
+                    funds:         vec![Coin {
+                        denom:  token,
                         amount: amount.into(),
                     }],
                 }))
@@ -198,43 +212,43 @@ pub fn execute(
         ProxyExecuteMsg::Unstake { signature, amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&StakingExecuteMsg::Unstake {
+                msg:           to_json_binary(&StakingExecuteMsg::Unstake {
                     signature,
                     amount,
                     sender: Some(info.sender.to_string()),
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "unstake")),
         ProxyExecuteMsg::Withdraw { signature, amount } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&StakingExecuteMsg::Withdraw {
+                msg:           to_json_binary(&StakingExecuteMsg::Withdraw {
                     signature,
                     amount,
                     sender: Some(info.sender.to_string()),
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "withdraw")),
         ProxyExecuteMsg::AddToAllowlist { address } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&StakingExecuteMsg::AddToAllowlist {
+                msg:           to_json_binary(&StakingExecuteMsg::AddToAllowlist {
                     sender: Some(info.sender.to_string()),
                     address,
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "add_to_allowlist")),
         ProxyExecuteMsg::RemoveFromAllowlist { address } => Ok(Response::new()
             .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: STAKING.load(deps.storage)?.to_string(),
-                msg: to_json_binary(&StakingExecuteMsg::RemoveFromAllowlist {
+                msg:           to_json_binary(&StakingExecuteMsg::RemoveFromAllowlist {
                     sender: Some(info.sender.to_string()),
                     address,
                 })?,
-                funds: vec![],
+                funds:         vec![],
             }))
             .add_attribute("action", "remove_from_allowlist")),
     }
@@ -261,11 +275,10 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
 
         // DataRequests
         ProxyQueryMsg::GetDataRequest { dr_id: _dr_id } => {
-            let query_response: GetDataRequestResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
-                }))?;
+            let query_response: GetDataRequestResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
+                msg:           to_json_binary(&msg)?,
+            }))?;
             Ok(to_json_binary(&query_response)?)
         }
         ProxyQueryMsg::GetDataRequestsFromPool {
@@ -275,7 +288,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetDataRequestsFromPoolResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -286,7 +299,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetCommittedDataResultResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -294,7 +307,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetCommittedDataResultsResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -305,7 +318,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetRevealedDataResultResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -313,7 +326,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetRevealedDataResultsResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -321,29 +334,25 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetResolvedDataResultResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: DATA_REQUESTS.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
 
         // Staking
-        ProxyQueryMsg::GetDataRequestExecutor {
-            executor: _executor,
-        } => {
+        ProxyQueryMsg::GetDataRequestExecutor { executor: _executor } => {
             let query_response: GetDataRequestExecutorResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
-        ProxyQueryMsg::IsDataRequestExecutorEligible {
-            executor: _executor,
-        } => {
+        ProxyQueryMsg::IsDataRequestExecutorEligible { executor: _executor } => {
             let query_response: IsDataRequestExecutorEligibleResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -351,7 +360,7 @@ pub fn query(deps: Deps, _env: Env, msg: ProxyQueryMsg) -> StdResult<Binary> {
             let query_response: GetStakingConfigResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: STAKING.load(deps.storage)?.to_string(),
-                    msg: to_json_binary(&msg)?,
+                    msg:           to_json_binary(&msg)?,
                 }))?;
             Ok(to_json_binary(&query_response)?)
         }
@@ -387,10 +396,13 @@ pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, Contract
 
 #[cfg(test)]
 mod init_tests {
-    use super::*;
     use common::test_utils::TestExecutor;
-    use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{
+        coins,
+        testing::{mock_dependencies, mock_env, mock_info},
+    };
+
+    use super::*;
 
     #[test]
     #[should_panic(expected = "ContractAlreadySet")]
@@ -435,10 +447,7 @@ mod init_tests {
 
         let exec = TestExecutor::new("sender");
         let msg = ProxyExecuteMsg::DepositAndStake {
-            signature: exec.sign([
-                "deposit_and_stake".as_bytes().to_vec(),
-                "sender".as_bytes().to_vec(),
-            ]),
+            signature: exec.sign(["deposit_and_stake".as_bytes().to_vec(), "sender".as_bytes().to_vec()]),
         };
         let info = mock_info("anyone", &[]);
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();

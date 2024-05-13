@@ -1,21 +1,22 @@
-use common::msg::{GetOwnerResponse, GetPendingOwnerResponse};
-use common::test_utils::TestExecutor;
-use common::types::{Secpk256k1PublicKey, SimpleHash};
-use cosmwasm_std::{from_json, Addr, DepsMut, MessageInfo, Response};
-
-use crate::contract::{execute, instantiate, query};
-use common::state::StakingConfig;
 use common::{
     error::ContractError,
-    msg::{GetDataRequestExecutorResponse, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg},
+    msg::{
+        GetDataRequestExecutorResponse,
+        GetOwnerResponse,
+        GetPendingOwnerResponse,
+        InstantiateMsg,
+        StakingExecuteMsg,
+        StakingQueryMsg,
+    },
+    state::StakingConfig,
+    test_utils::TestExecutor,
+    types::{Secpk256k1PublicKey, SimpleHash},
 };
+use cosmwasm_std::{from_json, testing::mock_env, Addr, DepsMut, MessageInfo, Response};
 
-use cosmwasm_std::testing::mock_env;
+use crate::contract::{execute, instantiate, query};
 
-pub fn instantiate_staking_contract(
-    deps: DepsMut,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
+pub fn instantiate_staking_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let msg = InstantiateMsg {
         token: "token".to_string(),
         proxy: "proxy".to_string(),
@@ -31,10 +32,7 @@ pub fn helper_register_executor(
     memo: Option<String>,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender
-        .clone()
-        .map(Addr::unchecked)
-        .unwrap_or(info.sender.clone());
+    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
     let signature = if let Some(m) = memo.as_ref() {
         exec.sign([
             "register_data_request_executor".as_bytes().to_vec(),
@@ -63,10 +61,7 @@ pub fn helper_transfer_ownership(
     let msg = StakingExecuteMsg::TransferOwnership { new_owner };
     execute(deps, mock_env(), info, msg)
 }
-pub fn helper_accept_ownership(
-    deps: DepsMut,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
+pub fn helper_accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::AcceptOwnership {};
     execute(deps, mock_env(), info, msg)
 }
@@ -76,10 +71,7 @@ pub fn helper_unregister_executor(
     exec: &TestExecutor,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender
-        .clone()
-        .map(Addr::unchecked)
-        .unwrap_or(info.sender.clone());
+    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
     let signature = exec.sign([
         "unregister_data_request_executor".as_bytes().to_vec(),
         sender_unwrapped.as_bytes().to_vec(),
@@ -88,10 +80,7 @@ pub fn helper_unregister_executor(
     execute(deps, mock_env(), info, msg)
 }
 
-pub fn helper_get_executor(
-    deps: DepsMut,
-    executor: Secpk256k1PublicKey,
-) -> GetDataRequestExecutorResponse {
+pub fn helper_get_executor(deps: DepsMut, executor: Secpk256k1PublicKey) -> GetDataRequestExecutorResponse {
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -108,12 +97,7 @@ pub fn helper_get_owner(deps: DepsMut) -> GetOwnerResponse {
 }
 
 pub fn helper_get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        StakingQueryMsg::GetPendingOwner {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetPendingOwner {}).unwrap();
     let value: GetPendingOwnerResponse = from_json(res).unwrap();
     value
 }
@@ -123,10 +107,7 @@ pub fn helper_deposit_and_stake(
     exec: &TestExecutor,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender
-        .clone()
-        .map(Addr::unchecked)
-        .unwrap_or(info.sender.clone());
+    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
     let signature = exec.sign([
         "deposit_and_stake".as_bytes().to_vec(),
         sender_unwrapped.as_bytes().to_vec(),
@@ -142,10 +123,7 @@ pub fn helper_unstake(
     amount: u128,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender
-        .clone()
-        .map(Addr::unchecked)
-        .unwrap_or(info.sender.clone());
+    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
     let signature = exec.sign([
         "unstake".as_bytes().to_vec(),
         amount.to_be_bytes().to_vec(),
@@ -166,10 +144,7 @@ pub fn helper_withdraw(
     amount: u128,
     sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender
-        .clone()
-        .map(Addr::unchecked)
-        .unwrap_or(info.sender.clone());
+    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
     let signature = exec.sign([
         "withdraw".as_bytes().to_vec(),
         amount.to_be_bytes().to_vec(),

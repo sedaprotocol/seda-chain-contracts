@@ -1,14 +1,13 @@
 use cosmwasm_std::{StdError, Storage};
 use cw_storage_plus::{Item, Map, PrimaryKey};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 
 pub type Input = Vec<u8>;
 pub type PayloadItem = Vec<u8>;
 
 pub struct EnumerableMap<'a, K, T> {
-    pub len: Item<'a, u128>,
-    pub items: Map<'a, K, T>,
+    pub len:          Item<'a, u128>,
+    pub items:        Map<'a, K, T>,
     pub index_to_key: Map<'a, u128, K>,
     pub key_to_index: Map<'a, K, u128>,
 }
@@ -17,8 +16,8 @@ pub struct EnumerableMap<'a, K, T> {
 macro_rules! enumerable_map {
     ($namespace:literal) => {
         EnumerableMap {
-            len: Item::new(concat!($namespace, "_len")),
-            items: Map::new(concat!($namespace, "_items")),
+            len:          Item::new(concat!($namespace, "_len")),
+            items:        Map::new(concat!($namespace, "_items")),
             index_to_key: Map::new(concat!($namespace, "_index_to_key")),
             key_to_index: Map::new(concat!($namespace, "_key_to_index")),
         }

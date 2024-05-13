@@ -50,12 +50,12 @@ impl JsonSchema for Signature {
         let schema = SchemaObject {
             instance_type: Some(schemars::schema::InstanceType::Array.into()),
             array: Some(Box::new(schemars::schema::ArrayValidation {
-                items: Some(SingleOrVec::Single(Box::new(gen.subschema_for::<u8>()))),
-                min_items: Some(65),
-                max_items: Some(65),
-                unique_items: Some(false),
+                items:            Some(SingleOrVec::Single(Box::new(gen.subschema_for::<u8>()))),
+                min_items:        Some(65),
+                max_items:        Some(65),
+                unique_items:     Some(false),
                 additional_items: None,
-                contains: None,
+                contains:         None,
             })),
             ..Default::default()
         };

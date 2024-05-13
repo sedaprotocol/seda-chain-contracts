@@ -1,5 +1,4 @@
 use cosmwasm_schema::write_api;
-
 use proxy_contract::msg::{InstantiateMsg, ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg};
 
 fn main() {

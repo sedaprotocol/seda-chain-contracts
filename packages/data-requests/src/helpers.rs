@@ -1,28 +1,21 @@
 use std::collections::HashMap;
 
-use crate::utils::hash_data_request;
-use common::msg::PostDataRequestArgs;
-use common::state::{DataRequest, RevealBody};
-use common::types::{Bytes, Commitment};
-use common::types::{Hash, SimpleHash};
-
+use common::{
+    error::ContractError,
+    msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse, InstantiateMsg, PostDataRequestArgs},
+    state::{DataRequest, RevealBody},
+    types::{Bytes, Commitment, Hash, SimpleHash},
+};
+use cosmwasm_std::{from_json, testing::mock_env, DepsMut, MessageInfo, Response};
 use semver::{BuildMetadata, Prerelease, Version};
-use sha3::Digest;
-use sha3::Keccak256;
+use sha3::{Digest, Keccak256};
 
-use cosmwasm_std::testing::mock_env;
+use crate::{
+    contract::{instantiate, query},
+    utils::hash_data_request,
+};
 
-use crate::contract::{instantiate, query};
-use common::msg::{GetDataRequestsFromPoolResponse, InstantiateMsg};
-use common::{error::ContractError, msg::GetDataRequestResponse};
-use cosmwasm_std::from_json;
-
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
-
-pub fn calculate_dr_id_and_args(
-    nonce: u128,
-    replication_factor: u16,
-) -> (Hash, PostDataRequestArgs) {
+pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> (Hash, PostDataRequestArgs) {
     let dr_binary_id: Hash = "dr_binary_id".simple_hash();
     let tally_binary_id: Hash = "tally_binary_id".simple_hash();
     let dr_inputs: Bytes = "dr_inputs".as_bytes().to_vec();
@@ -43,7 +36,7 @@ pub fn calculate_dr_id_and_args(
         major: 1,
         minor: 0,
         patch: 0,
-        pre: Prerelease::EMPTY,
+        pre:   Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
 
@@ -63,11 +56,7 @@ pub fn calculate_dr_id_and_args(
     (dr_id, posted_dr)
 }
 
-pub fn construct_dr(
-    constructed_dr_id: Hash,
-    dr_args: PostDataRequestArgs,
-    seda_payload: Bytes,
-) -> DataRequest {
+pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs, seda_payload: Bytes) -> DataRequest {
     let commits: HashMap<String, Commitment> = HashMap::new();
     let reveals: HashMap<String, RevealBody> = HashMap::new();
 
@@ -75,7 +64,7 @@ pub fn construct_dr(
         major: 1,
         minor: 0,
         patch: 0,
-        pre: Prerelease::EMPTY,
+        pre:   Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
 
@@ -99,10 +88,7 @@ pub fn construct_dr(
     }
 }
 
-pub fn instantiate_dr_contract(
-    deps: DepsMut,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
+pub fn instantiate_dr_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let msg = InstantiateMsg {
         token: "token".to_string(),
         proxy: "proxy".to_string(),

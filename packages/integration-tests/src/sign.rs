@@ -1,5 +1,4 @@
-use common::crypto::recover_pubkey;
-use common::test_utils::TestExecutor;
+use common::{crypto::recover_pubkey, test_utils::TestExecutor};
 use sha3::{Digest, Keccak256};
 
 #[test]

@@ -1,15 +1,16 @@
-use cosmwasm_std::MessageInfo;
+use common::{
+    error::ContractError,
+    msg::{DataRequestsExecuteMsg as ExecuteMsg, GetDataRequestResponse, GetDataRequestsFromPoolResponse},
+    types::SimpleHash,
+};
+use cosmwasm_std::{
+    coins,
+    testing::{mock_dependencies, mock_env, mock_info},
+    MessageInfo,
+};
 
 use super::helpers::*;
-use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
-
 use crate::contract::execute;
-
-use common::error::ContractError;
-use common::msg::DataRequestsExecuteMsg as ExecuteMsg;
-use common::types::SimpleHash;
-use cosmwasm_std::coins;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 #[test]
 fn post_data_request() {
     let mut deps = mock_dependencies();
@@ -29,8 +30,8 @@ fn post_data_request() {
     let info = mock_info("anyone", &coins(2, "token"));
 
     let msg = ExecuteMsg::PostDataRequest {
-        posted_dr: dr_args,
-        seda_payload: vec![],
+        posted_dr:       dr_args,
+        seda_payload:    vec![],
         payback_address: vec![],
     };
     // someone posts a data request
@@ -73,22 +74,22 @@ fn get_data_requests() {
     // someone posts three data requests
     let info = mock_info("anyone", &coins(2, "token"));
     let msg = ExecuteMsg::PostDataRequest {
-        posted_dr: dr_args1,
-        seda_payload: vec![],
+        posted_dr:       dr_args1,
+        seda_payload:    vec![],
         payback_address: vec![],
     };
     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
     let msg = ExecuteMsg::PostDataRequest {
-        posted_dr: dr_args2,
-        seda_payload: vec![],
+        posted_dr:       dr_args2,
+        seda_payload:    vec![],
         payback_address: vec![],
     };
     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
     let msg = ExecuteMsg::PostDataRequest {
-        posted_dr: dr_args3,
-        seda_payload: vec![],
+        posted_dr:       dr_args3,
+        seda_payload:    vec![],
         payback_address: vec![],
     };
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -113,7 +114,7 @@ fn get_data_requests() {
                 constructed_dr1.clone(),
                 constructed_dr2.clone(),
                 constructed_dr3.clone(),
-            ]
+            ],
         },
         response
     );
@@ -124,19 +125,18 @@ fn get_data_requests() {
 
     assert_eq!(
         GetDataRequestsFromPoolResponse {
-            value: vec![constructed_dr1.clone(), constructed_dr2.clone(),]
+            value: vec![constructed_dr1.clone(), constructed_dr2.clone(),],
         },
         response
     );
 
     // fetch a single data request
 
-    let response: GetDataRequestsFromPoolResponse =
-        get_drs_from_pool(deps.as_mut(), Some(1), Some(1));
+    let response: GetDataRequestsFromPoolResponse = get_drs_from_pool(deps.as_mut(), Some(1), Some(1));
 
     assert_eq!(
         GetDataRequestsFromPoolResponse {
-            value: vec![constructed_dr2.clone()]
+            value: vec![constructed_dr2.clone()],
         },
         response
     );
@@ -147,7 +147,7 @@ fn get_data_requests() {
 
     assert_eq!(
         GetDataRequestsFromPoolResponse {
-            value: vec![constructed_dr2.clone(), constructed_dr3.clone(),]
+            value: vec![constructed_dr2.clone(), constructed_dr3.clone(),],
         },
         response
     );

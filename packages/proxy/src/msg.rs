@@ -2,13 +2,23 @@
 use arbitrary::Arbitrary;
 #[allow(unused_imports)]
 use common::msg::{
-    GetCommittedDataResultResponse, GetCommittedDataResultsResponse, GetContractResponse,
-    GetDataRequestExecutorResponse, GetDataRequestResponse, GetDataRequestsFromPoolResponse,
-    GetResolvedDataResultResponse, GetRevealedDataResultResponse, GetRevealedDataResultsResponse,
-    GetStakingConfigResponse, IsDataRequestExecutorEligibleResponse, PostDataRequestArgs,
+    GetCommittedDataResultResponse,
+    GetCommittedDataResultsResponse,
+    GetContractResponse,
+    GetDataRequestExecutorResponse,
+    GetDataRequestResponse,
+    GetDataRequestsFromPoolResponse,
+    GetResolvedDataResultResponse,
+    GetRevealedDataResultResponse,
+    GetRevealedDataResultsResponse,
+    GetStakingConfigResponse,
+    IsDataRequestExecutorEligibleResponse,
+    PostDataRequestArgs,
 };
-use common::state::RevealBody;
-use common::types::{Bytes, Hash, Secpk256k1PublicKey, Signature};
+use common::{
+    state::RevealBody,
+    types::{Bytes, Hash, Secpk256k1PublicKey, Signature},
+};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
@@ -33,24 +43,24 @@ pub enum ProxyExecuteMsg {
 
     // DataRequests
     PostDataRequest {
-        posted_dr: PostDataRequestArgs,
-        seda_payload: Bytes,
+        posted_dr:       PostDataRequestArgs,
+        seda_payload:    Bytes,
         payback_address: Bytes,
     },
     CommitDataResult {
-        dr_id: Hash,
+        dr_id:      Hash,
         commitment: Hash,
-        signature: Signature,
+        signature:  Signature,
     },
     RevealDataResult {
-        dr_id: Hash,
-        reveal: RevealBody,
+        dr_id:     Hash,
+        reveal:    RevealBody,
         signature: Signature,
     },
     // Staking
     RegisterDataRequestExecutor {
         signature: Signature,
-        memo: Option<String>,
+        memo:      Option<String>,
     },
     UnregisterDataRequestExecutor {
         signature: Signature,
@@ -60,11 +70,11 @@ pub enum ProxyExecuteMsg {
     },
     Unstake {
         signature: Signature,
-        amount: u128,
+        amount:    u128,
     },
     Withdraw {
         signature: Signature,
-        amount: u128,
+        amount:    u128,
     },
     AddToAllowlist {
         address: Addr,
@@ -88,18 +98,18 @@ pub enum ProxyQueryMsg {
     #[returns(GetDataRequestsFromPoolResponse)]
     GetDataRequestsFromPool {
         position: Option<u128>,
-        limit: Option<u128>,
+        limit:    Option<u128>,
     },
     #[returns(GetCommittedDataResultResponse)]
     GetCommittedDataResult {
-        dr_id: Hash,
+        dr_id:    Hash,
         executor: Secpk256k1PublicKey,
     },
     #[returns(GetCommittedDataResultsResponse)]
     GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]
     GetRevealedDataResult {
-        dr_id: Hash,
+        dr_id:    Hash,
         executor: Secpk256k1PublicKey,
     },
     #[returns(GetRevealedDataResultsResponse)]

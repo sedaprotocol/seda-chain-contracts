@@ -6,10 +6,7 @@ use crate::{
     types::{Secpk256k1PublicKey, Signature as Sig},
 };
 
-pub fn recover_pubkey(
-    msg_hash: [u8; 32],
-    signature: Sig,
-) -> Result<Secpk256k1PublicKey, ContractError> {
+pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Result<Secpk256k1PublicKey, ContractError> {
     let rs = signature.0[0..64].into();
     let id = match signature.0[64] {
         0 => RecoveryId::new(false, false),
@@ -20,8 +17,7 @@ pub fn recover_pubkey(
     let sig = Signature::from_bytes(rs).map_err(|_| ContractError::InvalidSignature)?;
 
     // Recover
-    let pubkey = VerifyingKey::recover_from_msg(&msg_hash, &sig, id)
-        .map_err(|_| ContractError::InvalidSignature)?;
+    let pubkey = VerifyingKey::recover_from_msg(&msg_hash, &sig, id).map_err(|_| ContractError::InvalidSignature)?;
     Ok(pubkey.to_sec1_bytes().to_vec())
 }
 

@@ -1,19 +1,32 @@
-use crate::tests::utils::{calculate_dr_id_and_args, helper_reg_dr_executor};
-use crate::tests::utils::{
-    get_dr_id, helper_commit_result, helper_post_dr, helper_reveal_result, proper_instantiate,
-    reveal_hash, send_tokens, USER,
+use common::{
+    error::ContractError,
+    msg::{
+        GetCommittedDataResultResponse,
+        GetDataRequestsFromPoolResponse,
+        GetResolvedDataResultResponse,
+        GetRevealedDataResultResponse,
+        IsDataRequestExecutorEligibleResponse,
+    },
+    state::RevealBody,
+    test_utils::TestExecutor,
+    types::SimpleHash,
 };
-use common::error::ContractError;
-use common::msg::{
-    GetCommittedDataResultResponse, GetDataRequestsFromPoolResponse, GetResolvedDataResultResponse,
-    GetRevealedDataResultResponse, IsDataRequestExecutorEligibleResponse,
-};
-use common::state::RevealBody;
-use common::test_utils::TestExecutor;
-use common::types::SimpleHash;
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg};
+
+use crate::tests::utils::{
+    calculate_dr_id_and_args,
+    get_dr_id,
+    helper_commit_result,
+    helper_post_dr,
+    helper_reg_dr_executor,
+    helper_reveal_result,
+    proper_instantiate,
+    reveal_hash,
+    send_tokens,
+    USER,
+};
 
 #[test]
 fn commit_reveal_result() {
@@ -27,10 +40,7 @@ fn commit_reveal_result() {
     let msg = ProxyQueryMsg::IsDataRequestExecutorEligible {
         executor: exec_1.public_key.clone(),
     };
-    let res: IsDataRequestExecutorEligibleResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: IsDataRequestExecutorEligibleResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     assert!(!res.value);
 
     // send tokens from USER to executor1, executor2, executor3 so they can register
@@ -68,22 +78,16 @@ fn commit_reveal_result() {
 
     let posted_dr = calculate_dr_id_and_args(1, 2);
 
-    let res = helper_post_dr(
-        &mut app,
-        proxy_contract.clone(),
-        posted_dr,
-        Addr::unchecked(USER),
-    )
-    .unwrap();
+    let res = helper_post_dr(&mut app, proxy_contract.clone(), posted_dr, Addr::unchecked(USER)).unwrap();
 
     // get dr_id
     let dr_id = get_dr_id(res);
 
     let reveal1 = RevealBody {
-        reveal: "2000".to_string().into_bytes(),
-        salt: exec_1.salt(),
+        reveal:    "2000".to_string().into_bytes(),
+        salt:      exec_1.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
     let (commitment1, reveal1_sig_bytes) = reveal_hash(&reveal1, None);
     let reveal1_sig = exec_1.sign(reveal1_sig_bytes);
@@ -144,10 +148,7 @@ fn commit_reveal_result() {
         dr_id,
         executor: exec_1.public_key.clone(),
     };
-    let res: GetCommittedDataResultResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetCommittedDataResultResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     assert!(res.value.is_some());
 
     // can't add another commitment since replication factor is reached
@@ -196,18 +197,15 @@ fn commit_reveal_result() {
         dr_id,
         executor: exec_1.public_key.clone(),
     };
-    let res: GetRevealedDataResultResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetRevealedDataResultResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     assert!(res.value.is_some());
 
     // executor 3 can't reveal since no commit was posted
     let reveal3 = RevealBody {
-        reveal: "4000".to_string().into_bytes(),
-        salt: exec_3.salt(),
+        reveal:    "4000".to_string().into_bytes(),
+        salt:      exec_3.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
     let (_, reveal3_sig_bytes) = reveal_hash(&reveal3, None);
     let reveal3_sig = exec_3.sign(reveal3_sig_bytes);
@@ -225,10 +223,10 @@ fn commit_reveal_result() {
 
     // reveal must match commitment
     let wrong_reveal = RevealBody {
-        reveal: "9999".to_string().into_bytes(),
-        salt: exec_2.salt(),
+        reveal:    "9999".to_string().into_bytes(),
+        salt:      exec_2.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
     let (_, wrong_reveal_sig_bytes) = reveal_hash(&wrong_reveal, None);
     let wrong_reveal_sig = exec_2.sign(wrong_reveal_sig_bytes);
@@ -245,10 +243,10 @@ fn commit_reveal_result() {
     );
 
     let reveal2 = RevealBody {
-        reveal: "2000".to_string().into_bytes(),
-        salt: exec_2.salt(),
+        reveal:    "2000".to_string().into_bytes(),
+        salt:      exec_2.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
     let (_, reveal2_sig_bytes) = reveal_hash(&reveal2, None);
     let reveal2_sig = exec_2.sign(reveal2_sig_bytes);
@@ -265,10 +263,7 @@ fn commit_reveal_result() {
 
     // now data request is resolved, let's check
     let msg = ProxyQueryMsg::GetResolvedDataResult { dr_id };
-    let res: GetResolvedDataResultResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetResolvedDataResultResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     assert_eq!(res.value.dr_id, dr_id);
 }
 
@@ -278,23 +273,17 @@ fn ineligible_post_data_result() {
 
     let posted_dr = calculate_dr_id_and_args(1, 2);
 
-    let res = helper_post_dr(
-        &mut app,
-        proxy_contract.clone(),
-        posted_dr,
-        Addr::unchecked(USER),
-    )
-    .unwrap();
+    let res = helper_post_dr(&mut app, proxy_contract.clone(), posted_dr, Addr::unchecked(USER)).unwrap();
 
     // get dr_id
     let dr_id = get_dr_id(res);
 
     let exec_1 = TestExecutor::new("exec_1");
     let reveal = RevealBody {
-        reveal: "2000".to_string().into_bytes(),
-        salt: exec_1.salt(),
+        reveal:    "2000".to_string().into_bytes(),
+        salt:      exec_1.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
 
     let (commitment1, _) = reveal_hash(&reveal, None);
@@ -333,42 +322,21 @@ fn pop_and_swap_in_pool() {
     // post three drs
 
     let posted_dr = calculate_dr_id_and_args(1, 2);
-    let res = helper_post_dr(
-        &mut app,
-        proxy_contract.clone(),
-        posted_dr,
-        Addr::unchecked(USER),
-    )
-    .unwrap();
+    let res = helper_post_dr(&mut app, proxy_contract.clone(), posted_dr, Addr::unchecked(USER)).unwrap();
     let dr_id_1 = get_dr_id(res);
     let posted_dr = calculate_dr_id_and_args(2, 2);
-    let res = helper_post_dr(
-        &mut app,
-        proxy_contract.clone(),
-        posted_dr,
-        Addr::unchecked(USER),
-    )
-    .unwrap();
+    let res = helper_post_dr(&mut app, proxy_contract.clone(), posted_dr, Addr::unchecked(USER)).unwrap();
     let dr_id_2 = get_dr_id(res);
     let posted_dr = calculate_dr_id_and_args(3, 2);
-    let res = helper_post_dr(
-        &mut app,
-        proxy_contract.clone(),
-        posted_dr,
-        Addr::unchecked(USER),
-    )
-    .unwrap();
+    let res = helper_post_dr(&mut app, proxy_contract.clone(), posted_dr, Addr::unchecked(USER)).unwrap();
     let dr_id_3 = get_dr_id(res);
 
     // check dr 1, 2, 3 are in pool
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: None,
-        limit: None,
+        limit:    None,
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 3);
     assert_eq!(fetched_drs[0].id, dr_id_1);
@@ -378,12 +346,9 @@ fn pop_and_swap_in_pool() {
     // `GetDataRequestsFromPool` with position = 0 and limit = 1 should return dr 1
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: Some(0),
-        limit: Some(1),
+        limit:    Some(1),
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
     assert_eq!(fetched_drs[0].id, dr_id_1);
@@ -391,10 +356,10 @@ fn pop_and_swap_in_pool() {
     // resolve dr 1
 
     let reveal1 = RevealBody {
-        reveal: "2000".to_string().into_bytes(),
-        salt: exec_1.salt(),
+        reveal:    "2000".to_string().into_bytes(),
+        salt:      exec_1.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
 
     // executor 1 commits
@@ -411,10 +376,10 @@ fn pop_and_swap_in_pool() {
     .unwrap();
 
     let reveal2 = RevealBody {
-        reveal: "3000".to_string().into_bytes(),
-        salt: exec_2.salt(),
+        reveal:    "3000".to_string().into_bytes(),
+        salt:      exec_2.salt(),
         exit_code: 0,
-        gas_used: 0,
+        gas_used:  0,
     };
     // executor 2 commits
     let (commitment2, reveal2_sig_bytes) = reveal_hash(&reveal2, None);
@@ -454,12 +419,9 @@ fn pop_and_swap_in_pool() {
     // pool is now of size two, the position of dr 2 and 3 should be swapped
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: None,
-        limit: None,
+        limit:    None,
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 2);
     assert_eq!(fetched_drs[0].id, dr_id_3);
@@ -468,12 +430,9 @@ fn pop_and_swap_in_pool() {
     // `GetDataRequestsFromPool` with position = 1 should return dr 2
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: Some(1),
-        limit: None,
+        limit:    None,
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
     assert_eq!(fetched_drs[0].id, dr_id_2);
@@ -481,12 +440,9 @@ fn pop_and_swap_in_pool() {
     // `GetDataRequestsFromPool` with limit = 1 should return dr 3
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: None,
-        limit: Some(1),
+        limit:    Some(1),
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 1);
     assert_eq!(fetched_drs[0].id, dr_id_3);
@@ -494,34 +450,25 @@ fn pop_and_swap_in_pool() {
     // `GetDataRequestsFromPool` with position = 2 or 3 should return empty array
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: Some(2),
-        limit: None,
+        limit:    None,
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 0);
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: Some(3),
-        limit: None,
+        limit:    None,
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 0);
 
     // `GetDataRequestsFromPool` with limit = 0 should return empty array
     let msg = ProxyQueryMsg::GetDataRequestsFromPool {
         position: None,
-        limit: Some(0),
+        limit:    Some(0),
     };
-    let res: GetDataRequestsFromPoolResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetDataRequestsFromPoolResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let fetched_drs = res.value;
     assert_eq!(fetched_drs.len(), 0);
 }

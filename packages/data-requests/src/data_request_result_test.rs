@@ -1,10 +1,11 @@
+use common::{msg::DataRequestsExecuteMsg, test_utils::TestExecutor, types::SimpleHash};
+use cosmwasm_std::{
+    coins,
+    testing::{mock_dependencies, mock_env, mock_info},
+};
+
 use super::helpers::instantiate_dr_contract;
 use crate::contract::execute;
-use common::msg::DataRequestsExecuteMsg;
-use common::test_utils::TestExecutor;
-use common::types::SimpleHash;
-use cosmwasm_std::coins;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 
 #[test]
 #[should_panic(expected = "NotProxy")]
@@ -27,7 +28,8 @@ fn only_proxy_can_pass_caller() {
         sender.as_bytes().to_vec(),
     ]);
 
-    // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
+    // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation
+    // comes first)
     let msg = DataRequestsExecuteMsg::CommitDataResult {
         dr_id,
         commitment,

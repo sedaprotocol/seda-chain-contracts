@@ -1,42 +1,46 @@
-use crate::state::{DataRequest, DataRequestExecutor, DataResult, RevealBody, StakingConfig};
-use crate::types::{Bytes, Commitment, Hash, Memo, Secpk256k1PublicKey, Signature};
+use std::collections::HashMap;
+
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 use semver::Version;
-use std::collections::HashMap;
+
+use crate::{
+    state::{DataRequest, DataRequestExecutor, DataResult, RevealBody, StakingConfig},
+    types::{Bytes, Commitment, Hash, Memo, Secpk256k1PublicKey, Signature},
+};
 
 #[cw_serde]
 pub struct PostDataRequestArgs {
-    pub version: Version,
-    pub dr_binary_id: Hash,
-    pub dr_inputs: Bytes,
-    pub tally_binary_id: Hash,
-    pub tally_inputs: Bytes,
+    pub version:            Version,
+    pub dr_binary_id:       Hash,
+    pub dr_inputs:          Bytes,
+    pub tally_binary_id:    Hash,
+    pub tally_inputs:       Bytes,
     pub replication_factor: u16,
-    pub gas_price: u128,
-    pub gas_limit: u128,
-    pub memo: Memo,
+    pub gas_price:          u128,
+    pub gas_limit:          u128,
+    pub memo:               Memo,
 }
 
 #[allow(clippy::large_enum_variant)]
 #[cw_serde]
 pub enum DataRequestsExecuteMsg {
     PostDataRequest {
-        posted_dr: PostDataRequestArgs,
-        seda_payload: Bytes,
+        posted_dr:       PostDataRequestArgs,
+        seda_payload:    Bytes,
         payback_address: Bytes,
     },
     CommitDataResult {
-        dr_id: Hash,
+        dr_id:      Hash,
         commitment: Hash,
-        sender: Option<String>,
-        signature: Signature,
+        sender:     Option<String>,
+        signature:  Signature,
     },
     RevealDataResult {
-        dr_id: Hash,
-        reveal: RevealBody,
+        dr_id:     Hash,
+        reveal:    RevealBody,
         signature: Signature,
-        sender: Option<String>,
+        sender:    Option<String>,
     },
 }
 
@@ -44,26 +48,26 @@ pub enum DataRequestsExecuteMsg {
 pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
         signature: Signature,
-        memo: Option<String>,
-        sender: Option<String>,
+        memo:      Option<String>,
+        sender:    Option<String>,
     },
     UnregisterDataRequestExecutor {
         signature: Signature,
-        sender: Option<String>,
+        sender:    Option<String>,
     },
     DepositAndStake {
         signature: Signature,
-        sender: Option<String>,
+        sender:    Option<String>,
     },
     Unstake {
         signature: Signature,
-        amount: u128,
-        sender: Option<String>,
+        amount:    u128,
+        sender:    Option<String>,
     },
     Withdraw {
         signature: Signature,
-        amount: u128,
-        sender: Option<String>,
+        amount:    u128,
+        sender:    Option<String>,
     },
     TransferOwnership {
         new_owner: String,
@@ -73,11 +77,11 @@ pub enum StakingExecuteMsg {
         config: StakingConfig,
     },
     AddToAllowlist {
-        sender: Option<String>,
+        sender:  Option<String>,
         address: Addr,
     },
     RemoveFromAllowlist {
-        sender: Option<String>,
+        sender:  Option<String>,
         address: Addr,
     },
 }
@@ -90,18 +94,18 @@ pub enum DataRequestsQueryMsg {
     #[returns(GetDataRequestsFromPoolResponse)]
     GetDataRequestsFromPool {
         position: Option<u128>,
-        limit: Option<u128>,
+        limit:    Option<u128>,
     },
     #[returns(GetCommittedDataResultResponse)]
     GetCommittedDataResult {
-        dr_id: Hash,
+        dr_id:    Hash,
         executor: Secpk256k1PublicKey,
     },
     #[returns(GetCommittedDataResultsResponse)]
     GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]
     GetRevealedDataResult {
-        dr_id: Hash,
+        dr_id:    Hash,
         executor: Secpk256k1PublicKey,
     },
     #[returns(GetRevealedDataResultsResponse)]

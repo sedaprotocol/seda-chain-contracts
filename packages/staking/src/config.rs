@@ -30,11 +30,7 @@ pub mod config {
     }
 
     /// Accept contract ownership
-    pub fn accept_ownership(
-        deps: DepsMut,
-        _env: Env,
-        info: MessageInfo,
-    ) -> Result<Response, ContractError> {
+    pub fn accept_ownership(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let pending_owner = PENDING_OWNER.load(deps.storage)?;
         if pending_owner.is_none() {
             return Err(ContractError::NoPendingOwnerFound);
@@ -46,10 +42,8 @@ pub mod config {
         PENDING_OWNER.save(deps.storage, &None)?;
         Ok(Response::new()
             .add_attribute("action", "accept-ownership")
-            .add_events([Event::new("seda-accept-ownership").add_attributes([
-                ("version", CONTRACT_VERSION),
-                ("new_owner", info.sender.as_ref()),
-            ])]))
+            .add_events([Event::new("seda-accept-ownership")
+                .add_attributes([("version", CONTRACT_VERSION), ("new_owner", info.sender.as_ref())])]))
     }
 
     /// Set staking config

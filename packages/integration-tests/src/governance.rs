@@ -1,9 +1,9 @@
-use crate::tests::utils::{proper_instantiate, EXECUTOR_1};
-use common::error::ContractError;
-use common::msg::GetContractResponse;
+use common::{error::ContractError, msg::GetContractResponse};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use proxy_contract::msg::{ProxyExecuteMsg, ProxyQueryMsg, ProxySudoMsg};
+
+use crate::tests::utils::{proper_instantiate, EXECUTOR_1};
 
 #[test]
 fn sudo_set_contract_address() {
@@ -11,10 +11,7 @@ fn sudo_set_contract_address() {
 
     // query initial contract address
     let msg = ProxyQueryMsg::GetDataRequestsContract {};
-    let res: GetContractResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetContractResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let initial_contract_address = res.value;
 
     // expect error when non-owner tries to set contract address via Execute call after the initial set
@@ -37,10 +34,7 @@ fn sudo_set_contract_address() {
 
     // query new contract address
     let msg = ProxyQueryMsg::GetDataRequestsContract {};
-    let res: GetContractResponse = app
-        .wrap()
-        .query_wasm_smart(proxy_contract.addr(), &msg)
-        .unwrap();
+    let res: GetContractResponse = app.wrap().query_wasm_smart(proxy_contract.addr(), &msg).unwrap();
     let new_contract_address = res.value;
 
     assert_ne!(initial_contract_address, new_contract_address);

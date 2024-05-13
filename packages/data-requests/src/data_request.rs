@@ -1,19 +1,23 @@
+use common::{
+    msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse},
+    state::DataRequest,
+    types::{Bytes, Hash},
+};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
-use common::msg::{GetDataRequestResponse, GetDataRequestsFromPoolResponse};
-use common::state::DataRequest;
-use common::types::{Bytes, Hash};
-
 pub mod data_requests {
-    use crate::{contract::CONTRACT_VERSION, state::DATA_REQUESTS_POOL, utils::hash_to_string};
-    use common::{error::ContractError, msg::PostDataRequestArgs};
-    use cosmwasm_std::{Binary, Event};
     use std::collections::HashMap;
 
-    use crate::{state::DATA_RESULTS, utils::hash_data_request};
+    use common::{error::ContractError, msg::PostDataRequestArgs};
+    use cosmwasm_std::{Binary, Event};
 
     use super::*;
+    use crate::{
+        contract::CONTRACT_VERSION,
+        state::{DATA_REQUESTS_POOL, DATA_RESULTS},
+        utils::{hash_data_request, hash_to_string},
+    };
 
     /// Internal function to return whether a data request or result exists with the given id.
     fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
@@ -22,11 +26,7 @@ pub mod data_requests {
             .ok()
             .flatten()
             .is_some()
-            || DATA_RESULTS
-                .may_load(deps.storage, dr_id)
-                .ok()
-                .flatten()
-                .is_some()
+            || DATA_RESULTS.may_load(deps.storage, dr_id).ok().flatten().is_some()
     }
 
     /// Posts a data request to the pool
@@ -55,33 +55,15 @@ pub mod data_requests {
                 ("version", CONTRACT_VERSION),
                 ("dr_id", &hash_to_string(&dr_id)),
                 ("dr_binary_id", &hash_to_string(&posted_dr.dr_binary_id)),
-                (
-                    "tally_binary_id",
-                    &hash_to_string(&posted_dr.tally_binary_id),
-                ),
-                (
-                    "dr_inputs",
-                    &serde_json::to_string(&posted_dr.dr_inputs).unwrap(),
-                ),
-                (
-                    "tally_inputs",
-                    &serde_json::to_string(&posted_dr.tally_inputs).unwrap(),
-                ),
+                ("tally_binary_id", &hash_to_string(&posted_dr.tally_binary_id)),
+                ("dr_inputs", &serde_json::to_string(&posted_dr.dr_inputs).unwrap()),
+                ("tally_inputs", &serde_json::to_string(&posted_dr.tally_inputs).unwrap()),
                 ("memo", &serde_json::to_string(&posted_dr.memo).unwrap()),
-                (
-                    "replication_factor",
-                    &posted_dr.replication_factor.to_string(),
-                ),
+                ("replication_factor", &posted_dr.replication_factor.to_string()),
                 ("gas_price", &posted_dr.gas_price.to_string()),
                 ("gas_limit", &posted_dr.gas_limit.to_string()),
-                (
-                    "seda_payload",
-                    &serde_json::to_string(&seda_payload).unwrap(),
-                ),
-                (
-                    "payback_address",
-                    &serde_json::to_string(&payback_address).unwrap(),
-                ),
+                ("seda_payload", &serde_json::to_string(&seda_payload).unwrap()),
+                ("payback_address", &serde_json::to_string(&payback_address).unwrap()),
             ]));
 
         // save the data request

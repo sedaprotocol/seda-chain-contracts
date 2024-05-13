@@ -21,7 +21,7 @@ fn mock_app() -> App {
                     storage,
                     &Addr::unchecked(user),
                     vec![Coin {
-                        denom: "NATIVE_DENOM".to_string(),
+                        denom:  "NATIVE_DENOM".to_string(),
                         amount: Uint128::new(amount),
                     }],
                 )
@@ -47,13 +47,6 @@ fuzz_target!(|msg: InstantiateMsg| {
 
     // instantiate proxy-contract
     let proxy_contract_code_id = app.store_code(proxy_contract_template());
-    app.instantiate_contract(
-        proxy_contract_code_id,
-        Addr::unchecked(ADMIN),
-        &msg,
-        &[],
-        "test",
-        None,
-    )
-    .unwrap();
+    app.instantiate_contract(proxy_contract_code_id, Addr::unchecked(ADMIN), &msg, &[], "test", None)
+        .unwrap();
 });
