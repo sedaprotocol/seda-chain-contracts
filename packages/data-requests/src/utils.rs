@@ -2,7 +2,7 @@ use common::error::ContractError;
 use common::msg::StakingQueryMsg;
 use common::msg::{IsDataRequestExecutorEligibleResponse, PostDataRequestArgs};
 use common::state::DataRequest;
-use common::types::{Bytes, Hash, Secpk256k1PublicKey, SimpleHash};
+use common::types::{Hash, Secpk256k1PublicKey, SimpleHash};
 use cosmwasm_std::{to_json_binary, Addr, DepsMut, QueryRequest, WasmQuery};
 use sha3::{Digest, Keccak256};
 
@@ -57,7 +57,7 @@ pub fn hash_data_result(
     block_height: u64,
     exit_code: u8,
     gas_used: u128,
-    result: &Bytes,
+    result: &[u8],
 ) -> Hash {
     // hash non-fixed-length inputs
     let mut results_hasher = Keccak256::new();
@@ -96,6 +96,6 @@ pub fn validate_sender(
     }
 }
 
-pub fn hash_to_string(input: Hash) -> String {
+pub fn hash_to_string(input: &[u8]) -> String {
     hex::encode(input)
 }

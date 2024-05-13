@@ -19,7 +19,7 @@ pub mod data_request_results {
         GetResolvedDataResultResponse, GetRevealedDataResultsResponse,
     };
     use common::state::{DataResult, RevealBody};
-    use common::types::{Bytes, Secpk256k1PublicKey, Signature};
+    use common::types::{Secpk256k1PublicKey, Signature};
 
     use crate::contract::CONTRACT_VERSION;
     use crate::state::DATA_REQUESTS_POOL;
@@ -53,13 +53,13 @@ pub mod data_request_results {
 
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
-        if !check_eligibility(&deps, public_key.clone())? {
+        let public_key_str = hex::encode(&public_key);
+        if !check_eligibility(&deps, public_key)? {
             return Err(IneligibleExecutor);
         }
 
         // find the data request from the pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
-        let public_key_str = hex::encode(public_key);
         if dr.commits.contains_key(&public_key_str) {
             return Err(AlreadyCommitted);
         }
@@ -78,9 +78,9 @@ pub mod data_request_results {
             .add_attribute("action", "commit_data_result")
             .add_event(Event::new("seda-commitment").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", &hash_to_string(dr_id)),
+                ("dr_id", &hash_to_string(&dr_id)),
                 ("executor", sender.as_str()),
-                ("commitment", &hash_to_string(commitment)),
+                ("commitment", &hash_to_string(&commitment)),
             ])))
     }
 
@@ -98,31 +98,32 @@ pub mod data_request_results {
         let sender = validate_sender(&deps, info.sender, sender)?;
 
         // compute hash of reveal body
-        let reveal_body_hash = compute_hash(reveal_body.clone());
+        let reveal_body_hash = compute_hash(&reveal_body);
 
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(reveal_body_hash, signature)?;
-        if !check_eligibility(&deps, public_key.clone())? {
+        let public_key_str = hex::encode(&public_key);
+        if !check_eligibility(&deps, public_key)? {
             return Err(IneligibleExecutor);
         }
 
         // find the data request from the committed pool (if it exists, otherwise error)
         let mut dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
+        dbg!(&dr);
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)
-        let committed_dr_results = dr.clone().commits;
+        let committed_dr_results = &dr.commits;
         if u16::try_from(committed_dr_results.len()).unwrap() < dr.replication_factor {
             return Err(RevealNotStarted);
         }
 
         // error if data request executor has not submitted a commitment
-        let public_key_str = hex::encode(public_key);
         if !committed_dr_results.contains_key(&public_key_str) {
             return Err(NotCommitted);
         }
 
         // error if data request executor has already submitted a reveal
-        if dr.reveals.contains_key(&public_key_str) {
+        if dbg!(dr.reveals.contains_key(dbg!(&public_key_str))) {
             return Err(AlreadyRevealed);
         }
 
@@ -134,15 +135,11 @@ pub mod data_request_results {
             return Err(RevealMismatch);
         }
 
-        // add the reveal to the data request state
-        dr.reveals.insert(public_key_str, reveal_body.clone());
-        DATA_REQUESTS_POOL.update(deps.storage, dr_id, &dr)?;
-
         let mut response = Response::new()
             .add_attribute("action", "reveal_data_result")
             .add_event(Event::new("seda-reveal").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("dr_id", &hash_to_string(dr_id)),
+                ("dr_id", &hash_to_string(&dr_id)),
                 ("executor", sender.as_str()),
                 (
                     "reveal",
@@ -150,49 +147,53 @@ pub mod data_request_results {
                 ),
             ]));
 
+        // add the reveal to the data request state
+        let gas_used = reveal_body.gas_used;
+        let reveal = reveal_body.reveal.clone();
+        dr.reveals.insert(public_key_str, reveal_body);
+        DATA_REQUESTS_POOL.update(deps.storage, dr_id, &dr)?;
+
         // if total reveals equals replication factor, resolve the DR
         // TODO: this needs to be separated out in a tally function once the module is implemented
         if u16::try_from(dr.reveals.len()).unwrap() == dr.replication_factor {
             let block_height: u64 = env.block.height;
             let exit_code: u8 = 0; // TODO: get this from the tally module
-            let gas_used = reveal_body.clone().gas_used;
-            let result: Bytes = reveal_body.clone().reveal.to_vec();
-
-            let payback_address: Bytes = dr.payback_address.clone();
-            let seda_payload: Bytes = dr.seda_payload.clone();
 
             // save the data result
-            let result_id = hash_data_result(&dr, block_height, exit_code, gas_used, &result);
-            let dr_result = DataResult {
-                version: dr.version,
-                dr_id,
-                block_height,
-                exit_code,
-                result: result.clone(),
-                payback_address: payback_address.clone(),
-                seda_payload: seda_payload.clone(),
-            };
-            DATA_RESULTS.save(deps.storage, dr_id, &dr_result)?;
+            let result_id = hash_data_result(&dr, block_height, exit_code, gas_used, &reveal);
 
             // remove from the pool
             DATA_REQUESTS_POOL.remove(deps.storage, dr_id)?;
 
             response = response.add_event(Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION),
-                ("result_id", &hash_to_string(result_id)),
-                ("dr_id", &hash_to_string(dr_id)),
+                ("result_id", &hash_to_string(&result_id)),
+                ("dr_id", &hash_to_string(&dr_id)),
                 ("block_height", &block_height.to_string()),
                 ("exit_code", &exit_code.to_string()),
-                ("result", &serde_json::to_string(&result).unwrap()),
+                ("result", &serde_json::to_string(&reveal).unwrap()),
                 (
                     "payback_address",
-                    &serde_json::to_string(&payback_address).unwrap(),
+                    &serde_json::to_string(&dr.payback_address).unwrap(),
                 ),
                 (
                     "seda_payload",
-                    &serde_json::to_string(&seda_payload).unwrap(),
+                    &serde_json::to_string(&dr.seda_payload).unwrap(),
                 ),
             ]));
+
+            let dr_result = DataResult {
+                version: dr.version,
+                dr_id,
+                block_height,
+                exit_code,
+                result: reveal,
+                payback_address: dr.payback_address,
+                seda_payload: dr.seda_payload,
+            };
+
+            // save the data result
+            DATA_RESULTS.save(deps.storage, dr_id, &dr_result)?;
         }
 
         Ok(response)
@@ -206,10 +207,8 @@ pub mod data_request_results {
     ) -> StdResult<GetCommittedDataResultResponse> {
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         let public_key_str = hex::encode(executor);
-        let commitment = dr.commits.get(&public_key_str);
-        Ok(GetCommittedDataResultResponse {
-            value: commitment.cloned(),
-        })
+        let commitment = dr.commits.get(&public_key_str).cloned();
+        Ok(GetCommittedDataResultResponse { value: commitment })
     }
 
     /// Returns a data result from the results with the given id, if it exists.
@@ -260,12 +259,12 @@ pub mod data_request_results {
     ) -> StdResult<GetCommittedExecutorsResponse> {
         let dr = DATA_REQUESTS_POOL.load(deps.storage, dr_id)?;
         Ok(GetCommittedExecutorsResponse {
-            value: dr.commits.keys().map(|k| k.clone().into_bytes()).collect(),
+            value: dr.commits.keys().cloned().map(|k| k.into_bytes()).collect(),
         })
     }
 
     /// Computes hash given a reveal and salt
-    fn compute_hash(reveal: RevealBody) -> Hash {
+    fn compute_hash(reveal: &RevealBody) -> Hash {
         // hash non-fixed-length inputs
         let mut reveal_hasher = Keccak256::new();
         reveal_hasher.update(&reveal.reveal);
@@ -278,48 +277,5 @@ pub mod data_request_results {
         reveal_body_hasher.update(reveal.gas_used.to_be_bytes());
         reveal_body_hasher.update(reveal_hash);
         reveal_body_hasher.finalize().into()
-    }
-}
-
-#[cfg(test)]
-mod data_request_result_tests {
-    use crate::contract::execute;
-    use crate::helpers::instantiate_dr_contract;
-    use common::msg::DataRequestsExecuteMsg;
-    use common::test_utils::TestExecutor;
-    use common::types::SimpleHash;
-    use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-
-    #[test]
-    #[should_panic(expected = "NotProxy")]
-    fn only_proxy_can_pass_caller() {
-        let mut deps = mock_dependencies();
-
-        let info = mock_info("creator", &coins(2, "token"));
-        let exec = TestExecutor::new("creator");
-
-        // instantiate contract
-        instantiate_dr_contract(deps.as_mut(), info).unwrap();
-
-        let dr_id = "dr_id".simple_hash();
-        let commitment = "commitment".simple_hash();
-        let sender = "someone".to_string();
-        let signature = exec.sign([
-            "commit_data_result".as_bytes().to_vec(),
-            dr_id.to_vec(),
-            commitment.to_vec(),
-            sender.as_bytes().to_vec(),
-        ]);
-
-        // try commiting a data result from a non-proxy (doesn't matter if it's eligible or not since sender validation comes first)
-        let msg = DataRequestsExecuteMsg::CommitDataResult {
-            dr_id,
-            commitment,
-            sender: Some("someone".to_string()),
-            signature,
-        };
-        let info = mock_info("anyone", &[]);
-        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
 }

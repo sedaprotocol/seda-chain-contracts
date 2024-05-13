@@ -91,7 +91,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg(test)]
 mod init_tests {
 
-    use crate::helpers::instantiate_dr_contract;
+    use crate::test::helpers::instantiate_dr_contract;
     use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_info};
     #[test]

@@ -47,19 +47,6 @@ pub fn calculate_dr_id_and_args(
         build: BuildMetadata::EMPTY,
     };
 
-    let constructed_dr_input = PostDataRequestArgs {
-        version: version.clone(),
-        dr_binary_id,
-        tally_binary_id,
-        dr_inputs: dr_inputs.clone(),
-        tally_inputs: tally_inputs.clone(),
-        memo: memo.clone(),
-        replication_factor,
-        gas_price,
-        gas_limit,
-    };
-    let constructed_dr_id = hash_data_request(&constructed_dr_input);
-
     let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
         version,
         dr_binary_id,
@@ -71,8 +58,9 @@ pub fn calculate_dr_id_and_args(
         gas_price,
         gas_limit,
     };
+    let dr_id = hash_data_request(&posted_dr);
 
-    (constructed_dr_id, posted_dr)
+    (dr_id, posted_dr)
 }
 
 pub fn construct_dr(
