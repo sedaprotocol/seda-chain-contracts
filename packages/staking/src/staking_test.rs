@@ -9,7 +9,7 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
 };
 
-use super::helpers::*;
+use super::helpers;
 use crate::{contract::execute, staking::is_executor_eligible};
 
 #[test]
@@ -17,23 +17,23 @@ fn deposit_stake_withdraw() {
     let mut deps = mock_dependencies();
 
     let info = mock_info("creator", &coins(0, "token"));
-    let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+    let _res = helpers::instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
     // cant register without depositing tokens
     let info = mock_info("anyone", &coins(0, "token"));
     let exec = TestExecutor::new("anyone");
 
-    let res = helper_reg_and_stake(deps.as_mut(), info, &exec, None);
+    let res = helpers::reg_and_stake(deps.as_mut(), info, &exec, None);
     assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds(1, 0));
 
     // register a data request executor
     let info = mock_info("anyone", &coins(1, "token"));
 
-    let _res = helper_reg_and_stake(deps.as_mut(), info.clone(), &exec, Some("address".to_string()));
+    let _res = helpers::reg_and_stake(deps.as_mut(), info.clone(), &exec, Some("address".to_string()));
     let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
     assert!(executor_is_eligible.value);
     // data request executor's stake should be 1
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -48,11 +48,11 @@ fn deposit_stake_withdraw() {
 
     // the data request executor stakes 2 more tokens
     let info = mock_info("anyone", &coins(2, "token"));
-    let _res = helper_increase_stake(deps.as_mut(), info.clone(), &exec).unwrap();
+    let _res = helpers::increase_stake(deps.as_mut(), info.clone(), &exec).unwrap();
     let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
     assert!(executor_is_eligible.value);
     // data request executor's stake should be 3
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -68,11 +68,11 @@ fn deposit_stake_withdraw() {
     // the data request executor unstakes 1
     let info = mock_info("anyone", &coins(0, "token"));
 
-    let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 1);
+    let _res = helpers::unstake(deps.as_mut(), info.clone(), &exec, 1);
     let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
     assert!(executor_is_eligible.value);
     // data request executor's stake should be 1 and pending 1
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -87,12 +87,12 @@ fn deposit_stake_withdraw() {
 
     // the data request executor withdraws 1
     let info = mock_info("anyone", &coins(0, "token"));
-    let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 1);
+    let _res = helpers::withdraw(deps.as_mut(), info.clone(), &exec, 1);
     let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
     assert!(executor_is_eligible.value);
 
     // data request executor's stake should be 1 and pending 0
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -106,7 +106,7 @@ fn deposit_stake_withdraw() {
     );
 
     // unstake 2 more
-    helper_unstake(deps.as_mut(), info, &exec, 2).unwrap();
+    helpers::unstake(deps.as_mut(), info, &exec, 2).unwrap();
 
     // assert executer is no longer eligible for committe inclusion
     let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key).unwrap();
@@ -119,7 +119,7 @@ fn no_funds_provided() {
     let mut deps = mock_dependencies();
 
     let info = mock_info("creator", &coins(2, "token"));
-    let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+    let _res = helpers::instantiate_staking_contract(deps.as_mut(), info).unwrap();
     let exec = TestExecutor::new("anyone");
 
     let msg = ExecuteMsg::IncreaseStake {
@@ -135,15 +135,15 @@ fn insufficient_funds() {
     let mut deps = mock_dependencies();
 
     let info = mock_info("alice", &coins(1, "token"));
-    let _res = instantiate_staking_contract(deps.as_mut(), info.clone()).unwrap();
+    let _res = helpers::instantiate_staking_contract(deps.as_mut(), info.clone()).unwrap();
     let alice = TestExecutor::new("alice");
 
     // register a data request executor
-    helper_reg_and_stake(deps.as_mut(), info.clone(), &alice, None).unwrap();
+    helpers::reg_and_stake(deps.as_mut(), info.clone(), &alice, None).unwrap();
 
     // try unstaking more than staked
     let info = mock_info("alice", &coins(0, "token"));
-    helper_unstake(deps.as_mut(), info.clone(), &alice, 2).unwrap();
+    helpers::unstake(deps.as_mut(), info.clone(), &alice, 2).unwrap();
 }
 
 #[test]
@@ -151,22 +151,22 @@ fn register_data_request_executor() {
     let mut deps = mock_dependencies();
 
     let info = mock_info("creator", &coins(2, "token"));
-    let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+    let _res = helpers::instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
     let exec = TestExecutor::new("anyone");
     // fetching data request executor for an address that doesn't exist should return None
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(value, GetStaker { value: None });
 
     // someone registers a data request executor
     let info = mock_info("anyone", &coins(2, "token"));
 
-    let _res = helper_reg_and_stake(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
+    let _res = helpers::reg_and_stake(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
 
     // should be able to fetch the data request executor
 
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
     assert_eq!(
         value,
         GetStaker {
@@ -184,16 +184,16 @@ fn unregister_data_request_executor() {
     let mut deps = mock_dependencies();
 
     let info = mock_info("creator", &coins(2, "token"));
-    let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
+    let _res = helpers::instantiate_staking_contract(deps.as_mut(), info).unwrap();
 
     // someone registers a data request executor
     let info = mock_info("anyone", &coins(2, "token"));
     let exec = TestExecutor::new("anyone");
 
-    let _res = helper_reg_and_stake(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
+    let _res = helpers::reg_and_stake(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
 
     // should be able to fetch the data request executor
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -208,22 +208,22 @@ fn unregister_data_request_executor() {
 
     // can't unregister the data request executor if it has staked tokens
     let info = mock_info("anyone", &coins(2, "token"));
-    let res = helper_unregister(deps.as_mut(), info, &exec);
+    let res = helpers::unregister(deps.as_mut(), info, &exec);
     assert!(res.is_err_and(|x| x == ContractError::ExecutorHasTokens));
 
     // unstake and withdraw all tokens
     let info = mock_info("anyone", &coins(0, "token"));
 
-    let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 2);
+    let _res = helpers::unstake(deps.as_mut(), info.clone(), &exec, 2);
     let info = mock_info("anyone", &coins(0, "token"));
-    let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 2);
+    let _res = helpers::withdraw(deps.as_mut(), info.clone(), &exec, 2);
 
     // unregister the data request executor
     let info = mock_info("anyone", &coins(2, "token"));
-    let _res = helper_unregister(deps.as_mut(), info, &exec).unwrap();
+    let _res = helpers::unregister(deps.as_mut(), info, &exec).unwrap();
 
     // fetching data request executor after unregistering should return None
-    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = helpers::get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(value, GetStaker { value: None });
 }
