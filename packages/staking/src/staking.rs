@@ -9,8 +9,8 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
     contract::CONTRACT_VERSION,
-    state::{ALLOWLIST, CONFIG, DATA_REQUEST_EXECUTORS, TOKEN},
-    utils::{apply_validator_eligibility, get_attached_funds},
+    state::{DATA_REQUEST_EXECUTORS, TOKEN},
+    utils::{apply_validator_eligibility, get_attached_funds, if_allowlist_enabled},
 };
 
 /// Deposits and stakes tokens for a data request executor.
@@ -29,14 +29,9 @@ pub fn deposit_and_stake(
 
     // recover public key from signature
     let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
-    // if allowlist is on, check if the sender is in the allowlist
-    let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-    if allowlist_enabled {
-        let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
-        if is_allowed.is_none() {
-            return Err(ContractError::NotOnAllowlist);
-        }
-    }
+
+    // if allowlist is on, check if the signer is in the allowlist
+    if_allowlist_enabled(&deps, &public_key)?;
 
     // update staked tokens for executor
     let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
@@ -80,14 +75,8 @@ pub fn unstake(
     // recover public key from signature
     let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
-    // if allowlist is on, check if the sender is in the allowlist
-    let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-    if allowlist_enabled {
-        let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
-        if is_allowed.is_none() {
-            return Err(ContractError::NotOnAllowlist);
-        }
-    }
+    // if allowlist is on, check if the signer is in the allowlist
+    if_allowlist_enabled(&deps, &public_key)?;
 
     // error if amount is greater than staked tokens
     let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
@@ -135,14 +124,9 @@ pub fn withdraw(
 
     // recover public key from signature
     let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
-    // if allowlist is on, check if the sender is in the allowlist
-    let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-    if allowlist_enabled {
-        let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
-        if is_allowed.is_none() {
-            return Err(ContractError::NotOnAllowlist);
-        }
-    }
+
+    // if allowlist is on, check if the signer is in the allowlist
+    if_allowlist_enabled(&deps, &public_key)?;
 
     // TODO: add delay after calling unstake
     let token = TOKEN.load(deps.storage)?;

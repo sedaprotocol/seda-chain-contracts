@@ -19,8 +19,8 @@ pub mod data_request_executors {
     use super::*;
     use crate::{
         contract::CONTRACT_VERSION,
-        state::{ALLOWLIST, ELIGIBLE_DATA_REQUEST_EXECUTORS},
-        utils::apply_validator_eligibility,
+        state::ELIGIBLE_DATA_REQUEST_EXECUTORS,
+        utils::{apply_validator_eligibility, if_allowlist_enabled},
     };
 
     /// Registers a data request executor with an optional p2p multi address, requiring a token deposit.
@@ -40,14 +40,8 @@ pub mod data_request_executors {
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
-        // if allowlist is on, check if the sender is in the allowlist
-        let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-        if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
-            if is_allowed.is_none() {
-                return Err(ContractError::NotOnAllowlist);
-            }
-        }
+        // if allowlist is on, check if the signer is in the allowlist
+        if_allowlist_enabled(&deps, &public_key)?;
 
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
@@ -91,14 +85,8 @@ pub mod data_request_executors {
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
-        // if allowlist is on, check if the sender is in the allowlist
-        let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-        if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
-            if is_allowed.is_none() {
-                return Err(ContractError::NotOnAllowlist);
-            }
-        }
+        // if allowlist is on, check if the signer is in the allowlist
+        if_allowlist_enabled(&deps, &public_key)?;
 
         // require that the executor has no staked or tokens pending withdrawal
         let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;

@@ -25,3 +25,14 @@ pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractE
         .map(|coin| coin.amount.u128());
     amount.ok_or(ContractError::NoFunds)
 }
+
+pub fn if_allowlist_enabled(deps: &DepsMut, public_key: &Secpk256k1PublicKey) -> Result<(), ContractError> {
+    let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
+    if allowlist_enabled {
+        let is_allowed = ELIGIBLE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, public_key)?;
+        if is_allowed.is_none() {
+            return Err(ContractError::NotOnAllowlist);
+        }
+    }
+    Ok(())
+}
