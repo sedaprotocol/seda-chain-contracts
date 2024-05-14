@@ -1,4 +1,3 @@
-pub mod allowlist;
 pub mod config;
 pub mod contract;
 pub mod executors_registry;
@@ -11,8 +10,7 @@ pub mod utils;
 pub(crate) mod test {
     pub mod helpers;
 
-    mod allowlist_test;
-    mod contract_test;
+    mod config_test;
     mod executors_registry_test;
     mod staking_test;
 }

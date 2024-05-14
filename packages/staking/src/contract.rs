@@ -17,8 +17,7 @@ use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, DepsMut, Env, Mess
 use cw2::set_contract_version;
 
 use crate::{
-    allowlist::allow_list,
-    config::config,
+    config,
     executors_registry::data_request_executors,
     staking::staking,
     state::{CONFIG, OWNER, PENDING_OWNER, PROXY_CONTRACT, TOKEN},
@@ -65,8 +64,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
         ExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
         ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
         ExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
-        ExecuteMsg::AddToAllowlist { pub_key } => allow_list::add_to_allowlist(deps, info, pub_key),
-        ExecuteMsg::RemoveFromAllowlist { pub_key } => allow_list::remove_from_allowlist(deps, info, pub_key),
+        ExecuteMsg::AddToAllowlist { pub_key } => config::add_to_allowlist(deps, info, pub_key),
+        ExecuteMsg::RemoveFromAllowlist { pub_key } => config::remove_from_allowlist(deps, info, pub_key),
     }
 }
 
