@@ -19,7 +19,7 @@ use cw2::set_contract_version;
 use crate::{
     config,
     executors_registry::data_request_executors,
-    staking::staking,
+    staking,
     state::{CONFIG, OWNER, PENDING_OWNER, PROXY_CONTRACT, TOKEN},
 };
 
