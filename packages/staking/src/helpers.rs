@@ -25,9 +25,9 @@ pub fn reg_and_stake(
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
     let signature = if let Some(m) = memo.as_ref() {
-        exec.sign(["register_and_stake".as_bytes().to_vec(), m.simple_hash().to_vec()])
+        exec.sign(["register_and_stake".as_bytes(), &m.simple_hash()])
     } else {
-        exec.sign(["register_and_stake".as_bytes().to_vec()])
+        exec.sign(["register_and_stake".as_bytes()])
     };
     let msg = StakingExecuteMsg::RegisterAndStake { signature, memo };
 
@@ -45,7 +45,7 @@ pub fn accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Response, Co
     execute(deps, mock_env(), info, msg)
 }
 pub fn unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
-    let signature = exec.sign(["unregister".as_bytes().to_vec()]);
+    let signature = exec.sign(["unregister".as_bytes()]);
     let msg = StakingExecuteMsg::Unregister { signature };
 
     execute(deps, mock_env(), info, msg)
@@ -71,14 +71,14 @@ pub fn get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
     value
 }
 pub fn increase_stake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
-    let signature = exec.sign(["increase_stake".as_bytes().to_vec()]);
+    let signature = exec.sign(["increase_stake".as_bytes()]);
     let msg = StakingExecuteMsg::IncreaseStake { signature };
 
     execute(deps, mock_env(), info, msg)
 }
 
 pub fn unstake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor, amount: u128) -> Result<Response, ContractError> {
-    let signature = exec.sign(["unstake".as_bytes().to_vec(), amount.to_be_bytes().to_vec()]);
+    let signature = exec.sign(["unstake".as_bytes(), &amount.to_be_bytes()]);
     let msg = StakingExecuteMsg::Unstake { signature, amount };
 
     execute(deps, mock_env(), info, msg)
@@ -90,7 +90,7 @@ pub fn withdraw(
     exec: &TestExecutor,
     amount: u128,
 ) -> Result<Response, ContractError> {
-    let signature = exec.sign(["withdraw".as_bytes().to_vec(), amount.to_be_bytes().to_vec()]);
+    let signature = exec.sign(["withdraw".as_bytes(), &amount.to_be_bytes()]);
     let msg = StakingExecuteMsg::Withdraw { signature, amount };
 
     execute(deps, mock_env(), info, msg)

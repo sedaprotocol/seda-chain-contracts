@@ -55,9 +55,9 @@ impl TestExecutor {
         hasher.finalize().into()
     }
 
-    pub fn sign<I>(&self, msg: I) -> Signature
+    pub fn sign<'a, I>(&self, msg: I) -> Signature
     where
-        I: IntoIterator<Item = Vec<u8>>,
+        I: IntoIterator<Item = &'a [u8]>,
     {
         let mut hasher = Keccak256::new();
         for m in msg {

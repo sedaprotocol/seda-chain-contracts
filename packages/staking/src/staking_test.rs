@@ -120,7 +120,7 @@ fn no_funds_provided() {
     let anyone = TestExecutor::new("anyone", None);
 
     let msg = ExecuteMsg::IncreaseStake {
-        signature: anyone.sign(["deposit_and_stake".as_bytes().to_vec()]),
+        signature: anyone.sign(["deposit_and_stake".as_bytes()]),
     };
     execute(deps.as_mut(), mock_env(), anyone.info(), msg).unwrap();
 }
