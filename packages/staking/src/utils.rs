@@ -3,7 +3,7 @@ use cosmwasm_std::{Coin, DepsMut};
 
 use crate::state::{CONFIG, ELIGIBLE_DATA_REQUEST_EXECUTORS};
 
-pub fn apply_validator_eligibility(
+pub fn update_dr_elig(
     deps: DepsMut,
     public_key: &Secpk256k1PublicKey,
     tokens_staked: u128,

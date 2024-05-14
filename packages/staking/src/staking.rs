@@ -10,7 +10,7 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use crate::{
     contract::CONTRACT_VERSION,
     state::{DATA_REQUEST_EXECUTORS, TOKEN},
-    utils::{apply_validator_eligibility, get_attached_funds, if_allowlist_enabled},
+    utils::{get_attached_funds, if_allowlist_enabled, update_dr_elig},
 };
 
 /// Deposits and stakes tokens for a data request executor.
@@ -38,7 +38,7 @@ pub fn deposit_and_stake(
     executor.tokens_staked += amount;
     DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
-    apply_validator_eligibility(deps, &public_key, executor.tokens_staked)?;
+    update_dr_elig(deps, &public_key, executor.tokens_staked)?;
 
     Ok(Response::new()
         .add_attribute("action", "deposit_and_stake")
@@ -89,7 +89,7 @@ pub fn unstake(
     executor.tokens_pending_withdrawal += amount;
     DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
-    apply_validator_eligibility(deps, &public_key, executor.tokens_staked)?;
+    update_dr_elig(deps, &public_key, executor.tokens_staked)?;
 
     // TODO: emit when pending tokens can be withdrawn
     Ok(Response::new().add_attribute("action", "unstake").add_events([

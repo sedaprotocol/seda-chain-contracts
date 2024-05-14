@@ -20,7 +20,7 @@ pub mod data_request_executors {
     use crate::{
         contract::CONTRACT_VERSION,
         state::ELIGIBLE_DATA_REQUEST_EXECUTORS,
-        utils::{apply_validator_eligibility, if_allowlist_enabled},
+        utils::{if_allowlist_enabled, update_dr_elig},
     };
 
     /// Registers a data request executor with an optional p2p multi address, requiring a token deposit.
@@ -59,7 +59,7 @@ pub mod data_request_executors {
         };
         DATA_REQUEST_EXECUTORS.save(deps.storage, &public_key, &executor)?;
 
-        apply_validator_eligibility(deps, &public_key, amount)?;
+        update_dr_elig(deps, &public_key, amount)?;
 
         Ok(Response::new()
             .add_attribute("action", "register_data_request_executor")
