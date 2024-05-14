@@ -20,7 +20,7 @@ use crate::{
     config,
     executors_registry::data_request_executors,
     staking,
-    state::{CONFIG, OWNER, PENDING_OWNER, PROXY_CONTRACT, TOKEN},
+    state::{CONFIG, OWNER, PENDING_OWNER, TOKEN},
 };
 
 // version info for migration info
@@ -36,7 +36,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
-    PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
+    // PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     PENDING_OWNER.save(deps.storage, &None)?;
     let init_config = StakingConfig {
