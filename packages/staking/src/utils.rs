@@ -1,7 +1,7 @@
 use common::{error::ContractError, types::Secpk256k1PublicKey};
 use cosmwasm_std::{Coin, DepsMut};
 
-use crate::state::{CONFIG, ELIGIBLE_DATA_REQUEST_EXECUTORS};
+use crate::state::{ALLOWLIST, CONFIG, ELIGIBLE_DATA_REQUEST_EXECUTORS};
 
 pub fn update_dr_elig(
     deps: DepsMut,
@@ -29,7 +29,7 @@ pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractE
 pub fn if_allowlist_enabled(deps: &DepsMut, public_key: &Secpk256k1PublicKey) -> Result<(), ContractError> {
     let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
     if allowlist_enabled {
-        let is_allowed = ELIGIBLE_DATA_REQUEST_EXECUTORS.may_load(deps.storage, public_key)?;
+        let is_allowed = ALLOWLIST.may_load(deps.storage, public_key)?;
         if is_allowed.is_none() {
             return Err(ContractError::NotOnAllowlist);
         }

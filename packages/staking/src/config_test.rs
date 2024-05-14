@@ -128,7 +128,6 @@ pub fn allowlist_works() {
     let info = mock_info("alice", &coins(100, "token"));
     let alice = TestExecutor::new("alice");
     let res = helper_reg_and_stake(deps.as_mut(), info, &alice, None);
-    dbg!(&res);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
     // add alice to the allowlist
