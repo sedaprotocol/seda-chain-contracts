@@ -26,7 +26,7 @@ pub fn increase_stake(
     let amount = get_attached_funds(&info.funds, &token)?;
 
     // compute message hash
-    let message_hash = hash(["stake".as_bytes()]);
+    let message_hash = hash(["increase_stake".as_bytes()]);
 
     // recover public key from signature
     let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;

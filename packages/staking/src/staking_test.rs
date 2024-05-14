@@ -35,7 +35,7 @@ fn deposit_stake_withdraw() {
         .unwrap();
     assert!(executor_is_eligible);
     // data request executor's stake should be 1
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -56,7 +56,7 @@ fn deposit_stake_withdraw() {
         .unwrap();
     assert!(executor_is_eligible);
     // data request executor's stake should be 3
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -78,7 +78,7 @@ fn deposit_stake_withdraw() {
         .unwrap();
     assert!(executor_is_eligible);
     // data request executor's stake should be 1 and pending 1
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -101,7 +101,7 @@ fn deposit_stake_withdraw() {
     assert!(executor_is_eligible);
 
     // data request executor's stake should be 1 and pending 0
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -164,7 +164,7 @@ fn register_data_request_executor() {
 
     let exec = TestExecutor::new("anyone");
     // fetching data request executor for an address that doesn't exist should return None
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(value, GetStaker { value: None });
 
@@ -175,7 +175,7 @@ fn register_data_request_executor() {
 
     // should be able to fetch the data request executor
 
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
     assert_eq!(
         value,
         GetStaker {
@@ -202,7 +202,7 @@ fn unregister_data_request_executor() {
     let _res = helper_reg_and_stake(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
 
     // should be able to fetch the data request executor
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(
         value,
@@ -232,7 +232,7 @@ fn unregister_data_request_executor() {
     let _res = helper_unregister(deps.as_mut(), info, &exec).unwrap();
 
     // fetching data request executor after unregistering should return None
-    let value: GetStaker = helper_get_executor(deps.as_mut(), exec.public_key.clone());
+    let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
     assert_eq!(value, GetStaker { value: None });
 }

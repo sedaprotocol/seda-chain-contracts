@@ -51,7 +51,7 @@ pub fn helper_unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) 
     execute(deps, mock_env(), info, msg)
 }
 
-pub fn helper_get_executor(deps: DepsMut, executor: Secpk256k1PublicKey) -> GetStaker {
+pub fn get_staker(deps: DepsMut, executor: Secpk256k1PublicKey) -> GetStaker {
     let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetStaker { executor }).unwrap();
     let value: GetStaker = from_json(res).unwrap();
     value
