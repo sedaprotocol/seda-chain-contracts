@@ -1,3 +1,4 @@
+use cosmwasm_std::{coins, testing::mock_info, MessageInfo};
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
@@ -7,22 +8,45 @@ use sha3::{Digest, Keccak256};
 use crate::types::{Hash, Secp256k1PublicKey, Signature};
 
 pub struct TestExecutor {
-    pub name:          &'static str,
-    pub signing_key:   SigningKey,
-    pub verifying_key: VerifyingKey,
-    pub public_key:    Secp256k1PublicKey,
+    pub name:       &'static str,
+    signing_key:    SigningKey,
+    _verifying_key: VerifyingKey,
+    public_key:     Secp256k1PublicKey,
+    info:           MessageInfo,
 }
 
 impl TestExecutor {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: &'static str, amount: Option<u128>) -> Self {
         let signing_key = SigningKey::random(&mut OsRng); // Serialize with `::to_bytes()`
-        let verifying_key = VerifyingKey::from(&signing_key);
+        let _verifying_key = VerifyingKey::from(&signing_key);
+        let coins = if let Some(amount) = amount {
+            coins(amount, "token")
+        } else {
+            vec![]
+        };
         TestExecutor {
             name,
             signing_key,
-            verifying_key,
-            public_key: verifying_key.to_sec1_bytes().to_vec(),
+            _verifying_key,
+            public_key: _verifying_key.to_sec1_bytes().to_vec(),
+            info: mock_info(name, &coins),
         }
+    }
+
+    pub fn pub_key(&self) -> Secp256k1PublicKey {
+        self.public_key.clone()
+    }
+
+    pub fn info(&self) -> MessageInfo {
+        self.info.clone()
+    }
+
+    pub fn set_amount(&mut self, amount: u128) {
+        self.info = mock_info(self.name, &coins(amount, "token"));
+    }
+
+    pub fn remove_coins(&mut self) {
+        self.info = mock_info(self.name, &[]);
     }
 
     pub fn salt(&self) -> Hash {
