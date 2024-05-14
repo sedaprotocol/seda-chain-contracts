@@ -1,5 +1,5 @@
 use common::{
-    state::{DataRequestExecutor, StakingConfig},
+    state::{Staker, StakingConfig},
     types::Secpk256k1PublicKey,
 };
 use cosmwasm_std::Addr;
@@ -9,8 +9,9 @@ use cw_storage_plus::{Item, Map};
 pub const TOKEN: Item<String> = Item::new("token");
 
 /// A map of data request executors (of address to info) that have not yet been marked as active
-pub const DATA_REQUEST_EXECUTORS: Map<&Secpk256k1PublicKey, DataRequestExecutor> = Map::new("data_request_executors");
+pub const STAKERS: Map<&Secpk256k1PublicKey, Staker> = Map::new("data_request_executors");
 
+// TODO: maybe move this to data-requests contract?
 /// A map of data request executors (of Secpk256k1PublicKey to boolean) that are eligible for committee inclusion
 pub const ELIGIBLE_DATA_REQUEST_EXECUTORS: Map<&Secpk256k1PublicKey, bool> =
     Map::new("eligible_data_request_executors");

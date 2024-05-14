@@ -5,7 +5,7 @@ use cosmwasm_std::Addr;
 use semver::Version;
 
 use crate::{
-    state::{DataRequest, DataRequestExecutor, DataResult, RevealBody, StakingConfig},
+    state::{DataRequest, DataResult, RevealBody, Staker, StakingConfig},
     types::{Bytes, Commitment, Hash, Memo, Secpk256k1PublicKey, Signature},
 };
 
@@ -46,14 +46,14 @@ pub enum DataRequestsExecuteMsg {
 
 #[cw_serde]
 pub enum StakingExecuteMsg {
-    RegisterDataRequestExecutor {
+    RegisterAndStake {
         signature: Signature,
         memo:      Option<String>,
     },
-    UnregisterDataRequestExecutor {
+    Unregister {
         signature: Signature,
     },
-    DepositAndStake {
+    IncreaseStake {
         signature: Signature,
     },
     Unstake {
@@ -114,8 +114,8 @@ pub enum DataRequestsQueryMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum StakingQueryMsg {
-    #[returns(GetDataRequestExecutorResponse)]
-    GetDataRequestExecutor { executor: Secpk256k1PublicKey },
+    #[returns(GetStaker)]
+    GetStaker { executor: Secpk256k1PublicKey },
     #[returns(IsDataRequestExecutorEligibleResponse)]
     IsDataRequestExecutorEligible { executor: Secpk256k1PublicKey },
     #[returns(GetStakingConfigResponse)]
@@ -162,8 +162,8 @@ pub struct GetResolvedDataResultResponse {
 }
 
 #[cw_serde]
-pub struct GetDataRequestExecutorResponse {
-    pub value: Option<DataRequestExecutor>,
+pub struct GetStaker {
+    pub value: Option<Staker>,
 }
 
 #[cw_serde]
@@ -189,7 +189,7 @@ pub struct GetStakingConfigResponse {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
-    pub proxy: String,
+    // pub proxy: String,
     pub owner: String,
 }
 

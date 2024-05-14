@@ -127,7 +127,7 @@ pub fn allowlist_works() {
     // alice tries to register a data request executor, but she's not on the allowlist
     let info = mock_info("alice", &coins(100, "token"));
     let alice = TestExecutor::new("alice");
-    let res = helper_register_executor(deps.as_mut(), info, &alice, None);
+    let res = helper_reg_and_stake(deps.as_mut(), info, &alice, None);
     dbg!(&res);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
@@ -138,7 +138,7 @@ pub fn allowlist_works() {
 
     // now alice can register a data request executor
     let info = mock_info("alice", &coins(100, "token"));
-    let res = helper_register_executor(deps.as_mut(), info, &alice, None);
+    let res = helper_reg_and_stake(deps.as_mut(), info, &alice, None);
     assert!(res.is_ok());
 
     // alice unstakes, withdraws, then unregisters herself
@@ -147,7 +147,7 @@ pub fn allowlist_works() {
     let info = mock_info("alice", &coins(0, "token"));
     let _res = helper_withdraw(deps.as_mut(), info.clone(), &alice, 100).unwrap();
     let info = mock_info("alice", &coins(0, "token"));
-    let res = helper_unregister_executor(deps.as_mut(), info, &alice);
+    let res = helper_unregister(deps.as_mut(), info, &alice);
     assert!(res.is_ok());
 
     // remove alice from the allowlist
@@ -157,7 +157,7 @@ pub fn allowlist_works() {
 
     // now alice can't register a data request executor
     let info = mock_info("alice", &coins(2, "token"));
-    let res = helper_register_executor(deps.as_mut(), info, &alice, None);
+    let res = helper_reg_and_stake(deps.as_mut(), info, &alice, None);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
     // update the config to disable the allowlist
@@ -172,6 +172,6 @@ pub fn allowlist_works() {
 
     // now alice can register a data request executor
     let info = mock_info("alice", &coins(100, "token"));
-    let res = helper_register_executor(deps.as_mut(), info, &alice, None);
+    let res = helper_reg_and_stake(deps.as_mut(), info, &alice, None);
     assert!(res.is_ok());
 }

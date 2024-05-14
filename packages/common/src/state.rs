@@ -77,7 +77,7 @@ pub struct RevealBody {
 
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct DataRequestExecutor {
+pub struct Staker {
     pub memo:                      Option<String>,
     pub tokens_staked:             u128,
     pub tokens_pending_withdrawal: u128,

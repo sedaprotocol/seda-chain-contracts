@@ -1,13 +1,6 @@
 use common::{
     error::ContractError,
-    msg::{
-        GetDataRequestExecutorResponse,
-        GetOwnerResponse,
-        GetPendingOwnerResponse,
-        InstantiateMsg,
-        StakingExecuteMsg,
-        StakingQueryMsg,
-    },
+    msg::{GetOwnerResponse, GetPendingOwnerResponse, GetStaker, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg},
     state::StakingConfig,
     test_utils::TestExecutor,
     types::{Secpk256k1PublicKey, SimpleHash},
@@ -19,27 +12,24 @@ use crate::contract::{execute, instantiate, query};
 pub fn instantiate_staking_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let msg = InstantiateMsg {
         token: "token".to_string(),
-        proxy: "proxy".to_string(),
+        // proxy: "proxy".to_string(),
         owner: "owner".to_string(),
     };
     instantiate(deps, mock_env(), info, msg)
 }
 
-pub fn helper_register_executor(
+pub fn helper_reg_and_stake(
     deps: DepsMut,
     info: MessageInfo,
     exec: &TestExecutor,
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
     let signature = if let Some(m) = memo.as_ref() {
-        exec.sign([
-            "register_data_request_executor".as_bytes().to_vec(),
-            m.simple_hash().to_vec(),
-        ])
+        exec.sign(["register_and_stake".as_bytes().to_vec(), m.simple_hash().to_vec()])
     } else {
-        exec.sign(["register_data_request_executor".as_bytes().to_vec()])
+        exec.sign(["register_and_stake".as_bytes().to_vec()])
     };
-    let msg = StakingExecuteMsg::RegisterDataRequestExecutor { signature, memo };
+    let msg = StakingExecuteMsg::RegisterAndStake { signature, memo };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -55,24 +45,15 @@ pub fn helper_accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Respo
     let msg = StakingExecuteMsg::AcceptOwnership {};
     execute(deps, mock_env(), info, msg)
 }
-pub fn helper_unregister_executor(
-    deps: DepsMut,
-    info: MessageInfo,
-    exec: &TestExecutor,
-) -> Result<Response, ContractError> {
-    let signature = exec.sign(["unregister_data_request_executor".as_bytes().to_vec()]);
-    let msg = StakingExecuteMsg::UnregisterDataRequestExecutor { signature };
+pub fn helper_unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
+    let signature = exec.sign(["unregister".as_bytes().to_vec()]);
+    let msg = StakingExecuteMsg::Unregister { signature };
     execute(deps, mock_env(), info, msg)
 }
 
-pub fn helper_get_executor(deps: DepsMut, executor: Secpk256k1PublicKey) -> GetDataRequestExecutorResponse {
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        StakingQueryMsg::GetDataRequestExecutor { executor },
-    )
-    .unwrap();
-    let value: GetDataRequestExecutorResponse = from_json(res).unwrap();
+pub fn helper_get_executor(deps: DepsMut, executor: Secpk256k1PublicKey) -> GetStaker {
+    let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetStaker { executor }).unwrap();
+    let value: GetStaker = from_json(res).unwrap();
     value
 }
 pub fn helper_get_owner(deps: DepsMut) -> GetOwnerResponse {
@@ -86,13 +67,9 @@ pub fn helper_get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
     let value: GetPendingOwnerResponse = from_json(res).unwrap();
     value
 }
-pub fn helper_deposit_and_stake(
-    deps: DepsMut,
-    info: MessageInfo,
-    exec: &TestExecutor,
-) -> Result<Response, ContractError> {
-    let signature = exec.sign(["deposit_and_stake".as_bytes().to_vec()]);
-    let msg = StakingExecuteMsg::DepositAndStake { signature };
+pub fn helper_increase_stake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
+    let signature = exec.sign(["increase_stake".as_bytes().to_vec()]);
+    let msg = StakingExecuteMsg::IncreaseStake { signature };
     execute(deps, mock_env(), info, msg)
 }
 
