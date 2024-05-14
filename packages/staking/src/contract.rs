@@ -18,7 +18,7 @@ use cw2::set_contract_version;
 
 use crate::{
     config,
-    executors_registry::data_request_executors,
+    executors_registry,
     staking,
     state::{CONFIG, OWNER, PENDING_OWNER, TOKEN},
 };
@@ -53,10 +53,10 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterDataRequestExecutor { signature, memo } => {
-            data_request_executors::register_data_request_executor(deps, info, signature, memo)
+            executors_registry::register_data_request_executor(deps, info, signature, memo)
         }
         ExecuteMsg::UnregisterDataRequestExecutor { signature } => {
-            data_request_executors::unregister_data_request_executor(deps, info, signature)
+            executors_registry::unregister_data_request_executor(deps, info, signature)
         }
         ExecuteMsg::DepositAndStake { signature } => staking::deposit_and_stake(deps, env, info, signature),
         ExecuteMsg::Unstake { signature, amount } => staking::unstake(deps, env, info, signature, amount),
@@ -73,11 +73,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetDataRequestExecutor { executor } => {
-            to_json_binary(&data_request_executors::get_data_request_executor(deps, executor)?)
+            to_json_binary(&executors_registry::get_data_request_executor(deps, executor)?)
         }
-        QueryMsg::IsDataRequestExecutorEligible { executor } => to_json_binary(
-            &data_request_executors::is_data_request_executor_eligible(deps, executor)?,
-        ),
+        QueryMsg::IsDataRequestExecutorEligible { executor } => {
+            to_json_binary(&executors_registry::is_data_request_executor_eligible(deps, executor)?)
+        }
         QueryMsg::GetStakingConfig => to_json_binary(&GetStakingConfigResponse {
             value: CONFIG.load(deps.storage)?,
         }),
