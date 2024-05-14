@@ -53,34 +53,20 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::RegisterDataRequestExecutor {
-            signature,
-            memo,
-            sender,
-        } => data_request_executors::register_data_request_executor(deps, info, signature, memo, sender),
-        ExecuteMsg::UnregisterDataRequestExecutor { signature, sender } => {
-            data_request_executors::unregister_data_request_executor(deps, info, signature, sender)
+        ExecuteMsg::RegisterDataRequestExecutor { signature, memo } => {
+            data_request_executors::register_data_request_executor(deps, info, signature, memo)
         }
-        ExecuteMsg::DepositAndStake { signature, sender } => {
-            staking::deposit_and_stake(deps, env, info, signature, sender)
+        ExecuteMsg::UnregisterDataRequestExecutor { signature } => {
+            data_request_executors::unregister_data_request_executor(deps, info, signature)
         }
-        ExecuteMsg::Unstake {
-            signature,
-            amount,
-            sender,
-        } => staking::unstake(deps, env, info, signature, amount, sender),
-        ExecuteMsg::Withdraw {
-            signature,
-            amount,
-            sender,
-        } => staking::withdraw(deps, env, info, signature, amount, sender),
+        ExecuteMsg::DepositAndStake { signature } => staking::deposit_and_stake(deps, env, info, signature),
+        ExecuteMsg::Unstake { signature, amount } => staking::unstake(deps, env, info, signature, amount),
+        ExecuteMsg::Withdraw { signature, amount } => staking::withdraw(deps, env, info, signature, amount),
         ExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
         ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
         ExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
-        ExecuteMsg::AddToAllowlist { address, sender } => allow_list::add_to_allowlist(deps, info, sender, address),
-        ExecuteMsg::RemoveFromAllowlist { address, sender } => {
-            allow_list::remove_from_allowlist(deps, info, sender, address)
-        }
+        ExecuteMsg::AddToAllowlist { pub_key } => allow_list::add_to_allowlist(deps, info, pub_key),
+        ExecuteMsg::RemoveFromAllowlist { pub_key } => allow_list::remove_from_allowlist(deps, info, pub_key),
     }
 }
 

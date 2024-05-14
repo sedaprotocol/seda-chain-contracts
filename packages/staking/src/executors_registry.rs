@@ -4,7 +4,7 @@ use cosmwasm_std::{Deps, DepsMut, MessageInfo, Response, StdResult};
 
 use crate::{
     state::{CONFIG, DATA_REQUEST_EXECUTORS, TOKEN},
-    utils::{get_attached_funds, validate_sender},
+    utils::get_attached_funds,
 };
 
 pub mod data_request_executors {
@@ -29,32 +29,25 @@ pub mod data_request_executors {
         info: MessageInfo,
         signature: Signature,
         memo: Option<String>,
-        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
-
-        // if allowlist is on, check if the sender is in the allowlist
-        let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-        if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
-            if is_allowed.is_none() {
-                return Err(ContractError::NotOnAllowlist);
-            }
-        }
-
         // compute message hash
         let message_hash = if let Some(m) = memo.as_ref() {
-            hash([
-                "register_data_request_executor".as_bytes(),
-                sender.as_bytes(),
-                &m.simple_hash(),
-            ])
+            hash(["register_data_request_executor".as_bytes(), &m.simple_hash()])
         } else {
-            hash(["register_data_request_executor".as_bytes(), sender.as_bytes()])
+            hash(["register_data_request_executor".as_bytes()])
         };
 
         // recover public key from signature
         let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
+
+        // if allowlist is on, check if the sender is in the allowlist
+        let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
+        if allowlist_enabled {
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
+            if is_allowed.is_none() {
+                return Err(ContractError::NotOnAllowlist);
+            }
+        }
 
         // require token deposit
         let token = TOKEN.load(deps.storage)?;
@@ -79,7 +72,7 @@ pub mod data_request_executors {
             .add_event(Event::new("seda-data-request-executor").add_attributes([
                 ("version", CONTRACT_VERSION),
                 ("executor", hex::encode(public_key).as_str()),
-                ("sender", sender.as_ref()),
+                ("sender", info.sender.as_ref()),
                 ("memo", &memo.unwrap_or_default()),
                 ("tokens_staked", &amount.to_string()),
                 ("tokens_pending_withdrawal", "0"),
@@ -89,26 +82,23 @@ pub mod data_request_executors {
     /// Unregisters a data request executor, with the requirement that no tokens are staked or pending withdrawal.
     pub fn unregister_data_request_executor(
         deps: DepsMut,
-        info: MessageInfo,
+        _info: MessageInfo,
         signature: Signature,
-        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
+        // compute message hash
+        let message_hash = hash(["unregister_data_request_executor".as_bytes()]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
         }
-
-        // compute message hash
-        let message_hash = hash(["unregister_data_request_executor".as_bytes(), sender.as_bytes()]);
-
-        // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // require that the executor has no staked or tokens pending withdrawal
         let executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;

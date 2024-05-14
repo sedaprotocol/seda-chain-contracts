@@ -23,13 +23,13 @@ fn deposit_stake_withdraw() {
     let info = mock_info("anyone", &coins(0, "token"));
     let exec = TestExecutor::new("anyone");
 
-    let res = helper_register_executor(deps.as_mut(), info, &exec, Some("address".to_string()), None);
+    let res = helper_register_executor(deps.as_mut(), info, &exec, None);
     assert_eq!(res.unwrap_err(), ContractError::InsufficientFunds(1, 0));
 
     // register a data request executor
     let info = mock_info("anyone", &coins(1, "token"));
 
-    let _res = helper_register_executor(deps.as_mut(), info.clone(), &exec, Some("address".to_string()), None);
+    let _res = helper_register_executor(deps.as_mut(), info.clone(), &exec, Some("address".to_string()));
     let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
         .load(&deps.storage, &exec.public_key) // Convert Addr to Vec<u8>
         .unwrap();
@@ -50,7 +50,7 @@ fn deposit_stake_withdraw() {
 
     // the data request executor stakes 2 more tokens
     let info = mock_info("anyone", &coins(2, "token"));
-    let _res = helper_deposit_and_stake(deps.as_mut(), info.clone(), &exec, None).unwrap();
+    let _res = helper_deposit_and_stake(deps.as_mut(), info.clone(), &exec).unwrap();
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
         .load(&deps.storage, &exec.public_key)
         .unwrap();
@@ -72,7 +72,7 @@ fn deposit_stake_withdraw() {
     // the data request executor unstakes 1
     let info = mock_info("anyone", &coins(0, "token"));
 
-    let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 1, None);
+    let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 1);
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
         .load(&deps.storage, &exec.public_key)
         .unwrap();
@@ -93,7 +93,7 @@ fn deposit_stake_withdraw() {
 
     // the data request executor withdraws 1
     let info = mock_info("anyone", &coins(0, "token"));
-    let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 1, None);
+    let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 1);
 
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
         .load(&deps.storage, &exec.public_key)
@@ -115,7 +115,7 @@ fn deposit_stake_withdraw() {
     );
 
     // unstake 2 more
-    helper_unstake(deps.as_mut(), info, &exec, 2, None).unwrap();
+    helper_unstake(deps.as_mut(), info, &exec, 2).unwrap();
 
     // assert executer is no longer eligible for committe inclusion
     let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, &exec.public_key);
@@ -132,8 +132,7 @@ fn no_funds_provided() {
     let exec = TestExecutor::new("anyone");
 
     let msg = ExecuteMsg::DepositAndStake {
-        sender:    None,
-        signature: exec.sign(["deposit_and_stake".as_bytes().to_vec(), "anyone".as_bytes().to_vec()]),
+        signature: exec.sign(["deposit_and_stake".as_bytes().to_vec()]),
     };
     let info = mock_info("anyone", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -149,9 +148,9 @@ fn insufficient_funds() {
     let alice = TestExecutor::new("alice");
 
     // register a data request executor
-    helper_register_executor(deps.as_mut(), info.clone(), &alice, Some("address".to_string()), None).unwrap();
+    helper_register_executor(deps.as_mut(), info.clone(), &alice, None).unwrap();
 
     // try unstaking more than staked
     let info = mock_info("alice", &coins(0, "token"));
-    helper_unstake(deps.as_mut(), info.clone(), &alice, 2, None).unwrap();
+    helper_unstake(deps.as_mut(), info.clone(), &alice, 2).unwrap();
 }

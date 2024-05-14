@@ -1,11 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-	"fuzz",
+	# "fuzz",
+	"packages/common",
 	"packages/staking",
-	"packages/data-requests",
-	"packages/integration-tests",
-	"packages/proxy",
+	# "packages/data-requests",
+	# "packages/integration-tests",
+	# "packages/proxy",
 ]
 
 [profile.release]

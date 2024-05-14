@@ -27,7 +27,7 @@ fn register_data_request_executor() {
     // someone registers a data request executor
     let info = mock_info("anyone", &coins(2, "token"));
 
-    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None).unwrap();
+    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
 
     // should be able to fetch the data request executor
 
@@ -55,7 +55,7 @@ fn unregister_data_request_executor() {
     let info = mock_info("anyone", &coins(2, "token"));
     let exec = TestExecutor::new("anyone");
 
-    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string()), None).unwrap();
+    let _res = helper_register_executor(deps.as_mut(), info, &exec, Some("memo".to_string())).unwrap();
 
     // should be able to fetch the data request executor
     let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), exec.public_key.clone());
@@ -73,19 +73,19 @@ fn unregister_data_request_executor() {
 
     // can't unregister the data request executor if it has staked tokens
     let info = mock_info("anyone", &coins(2, "token"));
-    let res = helper_unregister_executor(deps.as_mut(), info, &exec, None);
+    let res = helper_unregister_executor(deps.as_mut(), info, &exec);
     assert!(res.is_err_and(|x| x == ContractError::ExecutorHasTokens));
 
     // unstake and withdraw all tokens
     let info = mock_info("anyone", &coins(0, "token"));
 
-    let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 2, None);
+    let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 2);
     let info = mock_info("anyone", &coins(0, "token"));
-    let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 2, None);
+    let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 2);
 
     // unregister the data request executor
     let info = mock_info("anyone", &coins(2, "token"));
-    let _res = helper_unregister_executor(deps.as_mut(), info, &exec, None).unwrap();
+    let _res = helper_unregister_executor(deps.as_mut(), info, &exec).unwrap();
 
     // fetching data request executor after unregistering should return None
     let value: GetDataRequestExecutorResponse = helper_get_executor(deps.as_mut(), exec.public_key.clone());

@@ -1,4 +1,4 @@
-use common::{error::ContractError, state::StakingConfig, test_utils::TestExecutor};
+use common::{error::ContractError, state::StakingConfig};
 use cosmwasm_std::{
     coins,
     testing::{mock_dependencies, mock_info},
@@ -9,7 +9,6 @@ use crate::test::helpers::{
     helper_accept_ownership,
     helper_get_owner,
     helper_get_pending_owner,
-    helper_register_executor,
     helper_set_staking_config,
     helper_transfer_ownership,
     instantiate_staking_contract,
@@ -23,26 +22,6 @@ fn proper_initialization() {
     // we can just call .unwrap() to assert this was a success
     let res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
     assert_eq!(0, res.messages.len());
-}
-
-#[test]
-fn only_proxy_can_pass_caller() {
-    let mut deps = mock_dependencies();
-
-    let info = mock_info("creator", &coins(1000, "token"));
-    let _res = instantiate_staking_contract(deps.as_mut(), info).unwrap();
-
-    // register a data request executor, while passing a sender
-    let info = mock_info("anyone", &coins(2, "token"));
-    let exec = TestExecutor::new("sender");
-
-    let res = helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string()));
-    assert!(res.is_err_and(|x| x == ContractError::NotProxy));
-
-    // register a data request executor from the proxy
-    let info = mock_info("proxy", &coins(2, "token"));
-
-    let _res = helper_register_executor(deps.as_mut(), info, &exec, None, Some("sender".to_string())).unwrap();
 }
 
 #[test]

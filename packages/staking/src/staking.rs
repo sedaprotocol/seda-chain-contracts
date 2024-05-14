@@ -3,7 +3,7 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
     state::{ALLOWLIST, DATA_REQUEST_EXECUTORS, TOKEN},
-    utils::{get_attached_funds, validate_sender},
+    utils::get_attached_funds,
 };
 
 #[allow(clippy::module_inception)]
@@ -24,28 +24,24 @@ pub mod staking {
         _env: Env,
         info: MessageInfo,
         signature: Signature,
-        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
-
         let token = TOKEN.load(deps.storage)?;
         let amount = get_attached_funds(&info.funds, &token)?;
 
+        // TODO: do we even need to verify signature for a deposit?
+        // compute message hash
+        let message_hash = hash(["deposit_and_stake".as_bytes()]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
         }
-
-        // TODO: do we even need to verify signature for a deposit?
-        // compute message hash
-        let message_hash = hash(["deposit_and_stake".as_bytes(), sender.as_bytes()]);
-
-        // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // update staked tokens for executor
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
@@ -79,27 +75,24 @@ pub mod staking {
     pub fn unstake(
         deps: DepsMut,
         _env: Env,
-        info: MessageInfo,
+        _info: MessageInfo,
         signature: Signature,
         amount: u128,
-        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
+        // compute message hash
+        let message_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
+
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
         }
-
-        // compute message hash
-        let message_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes(), sender.as_bytes()]);
-
-        // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // error if amount is greater than staked tokens
         let mut executor = DATA_REQUEST_EXECUTORS.load(deps.storage, &public_key)?;
@@ -141,24 +134,20 @@ pub mod staking {
         info: MessageInfo,
         signature: Signature,
         amount: u128,
-        sender: Option<String>,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
+        // compute message hash
+        let message_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
 
+        // recover public key from signature
+        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
         // if allowlist is on, check if the sender is in the allowlist
         let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
         if allowlist_enabled {
-            let is_allowed = ALLOWLIST.may_load(deps.storage, &sender)?;
+            let is_allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
             if is_allowed.is_none() {
                 return Err(ContractError::NotOnAllowlist);
             }
         }
-
-        // compute message hash
-        let message_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes(), sender.as_bytes()]);
-
-        // recover public key from signature
-        let public_key: Secpk256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
@@ -178,7 +167,7 @@ pub mod staking {
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
-            to_address: sender.to_string(),
+            to_address: info.sender.to_string(),
             amount:     coins(amount, token),
         };
 
@@ -188,7 +177,7 @@ pub mod staking {
             .add_events([
                 Event::new("seda-data-request-executor").add_attributes([
                     ("version", CONTRACT_VERSION),
-                    ("executor", sender.as_ref()),
+                    ("executor", info.sender.as_ref()),
                     ("memo", &executor.memo.unwrap_or_default()),
                     ("tokens_staked", &executor.tokens_staked.to_string()),
                     (
@@ -198,7 +187,7 @@ pub mod staking {
                 ]),
                 Event::new("seda-data-request-executor-withdraw").add_attributes([
                     ("version", CONTRACT_VERSION),
-                    ("executor", sender.as_ref()),
+                    ("executor", info.sender.as_ref()),
                     ("amount_withdrawn", &amount.to_string()),
                 ]),
             ]))

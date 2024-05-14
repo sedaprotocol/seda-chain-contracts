@@ -49,25 +49,20 @@ pub enum StakingExecuteMsg {
     RegisterDataRequestExecutor {
         signature: Signature,
         memo:      Option<String>,
-        sender:    Option<String>,
     },
     UnregisterDataRequestExecutor {
         signature: Signature,
-        sender:    Option<String>,
     },
     DepositAndStake {
         signature: Signature,
-        sender:    Option<String>,
     },
     Unstake {
         signature: Signature,
         amount:    u128,
-        sender:    Option<String>,
     },
     Withdraw {
         signature: Signature,
         amount:    u128,
-        sender:    Option<String>,
     },
     TransferOwnership {
         new_owner: String,
@@ -76,13 +71,15 @@ pub enum StakingExecuteMsg {
     SetStakingConfig {
         config: StakingConfig,
     },
+    /// Add a user to the allowlist.
     AddToAllowlist {
-        sender:  Option<String>,
-        address: Addr,
+        /// The public key of the person to allowlist.
+        pub_key: Secpk256k1PublicKey,
     },
+    /// Remove a user from the allowlist.
     RemoveFromAllowlist {
-        sender:  Option<String>,
-        address: Addr,
+        /// The public key of the person remove from allowlist.
+        pub_key: Secpk256k1PublicKey,
     },
 }
 

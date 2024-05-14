@@ -12,7 +12,7 @@ use common::{
     test_utils::TestExecutor,
     types::{Secpk256k1PublicKey, SimpleHash},
 };
-use cosmwasm_std::{from_json, testing::mock_env, Addr, DepsMut, MessageInfo, Response};
+use cosmwasm_std::{from_json, testing::mock_env, DepsMut, MessageInfo, Response};
 
 use crate::contract::{execute, instantiate, query};
 
@@ -30,26 +30,16 @@ pub fn helper_register_executor(
     info: MessageInfo,
     exec: &TestExecutor,
     memo: Option<String>,
-    sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
     let signature = if let Some(m) = memo.as_ref() {
         exec.sign([
             "register_data_request_executor".as_bytes().to_vec(),
-            sender_unwrapped.as_bytes().to_vec(),
             m.simple_hash().to_vec(),
         ])
     } else {
-        exec.sign([
-            "register_data_request_executor".as_bytes().to_vec(),
-            sender_unwrapped.as_bytes().to_vec(),
-        ])
+        exec.sign(["register_data_request_executor".as_bytes().to_vec()])
     };
-    let msg = StakingExecuteMsg::RegisterDataRequestExecutor {
-        signature,
-        memo,
-        sender,
-    };
+    let msg = StakingExecuteMsg::RegisterDataRequestExecutor { signature, memo };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -69,14 +59,9 @@ pub fn helper_unregister_executor(
     deps: DepsMut,
     info: MessageInfo,
     exec: &TestExecutor,
-    sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
-    let signature = exec.sign([
-        "unregister_data_request_executor".as_bytes().to_vec(),
-        sender_unwrapped.as_bytes().to_vec(),
-    ]);
-    let msg = StakingExecuteMsg::UnregisterDataRequestExecutor { signature, sender };
+    let signature = exec.sign(["unregister_data_request_executor".as_bytes().to_vec()]);
+    let msg = StakingExecuteMsg::UnregisterDataRequestExecutor { signature };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -105,14 +90,9 @@ pub fn helper_deposit_and_stake(
     deps: DepsMut,
     info: MessageInfo,
     exec: &TestExecutor,
-    sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
-    let signature = exec.sign([
-        "deposit_and_stake".as_bytes().to_vec(),
-        sender_unwrapped.as_bytes().to_vec(),
-    ]);
-    let msg = StakingExecuteMsg::DepositAndStake { signature, sender };
+    let signature = exec.sign(["deposit_and_stake".as_bytes().to_vec()]);
+    let msg = StakingExecuteMsg::DepositAndStake { signature };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -121,19 +101,9 @@ pub fn helper_unstake(
     info: MessageInfo,
     exec: &TestExecutor,
     amount: u128,
-    sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
-    let signature = exec.sign([
-        "unstake".as_bytes().to_vec(),
-        amount.to_be_bytes().to_vec(),
-        sender_unwrapped.as_bytes().to_vec(),
-    ]);
-    let msg = StakingExecuteMsg::Unstake {
-        signature,
-        amount,
-        sender,
-    };
+    let signature = exec.sign(["unstake".as_bytes().to_vec(), amount.to_be_bytes().to_vec()]);
+    let msg = StakingExecuteMsg::Unstake { signature, amount };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -142,19 +112,9 @@ pub fn helper_withdraw(
     info: MessageInfo,
     exec: &TestExecutor,
     amount: u128,
-    sender: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender_unwrapped = sender.clone().map(Addr::unchecked).unwrap_or(info.sender.clone());
-    let signature = exec.sign([
-        "withdraw".as_bytes().to_vec(),
-        amount.to_be_bytes().to_vec(),
-        sender_unwrapped.as_bytes().to_vec(),
-    ]);
-    let msg = StakingExecuteMsg::Withdraw {
-        signature,
-        amount,
-        sender,
-    };
+    let signature = exec.sign(["withdraw".as_bytes().to_vec(), amount.to_be_bytes().to_vec()]);
+    let msg = StakingExecuteMsg::Withdraw { signature, amount };
     execute(deps, mock_env(), info, msg)
 }
 
@@ -170,25 +130,17 @@ pub fn helper_set_staking_config(
 pub fn helper_add_to_allowlist(
     deps: DepsMut,
     info: MessageInfo,
-    address: String,
-    sender: Option<String>,
+    pub_key: Secpk256k1PublicKey,
 ) -> Result<Response, ContractError> {
-    let msg = StakingExecuteMsg::AddToAllowlist {
-        address: Addr::unchecked(address),
-        sender,
-    };
+    let msg = StakingExecuteMsg::AddToAllowlist { pub_key };
     execute(deps, mock_env(), info, msg)
 }
 
 pub fn helper_remove_from_allowlist(
     deps: DepsMut,
     info: MessageInfo,
-    address: String,
-    sender: Option<String>,
+    pub_key: Secpk256k1PublicKey,
 ) -> Result<Response, ContractError> {
-    let msg = StakingExecuteMsg::RemoveFromAllowlist {
-        address: Addr::unchecked(address),
-        sender,
-    };
+    let msg = StakingExecuteMsg::RemoveFromAllowlist { pub_key };
     execute(deps, mock_env(), info, msg)
 }

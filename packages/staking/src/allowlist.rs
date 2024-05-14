@@ -1,29 +1,23 @@
 pub mod allow_list {
-    use common::error::ContractError;
+    use common::{error::ContractError, types::Secpk256k1PublicKey};
     #[cfg(not(feature = "library"))]
-    use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response};
+    use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
-    use crate::{
-        state::{ALLOWLIST, OWNER},
-        utils::validate_sender,
-    };
+    use crate::state::{ALLOWLIST, OWNER};
 
     pub fn add_to_allowlist(
         deps: DepsMut,
         info: MessageInfo,
-        sender: Option<String>,
-        address: Addr,
+        pub_key: Secpk256k1PublicKey,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
-
         // require the sender to be the OWNER
         let owner = OWNER.load(deps.storage)?;
-        if sender != owner {
+        if info.sender != owner {
             return Err(ContractError::NotOwner);
         }
 
         // add the address to the allowlist
-        ALLOWLIST.save(deps.storage, &address, &true)?;
+        ALLOWLIST.save(deps.storage, &pub_key, &true)?;
 
         Ok(Response::new())
     }
@@ -31,19 +25,16 @@ pub mod allow_list {
     pub fn remove_from_allowlist(
         deps: DepsMut,
         info: MessageInfo,
-        sender: Option<String>,
-        address: Addr,
+        pub_key: Secpk256k1PublicKey,
     ) -> Result<Response, ContractError> {
-        let sender = validate_sender(&deps, info.sender, sender)?;
-
         // require the sender to be the OWNER
         let owner = OWNER.load(deps.storage)?;
-        if sender != owner {
+        if info.sender != owner {
             return Err(ContractError::NotOwner);
         }
 
         // remove the address from the allowlist
-        ALLOWLIST.remove(deps.storage, &address);
+        ALLOWLIST.remove(deps.storage, &pub_key);
 
         Ok(Response::new())
     }
