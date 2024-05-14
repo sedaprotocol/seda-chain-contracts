@@ -18,7 +18,7 @@ pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Result<Secp256k1Pub
 
     // Recover
     let pubkey = VerifyingKey::recover_from_msg(&msg_hash, &sig, id).map_err(|_| ContractError::InvalidSignature)?;
-    Ok(pubkey.to_sec1_bytes().to_vec())
+    Ok(pubkey.to_encoded_point(true).as_bytes().to_vec())
 }
 
 pub fn hash<'a, I>(iter: I) -> [u8; 32]
