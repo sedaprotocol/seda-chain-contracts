@@ -5,20 +5,23 @@ use k256::{
 };
 use sha3::{Digest, Keccak256};
 
-use crate::types::{Hash, Secp256k1PublicKey, Signature};
+use crate::{
+    crypto::hash,
+    types::{Hash, Secp256k1PublicKey, Signature},
+};
 
 pub struct TestExecutor {
-    pub name:       &'static str,
-    signing_key:    SigningKey,
-    _verifying_key: VerifyingKey,
-    public_key:     Secp256k1PublicKey,
-    info:           MessageInfo,
+    pub name:    &'static str,
+    signing_key: SigningKey,
+    public_key:  Secp256k1PublicKey,
+    info:        MessageInfo,
 }
 
 impl TestExecutor {
     pub fn new(name: &'static str, amount: Option<u128>) -> Self {
-        let signing_key = SigningKey::random(&mut OsRng); // Serialize with `::to_bytes()`
-        let _verifying_key = VerifyingKey::from(&signing_key);
+        let signing_key = SigningKey::random(&mut OsRng);
+        let verifying_key = VerifyingKey::from(&signing_key);
+        let public_key = verifying_key.to_encoded_point(true).to_bytes();
         let coins = if let Some(amount) = amount {
             coins(amount, "token")
         } else {
@@ -27,8 +30,7 @@ impl TestExecutor {
         TestExecutor {
             name,
             signing_key,
-            _verifying_key,
-            public_key: _verifying_key.to_sec1_bytes().to_vec(),
+            public_key: public_key.to_vec(),
             info: mock_info(name, &coins),
         }
     }
@@ -59,11 +61,7 @@ impl TestExecutor {
     where
         I: IntoIterator<Item = &'a [u8]>,
     {
-        let mut hasher = Keccak256::new();
-        for m in msg {
-            hasher.update(m);
-        }
-        let hash = hasher.finalize();
+        let hash = hash(msg);
         let (signature, rid) = self.signing_key.sign_recoverable(hash.as_ref()).unwrap();
 
         let mut sig: [u8; 65] = [0; 65];
