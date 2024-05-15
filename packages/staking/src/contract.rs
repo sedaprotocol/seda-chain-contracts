@@ -52,10 +52,10 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterAndStake { signature, memo } => staking::register_and_stake(deps, info, signature, memo),
-        ExecuteMsg::Unregister { signature } => staking::unregister(deps, info, signature),
         ExecuteMsg::IncreaseStake { signature } => staking::increase_stake(deps, env, info, signature),
         ExecuteMsg::Unstake { signature, amount } => staking::unstake(deps, env, info, signature, amount),
         ExecuteMsg::Withdraw { signature, amount } => staking::withdraw(deps, env, info, signature, amount),
+        ExecuteMsg::Unregister { signature } => staking::unregister(deps, info, signature),
         ExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
         ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
         ExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
@@ -68,9 +68,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetStaker { executor } => to_json_binary(&staking::get_staker(deps, executor)?),
-        QueryMsg::IsDataRequestExecutorEligible { executor } => {
-            to_json_binary(&staking::is_data_request_executor_eligible(deps, executor)?)
-        }
+        QueryMsg::IsExecutorEligible { executor } => to_json_binary(&staking::is_executor_eligible(deps, executor)?),
         QueryMsg::GetStakingConfig => to_json_binary(&GetStakingConfigResponse {
             value: CONFIG.load(deps.storage)?,
         }),

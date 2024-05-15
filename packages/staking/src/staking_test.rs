@@ -10,7 +10,7 @@ use cosmwasm_std::{
 };
 
 use super::helpers::*;
-use crate::{contract::execute, state::ELIGIBLE_DATA_REQUEST_EXECUTORS};
+use crate::{contract::execute, staking::is_executor_eligible};
 
 #[test]
 fn deposit_stake_withdraw() {
@@ -30,10 +30,8 @@ fn deposit_stake_withdraw() {
     let info = mock_info("anyone", &coins(1, "token"));
 
     let _res = helper_reg_and_stake(deps.as_mut(), info.clone(), &exec, Some("address".to_string()));
-    let executor_is_eligible: bool = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, &exec.public_key) // Convert Addr to Vec<u8>
-        .unwrap();
-    assert!(executor_is_eligible);
+    let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
+    assert!(executor_is_eligible.value);
     // data request executor's stake should be 1
     let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
@@ -51,10 +49,8 @@ fn deposit_stake_withdraw() {
     // the data request executor stakes 2 more tokens
     let info = mock_info("anyone", &coins(2, "token"));
     let _res = helper_increase_stake(deps.as_mut(), info.clone(), &exec).unwrap();
-    let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, &exec.public_key)
-        .unwrap();
-    assert!(executor_is_eligible);
+    let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
+    assert!(executor_is_eligible.value);
     // data request executor's stake should be 3
     let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
@@ -73,10 +69,8 @@ fn deposit_stake_withdraw() {
     let info = mock_info("anyone", &coins(0, "token"));
 
     let _res = helper_unstake(deps.as_mut(), info.clone(), &exec, 1);
-    let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, &exec.public_key)
-        .unwrap();
-    assert!(executor_is_eligible);
+    let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
+    assert!(executor_is_eligible.value);
     // data request executor's stake should be 1 and pending 1
     let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
 
@@ -94,11 +88,8 @@ fn deposit_stake_withdraw() {
     // the data request executor withdraws 1
     let info = mock_info("anyone", &coins(0, "token"));
     let _res = helper_withdraw(deps.as_mut(), info.clone(), &exec, 1);
-
-    let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS
-        .load(&deps.storage, &exec.public_key)
-        .unwrap();
-    assert!(executor_is_eligible);
+    let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key.clone()).unwrap();
+    assert!(executor_is_eligible.value);
 
     // data request executor's stake should be 1 and pending 0
     let value: GetStaker = get_staker(deps.as_mut(), exec.public_key.clone());
@@ -118,8 +109,8 @@ fn deposit_stake_withdraw() {
     helper_unstake(deps.as_mut(), info, &exec, 2).unwrap();
 
     // assert executer is no longer eligible for committe inclusion
-    let executor_is_eligible = ELIGIBLE_DATA_REQUEST_EXECUTORS.has(&deps.storage, &exec.public_key);
-    assert!(!executor_is_eligible);
+    let executor_is_eligible = is_executor_eligible(deps.as_ref(), exec.public_key).unwrap();
+    assert!(!executor_is_eligible.value);
 }
 
 #[test]

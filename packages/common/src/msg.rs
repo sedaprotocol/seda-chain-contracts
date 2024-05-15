@@ -116,8 +116,8 @@ pub enum DataRequestsQueryMsg {
 pub enum StakingQueryMsg {
     #[returns(GetStaker)]
     GetStaker { executor: Secpk256k1PublicKey },
-    #[returns(IsDataRequestExecutorEligibleResponse)]
-    IsDataRequestExecutorEligible { executor: Secpk256k1PublicKey },
+    #[returns(IsExecutorEligibleResponse)]
+    IsExecutorEligible { executor: Secpk256k1PublicKey },
     #[returns(GetStakingConfigResponse)]
     GetStakingConfig,
     #[returns(GetOwnerResponse)]
@@ -172,7 +172,7 @@ pub struct GetCommittedExecutorsResponse {
 }
 
 #[cw_serde]
-pub struct IsDataRequestExecutorEligibleResponse {
+pub struct IsExecutorEligibleResponse {
     pub value: bool,
 }
 
