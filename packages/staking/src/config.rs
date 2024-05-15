@@ -6,7 +6,7 @@ use crate::{
     state::{ALLOWLIST, CONFIG, OWNER, PENDING_OWNER},
 };
 
-/// Transfer contract ownership to a new owner
+/// Start 2-step process for transfer contract ownership to a new address
 pub fn transfer_ownership(
     deps: DepsMut,
     _env: Env,
@@ -16,18 +16,18 @@ pub fn transfer_ownership(
     if info.sender != OWNER.load(deps.storage)? {
         return Err(ContractError::NotOwner);
     }
-
     PENDING_OWNER.save(deps.storage, &Some(deps.api.addr_validate(&new_owner)?))?;
+
     Ok(Response::new()
         .add_attribute("action", "transfer_ownership")
         .add_events([Event::new("seda-transfer-ownership").add_attributes([
             ("version", CONTRACT_VERSION),
             ("sender", info.sender.as_ref()),
-            ("new_owner", &new_owner),
+            ("pending_owner", &new_owner),
         ])]))
 }
 
-/// Accept contract ownership
+/// Accept transfer contract ownership (previously triggered by owner)
 pub fn accept_ownership(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let pending_owner = PENDING_OWNER.load(deps.storage)?;
     if pending_owner.is_none() {
@@ -38,6 +38,7 @@ pub fn accept_ownership(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<R
     }
     OWNER.save(deps.storage, &info.sender)?;
     PENDING_OWNER.save(deps.storage, &None)?;
+
     Ok(Response::new()
         .add_attribute("action", "accept-ownership")
         .add_events([Event::new("seda-accept-ownership")
@@ -55,6 +56,7 @@ pub fn set_staking_config(
         return Err(ContractError::NotOwner);
     }
     CONFIG.save(deps.storage, &config)?;
+
     Ok(Response::new()
         .add_attribute("action", "set-staking-config")
         .add_events([Event::new("set-staking-config").add_attributes([
@@ -67,9 +69,11 @@ pub fn set_staking_config(
                 "minimum_stake_to_register",
                 &config.minimum_stake_to_register.to_string(),
             ),
+            ("allowlist_enabled", &config.allowlist_enabled.to_string()),
         ])]))
 }
 
+/// Add a `Secp256k1PublicKey` to the allow list
 pub fn add_to_allowlist(
     deps: DepsMut,
     info: MessageInfo,
@@ -90,6 +94,7 @@ pub fn add_to_allowlist(
     ))
 }
 
+/// Remove a `Secp256k1PublicKey` to the allow list
 pub fn remove_from_allowlist(
     deps: DepsMut,
     info: MessageInfo,

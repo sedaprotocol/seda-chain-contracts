@@ -89,8 +89,8 @@ fn set_staking_config() {
     let _res = instantiate_staking_contract(deps.as_mut(), info.clone()).unwrap();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               100,
-        minimum_stake_for_committee_eligibility: 200,
+        minimum_stake_to_register:               200,
+        minimum_stake_for_committee_eligibility: 100,
         allowlist_enabled:                       false,
     };
 
