@@ -39,7 +39,29 @@ impl SimpleHash for Version {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Signature(#[serde(with = "BigArray")] pub(crate) [u8; 65]);
+pub struct Signature(#[serde(with = "BigArray")] [u8; 65]);
+
+impl Signature {
+    pub fn sig_bytes(&self) -> &[u8] {
+        &self.0[0..64]
+    }
+
+    pub fn rid(&self) -> u8 {
+        self.0[64]
+    }
+}
+
+impl AsRef<[u8]> for Signature {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl From<[u8; 65]> for Signature {
+    fn from(bytes: [u8; 65]) -> Self {
+        Signature(bytes)
+    }
+}
 
 impl JsonSchema for Signature {
     fn schema_name() -> String {
@@ -60,11 +82,5 @@ impl JsonSchema for Signature {
             ..Default::default()
         };
         schema.into()
-    }
-}
-
-impl From<[u8; 65]> for Signature {
-    fn from(bytes: [u8; 65]) -> Self {
-        Signature(bytes)
     }
 }

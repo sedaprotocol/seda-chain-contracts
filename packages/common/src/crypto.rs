@@ -7,8 +7,8 @@ use crate::{
 };
 
 pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Result<Secp256k1PublicKey, ContractError> {
-    let rs = signature.0[0..64].into();
-    let id = match signature.0[64] {
+    let rs = signature.sig_bytes().into();
+    let id = match signature.rid() {
         0 => RecoveryId::new(false, false),
         1 => RecoveryId::new(true, false),
         _ => return Err(ContractError::InvalidSignatureRecoveryId),
