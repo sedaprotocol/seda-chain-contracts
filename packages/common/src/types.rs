@@ -12,8 +12,6 @@ pub type Bytes = Vec<u8>;
 pub type Commitment = Hash;
 pub type Memo = Vec<u8>;
 pub type Hash = [u8; 32];
-pub type Secp256k1PublicKey = Vec<u8>;
-
 pub trait SimpleHash {
     fn simple_hash(&self) -> Hash;
 }
@@ -59,7 +57,7 @@ impl AsRef<[u8]> for Signature {
 
 impl From<[u8; 65]> for Signature {
     fn from(bytes: [u8; 65]) -> Self {
-        Signature(bytes)
+        Self(bytes)
     }
 }
 
@@ -75,6 +73,43 @@ impl JsonSchema for Signature {
                 items:            Some(SingleOrVec::Single(Box::new(gen.subschema_for::<u8>()))),
                 min_items:        Some(65),
                 max_items:        Some(65),
+                unique_items:     Some(false),
+                additional_items: None,
+                contains:         None,
+            })),
+            ..Default::default()
+        };
+        schema.into()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Secp256k1PublicKey(#[serde(with = "BigArray")] [u8; 33]);
+
+impl AsRef<[u8]> for Secp256k1PublicKey {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl From<[u8; 33]> for Secp256k1PublicKey {
+    fn from(bytes: [u8; 33]) -> Self {
+        Self(bytes)
+    }
+}
+
+impl JsonSchema for Secp256k1PublicKey {
+    fn schema_name() -> String {
+        "Secp256k1PublicKeyCompressed".to_string()
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        let schema = SchemaObject {
+            instance_type: Some(schemars::schema::InstanceType::Array.into()),
+            array: Some(Box::new(schemars::schema::ArrayValidation {
+                items:            Some(SingleOrVec::Single(Box::new(gen.subschema_for::<u8>()))),
+                min_items:        Some(33),
+                max_items:        Some(33),
                 unique_items:     Some(false),
                 additional_items: None,
                 contains:         None,

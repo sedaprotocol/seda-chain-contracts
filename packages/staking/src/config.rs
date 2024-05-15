@@ -86,7 +86,7 @@ pub fn add_to_allowlist(
     }
 
     // add the address to the allowlist
-    ALLOWLIST.save(deps.storage, &pub_key, &true)?;
+    ALLOWLIST.save(deps.storage, pub_key.as_ref(), &true)?;
 
     Ok(Response::new().add_attribute("action", "add-to-allowlist").add_event(
         Event::new("add-to-allowlist")
@@ -107,7 +107,7 @@ pub fn remove_from_allowlist(
     }
 
     // remove the address from the allowlist
-    ALLOWLIST.remove(deps.storage, &pub_key);
+    ALLOWLIST.remove(deps.storage, pub_key.as_ref());
 
     Ok(Response::new()
         .add_attribute("action", "remove-from-allowlist")

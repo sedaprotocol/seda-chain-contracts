@@ -21,7 +21,7 @@ impl TestExecutor {
     pub fn new(name: &'static str, amount: Option<u128>) -> Self {
         let signing_key = SigningKey::random(&mut OsRng);
         let verifying_key = VerifyingKey::from(&signing_key);
-        let public_key = verifying_key.to_encoded_point(true).to_bytes();
+        let public_key: [u8; 33] = verifying_key.to_encoded_point(true).as_bytes().try_into().unwrap();
         let coins = if let Some(amount) = amount {
             coins(amount, "token")
         } else {
@@ -30,7 +30,7 @@ impl TestExecutor {
         TestExecutor {
             name,
             signing_key,
-            public_key: public_key.to_vec(),
+            public_key: public_key.into(),
             info: mock_info(name, &coins),
         }
     }

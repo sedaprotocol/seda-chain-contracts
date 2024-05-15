@@ -15,7 +15,7 @@ pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractE
 pub fn is_staker_allowed(deps: &DepsMut, public_key: &Secp256k1PublicKey) -> Result<(), ContractError> {
     let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
     if allowlist_enabled {
-        let is_allowed = ALLOWLIST.may_load(deps.storage, public_key)?;
+        let is_allowed = ALLOWLIST.may_load(deps.storage, public_key.as_ref())?;
         if is_allowed.is_none() {
             return Err(ContractError::NotOnAllowlist);
         }

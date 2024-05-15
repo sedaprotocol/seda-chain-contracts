@@ -49,7 +49,7 @@ pub fn register_and_stake(
         tokens_staked:             amount,
         tokens_pending_withdrawal: 0,
     };
-    STAKERS.save(deps.storage, &public_key, &executor)?;
+    STAKERS.save(deps.storage, public_key.as_ref(), &executor)?;
 
     Ok(Response::new().add_attribute("action", "register-and-stake").add_event(
         Event::new("seda-register-and-stake").add_attributes([
@@ -83,9 +83,9 @@ pub fn increase_stake(
     is_staker_allowed(&deps, &public_key)?;
 
     // update staked tokens for executor
-    let mut executor = STAKERS.load(deps.storage, &public_key)?;
+    let mut executor = STAKERS.load(deps.storage, public_key.as_ref())?;
     executor.tokens_staked += amount;
-    STAKERS.save(deps.storage, &public_key, &executor)?;
+    STAKERS.save(deps.storage, public_key.as_ref(), &executor)?;
 
     Ok(Response::new().add_attribute("action", "increase-stake").add_events([
         Event::new("seda-data-request-executor").add_attributes([
@@ -121,7 +121,7 @@ pub fn unstake(
     let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
     // error if amount is greater than staked tokens
-    let mut executor = STAKERS.load(deps.storage, &public_key)?;
+    let mut executor = STAKERS.load(deps.storage, public_key.as_ref())?;
     if amount > executor.tokens_staked {
         return Err(ContractError::InsufficientFunds(executor.tokens_staked, amount));
     }
@@ -129,7 +129,7 @@ pub fn unstake(
     // update the executor
     executor.tokens_staked -= amount;
     executor.tokens_pending_withdrawal += amount;
-    STAKERS.save(deps.storage, &public_key, &executor)?;
+    STAKERS.save(deps.storage, public_key.as_ref(), &executor)?;
 
     // TODO: emit when pending tokens can be withdrawn
     Ok(Response::new().add_attribute("action", "unstake").add_events([
@@ -169,7 +169,7 @@ pub fn withdraw(
     let token = TOKEN.load(deps.storage)?;
 
     // error if amount is greater than pending tokens
-    let mut executor = STAKERS.load(deps.storage, &public_key)?;
+    let mut executor = STAKERS.load(deps.storage, public_key.as_ref())?;
     if amount > executor.tokens_pending_withdrawal {
         return Err(ContractError::InsufficientFunds(
             executor.tokens_pending_withdrawal,
@@ -179,7 +179,7 @@ pub fn withdraw(
 
     // update the executor
     executor.tokens_pending_withdrawal -= amount;
-    STAKERS.save(deps.storage, &public_key, &executor)?;
+    STAKERS.save(deps.storage, public_key.as_ref(), &executor)?;
 
     // send the tokens back to the executor
     let bank_msg = BankMsg::Send {
@@ -218,12 +218,12 @@ pub fn unregister(deps: DepsMut, _info: MessageInfo, signature: Signature) -> Re
     let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
 
     // require that the executor has no staked or tokens pending withdrawal
-    let executor = STAKERS.load(deps.storage, &public_key)?;
+    let executor = STAKERS.load(deps.storage, public_key.as_ref())?;
     if executor.tokens_staked > 0 || executor.tokens_pending_withdrawal > 0 {
         return Err(ContractError::ExecutorHasTokens);
     }
 
-    STAKERS.remove(deps.storage, &public_key);
+    STAKERS.remove(deps.storage, public_key.as_ref());
 
     Ok(Response::new()
         .add_attribute("action", "unregister")
@@ -235,14 +235,14 @@ pub fn unregister(deps: DepsMut, _info: MessageInfo, signature: Signature) -> Re
 
 /// Returns a staker with the given address, if it exists.
 pub fn get_staker(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<GetStaker> {
-    let executor = STAKERS.may_load(deps.storage, &executor)?;
+    let executor = STAKERS.may_load(deps.storage, executor.as_ref())?;
     Ok(GetStaker { value: executor })
 }
 
 // TODO: maybe move this to data-requests contract?
 /// Returns whether an executor is eligible to participate in the committee.
 pub fn is_executor_eligible(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<IsExecutorEligibleResponse> {
-    let executor = STAKERS.may_load(deps.storage, &executor)?;
+    let executor = STAKERS.may_load(deps.storage, executor.as_ref())?;
     let value = match executor {
         Some(staker) => staker.tokens_staked >= CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility,
         None => false,
