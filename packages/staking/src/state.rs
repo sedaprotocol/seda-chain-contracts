@@ -5,7 +5,7 @@ use common::{
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 
-/// Address of the token used for data request executor staking (e.g., `aseda`).
+/// Token denom used for staking (e.g., `aseda`).
 pub const TOKEN: Item<String> = Item::new("token");
 
 /// Governance-controlled configuration parameters.
