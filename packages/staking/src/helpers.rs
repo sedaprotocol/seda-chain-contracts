@@ -3,7 +3,7 @@ use common::{
     msg::{GetOwnerResponse, GetPendingOwnerResponse, GetStaker, InstantiateMsg, StakingExecuteMsg, StakingQueryMsg},
     state::StakingConfig,
     test_utils::TestExecutor,
-    types::{Secpk256k1PublicKey, SimpleHash},
+    types::{Secp256k1PublicKey, SimpleHash},
 };
 use cosmwasm_std::{from_json, testing::mock_env, DepsMut, MessageInfo, Response};
 
@@ -55,7 +55,7 @@ pub fn helper_unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) 
     execute(deps, mock_env(), info, msg)
 }
 
-pub fn get_staker(deps: DepsMut, executor: Secpk256k1PublicKey) -> GetStaker {
+pub fn get_staker(deps: DepsMut, executor: Secp256k1PublicKey) -> GetStaker {
     let res = query(deps.as_ref(), mock_env(), StakingQueryMsg::GetStaker { executor }).unwrap();
     let value: GetStaker = from_json(res).unwrap();
 
@@ -118,7 +118,7 @@ pub fn helper_set_staking_config(
 pub fn helper_add_to_allowlist(
     deps: DepsMut,
     info: MessageInfo,
-    pub_key: Secpk256k1PublicKey,
+    pub_key: Secp256k1PublicKey,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::AddToAllowlist { pub_key };
 
@@ -128,7 +128,7 @@ pub fn helper_add_to_allowlist(
 pub fn helper_remove_from_allowlist(
     deps: DepsMut,
     info: MessageInfo,
-    pub_key: Secpk256k1PublicKey,
+    pub_key: Secp256k1PublicKey,
 ) -> Result<Response, ContractError> {
     let msg = StakingExecuteMsg::RemoveFromAllowlist { pub_key };
 

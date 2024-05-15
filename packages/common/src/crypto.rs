@@ -3,10 +3,10 @@ use sha3::{Digest, Keccak256};
 
 use crate::{
     error::ContractError,
-    types::{Secpk256k1PublicKey, Signature as Sig},
+    types::{Secp256k1PublicKey, Signature as Sig},
 };
 
-pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Result<Secpk256k1PublicKey, ContractError> {
+pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Result<Secp256k1PublicKey, ContractError> {
     let rs = signature.0[0..64].into();
     let id = match signature.0[64] {
         0 => RecoveryId::new(false, false),

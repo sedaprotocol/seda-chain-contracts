@@ -6,7 +6,7 @@ use semver::Version;
 
 use crate::{
     state::{DataRequest, DataResult, RevealBody, Staker, StakingConfig},
-    types::{Bytes, Commitment, Hash, Memo, Secpk256k1PublicKey, Signature},
+    types::{Bytes, Commitment, Hash, Memo, Secp256k1PublicKey, Signature},
 };
 
 #[cw_serde]
@@ -74,12 +74,12 @@ pub enum StakingExecuteMsg {
     /// Add a user to the allowlist.
     AddToAllowlist {
         /// The public key of the person to allowlist.
-        pub_key: Secpk256k1PublicKey,
+        pub_key: Secp256k1PublicKey,
     },
     /// Remove a user from the allowlist.
     RemoveFromAllowlist {
         /// The public key of the person remove from allowlist.
-        pub_key: Secpk256k1PublicKey,
+        pub_key: Secp256k1PublicKey,
     },
 }
 
@@ -96,14 +96,14 @@ pub enum DataRequestsQueryMsg {
     #[returns(GetCommittedDataResultResponse)]
     GetCommittedDataResult {
         dr_id:    Hash,
-        executor: Secpk256k1PublicKey,
+        executor: Secp256k1PublicKey,
     },
     #[returns(GetCommittedDataResultsResponse)]
     GetCommittedDataResults { dr_id: Hash },
     #[returns(GetRevealedDataResultResponse)]
     GetRevealedDataResult {
         dr_id:    Hash,
-        executor: Secpk256k1PublicKey,
+        executor: Secp256k1PublicKey,
     },
     #[returns(GetRevealedDataResultsResponse)]
     GetRevealedDataResults { dr_id: Hash },
@@ -115,9 +115,9 @@ pub enum DataRequestsQueryMsg {
 #[derive(QueryResponses)]
 pub enum StakingQueryMsg {
     #[returns(GetStaker)]
-    GetStaker { executor: Secpk256k1PublicKey },
+    GetStaker { executor: Secp256k1PublicKey },
     #[returns(IsExecutorEligibleResponse)]
-    IsExecutorEligible { executor: Secpk256k1PublicKey },
+    IsExecutorEligible { executor: Secp256k1PublicKey },
     #[returns(GetStakingConfigResponse)]
     GetStakingConfig,
     #[returns(GetOwnerResponse)]
@@ -168,7 +168,7 @@ pub struct GetStaker {
 
 #[cw_serde]
 pub struct GetCommittedExecutorsResponse {
-    pub value: Vec<Secpk256k1PublicKey>,
+    pub value: Vec<Secp256k1PublicKey>,
 }
 
 #[cw_serde]

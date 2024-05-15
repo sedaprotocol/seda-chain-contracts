@@ -1,4 +1,4 @@
-use common::{error::ContractError, state::StakingConfig, types::Secpk256k1PublicKey};
+use common::{error::ContractError, state::StakingConfig, types::Secp256k1PublicKey};
 use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
 
 use crate::{
@@ -77,7 +77,7 @@ pub fn set_staking_config(
 pub fn add_to_allowlist(
     deps: DepsMut,
     info: MessageInfo,
-    pub_key: Secpk256k1PublicKey,
+    pub_key: Secp256k1PublicKey,
 ) -> Result<Response, ContractError> {
     // require the sender to be the OWNER
     let owner = OWNER.load(deps.storage)?;
@@ -98,7 +98,7 @@ pub fn add_to_allowlist(
 pub fn remove_from_allowlist(
     deps: DepsMut,
     info: MessageInfo,
-    pub_key: Secpk256k1PublicKey,
+    pub_key: Secp256k1PublicKey,
 ) -> Result<Response, ContractError> {
     // require the sender to be the OWNER
     let owner = OWNER.load(deps.storage)?;
