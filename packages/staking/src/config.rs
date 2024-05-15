@@ -21,9 +21,9 @@ pub fn transfer_ownership(
     Ok(Response::new()
         .add_attribute("action", "transfer_ownership")
         .add_events([Event::new("seda-transfer-ownership").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("sender", info.sender.as_ref()),
-            ("pending_owner", &new_owner),
+            ("version", CONTRACT_VERSION.clone()),
+            ("sender", info.sender.to_string()),
+            ("pending_owner", new_owner),
         ])]))
 }
 
@@ -41,8 +41,10 @@ pub fn accept_ownership(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<R
 
     Ok(Response::new()
         .add_attribute("action", "accept-ownership")
-        .add_events([Event::new("seda-accept-ownership")
-            .add_attributes([("version", CONTRACT_VERSION), ("new_owner", info.sender.as_ref())])]))
+        .add_events([Event::new("seda-accept-ownership").add_attributes([
+            ("version", CONTRACT_VERSION.clone()),
+            ("new_owner", info.sender.to_string()),
+        ])]))
 }
 
 /// Set staking config
@@ -60,16 +62,16 @@ pub fn set_staking_config(
     Ok(Response::new()
         .add_attribute("action", "set-staking-config")
         .add_events([Event::new("set-staking-config").add_attributes([
-            ("version", CONTRACT_VERSION),
+            ("version", CONTRACT_VERSION.clone()),
             (
                 "minimum_stake_for_committee_eligibility",
-                &config.minimum_stake_for_committee_eligibility.to_string(),
+                config.minimum_stake_for_committee_eligibility.to_string(),
             ),
             (
                 "minimum_stake_to_register",
-                &config.minimum_stake_to_register.to_string(),
+                config.minimum_stake_to_register.to_string(),
             ),
-            ("allowlist_enabled", &config.allowlist_enabled.to_string()),
+            ("allowlist_enabled", config.allowlist_enabled.to_string()),
         ])]))
 }
 
@@ -90,7 +92,7 @@ pub fn add_to_allowlist(
 
     Ok(Response::new().add_attribute("action", "add-to-allowlist").add_event(
         Event::new("add-to-allowlist")
-            .add_attributes([("version", CONTRACT_VERSION), ("pub_key", &hex::encode(pub_key))]),
+            .add_attributes([("version", CONTRACT_VERSION.clone()), ("pub_key", hex::encode(pub_key))]),
     ))
 }
 
@@ -113,6 +115,6 @@ pub fn remove_from_allowlist(
         .add_attribute("action", "remove-from-allowlist")
         .add_event(
             Event::new("remove-from-allowlist")
-                .add_attributes([("version", CONTRACT_VERSION), ("pub_key", &hex::encode(pub_key))]),
+                .add_attributes([("version", CONTRACT_VERSION.clone()), ("pub_key", hex::encode(pub_key))]),
         ))
 }

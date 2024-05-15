@@ -32,6 +32,7 @@ cw2 = "1.1.2"
 cw-utils = "1.0.3"
 hex = "0.4.3"
 k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
+lazy_static = "1.4"
 libfuzzer-sys = "0.4"
 proxy-contract = { path = "./packages/proxy" }
 schemars = { version = "0.8", features = ["semver"] }

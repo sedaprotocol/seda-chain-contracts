@@ -24,7 +24,11 @@ use crate::{
 
 // version info for migration info
 const CONTRACT_NAME: &str = "staking";
-pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const CONTRACT_VERSION_STR: &str = env!("CARGO_PKG_VERSION");
+
+lazy_static::lazy_static!(
+        pub static ref CONTRACT_VERSION: String = CONTRACT_VERSION_STR.to_string();
+);
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -33,7 +37,7 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION.clone())?;
     TOKEN.save(deps.storage, &msg.token)?;
     // PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;

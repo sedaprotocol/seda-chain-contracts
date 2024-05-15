@@ -53,12 +53,12 @@ pub fn register_and_stake(
 
     Ok(Response::new().add_attribute("action", "register-and-stake").add_event(
         Event::new("seda-register-and-stake").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("executor", hex::encode(public_key).as_str()),
-            ("sender", info.sender.as_ref()),
-            ("memo", &memo.unwrap_or_default()),
-            ("tokens_staked", &amount.to_string()),
-            ("tokens_pending_withdrawal", "0"),
+            ("version", CONTRACT_VERSION.clone()),
+            ("executor", hex::encode(public_key)),
+            ("sender", info.sender.to_string()),
+            ("memo", memo.unwrap_or_default()),
+            ("tokens_staked", amount.to_string()),
+            ("tokens_pending_withdrawal", "0".to_string()),
         ]),
     ))
 }
@@ -89,19 +89,19 @@ pub fn increase_stake(
 
     Ok(Response::new().add_attribute("action", "increase-stake").add_events([
         Event::new("seda-data-request-executor").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("executor", &hex::encode(&public_key)),
-            ("memo", &executor.memo.unwrap_or_default()),
-            ("tokens_staked", &executor.tokens_staked.to_string()),
+            ("version", CONTRACT_VERSION.clone()),
+            ("executor", hex::encode(&public_key)),
+            ("memo", executor.memo.unwrap_or_default()),
+            ("tokens_staked", executor.tokens_staked.to_string()),
             (
                 "tokens_pending_withdrawal",
-                &executor.tokens_pending_withdrawal.to_string(),
+                executor.tokens_pending_withdrawal.to_string(),
             ),
         ]),
         Event::new("seda-data-request-executor-increase-stake").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("executor", &hex::encode(public_key)),
-            ("amount_deposited", &amount.to_string()),
+            ("version", CONTRACT_VERSION.clone()),
+            ("executor", hex::encode(public_key)),
+            ("amount_deposited", amount.to_string()),
         ]),
     ]))
 }
@@ -134,19 +134,19 @@ pub fn unstake(
     // TODO: emit when pending tokens can be withdrawn
     Ok(Response::new().add_attribute("action", "unstake").add_events([
         Event::new("seda-data-request-executor").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("executor", &hex::encode(&public_key)),
-            ("memo", &executor.memo.unwrap_or_default()),
-            ("tokens_staked", &executor.tokens_staked.to_string()),
+            ("version", CONTRACT_VERSION.clone()),
+            ("executor", hex::encode(&public_key)),
+            ("memo", executor.memo.unwrap_or_default()),
+            ("tokens_staked", executor.tokens_staked.to_string()),
             (
                 "tokens_pending_withdrawal",
-                &executor.tokens_pending_withdrawal.to_string(),
+                executor.tokens_pending_withdrawal.to_string(),
             ),
         ]),
         Event::new("seda-data-request-executor-unstake").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("executor", &hex::encode(public_key)),
-            ("amount_unstaked", &amount.to_string()),
+            ("version", CONTRACT_VERSION.clone()),
+            ("executor", hex::encode(public_key)),
+            ("amount_unstaked", amount.to_string()),
         ]),
     ]))
 }
@@ -192,19 +192,19 @@ pub fn withdraw(
         .add_attribute("action", "withdraw")
         .add_events([
             Event::new("seda-data-request-executor").add_attributes([
-                ("version", CONTRACT_VERSION),
-                ("executor", info.sender.as_ref()),
-                ("memo", &executor.memo.unwrap_or_default()),
-                ("tokens_staked", &executor.tokens_staked.to_string()),
+                ("version", CONTRACT_VERSION.clone()),
+                ("executor", info.sender.to_string()),
+                ("memo", executor.memo.unwrap_or_default()),
+                ("tokens_staked", executor.tokens_staked.to_string()),
                 (
                     "tokens_pending_withdrawal",
-                    &executor.tokens_pending_withdrawal.to_string(),
+                    executor.tokens_pending_withdrawal.to_string(),
                 ),
             ]),
             Event::new("seda-data-request-executor-withdraw").add_attributes([
-                ("version", CONTRACT_VERSION),
-                ("executor", info.sender.as_ref()),
-                ("amount_withdrawn", &amount.to_string()),
+                ("version", CONTRACT_VERSION.clone()),
+                ("executor", info.sender.to_string()),
+                ("amount_withdrawn", amount.to_string()),
             ]),
         ]))
 }
@@ -228,8 +228,8 @@ pub fn unregister(deps: DepsMut, _info: MessageInfo, signature: Signature) -> Re
     Ok(Response::new()
         .add_attribute("action", "unregister")
         .add_event(Event::new("seda-unregister").add_attributes([
-            ("version", CONTRACT_VERSION),
-            ("executor", hex::encode(public_key).as_str()),
+            ("version", CONTRACT_VERSION.clone()),
+            ("executor", hex::encode(public_key)),
         ])))
 }
 
