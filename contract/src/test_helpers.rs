@@ -1,6 +1,6 @@
 use cosmwasm_std::{from_json, testing::mock_env, Addr, DepsMut, MessageInfo, Response};
 
-use super::test_executor::TestExecutor;
+use super::TestExecutor;
 use crate::{
     contract::{execute, instantiate, query},
     error::ContractError,
