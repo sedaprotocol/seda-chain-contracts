@@ -58,6 +58,7 @@ impl From<StakingExecuteMsg> for ExecuteMsg {
 //     GetResolvedDataResult { dr_id: Hash },
 // }
 
+// https://github.com/CosmWasm/cosmwasm/issues/2030
 #[cw_serde]
 #[serde(untagged)]
 #[derive(QueryResponses)]
