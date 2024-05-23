@@ -6,8 +6,15 @@ pub mod staking;
 pub use staking::{ExecuteMsg as StakingExecuteMsg, QueryMsg as StakingQueryMsg};
 
 #[cw_serde]
+#[serde(untagged)]
 pub enum ExecuteMsg {
     Staking(StakingExecuteMsg),
+    Owner(OwnerExecuteMsg),
+}
+
+#[cw_serde]
+#[serde(untagged)]
+pub enum OwnerExecuteMsg {
     TransferOwnership {
         new_owner: String,
     },
@@ -30,33 +37,11 @@ impl From<StakingExecuteMsg> for ExecuteMsg {
     }
 }
 
-// #[cw_serde]
-// #[derive(QueryResponses)]
-// pub enum DataRequestsQueryMsg {
-//     #[returns(GetDataRequestResponse)]
-//     GetDataRequest { dr_id: Hash },
-//     #[returns(GetDataRequestsFromPoolResponse)]
-//     GetDataRequestsFromPool {
-//         position: Option<u128>,
-//         limit:    Option<u128>,
-//     },
-//     #[returns(GetCommittedDataResultResponse)]
-//     GetCommittedDataResult {
-//         dr_id:    Hash,
-//         executor: Secp256k1PublicKey,
-//     },
-//     #[returns(GetCommittedDataResultsResponse)]
-//     GetCommittedDataResults { dr_id: Hash },
-//     #[returns(GetRevealedDataResultResponse)]
-//     GetRevealedDataResult {
-//         dr_id:    Hash,
-//         executor: Secp256k1PublicKey,
-//     },
-//     #[returns(GetRevealedDataResultsResponse)]
-//     GetRevealedDataResults { dr_id: Hash },
-//     #[returns(GetResolvedDataResultResponse)]
-//     GetResolvedDataResult { dr_id: Hash },
-// }
+impl From<OwnerExecuteMsg> for ExecuteMsg {
+    fn from(value: OwnerExecuteMsg) -> Self {
+        Self::Owner(value)
+    }
+}
 
 // https://github.com/CosmWasm/cosmwasm/issues/2030
 #[cw_serde]
@@ -65,12 +50,12 @@ impl From<StakingExecuteMsg> for ExecuteMsg {
 #[query_responses(nested)]
 pub enum QueryMsg {
     Staking(StakingQueryMsg),
-    Rest(QueryMsgRest),
+    Owner(OwnerQueryMsg),
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsgRest {
+pub enum OwnerQueryMsg {
     #[returns(cosmwasm_std::Addr)]
     GetOwner,
     #[returns(Option<cosmwasm_std::Addr>)]
@@ -83,26 +68,14 @@ impl From<StakingQueryMsg> for QueryMsg {
     }
 }
 
-impl From<QueryMsgRest> for QueryMsg {
-    fn from(value: QueryMsgRest) -> Self {
-        Self::Rest(value)
+impl From<OwnerQueryMsg> for QueryMsg {
+    fn from(value: OwnerQueryMsg) -> Self {
+        Self::Owner(value)
     }
 }
 
-// impl QueryResponses for QueryMsg {
-//     fn response_schemas_impl() -> std::collections::BTreeMap<String, schemars::schema::RootSchema> {
-//         let mut schemas = std::collections::BTreeMap::new();
-
-//         // Merge schemas from StakingQueryMsg
-//         let staking_schemas = StakingQueryMsg::response_schemas_impl();
-//         for (key, value) in staking_schemas {
-//             schemas.insert(key, value);
-//         }
-
-//         // Add schemas for GetOwner and GetPendingOwner
-//         schemas.insert("GetOwner".to_string(), RootSchema::new::<cosmwasm_std::Addr>());
-//         schemas.insert("GetPendingOwner".to_string(), RootSchema::new::<Option<cosmwasm_std::Addr>>());
-
-//         schemas
-//     }
-// }
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub token: String,
+    pub owner: String,
+}

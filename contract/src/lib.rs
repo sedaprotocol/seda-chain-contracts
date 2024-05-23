@@ -1,17 +1,20 @@
-mod config;
-mod consts;
-mod contract;
+pub mod config;
+pub mod consts;
+pub mod contract;
 mod crypto;
 mod error;
 pub mod msg;
 pub mod msgs;
-mod staking;
-mod state;
+pub mod staking;
+pub mod state;
 mod types;
 mod utils;
 
-#[cfg(feature = "testing")]
-pub mod test_utils;
+// #[path =""]
+// #[cfg_attr(not(feature = "library"), cosmwasm_std::entry_point)]
+// mod lib {
+//  pub mod consts;
+// }
 
 #[path = ""]
 #[cfg(test)]

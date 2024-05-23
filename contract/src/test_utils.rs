@@ -47,11 +47,11 @@ impl TestExecutor {
         self.info = mock_info(self.name, &coins(amount, "token"));
     }
 
-    pub fn remove_coins(&mut self) {
+    pub fn _remove_coins(&mut self) {
         self.info = mock_info(self.name, &[]);
     }
 
-    pub fn salt(&self) -> Hash {
+    pub fn _salt(&self) -> Hash {
         let mut hasher = Keccak256::new();
         hasher.update(self.name);
         hasher.finalize().into()

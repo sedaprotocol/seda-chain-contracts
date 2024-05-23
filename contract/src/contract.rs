@@ -7,8 +7,7 @@ use crate::{
     config,
     consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
     error::ContractError,
-    msg::InstantiateMsg,
-    msgs::{ExecuteMsg, QueryMsg, QueryMsgRest, StakingExecuteMsg, StakingQueryMsg},
+    msgs::{ExecuteMsg, InstantiateMsg, OwnerExecuteMsg, OwnerQueryMsg, QueryMsg, StakingExecuteMsg, StakingQueryMsg},
     staking,
     state::{StakingConfig, CONFIG, OWNER, PENDING_OWNER, TOKEN},
 };
@@ -52,10 +51,12 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
             StakingExecuteMsg::Unregister { signature } => staking::unregister(deps, info, signature),
             StakingExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
         },
-        ExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
-        ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
-        ExecuteMsg::AddToAllowlist { pub_key } => config::add_to_allowlist(deps, info, pub_key),
-        ExecuteMsg::RemoveFromAllowlist { pub_key } => config::remove_from_allowlist(deps, info, pub_key),
+        ExecuteMsg::Owner(msg) => match msg {
+            OwnerExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
+            OwnerExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
+            OwnerExecuteMsg::AddToAllowlist { pub_key } => config::add_to_allowlist(deps, info, pub_key),
+            OwnerExecuteMsg::RemoveFromAllowlist { pub_key } => config::remove_from_allowlist(deps, info, pub_key),
+        },
     }
 }
 
@@ -69,10 +70,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             }
             StakingQueryMsg::GetStakingConfig => to_json_binary(&CONFIG.load(deps.storage)?),
         },
-        QueryMsg::Rest(msg) => match msg {
-            QueryMsgRest::GetOwner => to_json_binary(&OWNER.load(deps.storage)?),
+        QueryMsg::Owner(msg) => match msg {
+            OwnerQueryMsg::GetOwner => to_json_binary(&OWNER.load(deps.storage)?),
 
-            QueryMsgRest::GetPendingOwner => to_json_binary(&PENDING_OWNER.load(deps.storage)?),
+            OwnerQueryMsg::GetPendingOwner => to_json_binary(&PENDING_OWNER.load(deps.storage)?),
         },
     }
 }

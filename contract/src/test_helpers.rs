@@ -4,8 +4,7 @@ use super::test_utils::TestExecutor;
 use crate::{
     contract::{execute, instantiate, query},
     error::ContractError,
-    msg::InstantiateMsg,
-    msgs::{ExecuteMsg, QueryMsgRest, StakingExecuteMsg, StakingQueryMsg},
+    msgs::{InstantiateMsg, OwnerExecuteMsg, OwnerQueryMsg, StakingExecuteMsg, StakingQueryMsg},
     state::{Staker, StakingConfig},
     types::{Secp256k1PublicKey, SimpleHash},
 };
@@ -36,14 +35,14 @@ pub fn reg_and_stake(
 }
 
 pub fn transfer_ownership(deps: DepsMut, info: MessageInfo, new_owner: String) -> Result<Response, ContractError> {
-    let msg = ExecuteMsg::TransferOwnership { new_owner };
+    let msg = OwnerExecuteMsg::TransferOwnership { new_owner };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 pub fn accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
-    let msg = ExecuteMsg::AcceptOwnership {};
+    let msg = OwnerExecuteMsg::AcceptOwnership {};
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 pub fn unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
     let signature = exec.sign(["unregister".as_bytes()]);
@@ -64,14 +63,14 @@ pub fn get_staker(deps: DepsMut, executor: Secp256k1PublicKey) -> Option<Staker>
     value
 }
 pub fn get_owner(deps: DepsMut) -> Addr {
-    let res = query(deps.as_ref(), mock_env(), QueryMsgRest::GetOwner {}.into()).unwrap();
+    let res = query(deps.as_ref(), mock_env(), OwnerQueryMsg::GetOwner {}.into()).unwrap();
     let value = from_json(res).unwrap();
 
     value
 }
 
 pub fn get_pending_owner(deps: DepsMut) -> Option<Addr> {
-    let res = query(deps.as_ref(), mock_env(), QueryMsgRest::GetPendingOwner {}.into()).unwrap();
+    let res = query(deps.as_ref(), mock_env(), OwnerQueryMsg::GetPendingOwner {}.into()).unwrap();
     let value = from_json(res).unwrap();
 
     value
@@ -113,9 +112,9 @@ pub fn add_to_allowlist(
     info: MessageInfo,
     pub_key: Secp256k1PublicKey,
 ) -> Result<Response, ContractError> {
-    let msg = ExecuteMsg::AddToAllowlist { pub_key };
+    let msg = OwnerExecuteMsg::AddToAllowlist { pub_key };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn remove_from_allowlist(
@@ -123,7 +122,7 @@ pub fn remove_from_allowlist(
     info: MessageInfo,
     pub_key: Secp256k1PublicKey,
 ) -> Result<Response, ContractError> {
-    let msg = ExecuteMsg::RemoveFromAllowlist { pub_key };
+    let msg = OwnerExecuteMsg::RemoveFromAllowlist { pub_key };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }

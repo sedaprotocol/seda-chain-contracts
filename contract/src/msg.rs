@@ -1,12 +1,7 @@
-use std::collections::HashMap;
-
 use cosmwasm_schema::cw_serde;
 use semver::Version;
 
-use crate::{
-    state::{DataRequest, DataResult, RevealBody},
-    types::{Bytes, Commitment, Hash, Memo, Secp256k1PublicKey},
-};
+use crate::types::{Bytes, Hash, Memo};
 
 #[cw_serde]
 pub struct PostDataRequestArgs {
@@ -42,55 +37,3 @@ pub struct PostDataRequestArgs {
 //         sender:    Option<String>,
 //     },
 // }
-
-#[cw_serde]
-pub struct GetDataRequestResponse {
-    pub value: Option<DataRequest>,
-}
-
-#[cw_serde]
-pub struct GetDataRequestsFromPoolResponse {
-    pub value: Vec<DataRequest>,
-}
-
-#[cw_serde]
-pub struct GetCommittedDataResultResponse {
-    pub value: Option<Commitment>,
-}
-
-#[cw_serde]
-pub struct GetCommittedDataResultsResponse {
-    pub value: HashMap<String, Commitment>, // key is hex::encode(public_key)
-}
-
-#[cw_serde]
-pub struct GetRevealedDataResultResponse {
-    pub value: Option<RevealBody>,
-}
-
-#[cw_serde]
-pub struct GetRevealedDataResultsResponse {
-    pub value: HashMap<String, RevealBody>, // key is hex::encode(public_key)
-}
-
-#[cw_serde]
-pub struct GetResolvedDataResultResponse {
-    pub value: DataResult,
-}
-
-#[cw_serde]
-pub struct GetCommittedExecutorsResponse {
-    pub value: Vec<Secp256k1PublicKey>,
-}
-
-#[cw_serde]
-pub struct GetContractResponse {
-    pub value: String,
-}
-
-#[cw_serde]
-pub struct InstantiateMsg {
-    pub token: String,
-    // pub proxy: String,
-    pub owner: String,
-}
