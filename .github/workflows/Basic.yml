@@ -33,7 +33,7 @@ jobs:
                 
       - name: 📝 Generate Schema
         if: always()
-        run: cargo schema --locked --package staking
+        run: cargo schema --locked
 
       - name: ✔️ Schema Changes
         # fails if any changes not committed

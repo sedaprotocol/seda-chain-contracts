@@ -1,7 +1,6 @@
-use common::{error::ContractError, types::Secp256k1PublicKey};
 use cosmwasm_std::{Coin, DepsMut};
 
-use crate::state::{ALLOWLIST, CONFIG};
+use crate::{error::ContractError, state::{ALLOWLIST, CONFIG}, types::Secp256k1PublicKey};
 
 pub fn get_attached_funds(funds: &[Coin], token: &str) -> Result<u128, ContractError> {
     let amount: Option<u128> = funds

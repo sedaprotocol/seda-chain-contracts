@@ -22,30 +22,31 @@ pub struct PostDataRequestArgs {
     pub memo:               Memo,
 }
 
-#[allow(clippy::large_enum_variant)]
-#[cw_serde]
-pub enum DataRequestsExecuteMsg {
-    PostDataRequest {
-        posted_dr:       PostDataRequestArgs,
-        seda_payload:    Bytes,
-        payback_address: Bytes,
-    },
-    CommitDataResult {
-        dr_id:      Hash,
-        commitment: Hash,
-        sender:     Option<String>,
-        signature:  Signature,
-    },
-    RevealDataResult {
-        dr_id:     Hash,
-        reveal:    RevealBody,
-        signature: Signature,
-        sender:    Option<String>,
-    },
-}
+// #[allow(clippy::large_enum_variant)]
+// #[cw_serde]
+// pub enum DataRequestsExecuteMsg {
+//     PostDataRequest {
+//         posted_dr:       PostDataRequestArgs,
+//         seda_payload:    Bytes,
+//         payback_address: Bytes,
+//     },
+//     CommitDataResult {
+//         dr_id:      Hash,
+//         commitment: Hash,
+//         sender:     Option<String>,
+//         signature:  Signature,
+//     },
+//     RevealDataResult {
+//         dr_id:     Hash,
+//         reveal:    RevealBody,
+//         signature: Signature,
+//         sender:    Option<String>,
+//     },
+// }
 
 #[cw_serde]
-pub enum StakingExecuteMsg {
+pub enum ExecuteMsg {
+    // staking msgs
     RegisterAndStake {
         signature: Signature,
         memo:      Option<String>,
@@ -113,7 +114,7 @@ pub enum DataRequestsQueryMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum StakingQueryMsg {
+pub enum QueryMsg {
     #[returns(GetStaker)]
     GetStaker { executor: Secp256k1PublicKey },
     #[returns(IsExecutorEligibleResponse)]

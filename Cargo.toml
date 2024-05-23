@@ -1,12 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+	"contract",
 	# "fuzz",
-	"packages/common",
-	"packages/staking",
-	# "packages/data-requests",
-	# "packages/integration-tests",
-	# "packages/proxy",
 ]
 
 [profile.release]
@@ -21,9 +17,8 @@ incremental = false
 overflow-checks = true
 
 [workspace.dependencies]
-anyhow = "1.0.81"
+anyhow = "1.0"
 arbitrary = "1.3"
-common = { path = "./packages/common" }
 cosmwasm-schema = "1.5"
 cosmwasm-std = { version = "1.5" }
 cw-multi-test = "1.1"

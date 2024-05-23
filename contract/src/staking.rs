@@ -1,18 +1,9 @@
-use common::{
-    crypto::{hash, recover_pubkey},
-    error::ContractError,
-    msg::{GetStaker, IsExecutorEligibleResponse},
-    state::Staker,
-    types::{Secp256k1PublicKey, Signature, SimpleHash},
-};
 use cosmwasm_std::{coins, BankMsg, Deps, Event, StdResult};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
-    contract::CONTRACT_VERSION,
-    state::{CONFIG, STAKERS, TOKEN},
-    utils::{get_attached_funds, is_staker_allowed},
+    contract::CONTRACT_VERSION, crypto::{hash, recover_pubkey}, error::ContractError, msg::{GetStaker, IsExecutorEligibleResponse}, state::{Staker, CONFIG, STAKERS, TOKEN}, types::{Secp256k1PublicKey, Signature, SimpleHash}, utils::{get_attached_funds, is_staker_allowed}
 };
 
 /// Registers a staker with an optional p2p multi address, requiring a token deposit.

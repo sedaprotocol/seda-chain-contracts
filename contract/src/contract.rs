@@ -1,25 +1,10 @@
-use common::{
-    consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
-    error::ContractError,
-    msg::{
-        GetOwnerResponse,
-        GetPendingOwnerResponse,
-        GetStakingConfigResponse,
-        InstantiateMsg,
-        StakingExecuteMsg as ExecuteMsg,
-        StakingQueryMsg as QueryMsg,
-    },
-    state::StakingConfig,
-};
 use cosmwasm_std::StdResult;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
 use crate::{
-    config,
-    staking,
-    state::{CONFIG, OWNER, PENDING_OWNER, TOKEN},
+    config, consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER}, error::ContractError, msg::{ExecuteMsg, GetOwnerResponse, GetPendingOwnerResponse, GetStakingConfigResponse, InstantiateMsg, QueryMsg}, staking, state::{StakingConfig, CONFIG, OWNER, PENDING_OWNER, TOKEN}
 };
 
 // version info for migration info

@@ -1,5 +1,5 @@
 [package]
-name = "staking"
+name = "seda-contract"
 version = "0.1.0"
 edition = "2021"
 
@@ -28,15 +28,18 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-common = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
 cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
 cw2 = { workspace = true }
 hex = { workspace = true }
+k256 = { workspace = true }
 schemars = { workspace = true }
+semver = { workspace = true }
 serde = { workspace = true }
+serde-big-array.workspace = true
 serde_json = { workspace = true }
+sha3.workspace = true
+thiserror = { workspace = true }
 
-[dev-dependencies]
-common = { workspace = true, features = ["testing"] }
