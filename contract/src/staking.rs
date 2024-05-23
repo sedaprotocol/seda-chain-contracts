@@ -3,7 +3,12 @@ use cosmwasm_std::{coins, BankMsg, Deps, Event, StdResult};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
-    contract::CONTRACT_VERSION, crypto::{hash, recover_pubkey}, error::ContractError, msg::{GetStaker, IsExecutorEligibleResponse}, state::{Staker, CONFIG, STAKERS, TOKEN}, types::{Secp256k1PublicKey, Signature, SimpleHash}, utils::{get_attached_funds, is_staker_allowed}
+    contract::CONTRACT_VERSION,
+    crypto::{hash, recover_pubkey},
+    error::ContractError,
+    state::{Staker, CONFIG, STAKERS, TOKEN},
+    types::{Secp256k1PublicKey, Signature, SimpleHash},
+    utils::{get_attached_funds, is_staker_allowed},
 };
 
 /// Registers a staker with an optional p2p multi address, requiring a token deposit.
@@ -225,19 +230,19 @@ pub fn unregister(deps: DepsMut, _info: MessageInfo, signature: Signature) -> Re
 }
 
 /// Returns a staker with the given address, if it exists.
-pub fn get_staker(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<GetStaker> {
+pub fn get_staker(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<Option<Staker>> {
     let executor = STAKERS.may_load(deps.storage, &executor)?;
-    Ok(GetStaker { value: executor })
+    Ok(executor)
 }
 
 // TODO: maybe move this to data-requests contract?
 /// Returns whether an executor is eligible to participate in the committee.
-pub fn is_executor_eligible(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<IsExecutorEligibleResponse> {
+pub fn is_executor_eligible(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<bool> {
     let executor = STAKERS.may_load(deps.storage, &executor)?;
     let value = match executor {
         Some(staker) => staker.tokens_staked >= CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility,
         None => false,
     };
 
-    Ok(IsExecutorEligibleResponse { value })
+    Ok(value)
 }

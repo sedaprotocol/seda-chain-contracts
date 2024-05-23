@@ -1,9 +1,14 @@
-
-use cosmwasm_std::{from_json, testing::mock_env, DepsMut, MessageInfo, Response};
-
-use crate::{contract::{execute, instantiate, query}, error::ContractError, msg::{ExecuteMsg, GetOwnerResponse, GetPendingOwnerResponse, GetStaker, InstantiateMsg, QueryMsg}, state::StakingConfig, types::{Secp256k1PublicKey, SimpleHash}};
+use cosmwasm_std::{from_json, testing::mock_env, Addr, DepsMut, MessageInfo, Response};
 
 use super::test_utils::TestExecutor;
+use crate::{
+    contract::{execute, instantiate, query},
+    error::ContractError,
+    msg::InstantiateMsg,
+    msgs::{ExecuteMsg, QueryMsgRest, StakingExecuteMsg, StakingQueryMsg},
+    state::{Staker, StakingConfig},
+    types::{Secp256k1PublicKey, SimpleHash},
+};
 
 pub fn instantiate_staking_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let msg = InstantiateMsg {
@@ -25,9 +30,9 @@ pub fn reg_and_stake(
     } else {
         exec.sign(["register_and_stake".as_bytes()])
     };
-    let msg = ExecuteMsg::RegisterAndStake { signature, memo };
+    let msg = StakingExecuteMsg::RegisterAndStake { signature, memo };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn transfer_ownership(deps: DepsMut, info: MessageInfo, new_owner: String) -> Result<Response, ContractError> {
@@ -42,42 +47,47 @@ pub fn accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Response, Co
 }
 pub fn unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
     let signature = exec.sign(["unregister".as_bytes()]);
-    let msg = ExecuteMsg::Unregister { signature };
+    let msg = StakingExecuteMsg::Unregister { signature };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
-pub fn get_staker(deps: DepsMut, executor: Secp256k1PublicKey) -> GetStaker {
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetStaker { executor }).unwrap();
-    let value: GetStaker = from_json(res).unwrap();
+pub fn get_staker(deps: DepsMut, executor: Secp256k1PublicKey) -> Option<Staker> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        StakingQueryMsg::GetStaker { executor }.into(),
+    )
+    .unwrap();
+    let value: Option<Staker> = from_json(res).unwrap();
 
     value
 }
-pub fn get_owner(deps: DepsMut) -> GetOwnerResponse {
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
-    let value: GetOwnerResponse = from_json(res).unwrap();
+pub fn get_owner(deps: DepsMut) -> Addr {
+    let res = query(deps.as_ref(), mock_env(), QueryMsgRest::GetOwner {}.into()).unwrap();
+    let value = from_json(res).unwrap();
 
     value
 }
 
-pub fn get_pending_owner(deps: DepsMut) -> GetPendingOwnerResponse {
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetPendingOwner {}).unwrap();
-    let value: GetPendingOwnerResponse = from_json(res).unwrap();
+pub fn get_pending_owner(deps: DepsMut) -> Option<Addr> {
+    let res = query(deps.as_ref(), mock_env(), QueryMsgRest::GetPendingOwner {}.into()).unwrap();
+    let value = from_json(res).unwrap();
 
     value
 }
 pub fn increase_stake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
     let signature = exec.sign(["increase_stake".as_bytes()]);
-    let msg = ExecuteMsg::IncreaseStake { signature };
+    let msg = StakingExecuteMsg::IncreaseStake { signature };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn unstake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor, amount: u128) -> Result<Response, ContractError> {
     let signature = exec.sign(["unstake".as_bytes(), &amount.to_be_bytes()]);
-    let msg = ExecuteMsg::Unstake { signature, amount };
+    let msg = StakingExecuteMsg::Unstake { signature, amount };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn withdraw(
@@ -87,15 +97,15 @@ pub fn withdraw(
     amount: u128,
 ) -> Result<Response, ContractError> {
     let signature = exec.sign(["withdraw".as_bytes(), &amount.to_be_bytes()]);
-    let msg = ExecuteMsg::Withdraw { signature, amount };
+    let msg = StakingExecuteMsg::Withdraw { signature, amount };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn set_staking_config(deps: DepsMut, info: MessageInfo, config: StakingConfig) -> Result<Response, ContractError> {
-    let msg = ExecuteMsg::SetStakingConfig { config };
+    let msg = StakingExecuteMsg::SetStakingConfig { config };
 
-    execute(deps, mock_env(), info, msg)
+    execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn add_to_allowlist(

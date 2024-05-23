@@ -4,9 +4,8 @@ use cosmwasm_std::{
     Addr,
 };
 
-use crate::{error::ContractError, state::StakingConfig, test::test_utils::TestExecutor};
-
 use super::test_helpers;
+use crate::{error::ContractError, state::StakingConfig, test::test_utils::TestExecutor};
 
 #[test]
 fn proper_initialization() {
@@ -25,10 +24,10 @@ fn two_step_transfer_ownership() {
     let creator = mock_info("creator", &coins(1000, "token"));
     let _res = test_helpers::instantiate_staking_contract(deps.as_mut(), creator).unwrap();
 
-    let owner_addr = test_helpers::get_owner(deps.as_mut()).value;
+    let owner_addr = test_helpers::get_owner(deps.as_mut());
     assert_eq!(owner_addr, "owner");
 
-    let pending_owner = test_helpers::get_pending_owner(deps.as_mut()).value;
+    let pending_owner = test_helpers::get_pending_owner(deps.as_mut());
     assert_eq!(pending_owner, None);
 
     // new-owner accepts ownership before owner calls transfer_ownership
@@ -46,10 +45,10 @@ fn two_step_transfer_ownership() {
     let res = test_helpers::transfer_ownership(deps.as_mut(), owner, "new-owner".to_string());
     assert!(res.is_ok());
 
-    let owner_addr = test_helpers::get_owner(deps.as_mut()).value;
+    let owner_addr = test_helpers::get_owner(deps.as_mut());
     assert_eq!(owner_addr, "owner");
 
-    let pending_owner = test_helpers::get_pending_owner(deps.as_mut()).value;
+    let pending_owner = test_helpers::get_pending_owner(deps.as_mut());
     assert_eq!(pending_owner, Some(Addr::unchecked("new-owner")));
 
     // non-owner accepts ownership
@@ -60,10 +59,10 @@ fn two_step_transfer_ownership() {
     let res = test_helpers::accept_ownership(deps.as_mut(), new_owner);
     assert!(res.is_ok());
 
-    let owner = test_helpers::get_owner(deps.as_mut()).value;
+    let owner = test_helpers::get_owner(deps.as_mut());
     assert_eq!(owner, Addr::unchecked("new-owner"));
 
-    let pending_owner = test_helpers::get_pending_owner(deps.as_mut()).value;
+    let pending_owner = test_helpers::get_pending_owner(deps.as_mut());
     assert_eq!(pending_owner, None);
 }
 

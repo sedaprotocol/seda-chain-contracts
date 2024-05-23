@@ -4,7 +4,13 @@ use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, DepsMut, Env, Mess
 use cw2::set_contract_version;
 
 use crate::{
-    config, consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER}, error::ContractError, msg::{ExecuteMsg, GetOwnerResponse, GetPendingOwnerResponse, GetStakingConfigResponse, InstantiateMsg, QueryMsg}, staking, state::{StakingConfig, CONFIG, OWNER, PENDING_OWNER, TOKEN}
+    config,
+    consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
+    error::ContractError,
+    msg::InstantiateMsg,
+    msgs::{ExecuteMsg, QueryMsg, QueryMsgRest, StakingExecuteMsg, StakingQueryMsg},
+    staking,
+    state::{StakingConfig, CONFIG, OWNER, PENDING_OWNER, TOKEN},
 };
 
 // version info for migration info
@@ -36,14 +42,18 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::RegisterAndStake { signature, memo } => staking::register_and_stake(deps, info, signature, memo),
-        ExecuteMsg::IncreaseStake { signature } => staking::increase_stake(deps, env, info, signature),
-        ExecuteMsg::Unstake { signature, amount } => staking::unstake(deps, env, info, signature, amount),
-        ExecuteMsg::Withdraw { signature, amount } => staking::withdraw(deps, env, info, signature, amount),
-        ExecuteMsg::Unregister { signature } => staking::unregister(deps, info, signature),
+        ExecuteMsg::Staking(msg) => match msg {
+            StakingExecuteMsg::RegisterAndStake { signature, memo } => {
+                staking::register_and_stake(deps, info, signature, memo)
+            }
+            StakingExecuteMsg::IncreaseStake { signature } => staking::increase_stake(deps, env, info, signature),
+            StakingExecuteMsg::Unstake { signature, amount } => staking::unstake(deps, env, info, signature, amount),
+            StakingExecuteMsg::Withdraw { signature, amount } => staking::withdraw(deps, env, info, signature, amount),
+            StakingExecuteMsg::Unregister { signature } => staking::unregister(deps, info, signature),
+            StakingExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
+        },
         ExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
         ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
-        ExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
         ExecuteMsg::AddToAllowlist { pub_key } => config::add_to_allowlist(deps, info, pub_key),
         ExecuteMsg::RemoveFromAllowlist { pub_key } => config::remove_from_allowlist(deps, info, pub_key),
     }
@@ -52,16 +62,17 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetStaker { executor } => to_json_binary(&staking::get_staker(deps, executor)?),
-        QueryMsg::IsExecutorEligible { executor } => to_json_binary(&staking::is_executor_eligible(deps, executor)?),
-        QueryMsg::GetStakingConfig => to_json_binary(&GetStakingConfigResponse {
-            value: CONFIG.load(deps.storage)?,
-        }),
-        QueryMsg::GetOwner => to_json_binary(&GetOwnerResponse {
-            value: OWNER.load(deps.storage)?,
-        }),
-        QueryMsg::GetPendingOwner => to_json_binary(&GetPendingOwnerResponse {
-            value: PENDING_OWNER.load(deps.storage)?,
-        }),
+        QueryMsg::Staking(msg) => match msg {
+            StakingQueryMsg::GetStaker { executor } => to_json_binary(&staking::get_staker(deps, executor)?),
+            StakingQueryMsg::IsExecutorEligible { executor } => {
+                to_json_binary(&staking::is_executor_eligible(deps, executor)?)
+            }
+            StakingQueryMsg::GetStakingConfig => to_json_binary(&CONFIG.load(deps.storage)?),
+        },
+        QueryMsg::Rest(msg) => match msg {
+            QueryMsgRest::GetOwner => to_json_binary(&OWNER.load(deps.storage)?),
+
+            QueryMsgRest::GetPendingOwner => to_json_binary(&PENDING_OWNER.load(deps.storage)?),
+        },
     }
 }

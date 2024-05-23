@@ -1,9 +1,10 @@
-mod consts;
 mod config;
+mod consts;
 mod contract;
 mod crypto;
 mod error;
 pub mod msg;
+pub mod msgs;
 mod staking;
 mod state;
 mod types;

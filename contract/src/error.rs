@@ -1,5 +1,4 @@
 use cosmwasm_std::StdError;
-use cw_utils::ParseReplyError;
 use hex::FromHexError;
 use thiserror::Error;
 
@@ -50,17 +49,6 @@ pub enum ContractError {
     #[error("EmptyArg: Arg cannot be empty: {0}")]
     EmptyArg(String),
 
-    // proxy errors
-    #[error("ContractAlreadySet: Contract already set")]
-    ContractAlreadySet,
-    #[error("NotContractCreator: Caller must be the contract creator")]
-    NotContractCreator,
-    #[error("UnknownReplyId: Unknown reply ID: {0}")]
-    UnknownReplyId(String),
-    #[error("UnexpectedError: Unexpected error: {0}")]
-    UnexpectedError(String),
-    #[error("ParseReplyError: Parse reply error: {0}")]
-    ParseReplyError(#[from] ParseReplyError),
     #[error("FromHex: Invalid hexadecimal input: {0}")]
     FromHex(FromHexError),
 }

@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
+use cosmwasm_schema::cw_serde;
 use semver::Version;
 
 use crate::{
-    state::{DataRequest, DataResult, RevealBody, Staker, StakingConfig},
-    types::{Bytes, Commitment, Hash, Memo, Secp256k1PublicKey, Signature},
+    state::{DataRequest, DataResult, RevealBody},
+    types::{Bytes, Commitment, Hash, Memo, Secp256k1PublicKey},
 };
 
 #[cw_serde]
@@ -45,89 +44,6 @@ pub struct PostDataRequestArgs {
 // }
 
 #[cw_serde]
-pub enum ExecuteMsg {
-    // staking msgs
-    RegisterAndStake {
-        signature: Signature,
-        memo:      Option<String>,
-    },
-    Unregister {
-        signature: Signature,
-    },
-    IncreaseStake {
-        signature: Signature,
-    },
-    Unstake {
-        signature: Signature,
-        amount:    u128,
-    },
-    Withdraw {
-        signature: Signature,
-        amount:    u128,
-    },
-    TransferOwnership {
-        new_owner: String,
-    },
-    AcceptOwnership {},
-    SetStakingConfig {
-        config: StakingConfig,
-    },
-    /// Add a user to the allowlist.
-    AddToAllowlist {
-        /// The public key of the person to allowlist.
-        pub_key: Secp256k1PublicKey,
-    },
-    /// Remove a user from the allowlist.
-    RemoveFromAllowlist {
-        /// The public key of the person remove from allowlist.
-        pub_key: Secp256k1PublicKey,
-    },
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum DataRequestsQueryMsg {
-    #[returns(GetDataRequestResponse)]
-    GetDataRequest { dr_id: Hash },
-    #[returns(GetDataRequestsFromPoolResponse)]
-    GetDataRequestsFromPool {
-        position: Option<u128>,
-        limit:    Option<u128>,
-    },
-    #[returns(GetCommittedDataResultResponse)]
-    GetCommittedDataResult {
-        dr_id:    Hash,
-        executor: Secp256k1PublicKey,
-    },
-    #[returns(GetCommittedDataResultsResponse)]
-    GetCommittedDataResults { dr_id: Hash },
-    #[returns(GetRevealedDataResultResponse)]
-    GetRevealedDataResult {
-        dr_id:    Hash,
-        executor: Secp256k1PublicKey,
-    },
-    #[returns(GetRevealedDataResultsResponse)]
-    GetRevealedDataResults { dr_id: Hash },
-    #[returns(GetResolvedDataResultResponse)]
-    GetResolvedDataResult { dr_id: Hash },
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(GetStaker)]
-    GetStaker { executor: Secp256k1PublicKey },
-    #[returns(IsExecutorEligibleResponse)]
-    IsExecutorEligible { executor: Secp256k1PublicKey },
-    #[returns(GetStakingConfigResponse)]
-    GetStakingConfig,
-    #[returns(GetOwnerResponse)]
-    GetOwner,
-    #[returns(GetPendingOwnerResponse)]
-    GetPendingOwner,
-}
-
-#[cw_serde]
 pub struct GetDataRequestResponse {
     pub value: Option<DataRequest>,
 }
@@ -163,18 +79,8 @@ pub struct GetResolvedDataResultResponse {
 }
 
 #[cw_serde]
-pub struct GetStaker {
-    pub value: Option<Staker>,
-}
-
-#[cw_serde]
 pub struct GetCommittedExecutorsResponse {
     pub value: Vec<Secp256k1PublicKey>,
-}
-
-#[cw_serde]
-pub struct IsExecutorEligibleResponse {
-    pub value: bool,
 }
 
 #[cw_serde]
@@ -183,23 +89,8 @@ pub struct GetContractResponse {
 }
 
 #[cw_serde]
-pub struct GetStakingConfigResponse {
-    pub value: StakingConfig,
-}
-
-#[cw_serde]
 pub struct InstantiateMsg {
     pub token: String,
     // pub proxy: String,
     pub owner: String,
-}
-
-#[cw_serde]
-pub struct GetOwnerResponse {
-    pub value: Addr,
-}
-
-#[cw_serde]
-pub struct GetPendingOwnerResponse {
-    pub value: Option<Addr>,
 }
