@@ -4,8 +4,8 @@ use cosmwasm_std::{
     Addr,
 };
 
-use super::test_helpers;
-use crate::{error::ContractError, msgs::staking::StakingConfig, test::test_utils::TestExecutor};
+use super::{test_helpers, TestExecutor};
+use crate::{error::ContractError, msgs::staking::StakingConfig};
 
 #[test]
 fn proper_initialization() {

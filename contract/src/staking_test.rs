@@ -3,13 +3,12 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
 };
 
-use super::test_helpers;
+use super::{test_helpers, TestExecutor};
 use crate::{
     contract::execute,
     error::ContractError,
     msgs::{staking::Staker, StakingExecuteMsg},
     staking::is_executor_eligible,
-    test::test_utils::TestExecutor,
 };
 
 #[test]

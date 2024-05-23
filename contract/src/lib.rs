@@ -9,17 +9,12 @@ pub mod state;
 mod types;
 mod utils;
 
-// #[path =""]
-// #[cfg_attr(not(feature = "library"), cosmwasm_std::entry_point)]
-// mod lib {
-//  pub mod consts;
-// }
-
 #[path = ""]
 #[cfg(test)]
 pub(crate) mod test {
     pub mod test_helpers;
-    pub mod test_utils;
+    mod test_executor;
+    pub use test_executor::TestExecutor;
 
     mod config_test;
     mod staking_test;
