@@ -1,6 +1,7 @@
 use cosmwasm_schema::cw_serde;
 
-use crate::{state::StakingConfig, types::Signature};
+use super::StakingConfig;
+use crate::types::Signature;
 
 #[cw_serde]
 pub enum ExecuteMsg {

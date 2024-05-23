@@ -4,15 +4,20 @@ use super::test_utils::TestExecutor;
 use crate::{
     contract::{execute, instantiate, query},
     error::ContractError,
-    msgs::{InstantiateMsg, OwnerExecuteMsg, OwnerQueryMsg, StakingExecuteMsg, StakingQueryMsg},
-    state::{Staker, StakingConfig},
+    msgs::{
+        staking::{Staker, StakingConfig},
+        InstantiateMsg,
+        OwnerExecuteMsg,
+        OwnerQueryMsg,
+        StakingExecuteMsg,
+        StakingQueryMsg,
+    },
     types::{Secp256k1PublicKey, SimpleHash},
 };
 
 pub fn instantiate_staking_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let msg = InstantiateMsg {
         token: "token".to_string(),
-        // proxy: "proxy".to_string(),
         owner: "owner".to_string(),
     };
     instantiate(deps, mock_env(), info, msg)

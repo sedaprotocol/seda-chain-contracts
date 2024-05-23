@@ -7,9 +7,18 @@ use crate::{
     config,
     consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
     error::ContractError,
-    msgs::{ExecuteMsg, InstantiateMsg, OwnerExecuteMsg, OwnerQueryMsg, QueryMsg, StakingExecuteMsg, StakingQueryMsg},
+    msgs::{
+        staking::StakingConfig,
+        ExecuteMsg,
+        InstantiateMsg,
+        OwnerExecuteMsg,
+        OwnerQueryMsg,
+        QueryMsg,
+        StakingExecuteMsg,
+        StakingQueryMsg,
+    },
     staking,
-    state::{StakingConfig, CONFIG, OWNER, PENDING_OWNER, TOKEN},
+    state::{CONFIG, OWNER, PENDING_OWNER, TOKEN},
 };
 
 // version info for migration info
@@ -25,7 +34,6 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
-    // PROXY_CONTRACT.save(deps.storage, &deps.api.addr_validate(&msg.proxy)?)?;
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     PENDING_OWNER.save(deps.storage, &None)?;
     let init_config = StakingConfig {

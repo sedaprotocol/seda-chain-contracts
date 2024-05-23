@@ -6,7 +6,8 @@ use crate::{
     contract::CONTRACT_VERSION,
     crypto::{hash, recover_pubkey},
     error::ContractError,
-    state::{Staker, CONFIG, STAKERS, TOKEN},
+    msgs::staking::Staker,
+    state::{CONFIG, STAKERS, TOKEN},
     types::{Secp256k1PublicKey, Signature, SimpleHash},
     utils::{get_attached_funds, is_staker_allowed},
 };

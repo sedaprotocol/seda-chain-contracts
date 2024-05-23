@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 
 use super::test_helpers;
-use crate::{error::ContractError, state::StakingConfig, test::test_utils::TestExecutor};
+use crate::{error::ContractError, msgs::staking::StakingConfig, test::test_utils::TestExecutor};
 
 #[test]
 fn proper_initialization() {

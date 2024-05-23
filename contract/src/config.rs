@@ -3,7 +3,8 @@ use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
 use crate::{
     contract::CONTRACT_VERSION,
     error::ContractError,
-    state::{StakingConfig, ALLOWLIST, CONFIG, OWNER, PENDING_OWNER},
+    msgs::staking::StakingConfig,
+    state::{ALLOWLIST, CONFIG, OWNER, PENDING_OWNER},
     types::Secp256k1PublicKey,
 };
 

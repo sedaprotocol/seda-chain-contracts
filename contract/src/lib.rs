@@ -3,7 +3,6 @@ pub mod consts;
 pub mod contract;
 mod crypto;
 mod error;
-pub mod msg;
 pub mod msgs;
 pub mod staking;
 pub mod state;

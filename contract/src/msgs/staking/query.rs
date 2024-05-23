@@ -10,6 +10,6 @@ pub enum QueryMsg {
     GetStaker { executor: Secp256k1PublicKey },
     #[returns(bool)]
     IsExecutorEligible { executor: Secp256k1PublicKey },
-    #[returns(crate::state::StakingConfig)]
+    #[returns(super::StakingConfig)]
     GetStakingConfig,
 }

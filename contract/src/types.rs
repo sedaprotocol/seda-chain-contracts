@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use sha3::{Digest, Keccak256};
 
-pub type Bytes = Vec<u8>;
-pub type Commitment = Hash;
-pub type Memo = Vec<u8>;
+// pub type Bytes = Vec<u8>;
+// pub type Commitment = Hash;
+// pub type Memo = Vec<u8>;
 pub type Hash = [u8; 32];
 pub type Secp256k1PublicKey = Vec<u8>;
 

@@ -2,6 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use crate::types::Secp256k1PublicKey;
 
+// pub mod data_requests;
 pub mod staking;
 pub use staking::{ExecuteMsg as StakingExecuteMsg, QueryMsg as StakingQueryMsg};
 

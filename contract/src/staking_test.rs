@@ -7,9 +7,8 @@ use super::test_helpers;
 use crate::{
     contract::execute,
     error::ContractError,
-    msgs::StakingExecuteMsg,
+    msgs::{staking::Staker, StakingExecuteMsg},
     staking::is_executor_eligible,
-    state::Staker,
     test::test_utils::TestExecutor,
 };
 
