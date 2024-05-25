@@ -23,8 +23,8 @@ jobs:
           target: wasm32-unknown-unknown
 
       - name: 🔑 Setup PAT
-        run: sed -i 's|ssh://git@github.com/sedaprotocol/vrf-rs.git|https://x-access-token:${secrets.PAT_TOKEN}@github.com/sedaprotocol/vrf-rs.git|' Cargo.toml
-
+        run: sed -i 's|ssh://git@github.com/sedaprotocol/vrf-rs.git|https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/sedaprotocol/vrf-rs.git|' Cargo.toml
+      
       - name: 📋 Run cargo clippy
         run: cargo clippy -- -D warnings
 
