@@ -1,6 +1,7 @@
 use cosmwasm_std::StdError;
 use hex::FromHexError;
 use thiserror::Error;
+use vrf_rs::error::VrfError;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -50,11 +51,8 @@ pub enum ContractError {
     EmptyArg(String),
 
     #[error("FromHex: Invalid hexadecimal input: {0}")]
-    FromHex(FromHexError),
-}
+    FromHex(#[from] FromHexError),
 
-impl From<FromHexError> for ContractError {
-    fn from(err: FromHexError) -> Self {
-        ContractError::FromHex(err)
-    }
+    #[error("Proof Error: {0}")]
+    Prove(#[from] VrfError),
 }

@@ -3,7 +3,7 @@ use cw_storage_plus::{Item, Map};
 
 use crate::{
     msgs::staking::{Staker, StakingConfig},
-    types::Secp256k1PublicKey,
+    types::PublicKey,
 };
 
 /// Token denom used for staking (e.g., `aseda`).
@@ -19,7 +19,7 @@ pub const OWNER: Item<Addr> = Item::new("owner");
 pub const PENDING_OWNER: Item<Option<Addr>> = Item::new("pending_owner");
 
 /// Allowlist of public keys that can register as a staker.
-pub const ALLOWLIST: Map<&Secp256k1PublicKey, bool> = Map::new("allowlist");
+pub const ALLOWLIST: Map<&PublicKey, bool> = Map::new("allowlist");
 
 /// A map of stakers (of address to info).
-pub const STAKERS: Map<&Secp256k1PublicKey, Staker> = Map::new("data_request_executors");
+pub const STAKERS: Map<&PublicKey, Staker> = Map::new("data_request_executors");

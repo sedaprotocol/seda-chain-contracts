@@ -4,11 +4,11 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
     contract::CONTRACT_VERSION,
-    crypto::{hash, recover_pubkey},
+    crypto::{hash, verify_proof},
     error::ContractError,
     msgs::staking::Staker,
     state::{CONFIG, STAKERS, TOKEN},
-    types::{Secp256k1PublicKey, Signature, SimpleHash},
+    types::{PublicKey, SimpleHash},
     utils::{get_attached_funds, is_staker_allowed},
 };
 
@@ -16,7 +16,8 @@ use crate::{
 pub fn register_and_stake(
     deps: DepsMut,
     info: MessageInfo,
-    signature: Signature,
+    public_key: PublicKey,
+    proof: Vec<u8>,
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
     // compute message hash
@@ -26,8 +27,8 @@ pub fn register_and_stake(
         hash(["register_and_stake".as_bytes()])
     };
 
-    // recover public key from signature
-    let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
+    // verify the proof
+    verify_proof(&public_key, &proof, message_hash)?;
 
     // if allowlist is on, check if the signer is in the allowlist
     is_staker_allowed(&deps, &public_key)?;
@@ -65,7 +66,8 @@ pub fn increase_stake(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    signature: Signature,
+    public_key: PublicKey,
+    proof: Vec<u8>,
 ) -> Result<Response, ContractError> {
     let token = TOKEN.load(deps.storage)?;
     let amount = get_attached_funds(&info.funds, &token)?;
@@ -73,8 +75,8 @@ pub fn increase_stake(
     // compute message hash
     let message_hash = hash(["increase_stake".as_bytes()]);
 
-    // recover public key from signature
-    let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
+    // verify the proof
+    verify_proof(&public_key, &proof, message_hash)?;
 
     // if allowlist is on, check if the signer is in the allowlist
     is_staker_allowed(&deps, &public_key)?;
@@ -108,14 +110,15 @@ pub fn unstake(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    signature: Signature,
+    public_key: PublicKey,
+    proof: Vec<u8>,
     amount: u128,
 ) -> Result<Response, ContractError> {
     // compute message hash
     let message_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
 
-    // recover public key from signature
-    let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
+    // verify the proof
+    verify_proof(&public_key, &proof, message_hash)?;
 
     // error if amount is greater than staked tokens
     let mut executor = STAKERS.load(deps.storage, &public_key)?;
@@ -153,14 +156,15 @@ pub fn withdraw(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    signature: Signature,
+    public_key: PublicKey,
+    proof: Vec<u8>,
     amount: u128,
 ) -> Result<Response, ContractError> {
     // compute message hash
     let message_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
 
-    // recover public key from signature
-    let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
+    // verify the proof
+    verify_proof(&public_key, &proof, message_hash)?;
 
     // TODO: add delay after calling unstake
     let token = TOKEN.load(deps.storage)?;
@@ -207,12 +211,17 @@ pub fn withdraw(
 }
 
 /// Unregisters a staker, with the requirement that no tokens are staked or pending withdrawal.
-pub fn unregister(deps: DepsMut, _info: MessageInfo, signature: Signature) -> Result<Response, ContractError> {
+pub fn unregister(
+    deps: DepsMut,
+    _info: MessageInfo,
+    public_key: PublicKey,
+    proof: Vec<u8>,
+) -> Result<Response, ContractError> {
     // compute message hash
     let message_hash = hash(["unregister".as_bytes()]);
 
-    // recover public key from signature
-    let public_key: Secp256k1PublicKey = recover_pubkey(message_hash, signature)?;
+    // verify the proof
+    verify_proof(&public_key, &proof, message_hash)?;
 
     // require that the executor has no staked or tokens pending withdrawal
     let executor = STAKERS.load(deps.storage, &public_key)?;
@@ -231,14 +240,14 @@ pub fn unregister(deps: DepsMut, _info: MessageInfo, signature: Signature) -> Re
 }
 
 /// Returns a staker with the given address, if it exists.
-pub fn get_staker(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<Option<Staker>> {
+pub fn get_staker(deps: Deps, executor: PublicKey) -> StdResult<Option<Staker>> {
     let executor = STAKERS.may_load(deps.storage, &executor)?;
     Ok(executor)
 }
 
 // TODO: maybe move this to data-requests contract?
 /// Returns whether an executor is eligible to participate in the committee.
-pub fn is_executor_eligible(deps: Deps, executor: Secp256k1PublicKey) -> StdResult<bool> {
+pub fn is_executor_eligible(deps: Deps, executor: PublicKey) -> StdResult<bool> {
     let executor = STAKERS.may_load(deps.storage, &executor)?;
     let value = match executor {
         Some(staker) => staker.tokens_staked >= CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility,

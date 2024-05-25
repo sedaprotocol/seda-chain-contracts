@@ -1,24 +1,14 @@
-use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use sha3::{Digest, Keccak256};
+use vrf_rs::Secp256k1Sha256;
 
-use crate::{
-    error::ContractError,
-    types::{Secp256k1PublicKey, Signature as Sig},
-};
+use crate::{error::ContractError, types::Hash};
 
-pub fn recover_pubkey(msg_hash: [u8; 32], signature: Sig) -> Result<Secp256k1PublicKey, ContractError> {
-    let rs = signature.0[0..64].into();
-    let id = match signature.0[64] {
-        0 => RecoveryId::new(false, false),
-        1 => RecoveryId::new(true, false),
-        _ => return Err(ContractError::InvalidSignatureRecoveryId),
-    };
+pub fn verify_proof(public_key: &[u8], proof: &[u8], hash: Hash) -> Result<(), ContractError> {
+    let verifier = Secp256k1Sha256::default();
+    let verifed = verifier.verify(public_key, proof, &hash);
 
-    let sig = Signature::from_bytes(rs).map_err(|_| ContractError::InvalidSignature)?;
-
-    // Recover
-    let pubkey = VerifyingKey::recover_from_msg(&msg_hash, &sig, id).map_err(|_| ContractError::InvalidSignature)?;
-    Ok(pubkey.to_encoded_point(true).as_bytes().to_vec())
+    // If we don't get an error it's always ok
+    verifed.map_err(ContractError::from).map(|_| ())
 }
 
 pub fn hash<'a, I>(iter: I) -> [u8; 32]

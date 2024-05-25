@@ -34,7 +34,7 @@ pub fn reg_and_stake(
     } else {
         exec.sign(["register_and_stake".as_bytes()])
     };
-    let msg = StakingExecuteMsg::RegisterAndStake { signature, memo };
+    let msg = StakingExecuteMsg::RegisterAndStake { proof: signature, memo };
 
     execute(deps, mock_env(), info, msg.into())
 }

@@ -1,28 +1,32 @@
 use cosmwasm_schema::cw_serde;
 
 use super::StakingConfig;
-use crate::types::Signature;
+use crate::types::PublicKey;
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    // staking msgs
     RegisterAndStake {
-        signature: Signature,
-        memo:      Option<String>,
+        public_key: PublicKey,
+        proof:      Vec<u8>,
+        memo:       Option<String>,
     },
     Unregister {
-        signature: Signature,
+        public_key: PublicKey,
+        proof:      Vec<u8>,
     },
     IncreaseStake {
-        signature: Signature,
+        public_key: PublicKey,
+        proof:      Vec<u8>,
     },
     Unstake {
-        signature: Signature,
-        amount:    u128,
+        public_key: PublicKey,
+        proof:      Vec<u8>,
+        amount:     u128,
     },
     Withdraw {
-        signature: Signature,
-        amount:    u128,
+        public_key: PublicKey,
+        proof:      Vec<u8>,
+        amount:     u128,
     },
     SetStakingConfig {
         config: StakingConfig,

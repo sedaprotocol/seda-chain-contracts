@@ -1,6 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
-use crate::types::Secp256k1PublicKey;
+use crate::types::PublicKey;
 
 // pub mod data_requests;
 pub mod staking;
@@ -23,12 +23,12 @@ pub enum OwnerExecuteMsg {
     /// Add a user to the allowlist.
     AddToAllowlist {
         /// The public key of the person to allowlist.
-        pub_key: Secp256k1PublicKey,
+        pub_key: PublicKey,
     },
     /// Remove a user from the allowlist.
     RemoveFromAllowlist {
         /// The public key of the person remove from allowlist.
-        pub_key: Secp256k1PublicKey,
+        pub_key: PublicKey,
     },
 }
 

@@ -50,13 +50,25 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Staking(msg) => match msg {
-            StakingExecuteMsg::RegisterAndStake { signature, memo } => {
-                staking::register_and_stake(deps, info, signature, memo)
+            StakingExecuteMsg::RegisterAndStake {
+                public_key,
+                proof,
+                memo,
+            } => staking::register_and_stake(deps, info, public_key, proof, memo),
+            StakingExecuteMsg::IncreaseStake { public_key, proof } => {
+                staking::increase_stake(deps, env, info, public_key, proof)
             }
-            StakingExecuteMsg::IncreaseStake { signature } => staking::increase_stake(deps, env, info, signature),
-            StakingExecuteMsg::Unstake { signature, amount } => staking::unstake(deps, env, info, signature, amount),
-            StakingExecuteMsg::Withdraw { signature, amount } => staking::withdraw(deps, env, info, signature, amount),
-            StakingExecuteMsg::Unregister { signature } => staking::unregister(deps, info, signature),
+            StakingExecuteMsg::Unstake {
+                public_key,
+                proof,
+                amount,
+            } => staking::unstake(deps, env, info, public_key, proof, amount),
+            StakingExecuteMsg::Withdraw {
+                public_key,
+                proof,
+                amount,
+            } => staking::withdraw(deps, env, info, public_key, proof, amount),
+            StakingExecuteMsg::Unregister { public_key, proof } => staking::unregister(deps, info, public_key, proof),
             StakingExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
         },
         ExecuteMsg::Owner(msg) => match msg {

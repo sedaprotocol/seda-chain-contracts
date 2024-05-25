@@ -5,7 +5,7 @@ use crate::{
     error::ContractError,
     msgs::staking::StakingConfig,
     state::{ALLOWLIST, CONFIG, OWNER, PENDING_OWNER},
-    types::Secp256k1PublicKey,
+    types::PublicKey,
 };
 
 /// Start 2-step process for transfer contract ownership to a new address
@@ -76,11 +76,7 @@ pub fn set_staking_config(
 }
 
 /// Add a `Secp256k1PublicKey` to the allow list
-pub fn add_to_allowlist(
-    deps: DepsMut,
-    info: MessageInfo,
-    pub_key: Secp256k1PublicKey,
-) -> Result<Response, ContractError> {
+pub fn add_to_allowlist(deps: DepsMut, info: MessageInfo, pub_key: PublicKey) -> Result<Response, ContractError> {
     // require the sender to be the OWNER
     let owner = OWNER.load(deps.storage)?;
     if info.sender != owner {
@@ -97,11 +93,7 @@ pub fn add_to_allowlist(
 }
 
 /// Remove a `Secp256k1PublicKey` to the allow list
-pub fn remove_from_allowlist(
-    deps: DepsMut,
-    info: MessageInfo,
-    pub_key: Secp256k1PublicKey,
-) -> Result<Response, ContractError> {
+pub fn remove_from_allowlist(deps: DepsMut, info: MessageInfo, pub_key: PublicKey) -> Result<Response, ContractError> {
     // require the sender to be the OWNER
     let owner = OWNER.load(deps.storage)?;
     if info.sender != owner {
