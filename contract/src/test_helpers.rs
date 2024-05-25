@@ -3,6 +3,7 @@ use cosmwasm_std::{from_json, testing::mock_env, Addr, DepsMut, MessageInfo, Res
 use super::TestExecutor;
 use crate::{
     contract::{execute, instantiate, query},
+    crypto::hash,
     error::ContractError,
     msgs::{
         staking::{Staker, StakingConfig},
@@ -12,7 +13,7 @@ use crate::{
         StakingExecuteMsg,
         StakingQueryMsg,
     },
-    types::{Secp256k1PublicKey, SimpleHash},
+    types::{PublicKey, SimpleHash},
 };
 
 pub fn instantiate_staking_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
@@ -29,12 +30,17 @@ pub fn reg_and_stake(
     exec: &TestExecutor,
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
-    let signature = if let Some(m) = memo.as_ref() {
-        exec.sign(["register_and_stake".as_bytes(), &m.simple_hash()])
+    let msg_hash = if let Some(m) = memo.as_ref() {
+        hash(["register_and_stake".as_bytes(), &m.simple_hash()])
     } else {
-        exec.sign(["register_and_stake".as_bytes()])
+        hash(["register_and_stake".as_bytes()])
     };
-    let msg = StakingExecuteMsg::RegisterAndStake { proof: signature, memo };
+
+    let msg = StakingExecuteMsg::RegisterAndStake {
+        public_key: exec.pub_key(),
+        proof: exec.prove(&msg_hash),
+        memo,
+    };
 
     execute(deps, mock_env(), info, msg.into())
 }
@@ -50,13 +56,16 @@ pub fn accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Response, Co
     execute(deps, mock_env(), info, msg.into())
 }
 pub fn unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
-    let signature = exec.sign(["unregister".as_bytes()]);
-    let msg = StakingExecuteMsg::Unregister { signature };
+    let msg_hash = hash(["unregister".as_bytes()]);
+    let msg = StakingExecuteMsg::Unregister {
+        public_key: exec.pub_key(),
+        proof:      exec.prove(&msg_hash),
+    };
 
     execute(deps, mock_env(), info, msg.into())
 }
 
-pub fn get_staker(deps: DepsMut, executor: Secp256k1PublicKey) -> Option<Staker> {
+pub fn get_staker(deps: DepsMut, executor: PublicKey) -> Option<Staker> {
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -81,15 +90,22 @@ pub fn get_pending_owner(deps: DepsMut) -> Option<Addr> {
     value
 }
 pub fn increase_stake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
-    let signature = exec.sign(["increase_stake".as_bytes()]);
-    let msg = StakingExecuteMsg::IncreaseStake { signature };
+    let msg_hash = hash(["increase_stake".as_bytes()]);
+    let msg = StakingExecuteMsg::IncreaseStake {
+        public_key: exec.pub_key(),
+        proof:      exec.prove(&msg_hash),
+    };
 
     execute(deps, mock_env(), info, msg.into())
 }
 
 pub fn unstake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor, amount: u128) -> Result<Response, ContractError> {
-    let signature = exec.sign(["unstake".as_bytes(), &amount.to_be_bytes()]);
-    let msg = StakingExecuteMsg::Unstake { signature, amount };
+    let msg_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
+    let msg = StakingExecuteMsg::Unstake {
+        public_key: exec.pub_key(),
+        proof: exec.prove(&msg_hash),
+        amount,
+    };
 
     execute(deps, mock_env(), info, msg.into())
 }
@@ -100,8 +116,12 @@ pub fn withdraw(
     exec: &TestExecutor,
     amount: u128,
 ) -> Result<Response, ContractError> {
-    let signature = exec.sign(["withdraw".as_bytes(), &amount.to_be_bytes()]);
-    let msg = StakingExecuteMsg::Withdraw { signature, amount };
+    let msg_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
+    let msg = StakingExecuteMsg::Withdraw {
+        public_key: exec.pub_key(),
+        proof: exec.prove(&msg_hash),
+        amount,
+    };
 
     execute(deps, mock_env(), info, msg.into())
 }
@@ -112,21 +132,13 @@ pub fn set_staking_config(deps: DepsMut, info: MessageInfo, config: StakingConfi
     execute(deps, mock_env(), info, msg.into())
 }
 
-pub fn add_to_allowlist(
-    deps: DepsMut,
-    info: MessageInfo,
-    pub_key: Secp256k1PublicKey,
-) -> Result<Response, ContractError> {
+pub fn add_to_allowlist(deps: DepsMut, info: MessageInfo, pub_key: PublicKey) -> Result<Response, ContractError> {
     let msg = OwnerExecuteMsg::AddToAllowlist { pub_key };
 
     execute(deps, mock_env(), info, msg.into())
 }
 
-pub fn remove_from_allowlist(
-    deps: DepsMut,
-    info: MessageInfo,
-    pub_key: Secp256k1PublicKey,
-) -> Result<Response, ContractError> {
+pub fn remove_from_allowlist(deps: DepsMut, info: MessageInfo, pub_key: PublicKey) -> Result<Response, ContractError> {
     let msg = OwnerExecuteMsg::RemoveFromAllowlist { pub_key };
 
     execute(deps, mock_env(), info, msg.into())

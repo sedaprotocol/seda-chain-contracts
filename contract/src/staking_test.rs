@@ -6,6 +6,7 @@ use cosmwasm_std::{
 use super::{test_helpers, TestExecutor};
 use crate::{
     contract::execute,
+    crypto::hash,
     error::ContractError,
     msgs::{staking::Staker, StakingExecuteMsg},
     staking::is_executor_eligible,
@@ -111,7 +112,8 @@ fn no_funds_provided() {
     let anyone = TestExecutor::new("anyone", None);
 
     let msg = StakingExecuteMsg::IncreaseStake {
-        signature: anyone.sign(["deposit_and_stake".as_bytes()]),
+        public_key: anyone.pub_key(),
+        proof:      anyone.prove(&hash(["deposit_and_stake".as_bytes()])),
     };
     execute(deps.as_mut(), mock_env(), anyone.info(), msg.into()).unwrap();
 }
