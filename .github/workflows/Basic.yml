@@ -22,8 +22,13 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: Set Perms For Private Repo
-        run: git config --global url."https://${{ secrets.GIT_CREDENTIALS }}@github.com".insteadOf ssh://git@github.com
+      - name: 🔑 Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-agent -a $SSH_AUTH_SOCK > /dev.json
+          ssh-add - <<< "${{ secrets.CI_SSH_KEY }}"
+          echo "StrictHostKeyChecking no" > ~/.ssh/config
+
 
       - name: 📋 Run cargo clippy
         run: cargo clippy -- -D warnings
