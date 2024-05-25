@@ -22,13 +22,8 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: 🔑 Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          ssh-agent -a $SSH_AUTH_SOCK > /dev.json
-          ssh-add - <<< "${{ secrets.CI_SSH_KEY }}"
-          echo "StrictHostKeyChecking no" > ~/.ssh/config
-
+      - name: 🔑 Setup PAT
+        run: sed -i 's|ssh://git@github.com/sedaprotocol/vrf-rs.git|https://x-access-token:${secrets.PAT_TOKEN}@github.com/sedaprotocol/vrf-rs.git|' Cargo.toml
 
       - name: 📋 Run cargo clippy
         run: cargo clippy -- -D warnings
