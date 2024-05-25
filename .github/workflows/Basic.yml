@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  repository-projects: true
+  repository-projects: read
 
 jobs:
 
