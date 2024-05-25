@@ -8,9 +8,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-permissions:
-  repository-projects: read
-
 jobs:
 
   test:
@@ -24,6 +21,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: wasm32-unknown-unknown
+
+      - name: Set Perms For Private Repo
+        run: git config --global url."https://${{ secrets.GIT_CREDENTIALS }}@github.com".insteadOf ssh://git@github.com
 
       - name: 📋 Run cargo clippy
         run: cargo clippy -- -D warnings
