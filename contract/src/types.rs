@@ -39,7 +39,7 @@ impl Hasher for Version {
 impl<const N: usize> Hasher for [u8; N] {
     fn hash(&self) -> Hash {
         let mut hasher = Keccak256::new();
-        hasher.update(&self);
+        hasher.update(self);
         hasher.finalize().into()
     }
 }
