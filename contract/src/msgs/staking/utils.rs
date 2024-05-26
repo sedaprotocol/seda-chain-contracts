@@ -2,7 +2,6 @@ use super::{
     state::{CONFIG, STAKERS},
     *,
 };
-use crate::types::PublicKey;
 
 /// Returns a staker with the given address, if it exists.
 pub fn get_staker(deps: Deps, executor: PublicKey) -> StdResult<Option<Staker>> {

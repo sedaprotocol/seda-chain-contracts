@@ -1,7 +1,4 @@
-use cosmwasm_std::Addr;
-use cw_storage_plus::{Item, Map};
-
-use crate::types::PublicKey;
+use super::*;
 
 /// Address of staking contract owner.
 pub const OWNER: Item<Addr> = Item::new("owner");

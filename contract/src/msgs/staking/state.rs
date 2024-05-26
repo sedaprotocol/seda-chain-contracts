@@ -1,7 +1,4 @@
-use cw_storage_plus::{Item, Map};
-
-use super::{Staker, StakingConfig};
-use crate::types::PublicKey;
+use super::*;
 
 /// Governance-controlled configuration parameters.
 pub const CONFIG: Item<StakingConfig> = Item::new("config");

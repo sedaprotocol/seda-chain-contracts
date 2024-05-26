@@ -1,5 +1,4 @@
 use super::*;
-use crate::error::ContractError;
 
 pub(in crate::msgs::staking) mod increase_stake;
 pub(in crate::msgs::staking) mod register_and_stake;

@@ -2,7 +2,6 @@ use cosmwasm_std::Event;
 use state::{ALLOWLIST, OWNER, PENDING_OWNER};
 
 use super::*;
-use crate::{error::ContractError, types::PublicKey};
 
 pub(in crate::msgs::owner) mod accept_ownership;
 pub(in crate::msgs::owner) mod add_to_allowlist;
@@ -28,5 +27,11 @@ impl ExecuteMsg {
             ExecuteMsg::AddToAllowlist(msg) => msg.execute(deps, info),
             ExecuteMsg::RemoveFromAllowlist(msg) => msg.execute(deps, info),
         }
+    }
+}
+
+impl From<ExecuteMsg> for super::ExecuteMsg {
+    fn from(value: ExecuteMsg) -> Self {
+        Self::Owner(value)
     }
 }

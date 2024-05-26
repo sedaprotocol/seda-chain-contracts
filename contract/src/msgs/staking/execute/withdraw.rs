@@ -2,11 +2,8 @@ use cosmwasm_std::{coins, BankMsg};
 
 use super::{state::STAKERS, *};
 use crate::{
-    contract::CONTRACT_VERSION,
     crypto::{hash, verify_proof},
-    error::ContractError,
     state::TOKEN,
-    types::PublicKey,
 };
 
 #[cw_serde]

@@ -1,7 +1,6 @@
 pub mod consts;
 pub mod contract;
 mod crypto;
-pub mod data_requests;
 mod error;
 pub mod msgs;
 pub mod state;

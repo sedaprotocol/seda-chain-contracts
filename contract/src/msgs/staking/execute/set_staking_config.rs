@@ -1,6 +1,5 @@
 use self::staking::owner::state::OWNER;
 use super::{state::CONFIG, StakingConfig, *};
-use crate::contract::CONTRACT_VERSION;
 
 impl StakingConfig {
     /// Set staking config

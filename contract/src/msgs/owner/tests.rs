@@ -1,12 +1,7 @@
-use cosmwasm_std::{
-    coins,
-    testing::{mock_dependencies, mock_info},
-    Addr,
-};
+use cosmwasm_std::testing::{mock_dependencies, mock_info};
 
 use super::*;
 use crate::{
-    error::ContractError,
     instantiate_contract,
     msgs::staking::{test_helpers as staking_test_helpers, StakingConfig},
     TestExecutor,

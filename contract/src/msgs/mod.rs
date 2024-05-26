@@ -1,7 +1,10 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult};
+use cosmwasm_std::*;
+use cw_storage_plus::{Item, Map};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
-use crate::error::ContractError;
+use crate::{contract::CONTRACT_VERSION, error::ContractError, types::*};
 
 pub mod data_requests;
 pub mod owner;
@@ -10,9 +13,9 @@ pub mod staking;
 #[cw_serde]
 #[serde(untagged)]
 pub enum ExecuteMsg {
-    DataRequest(data_requests::ExecuteMsg),
+    DataRequest(data_requests::execute::ExecuteMsg),
     Staking(staking::execute::ExecuteMsg),
-    Owner(owner::ExecuteMsg),
+    Owner(owner::execute::ExecuteMsg),
 }
 
 impl ExecuteMsg {
@@ -25,12 +28,6 @@ impl ExecuteMsg {
     }
 }
 
-impl From<owner::ExecuteMsg> for ExecuteMsg {
-    fn from(value: owner::ExecuteMsg) -> Self {
-        Self::Owner(value)
-    }
-}
-
 // https://github.com/CosmWasm/cosmwasm/issues/2030
 #[cw_serde]
 #[serde(untagged)]
@@ -38,7 +35,7 @@ impl From<owner::ExecuteMsg> for ExecuteMsg {
 #[query_responses(nested)]
 pub enum QueryMsg {
     Staking(staking::query::QueryMsg),
-    Owner(owner::QueryMsg),
+    Owner(owner::query::QueryMsg),
 }
 
 impl QueryMsg {
@@ -47,12 +44,6 @@ impl QueryMsg {
             QueryMsg::Staking(msg) => msg.query(deps, env),
             QueryMsg::Owner(msg) => msg.query(deps, env),
         }
-    }
-}
-
-impl From<owner::QueryMsg> for QueryMsg {
-    fn from(value: owner::QueryMsg) -> Self {
-        Self::Owner(value)
     }
 }
 

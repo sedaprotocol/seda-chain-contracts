@@ -1,5 +1,4 @@
 use super::*;
-use crate::contract::CONTRACT_VERSION;
 
 #[cw_serde]
 pub struct Execute {

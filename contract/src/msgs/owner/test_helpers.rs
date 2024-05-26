@@ -1,11 +1,7 @@
-use cosmwasm_std::{from_json, testing::mock_env, Addr};
+use cosmwasm_std::{from_json, testing::mock_env};
 
 use super::{execute::*, *};
-use crate::{
-    contract::{execute, query},
-    error::ContractError,
-    types::PublicKey,
-};
+use crate::contract::{execute, query};
 
 pub fn transfer_ownership(deps: DepsMut, info: MessageInfo, new_owner: String) -> Result<Response, ContractError> {
     let msg = transfer_ownership::Execute { new_owner };
@@ -35,14 +31,14 @@ pub fn remove_from_allowlist(
 }
 
 pub fn get_owner(deps: DepsMut) -> Addr {
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}.into()).unwrap();
+    let res = query(deps.as_ref(), mock_env(), query::QueryMsg::GetOwner {}.into()).unwrap();
     let value = from_json(res).unwrap();
 
     value
 }
 
 pub fn get_pending_owner(deps: DepsMut) -> Option<Addr> {
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetPendingOwner {}.into()).unwrap();
+    let res = query(deps.as_ref(), mock_env(), query::QueryMsg::GetPendingOwner {}.into()).unwrap();
     let value = from_json(res).unwrap();
 
     value

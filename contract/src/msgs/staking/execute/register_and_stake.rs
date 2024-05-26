@@ -4,9 +4,7 @@ use super::{
     *,
 };
 use crate::{
-    contract::CONTRACT_VERSION,
     crypto::{hash, verify_proof},
-    error::ContractError,
     msgs::staking::Staker,
     state::TOKEN,
     types::{Hasher, PublicKey},

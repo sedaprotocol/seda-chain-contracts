@@ -1,11 +1,8 @@
 use self::staking::owner::utils::is_staker_allowed;
 use super::{state::STAKERS, *};
 use crate::{
-    contract::CONTRACT_VERSION,
     crypto::{hash, verify_proof},
-    error::ContractError,
     state::TOKEN,
-    types::PublicKey,
     utils::get_attached_funds,
 };
 

@@ -1,6 +1,5 @@
-use self::state::ALLOWLIST;
-use super::*;
-use crate::{error::ContractError, msgs::staking::state::CONFIG, types::PublicKey};
+use super::{state::ALLOWLIST, *};
+use crate::msgs::staking::state::CONFIG;
 
 pub fn is_staker_allowed(deps: &DepsMut, public_key: &PublicKey) -> Result<(), ContractError> {
     let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;

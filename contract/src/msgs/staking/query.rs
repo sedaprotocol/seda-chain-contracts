@@ -1,8 +1,4 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult};
-
-use super::{state::CONFIG, utils};
-use crate::types::PublicKey;
+use super::{state::CONFIG, *};
 
 #[cw_serde]
 #[derive(QueryResponses)]

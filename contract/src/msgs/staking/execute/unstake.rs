@@ -1,10 +1,5 @@
 use super::{state::STAKERS, *};
-use crate::{
-    contract::CONTRACT_VERSION,
-    crypto::{hash, verify_proof},
-    error::ContractError,
-    types::PublicKey,
-};
+use crate::crypto::{hash, verify_proof};
 
 #[cw_serde]
 pub struct Execute {
