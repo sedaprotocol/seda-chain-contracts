@@ -6,7 +6,7 @@ use crate::{
     crypto::hash,
     error::ContractError,
     msgs::{
-        staking::{Staker, StakingConfig},
+        staking::{RegisterAndStake, Staker, StakingConfig},
         InstantiateMsg,
         OwnerExecuteMsg,
         OwnerQueryMsg,
@@ -36,7 +36,7 @@ pub fn reg_and_stake(
         hash(["register_and_stake".as_bytes()])
     };
 
-    let msg = StakingExecuteMsg::RegisterAndStake {
+    let msg = RegisterAndStake {
         public_key: exec.pub_key(),
         proof: exec.prove(&msg_hash),
         memo,

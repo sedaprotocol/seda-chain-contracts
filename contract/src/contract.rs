@@ -6,8 +6,14 @@ use cw2::set_contract_version;
 use crate::{
     consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
     error::ContractError,
-    msgs::{staking::StakingConfig, ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{CONFIG, OWNER, PENDING_OWNER, TOKEN},
+    msgs::{
+        owner::state::{OWNER, PENDING_OWNER},
+        staking::{state::CONFIG, StakingConfig},
+        ExecuteMsg,
+        InstantiateMsg,
+        QueryMsg,
+    },
+    state::TOKEN,
 };
 
 // version info for migration info

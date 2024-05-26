@@ -3,8 +3,10 @@ use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
 use crate::{
     contract::CONTRACT_VERSION,
     error::ContractError,
-    msgs::staking::StakingConfig,
-    state::{ALLOWLIST, CONFIG, OWNER, PENDING_OWNER},
+    msgs::{
+        owner::state::{OWNER, PENDING_OWNER},
+        staking::state::ALLOWLIST,
+    },
     types::PublicKey,
 };
 
@@ -45,34 +47,6 @@ pub fn accept_ownership(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<R
         .add_attribute("action", "accept-ownership")
         .add_events([Event::new("seda-accept-ownership")
             .add_attributes([("version", CONTRACT_VERSION), ("new_owner", info.sender.as_ref())])]))
-}
-
-/// Set staking config
-pub fn set_staking_config(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    config: StakingConfig,
-) -> Result<Response, ContractError> {
-    if info.sender != OWNER.load(deps.storage)? {
-        return Err(ContractError::NotOwner);
-    }
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::new()
-        .add_attribute("action", "set-staking-config")
-        .add_events([Event::new("set-staking-config").add_attributes([
-            ("version", CONTRACT_VERSION),
-            (
-                "minimum_stake_for_committee_eligibility",
-                &config.minimum_stake_for_committee_eligibility.to_string(),
-            ),
-            (
-                "minimum_stake_to_register",
-                &config.minimum_stake_to_register.to_string(),
-            ),
-            ("allowlist_enabled", &config.allowlist_enabled.to_string()),
-        ])]))
 }
 
 /// Add a `Secp256k1PublicKey` to the allow list

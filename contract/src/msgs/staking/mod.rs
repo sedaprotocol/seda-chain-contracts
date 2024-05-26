@@ -1,9 +1,12 @@
-mod execute;
-pub use execute::*;
-mod query;
-pub use query::*;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use super::*;
+
+pub mod execute;
+pub mod query;
+pub mod state;
+pub mod utils;
 
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]

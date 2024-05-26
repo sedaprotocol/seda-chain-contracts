@@ -1,21 +1,18 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+pub(self) use cosmwasm_schema::{cw_serde, QueryResponses};
+pub(self) use cosmwasm_std::{Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult};
 
 use crate::error::ContractError;
 
 pub mod data_requests;
-pub use data_requests::ExecuteMsg as DrExecuteMsg;
-pub mod staking;
-pub use staking::{ExecuteMsg as StakingExecuteMsg, QueryMsg as StakingQueryMsg};
 pub mod owner;
-pub use owner::{ExecuteMsg as OwnerExecuteMsg, QueryMsg as OwnerQueryMsg};
+pub mod staking;
 
 #[cw_serde]
 #[serde(untagged)]
 pub enum ExecuteMsg {
-    DataRequest(DrExecuteMsg),
-    Staking(StakingExecuteMsg),
-    Owner(OwnerExecuteMsg),
+    DataRequest(data_requests::ExecuteMsg),
+    Staking(staking::execute::ExecuteMsg),
+    Owner(owner::ExecuteMsg),
 }
 
 impl ExecuteMsg {
@@ -28,14 +25,8 @@ impl ExecuteMsg {
     }
 }
 
-impl From<StakingExecuteMsg> for ExecuteMsg {
-    fn from(value: StakingExecuteMsg) -> Self {
-        Self::Staking(value)
-    }
-}
-
-impl From<OwnerExecuteMsg> for ExecuteMsg {
-    fn from(value: OwnerExecuteMsg) -> Self {
+impl From<owner::ExecuteMsg> for ExecuteMsg {
+    fn from(value: owner::ExecuteMsg) -> Self {
         Self::Owner(value)
     }
 }
@@ -46,8 +37,8 @@ impl From<OwnerExecuteMsg> for ExecuteMsg {
 #[derive(QueryResponses)]
 #[query_responses(nested)]
 pub enum QueryMsg {
-    Staking(StakingQueryMsg),
-    Owner(OwnerQueryMsg),
+    Staking(staking::query::QueryMsg),
+    Owner(owner::QueryMsg),
 }
 
 impl QueryMsg {
@@ -59,14 +50,8 @@ impl QueryMsg {
     }
 }
 
-impl From<StakingQueryMsg> for QueryMsg {
-    fn from(value: StakingQueryMsg) -> Self {
-        Self::Staking(value)
-    }
-}
-
-impl From<OwnerQueryMsg> for QueryMsg {
-    fn from(value: OwnerQueryMsg) -> Self {
+impl From<owner::QueryMsg> for QueryMsg {
+    fn from(value: owner::QueryMsg) -> Self {
         Self::Owner(value)
     }
 }
