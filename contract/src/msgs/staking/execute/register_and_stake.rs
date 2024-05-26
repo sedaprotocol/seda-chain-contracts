@@ -15,9 +15,9 @@ use crate::{
 
 #[cw_serde]
 pub struct Execute {
-    pub public_key: PublicKey,
-    pub proof:      Vec<u8>,
-    pub memo:       Option<String>,
+    pub(in crate::msgs::staking) public_key: PublicKey,
+    pub(in crate::msgs::staking) proof:      Vec<u8>,
+    pub(in crate::msgs::staking) memo:       Option<String>,
 }
 
 impl Execute {
@@ -65,8 +65,8 @@ impl Execute {
     }
 }
 
-impl From<Execute> for ExecuteMsg {
+impl From<Execute> for crate::msgs::ExecuteMsg {
     fn from(value: Execute) -> Self {
-        ExecuteMsg::RegisterAndStake(value)
+        super::ExecuteMsg::RegisterAndStake(value).into()
     }
 }

@@ -1,4 +1,10 @@
-use cosmwasm_std::{coins, testing::mock_info, MessageInfo};
+use cosmwasm_std::{
+    coins,
+    testing::{mock_env, mock_info},
+    DepsMut,
+    MessageInfo,
+    Response,
+};
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
@@ -6,7 +12,12 @@ use k256::{
 use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
 
-use crate::types::{Hash, PublicKey};
+use crate::{
+    contract::instantiate,
+    error::ContractError,
+    msgs::InstantiateMsg,
+    types::{Hash, PublicKey},
+};
 
 pub struct TestExecutor {
     pub name:    &'static str,
@@ -61,4 +72,12 @@ impl TestExecutor {
         hasher.update(self.name);
         hasher.finalize().into()
     }
+}
+
+pub fn instantiate_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    let msg = InstantiateMsg {
+        token: "token".to_string(),
+        owner: "owner".to_string(),
+    };
+    instantiate(deps, mock_env(), info, msg)
 }

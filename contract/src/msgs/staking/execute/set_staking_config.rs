@@ -1,12 +1,12 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
 
-use super::{state::CONFIG, ExecuteMsg, StakingConfig};
+use super::{state::CONFIG, StakingConfig};
 use crate::{contract::CONTRACT_VERSION, error::ContractError, msgs::owner::state::OWNER};
 
 #[cw_serde]
 pub struct Execute {
-    config: StakingConfig,
+    pub(in crate::msgs::staking) config: StakingConfig,
 }
 
 impl Execute {
@@ -34,8 +34,8 @@ impl Execute {
     }
 }
 
-impl From<Execute> for ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        ExecuteMsg::SetStakingConfig(value)
+impl From<StakingConfig> for crate::msgs::ExecuteMsg {
+    fn from(config: StakingConfig) -> Self {
+        super::ExecuteMsg::SetStakingConfig(Execute { config }).into()
     }
 }

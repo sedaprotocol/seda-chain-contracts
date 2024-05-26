@@ -8,6 +8,12 @@ pub mod query;
 pub mod state;
 pub mod utils;
 
+#[cfg(test)]
+mod tests;
+
+#[cfg(test)]
+pub mod test_helpers;
+
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
 pub struct Staker {

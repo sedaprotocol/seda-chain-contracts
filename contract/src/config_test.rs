@@ -67,30 +67,6 @@ fn two_step_transfer_ownership() {
 }
 
 #[test]
-fn set_staking_config() {
-    let mut deps = mock_dependencies();
-
-    let creator = mock_info("creator", &coins(1000, "token"));
-    let _res = test_helpers::instantiate_staking_contract(deps.as_mut(), creator.clone()).unwrap();
-
-    let new_config = StakingConfig {
-        minimum_stake_to_register:               200,
-        minimum_stake_for_committee_eligibility: 100,
-        allowlist_enabled:                       false,
-    };
-
-    // non-owner sets staking config
-    let non_owner = mock_info("non-owner", &coins(0, "token"));
-    let res = test_helpers::set_staking_config(deps.as_mut(), non_owner, new_config.clone());
-    assert!(res.is_err_and(|x| x == ContractError::NotOwner));
-
-    // owner sets staking config
-    let owner = mock_info("owner", &coins(0, "token"));
-    let res = test_helpers::set_staking_config(deps.as_mut(), owner, new_config);
-    assert!(res.is_ok());
-}
-
-#[test]
 pub fn allowlist_works() {
     let mut deps = mock_dependencies();
 

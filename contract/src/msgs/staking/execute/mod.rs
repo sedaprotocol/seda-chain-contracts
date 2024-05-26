@@ -1,12 +1,12 @@
 use super::*;
 use crate::error::ContractError;
 
-mod increase_and_stake;
-mod register_and_stake;
-mod set_staking_config;
-mod unregister;
-mod unstake;
-mod withdraw;
+pub(in crate::msgs::staking) mod increase_and_stake;
+pub(in crate::msgs::staking) mod register_and_stake;
+pub(in crate::msgs::staking) mod set_staking_config;
+pub(in crate::msgs::staking) mod unregister;
+pub(in crate::msgs::staking) mod unstake;
+pub(in crate::msgs::staking) mod withdraw;
 
 #[cw_serde]
 pub enum ExecuteMsg {
