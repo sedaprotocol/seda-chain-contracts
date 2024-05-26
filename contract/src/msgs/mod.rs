@@ -23,7 +23,7 @@ impl ExecuteMsg {
         match self {
             ExecuteMsg::DataRequest(msg) => msg.execute(deps, env, info),
             ExecuteMsg::Staking(msg) => msg.execute(deps, env, info),
-            ExecuteMsg::Owner(_) => todo!(),
+            ExecuteMsg::Owner(msg) => msg.execute(deps, env, info),
         }
     }
 }

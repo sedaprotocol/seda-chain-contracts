@@ -9,7 +9,7 @@ pub enum ExecuteMsg {
     TransferOwnership {
         new_owner: String,
     },
-    AcceptOwnership {},
+    AcceptOwnership,
     /// Add a user to the allowlist.
     AddToAllowlist {
         /// The public key of the person to allowlist.
@@ -26,7 +26,7 @@ impl ExecuteMsg {
     pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         match self {
             ExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
-            ExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
+            ExecuteMsg::AcceptOwnership => config::accept_ownership(deps, env, info),
             ExecuteMsg::AddToAllowlist { pub_key } => config::add_to_allowlist(deps, info, pub_key),
             ExecuteMsg::RemoveFromAllowlist { pub_key } => config::remove_from_allowlist(deps, info, pub_key),
         }
