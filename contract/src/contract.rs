@@ -1,25 +1,12 @@
 use cosmwasm_std::StdResult;
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
 use crate::{
-    config,
     consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
-    data_requests,
     error::ContractError,
-    msgs::{
-        staking::StakingConfig,
-        DrExecuteMsg,
-        ExecuteMsg,
-        InstantiateMsg,
-        OwnerExecuteMsg,
-        OwnerQueryMsg,
-        QueryMsg,
-        StakingExecuteMsg,
-        StakingQueryMsg,
-    },
-    staking,
+    msgs::{staking::StakingConfig, ExecuteMsg, InstantiateMsg, QueryMsg},
     state::{CONFIG, OWNER, PENDING_OWNER, TOKEN},
 };
 
@@ -50,59 +37,10 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
-    match msg {
-        ExecuteMsg::DataRequest(msg) => match msg {
-            DrExecuteMsg::PostDataRequest {
-                posted_dr,
-                seda_payload,
-                payback_address,
-            } => data_requests::post_data_request(deps, info, posted_dr, seda_payload, payback_address),
-        },
-        ExecuteMsg::Staking(msg) => match msg {
-            StakingExecuteMsg::RegisterAndStake {
-                public_key,
-                proof,
-                memo,
-            } => staking::register_and_stake(deps, info, public_key, proof, memo),
-            StakingExecuteMsg::IncreaseStake { public_key, proof } => {
-                staking::increase_stake(deps, env, info, public_key, proof)
-            }
-            StakingExecuteMsg::Unstake {
-                public_key,
-                proof,
-                amount,
-            } => staking::unstake(deps, env, info, public_key, proof, amount),
-            StakingExecuteMsg::Withdraw {
-                public_key,
-                proof,
-                amount,
-            } => staking::withdraw(deps, env, info, public_key, proof, amount),
-            StakingExecuteMsg::Unregister { public_key, proof } => staking::unregister(deps, info, public_key, proof),
-            StakingExecuteMsg::SetStakingConfig { config } => config::set_staking_config(deps, env, info, config),
-        },
-        ExecuteMsg::Owner(msg) => match msg {
-            OwnerExecuteMsg::TransferOwnership { new_owner } => config::transfer_ownership(deps, env, info, new_owner),
-            OwnerExecuteMsg::AcceptOwnership {} => config::accept_ownership(deps, env, info),
-            OwnerExecuteMsg::AddToAllowlist { pub_key } => config::add_to_allowlist(deps, info, pub_key),
-            OwnerExecuteMsg::RemoveFromAllowlist { pub_key } => config::remove_from_allowlist(deps, info, pub_key),
-        },
-    }
+    msg.execute(deps, env, info)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::Staking(msg) => match msg {
-            StakingQueryMsg::GetStaker { executor } => to_json_binary(&staking::get_staker(deps, executor)?),
-            StakingQueryMsg::IsExecutorEligible { executor } => {
-                to_json_binary(&staking::is_executor_eligible(deps, executor)?)
-            }
-            StakingQueryMsg::GetStakingConfig => to_json_binary(&CONFIG.load(deps.storage)?),
-        },
-        QueryMsg::Owner(msg) => match msg {
-            OwnerQueryMsg::GetOwner => to_json_binary(&OWNER.load(deps.storage)?),
-
-            OwnerQueryMsg::GetPendingOwner => to_json_binary(&PENDING_OWNER.load(deps.storage)?),
-        },
-    }
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    msg.query(deps, env)
 }

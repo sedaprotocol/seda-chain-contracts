@@ -1,7 +1,8 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use super::PostDataRequestArgs;
-use crate::types::Bytes;
+use crate::{data_requests, error::ContractError, types::Bytes};
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -22,4 +23,16 @@ pub enum ExecuteMsg {
     //     public_key: PublicKey,
     //     sender:     Option<String>,
     // },
+}
+
+impl ExecuteMsg {
+    pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        match self {
+            ExecuteMsg::PostDataRequest {
+                posted_dr,
+                seda_payload,
+                payback_address,
+            } => data_requests::post_data_request(deps, info, posted_dr, seda_payload, payback_address),
+        }
+    }
 }
