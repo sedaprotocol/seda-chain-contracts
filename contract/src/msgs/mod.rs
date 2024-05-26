@@ -1,5 +1,5 @@
-pub(self) use cosmwasm_schema::{cw_serde, QueryResponses};
-pub(self) use cosmwasm_std::{Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult};
 
 use crate::error::ContractError;
 

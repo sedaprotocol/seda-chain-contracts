@@ -1,6 +1,3 @@
-// pub(self) use cosmwasm_schema::cw_serde;
-// pub(self) use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
-
 use super::*;
 use crate::error::ContractError;
 
