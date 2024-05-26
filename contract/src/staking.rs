@@ -8,7 +8,7 @@ use crate::{
     error::ContractError,
     msgs::staking::Staker,
     state::{CONFIG, STAKERS, TOKEN},
-    types::{PublicKey, SimpleHash},
+    types::{Hasher, PublicKey},
     utils::{get_attached_funds, is_staker_allowed},
 };
 
@@ -22,7 +22,7 @@ pub fn register_and_stake(
 ) -> Result<Response, ContractError> {
     // compute message hash
     let message_hash = if let Some(m) = memo.as_ref() {
-        hash(["register_and_stake".as_bytes(), &m.simple_hash()])
+        hash(["register_and_stake".as_bytes(), &m.hash()])
     } else {
         hash(["register_and_stake".as_bytes()])
     };

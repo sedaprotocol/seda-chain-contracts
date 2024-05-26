@@ -2,13 +2,17 @@ use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 
 use crate::{
-    msgs::staking::{Staker, StakingConfig},
-    types::PublicKey,
+    msgs::{
+        data_requests::DataRequest,
+        staking::{Staker, StakingConfig},
+    },
+    types::{Hash, PublicKey},
 };
 
 /// Token denom used for staking (e.g., `aseda`).
 pub const TOKEN: Item<String> = Item::new("token");
 
+// region: staking
 /// Governance-controlled configuration parameters.
 pub const CONFIG: Item<StakingConfig> = Item::new("config");
 
@@ -23,3 +27,8 @@ pub const ALLOWLIST: Map<&PublicKey, bool> = Map::new("allowlist");
 
 /// A map of stakers (of address to info).
 pub const STAKERS: Map<&PublicKey, Staker> = Map::new("data_request_executors");
+// endregion: staking
+
+// region: data requests
+pub const DATA_REQUESTS: Map<&Hash, DataRequest> = Map::new("data_results_pool");
+// endregion: data requests

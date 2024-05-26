@@ -2,13 +2,15 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use crate::types::PublicKey;
 
-// pub mod data_requests;
+pub mod data_requests;
+pub use data_requests::ExecuteMsg as DrExecuteMsg;
 pub mod staking;
 pub use staking::{ExecuteMsg as StakingExecuteMsg, QueryMsg as StakingQueryMsg};
 
 #[cw_serde]
 #[serde(untagged)]
 pub enum ExecuteMsg {
+    DataRequest(DrExecuteMsg),
     Staking(StakingExecuteMsg),
     Owner(OwnerExecuteMsg),
 }

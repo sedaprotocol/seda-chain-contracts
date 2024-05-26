@@ -31,6 +31,8 @@ pub enum ContractError {
     InsufficientFunds(u128, u128),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
+    #[error("Invalid payback address")]
+    InvalidPaybackAddr,
     #[error("IneligibleExecutor: Caller is not an eligible data request executor")]
     IneligibleExecutor,
     #[error("AlreadyCommitted: Caller has already committed on this data request")]

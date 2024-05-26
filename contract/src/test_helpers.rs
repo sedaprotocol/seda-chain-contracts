@@ -13,7 +13,7 @@ use crate::{
         StakingExecuteMsg,
         StakingQueryMsg,
     },
-    types::{PublicKey, SimpleHash},
+    types::{Hasher, PublicKey},
 };
 
 pub fn instantiate_staking_contract(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
@@ -31,7 +31,7 @@ pub fn reg_and_stake(
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
     let msg_hash = if let Some(m) = memo.as_ref() {
-        hash(["register_and_stake".as_bytes(), &m.simple_hash()])
+        hash(["register_and_stake".as_bytes(), &m.hash()])
     } else {
         hash(["register_and_stake".as_bytes()])
     };

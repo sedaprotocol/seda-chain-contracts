@@ -1,10 +1,14 @@
+mod execute;
 use std::collections::HashMap;
 
+use cosmwasm_schema::cw_serde;
+pub use execute::*;
 use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Keccak256};
 
-use crate::types::{Bytes, Commitment, Hash, Memo};
+use crate::types::{Bytes, Hash, Hasher, Memo};
 
 /// Represents a data request at creation time
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
@@ -38,42 +42,42 @@ pub struct DataRequest {
     /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
     pub seda_payload:    Bytes,
     /// Commitments submitted by executors
-    pub commits:         HashMap<String, Commitment>,
+    pub commits:         HashMap<String, Hash>,
     /// Reveals submitted by executors
-    pub reveals:         HashMap<String, RevealBody>,
+    pub reveals:         HashMap<String, Hash>,
 }
 
-/// Represents a resolved data result
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct DataResult {
-    // DR Result
-    /// Semantic Version String
-    pub version: Version,
+// /// Represents a resolved data result
+// #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+// pub struct DataResult {
+//     // DR Result
+//     /// Semantic Version String
+//     pub version: Version,
 
-    /// Data Request Identifier
-    pub dr_id:        Hash,
-    /// Block Height at which data request was finalized
-    pub block_height: u64,
-    /// Exit code of Tally WASM binary execution
-    pub exit_code:    u8,
-    /// Result from Tally WASM binary execution
-    pub result:       Bytes,
+//     /// Data Request Identifier
+//     pub dr_id:        Hash,
+//     /// Block Height at which data request was finalized
+//     pub block_height: u64,
+//     /// Exit code of Tally WASM binary execution
+//     pub exit_code:    u8,
+//     /// Result from Tally WASM binary execution
+//     pub result:       Bytes,
 
-    // Fields from Data Request Execution
-    /// Payback address set by the relayer
-    pub payback_address: Bytes,
-    /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
-    pub seda_payload:    Bytes,
-}
+//     // Fields from Data Request Execution
+//     /// Payback address set by the relayer
+//     pub payback_address: Bytes,
+//     /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
+//     pub seda_payload:    Bytes,
+// }
 
-/// A revealed data request result that is hashed and signed by the executor
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct RevealBody {
-    pub salt:      [u8; 32],
-    pub exit_code: u8,
-    pub gas_used:  u128,
-    pub reveal:    Bytes,
-}
+// /// A revealed data request result that is hashed and signed by the executor
+// #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+// pub struct RevealBody {
+//     pub salt:      [u8; 32],
+//     pub exit_code: u8,
+//     pub gas_used:  u128,
+//     pub reveal:    Bytes,
+// }
 
 #[cw_serde]
 pub struct PostDataRequestArgs {
@@ -88,24 +92,32 @@ pub struct PostDataRequestArgs {
     pub memo:               Memo,
 }
 
-#[allow(clippy::large_enum_variant)]
-#[cw_serde]
-pub enum DataRequestsExecuteMsg {
-    PostDataRequest {
-        posted_dr:       PostDataRequestArgs,
-        seda_payload:    Bytes,
-        payback_address: Bytes,
-    },
-    CommitDataResult {
-        dr_id:      Hash,
-        commitment: Hash,
-        sender:     Option<String>,
-        signature:  Signature,
-    },
-    RevealDataResult {
-        dr_id:     Hash,
-        reveal:    RevealBody,
-        signature: Signature,
-        sender:    Option<String>,
-    },
+impl Hasher for PostDataRequestArgs {
+    fn hash(&self) -> Hash {
+        // hash non-fixed-length inputs
+        let mut dr_inputs_hasher = Keccak256::new();
+        dr_inputs_hasher.update(&self.dr_inputs);
+        let dr_inputs_hash = dr_inputs_hasher.finalize();
+
+        let mut tally_inputs_hasher = Keccak256::new();
+        tally_inputs_hasher.update(&self.tally_inputs);
+        let tally_inputs_hash = tally_inputs_hasher.finalize();
+
+        let mut memo_hasher = Keccak256::new();
+        memo_hasher.update(&self.memo);
+        let memo_hash = memo_hasher.finalize();
+
+        // hash data request
+        let mut dr_hasher = Keccak256::new();
+        dr_hasher.update(self.version.hash());
+        dr_hasher.update(self.dr_binary_id);
+        dr_hasher.update(dr_inputs_hash);
+        dr_hasher.update(self.tally_binary_id);
+        dr_hasher.update(tally_inputs_hash);
+        dr_hasher.update(self.replication_factor.to_be_bytes());
+        dr_hasher.update(self.gas_price.to_be_bytes());
+        dr_hasher.update(self.gas_limit.to_be_bytes());
+        dr_hasher.update(memo_hash);
+        dr_hasher.finalize().into()
+    }
 }

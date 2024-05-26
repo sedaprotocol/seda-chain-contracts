@@ -6,9 +6,11 @@ use cw2::set_contract_version;
 use crate::{
     config,
     consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
+    data_requests,
     error::ContractError,
     msgs::{
         staking::StakingConfig,
+        DrExecuteMsg,
         ExecuteMsg,
         InstantiateMsg,
         OwnerExecuteMsg,
@@ -49,6 +51,13 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::DataRequest(msg) => match msg {
+            DrExecuteMsg::PostDataRequest {
+                posted_dr,
+                seda_payload,
+                payback_address,
+            } => data_requests::post_data_request(deps, info, posted_dr, seda_payload, payback_address),
+        },
         ExecuteMsg::Staking(msg) => match msg {
             StakingExecuteMsg::RegisterAndStake {
                 public_key,
