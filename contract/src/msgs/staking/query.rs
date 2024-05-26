@@ -22,6 +22,7 @@ impl QueryMsg {
     }
 }
 
+#[cfg(test)]
 impl From<QueryMsg> for super::QueryMsg {
     fn from(value: QueryMsg) -> Self {
         Self::Staking(value)

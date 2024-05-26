@@ -23,6 +23,7 @@ impl StakingConfig {
     }
 }
 
+#[cfg(test)]
 impl From<StakingConfig> for crate::msgs::ExecuteMsg {
     fn from(config: StakingConfig) -> Self {
         super::ExecuteMsg::SetStakingConfig(config).into()

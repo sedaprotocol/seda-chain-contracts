@@ -68,6 +68,7 @@ impl Execute {
     }
 }
 
+#[cfg(test)]
 impl From<Execute> for crate::msgs::ExecuteMsg {
     fn from(value: Execute) -> Self {
         super::ExecuteMsg::Withdraw(value).into()

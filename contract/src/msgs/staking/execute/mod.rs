@@ -32,6 +32,7 @@ impl ExecuteMsg {
     }
 }
 
+#[cfg(test)]
 impl From<ExecuteMsg> for super::ExecuteMsg {
     fn from(value: ExecuteMsg) -> Self {
         Self::Staking(value)
