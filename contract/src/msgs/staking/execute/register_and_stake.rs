@@ -1,6 +1,6 @@
+use self::staking::owner::utils::is_staker_allowed;
 use super::{
     state::{CONFIG, STAKERS},
-    utils::is_staker_allowed,
     *,
 };
 use crate::{

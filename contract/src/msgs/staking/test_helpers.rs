@@ -59,7 +59,7 @@ pub fn get_staker(deps: DepsMut, executor: PublicKey) -> Option<Staker> {
 
 pub fn increase_stake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
     let msg_hash = hash(["increase_stake".as_bytes()]);
-    let msg = increase_and_stake::Execute {
+    let msg = increase_stake::Execute {
         public_key: exec.pub_key(),
         proof:      exec.prove(&msg_hash),
     };

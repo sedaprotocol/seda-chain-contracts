@@ -1,7 +1,7 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult};
-
-use super::state::{OWNER, PENDING_OWNER};
+use super::{
+    state::{OWNER, PENDING_OWNER},
+    *,
+};
 
 #[cw_serde]
 #[derive(QueryResponses)]

@@ -1,4 +1,5 @@
-use super::{state::STAKERS, utils::is_staker_allowed, *};
+use self::staking::owner::utils::is_staker_allowed;
+use super::{state::STAKERS, *};
 use crate::{
     contract::CONTRACT_VERSION,
     crypto::{hash, verify_proof},

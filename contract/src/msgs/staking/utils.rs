@@ -1,10 +1,8 @@
-use cosmwasm_std::{Deps, DepsMut, StdResult};
-
 use super::{
-    state::{ALLOWLIST, CONFIG, STAKERS},
-    Staker,
+    state::{CONFIG, STAKERS},
+    *,
 };
-use crate::{error::ContractError, types::PublicKey};
+use crate::types::PublicKey;
 
 /// Returns a staker with the given address, if it exists.
 pub fn get_staker(deps: Deps, executor: PublicKey) -> StdResult<Option<Staker>> {
@@ -22,16 +20,4 @@ pub fn is_executor_eligible(deps: Deps, executor: PublicKey) -> StdResult<bool> 
     };
 
     Ok(value)
-}
-
-pub fn is_staker_allowed(deps: &DepsMut, public_key: &PublicKey) -> Result<(), ContractError> {
-    let allowlist_enabled = CONFIG.load(deps.storage)?.allowlist_enabled;
-    if allowlist_enabled {
-        let is_allowed = ALLOWLIST.may_load(deps.storage, public_key)?;
-        if is_allowed.is_none() {
-            return Err(ContractError::NotOnAllowlist);
-        }
-    }
-
-    Ok(())
 }

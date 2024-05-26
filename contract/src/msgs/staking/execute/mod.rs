@@ -1,7 +1,7 @@
 use super::*;
 use crate::error::ContractError;
 
-pub(in crate::msgs::staking) mod increase_and_stake;
+pub(in crate::msgs::staking) mod increase_stake;
 pub(in crate::msgs::staking) mod register_and_stake;
 pub(in crate::msgs::staking) mod set_staking_config;
 pub(in crate::msgs::staking) mod unregister;
@@ -12,10 +12,10 @@ pub(in crate::msgs::staking) mod withdraw;
 pub enum ExecuteMsg {
     RegisterAndStake(register_and_stake::Execute),
     Unregister(unregister::Execute),
-    IncreaseStake(increase_and_stake::Execute),
+    IncreaseStake(increase_stake::Execute),
     Unstake(unstake::Execute),
     Withdraw(withdraw::Execute),
-    SetStakingConfig(set_staking_config::Execute),
+    SetStakingConfig(StakingConfig),
 }
 
 impl ExecuteMsg {
