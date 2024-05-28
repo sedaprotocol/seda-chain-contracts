@@ -53,7 +53,7 @@ pub fn insert_req(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> Re
         .may_load(store, &DataRequestStatus::AwaitingCommits)?
         .unwrap_or_default();
     statuses.insert(*dr_id);
-    DATA_REQUESTS_BY_STATUS.save(store, &DataRequestStatus::Committing, &statuses)?;
+    DATA_REQUESTS_BY_STATUS.save(store, &DataRequestStatus::AwaitingCommits, &statuses)?;
 
     Ok(())
 }
@@ -69,4 +69,8 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
     )?;
 
     Ok(())
+}
+
+pub fn requests_by_status(store: &dyn Storage, status: &DataRequestStatus) -> StdResult<HashSet<Hash>> {
+    Ok(DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default())
 }
