@@ -32,14 +32,14 @@ impl Execute {
                 ("dr_id", dr_id.hash_hex()),
                 ("dr_binary_id", self.posted_dr.dr_binary_id.hash_hex()),
                 ("tally_binary_id", self.posted_dr.tally_binary_id.hash_hex()),
-                // ("dr_inputs", &serde_json::to_string(&self.posted_dr.dr_inputs).unwrap()),
-                // ("tally_inputs", &serde_json::to_string(&self.posted_dr.tally_inputs).unwrap()),
-                // ("memo", &serde_json::to_string(&self.posted_dr.memo).unwrap()),
+                ("dr_inputs", to_json_string(&self.posted_dr.dr_inputs)?),
+                ("tally_inputs", to_json_string(&self.posted_dr.tally_inputs)?),
+                ("memo", to_json_string(&self.posted_dr.memo)?),
                 ("replication_factor", self.posted_dr.replication_factor.to_string()),
                 ("gas_price", self.posted_dr.gas_price.to_string()),
                 ("gas_limit", self.posted_dr.gas_limit.to_string()),
-                // ("seda_payload", &serde_json::to_string(&seda_payload).unwrap()),
-                // ("payback_address", addr.into_string()),
+                ("seda_payload", to_json_string(&self.seda_payload)?),
+                ("payback_address", to_json_string(&self.payback_address)?),
             ]));
 
         // save the data request
@@ -57,8 +57,8 @@ impl Execute {
 
             payback_address: self.payback_address,
             seda_payload:    self.seda_payload,
-            commits:         HashMap::new(),
-            reveals:         HashMap::new(),
+            commits:         Default::default(),
+            reveals:         Default::default(),
         };
         state::insert_req(deps.storage, &dr_id, &dr)?;
 
