@@ -1,13 +1,16 @@
-pub mod execute;
-pub mod state;
-pub mod utils;
-
 use std::collections::HashMap;
 
 use semver::Version;
 use sha3::{Digest, Keccak256};
 
 use super::*;
+
+pub mod execute;
+pub mod state;
+pub mod utils;
+
+#[cfg(test)]
+mod tests;
 
 /// Represents a data request at creation time
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
