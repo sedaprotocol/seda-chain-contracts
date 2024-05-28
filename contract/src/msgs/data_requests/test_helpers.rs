@@ -2,7 +2,11 @@ use cosmwasm_std::{from_json, testing::mock_env};
 use semver::{BuildMetadata, Prerelease};
 
 use super::{execute::*, *};
-use crate::contract::{execute, query};
+use crate::{
+    contract::{execute, query},
+    crypto::hash,
+    TestExecutor,
+};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> (Hash, PostDataRequestArgs) {
     let dr_binary_id: Hash = "dr_binary_id".hash();
@@ -97,5 +101,23 @@ pub fn post_data_request(
         payback_address,
     };
     // someone posts a data request
+    execute(deps, mock_env(), info.clone(), msg.into())
+}
+
+pub fn commit_result(
+    deps: DepsMut,
+    info: MessageInfo,
+    exec: &TestExecutor,
+    dr_id: Hash,
+    commitment: Hash,
+) -> Result<Response, ContractError> {
+    let msg_hash = hash(["commit_data_result".as_bytes(), &dr_id, &commitment]);
+
+    let msg = commit_result::Execute {
+        dr_id,
+        commitment,
+        public_key: exec.pub_key(),
+        proof: exec.prove(&msg_hash),
+    };
     execute(deps, mock_env(), info.clone(), msg.into())
 }
