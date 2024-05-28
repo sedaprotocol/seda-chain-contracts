@@ -34,6 +34,7 @@ impl ExecuteMsg {
 #[derive(QueryResponses)]
 #[query_responses(nested)]
 pub enum QueryMsg {
+    DataRequest(data_requests::query::QueryMsg),
     Staking(staking::query::QueryMsg),
     Owner(owner::query::QueryMsg),
 }
@@ -41,6 +42,7 @@ pub enum QueryMsg {
 impl QueryMsg {
     pub fn query(self, deps: Deps, env: Env) -> StdResult<Binary> {
         match self {
+            QueryMsg::DataRequest(msg) => msg.query(deps, env),
             QueryMsg::Staking(msg) => msg.query(deps, env),
             QueryMsg::Owner(msg) => msg.query(deps, env),
         }

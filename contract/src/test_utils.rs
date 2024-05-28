@@ -62,9 +62,7 @@ impl TestExecutor {
 
     pub fn prove(&self, hash: &[u8]) -> Vec<u8> {
         let vrf = Secp256k1Sha256::default();
-        let proof = vrf.prove(&self.signing_key.to_bytes(), hash).unwrap();
-
-        proof
+        vrf.prove(&self.signing_key.to_bytes(), hash).unwrap()
     }
 
     pub fn _salt(&self) -> Hash {

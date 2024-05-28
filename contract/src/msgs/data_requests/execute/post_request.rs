@@ -1,5 +1,3 @@
-use cw_storage_plus::KeyDeserialize;
-
 use super::{state::DATA_REQUESTS, utils::data_request_or_result_exists, *};
 
 #[cw_serde]
@@ -20,9 +18,10 @@ impl Execute {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
-        let Ok(addr) = Addr::from_slice(&self.payback_address) else {
-            return Err(ContractError::InvalidPaybackAddr);
-        };
+        // TODO: verify the payback address... it's not a seda addr right?
+        // let Ok(addr) = Addr::from_slice(&self.payback_address) else {
+        //     return Err(ContractError::InvalidPaybackAddr);
+        // };
 
         // TODO: review this event
         let res = Response::new()
@@ -40,7 +39,7 @@ impl Execute {
                 ("gas_price", self.posted_dr.gas_price.to_string()),
                 ("gas_limit", self.posted_dr.gas_limit.to_string()),
                 // ("seda_payload", &serde_json::to_string(&seda_payload).unwrap()),
-                ("payback_address", addr.into_string()),
+                // ("payback_address", addr.into_string()),
             ]));
 
         // save the data request

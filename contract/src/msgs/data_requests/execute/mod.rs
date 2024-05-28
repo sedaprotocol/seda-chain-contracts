@@ -1,10 +1,10 @@
 use super::*;
 
-mod post;
+pub(in crate::msgs::data_requests) mod post_request;
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    PostDataRequest(post::Execute),
+    PostDataRequest(post_request::Execute),
 }
 
 impl ExecuteMsg {

@@ -29,6 +29,8 @@ pub enum ContractError {
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(u128, u128),
+    #[error("DataRequestDoesNotExist {0}: Data request does not exist")]
+    DataRequestDoesNotExist(String),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
     #[error("Invalid payback address")]

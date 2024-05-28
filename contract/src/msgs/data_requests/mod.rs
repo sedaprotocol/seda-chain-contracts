@@ -6,9 +6,12 @@ use sha3::{Digest, Keccak256};
 use super::*;
 
 pub mod execute;
+pub mod query;
 pub mod state;
 pub mod utils;
 
+#[cfg(test)]
+pub mod test_helpers;
 #[cfg(test)]
 mod tests;
 

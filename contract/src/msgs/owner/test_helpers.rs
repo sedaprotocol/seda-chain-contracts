@@ -32,14 +32,10 @@ pub fn remove_from_allowlist(
 
 pub fn get_owner(deps: DepsMut) -> Addr {
     let res = query(deps.as_ref(), mock_env(), query::QueryMsg::GetOwner {}.into()).unwrap();
-    let value = from_json(res).unwrap();
-
-    value
+    from_json(res).unwrap()
 }
 
 pub fn get_pending_owner(deps: DepsMut) -> Option<Addr> {
     let res = query(deps.as_ref(), mock_env(), query::QueryMsg::GetPendingOwner {}.into()).unwrap();
-    let value = from_json(res).unwrap();
-
-    value
+    from_json(res).unwrap()
 }
