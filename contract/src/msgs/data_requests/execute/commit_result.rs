@@ -1,4 +1,4 @@
-use super::{state::DATA_REQUESTS, *};
+use super::*;
 use crate::crypto::{hash, verify_proof};
 
 #[cw_serde]
@@ -20,7 +20,7 @@ impl Execute {
 
         // find the data request from the pool (if it exists, otherwise error)
         let public_key_str = hex::encode(&self.public_key);
-        let mut dr = DATA_REQUESTS.load(deps.storage, &self.dr_id)?;
+        let mut dr = state::load_req(deps.storage, &self.dr_id)?;
         if dr.commits.contains_key(&public_key_str) {
             return Err(ContractError::AlreadyCommitted);
         }
@@ -32,8 +32,7 @@ impl Execute {
 
         // add the commitment to the data request
         dr.commits.insert(public_key_str, self.commitment);
-        // TODO: update the data request status
-        DATA_REQUESTS.save(deps.storage, &self.dr_id, &dr)?;
+        state::commit(deps.storage, &self.dr_id, &dr)?;
 
         Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([

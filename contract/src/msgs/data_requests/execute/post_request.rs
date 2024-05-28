@@ -1,4 +1,4 @@
-use super::{state::DATA_REQUESTS, utils::data_request_or_result_exists, *};
+use super::*;
 
 #[cw_serde]
 pub struct Execute {
@@ -14,7 +14,7 @@ impl Execute {
         let dr_id = self.posted_dr.hash();
 
         // require the data request id to be unique
-        if data_request_or_result_exists(deps.as_ref(), dr_id) {
+        if state::data_request_or_result_exists(deps.as_ref(), dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
@@ -60,7 +60,7 @@ impl Execute {
             commits:         HashMap::new(),
             reveals:         HashMap::new(),
         };
-        DATA_REQUESTS.save(deps.storage, &dr_id, &dr)?;
+        state::insert_req(deps.storage, &dr_id, &dr)?;
 
         Ok(res)
     }

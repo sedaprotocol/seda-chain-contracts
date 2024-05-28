@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cw_storage_plus::{Key, PrimaryKey};
 use semver::Version;
 use sha3::{Digest, Keccak256};
 
@@ -8,12 +9,36 @@ use super::*;
 pub mod execute;
 pub mod query;
 pub mod state;
-pub mod utils;
 
 #[cfg(test)]
 pub mod test_helpers;
 #[cfg(test)]
 mod tests;
+
+#[derive(Clone)]
+pub enum DataRequestStatus {
+    AwaitingCommits,
+    Committing,
+    Revealing,
+}
+
+impl<'a> PrimaryKey<'a> for &'a DataRequestStatus {
+    type Prefix = ();
+    type SubPrefix = ();
+    type Suffix = &'static str;
+    type SuperSuffix = &'static str;
+
+    fn key(&self) -> Vec<Key> {
+        vec![Key::Ref(
+            match self {
+                DataRequestStatus::AwaitingCommits => "awaiting_commits",
+                DataRequestStatus::Committing => "committing",
+                DataRequestStatus::Revealing => "revealing",
+            }
+            .as_bytes(),
+        )]
+    }
+}
 
 /// Represents a data request at creation time
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
