@@ -13,7 +13,7 @@ pub mod staking;
 #[cw_serde]
 #[serde(untagged)]
 pub enum ExecuteMsg {
-    DataRequest(data_requests::execute::ExecuteMsg),
+    DataRequest(Box<data_requests::execute::ExecuteMsg>),
     Staking(staking::execute::ExecuteMsg),
     Owner(owner::execute::ExecuteMsg),
 }
