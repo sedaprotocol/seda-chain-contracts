@@ -43,3 +43,24 @@ impl<const N: usize> Hasher for [u8; N] {
         hasher.finalize().into()
     }
 }
+
+impl Hasher for Vec<u8> {
+    fn hash(&self) -> Hash {
+        let mut hasher = Keccak256::new();
+        hasher.update(self);
+        hasher.finalize().into()
+    }
+}
+
+impl<T> Hasher for Option<T>
+where
+    T: AsRef<[u8]>,
+{
+    fn hash(&self) -> Hash {
+        let mut hasher = Keccak256::new();
+        if let Some(inner) = self {
+            hasher.update(inner);
+        }
+        hasher.finalize().into()
+    }
+}

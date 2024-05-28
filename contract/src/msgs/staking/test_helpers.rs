@@ -20,11 +20,7 @@ pub fn reg_and_stake(
     exec: &TestExecutor,
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
-    let msg_hash = if let Some(m) = memo.as_ref() {
-        hash(["register_and_stake".as_bytes(), &m.hash()])
-    } else {
-        hash(["register_and_stake".as_bytes()])
-    };
+    let msg_hash = hash(["register_and_stake".as_bytes(), &memo.hash()]);
 
     let msg = register_and_stake::Execute {
         public_key: exec.pub_key(),

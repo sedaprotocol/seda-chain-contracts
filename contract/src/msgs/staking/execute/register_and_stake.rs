@@ -22,11 +22,7 @@ impl Execute {
     /// Registers a staker with an optional p2p multi address, requiring a token deposit.
     pub fn execute(self, deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
         // compute message hash
-        let message_hash = if let Some(m) = self.memo.as_ref() {
-            hash(["register_and_stake".as_bytes(), &m.hash()])
-        } else {
-            hash(["register_and_stake".as_bytes()])
-        };
+        let message_hash = hash(["register_and_stake".as_bytes(), &self.memo.hash()]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;
