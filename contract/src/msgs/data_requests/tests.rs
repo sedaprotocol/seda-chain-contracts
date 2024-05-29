@@ -402,3 +402,107 @@ fn reveal_must_match_commitment() {
     assert_eq!(1, revealed.len());
     assert!(revealed.contains_key(&dr_id.to_hex()));
 }
+
+// #[test]
+// fn post_data_result() {
+//     let mut deps = mock_dependencies();
+//     let creator = TestExecutor::new("creator", Some(2));
+//     instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+//     // post a data request
+//     let alice = TestExecutor::new("alice", Some(2));
+//     let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 1);
+//     test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+//     // commit a data result
+//     let alice_reveal = RevealBody {
+//         salt:      alice.salt(),
+//         reveal:    "10".hash().to_vec(),
+//         gas_used:  0,
+//         exit_code: 0,
+//     };
+//     test_helpers::commit_result(
+//         deps.as_mut(),
+//         alice.info(),
+//         &alice,
+//         constructed_dr_id,
+//         alice_reveal.hash(),
+//         None,
+//         None,
+//     )
+//     .unwrap();
+
+//     // alice reveals
+//     test_helpers::reveal_result(
+//         deps.as_mut(),
+//         alice.info(),
+//         &alice,
+//         constructed_dr_id,
+//         alice_reveal.clone(),
+//         None,
+//         None,
+//     )
+//     .unwrap();
+
+//     // post a data result
+//     let result = test_helpers::construct_result(dr_args, alice_reveal, 0, vec![], vec![]);
+//     test_helpers::post_data_result(deps.as_mut(), constructed_dr_id, result, 0).unwrap();
+
+//     let resolved = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Resolved);
+//     assert_eq!(1, resolved.len());
+//     assert!(resolved.contains_key(&constructed_dr_id.to_hex()));
+// }
+
+// #[test]
+// #[should_panic(expected = "Unauthorized")]
+// fn post_data_result_only_sudoers() {
+//     let mut deps = mock_dependencies();
+//     let creator = TestExecutor::new("creator", Some(2));
+//     instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+//     // let contract = ContractWrapper::new(
+//     //     crate::contract::execute,
+//     //     crate::contract::instantiate,
+//     //     crate::contract::query,
+//     // )
+//     // .with_sudo(sudo);
+
+//     // post a data request
+//     let alice = TestExecutor::new("alice", Some(2));
+//     let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 1);
+//     test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+//     // commit a data result
+//     let alice_reveal = RevealBody {
+//         salt:      alice.salt(),
+//         reveal:    "10".hash().to_vec(),
+//         gas_used:  0,
+//         exit_code: 0,
+//     };
+//     test_helpers::commit_result(
+//         deps.as_mut(),
+//         alice.info(),
+//         &alice,
+//         constructed_dr_id,
+//         alice_reveal.hash(),
+//         None,
+//         None,
+//     )
+//     .unwrap();
+
+//     // alice reveals
+//     test_helpers::reveal_result(
+//         deps.as_mut(),
+//         alice.info(),
+//         &alice,
+//         constructed_dr_id,
+//         alice_reveal.clone(),
+//         None,
+//         None,
+//     )
+//     .unwrap();
+
+//     // post a data result
+//     let result = test_helpers::construct_result(dr_args, alice_reveal, 0, vec![], vec![]);
+//     test_helpers::post_data_result(deps.as_mut(), constructed_dr_id, result, 0).unwrap();
+// }
