@@ -104,14 +104,27 @@ pub fn post_data_request(
     execute(deps, mock_env(), info.clone(), msg.into())
 }
 
+fn env_with_height(height: u64) -> Env {
+    let mut env = mock_env();
+    env.block.height = height;
+    env
+}
+
 pub fn commit_result(
     deps: DepsMut,
     info: MessageInfo,
     exec: &TestExecutor,
     dr_id: Hash,
     commitment: Hash,
+    msg_height: Option<u64>,
+    env_height: Option<u64>,
 ) -> Result<Response, ContractError> {
-    let msg_hash = hash(["commit_data_result".as_bytes(), &dr_id, &commitment]);
+    let msg_hash = hash([
+        "commit_data_result".as_bytes(),
+        &dr_id,
+        &msg_height.unwrap_or_default().to_be_bytes(),
+        &commitment,
+    ]);
 
     let msg = commit_result::Execute {
         dr_id,
@@ -119,5 +132,10 @@ pub fn commit_result(
         public_key: exec.pub_key(),
         proof: exec.prove(&msg_hash),
     };
-    execute(deps, mock_env(), info.clone(), msg.into())
+    execute(
+        deps,
+        env_with_height(env_height.unwrap_or_default()),
+        info.clone(),
+        msg.into(),
+    )
 }

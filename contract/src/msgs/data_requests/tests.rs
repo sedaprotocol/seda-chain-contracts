@@ -59,6 +59,8 @@ fn commit_result() {
         &anyone,
         constructed_dr_id,
         "0xcommitment".hash(),
+        None,
+        None,
     )
     .unwrap();
 
@@ -85,6 +87,8 @@ fn commits_meet_replication_factor() {
         &anyone,
         constructed_dr_id,
         "0xcommitment".hash(),
+        None,
+        None,
     )
     .unwrap();
 
@@ -112,6 +116,8 @@ fn cannot_double_commit() {
         &anyone,
         constructed_dr_id,
         "0xcommitment".hash(),
+        None,
+        None,
     )
     .unwrap();
 
@@ -124,6 +130,8 @@ fn cannot_double_commit() {
         &anyone,
         constructed_dr_id,
         "0xcommitment".hash(),
+        None,
+        None,
     )
     .unwrap();
 }
@@ -147,6 +155,8 @@ fn cannot_commit_after_replication_factor_reached() {
         &anyone,
         constructed_dr_id,
         "0xcommitment".hash(),
+        None,
+        None,
     )
     .unwrap();
 
@@ -160,6 +170,33 @@ fn cannot_commit_after_replication_factor_reached() {
         &new,
         constructed_dr_id,
         "0xcommitment".hash(),
+        None,
+        None,
+    )
+    .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "InvalidProof")]
+fn commits_wrong_signature_fails() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let anyone = TestExecutor::new("anyone", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 1);
+    test_helpers::post_data_request(deps.as_mut(), anyone.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    test_helpers::commit_result(
+        deps.as_mut(),
+        anyone.info(),
+        &anyone,
+        constructed_dr_id,
+        "0xcommitment".hash(),
+        Some(9),
+        Some(10),
     )
     .unwrap();
 }
