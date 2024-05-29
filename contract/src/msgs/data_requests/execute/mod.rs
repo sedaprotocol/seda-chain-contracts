@@ -10,9 +10,9 @@ pub enum ExecuteMsg {
 }
 
 impl ExecuteMsg {
-    pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         match self {
-            ExecuteMsg::CommitDataResult(msg) => msg.execute(deps, info),
+            ExecuteMsg::CommitDataResult(msg) => msg.execute(deps, env, info),
             ExecuteMsg::PostDataRequest(msg) => msg.execute(deps, info),
         }
     }

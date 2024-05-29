@@ -11,9 +11,14 @@ pub struct Execute {
 
 impl Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
-    pub fn execute(self, deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         // compute message hash
-        let message_hash = hash(["commit_data_result".as_bytes(), &self.dr_id, &self.commitment]);
+        let message_hash = hash([
+            "commit_data_result".as_bytes(),
+            &self.dr_id,
+            &env.block.height.to_be_bytes(),
+            &self.commitment,
+        ]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;
