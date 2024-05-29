@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use core::panic;
 
 use semver::{BuildMetadata, Prerelease, Version};
@@ -6,6 +7,17 @@ use sha3::{Digest, Keccak256};
 use super::{
     msgs::data_requests::{execute, query},
     *,
+=======
+use cosmwasm_std::{from_json, testing::mock_env};
+use semver::{BuildMetadata, Prerelease};
+use sudo::post_result;
+
+use super::{execute::*, *};
+use crate::{
+    contract::{execute, query, sudo},
+    crypto::hash,
+    TestExecutor,
+>>>>>>> 1d3d2dd (test(WIP): start testing but we need to swap to cw-multi-test)
 };
 use crate::{TestExecutor, TestInfo};
 
@@ -256,4 +268,13 @@ impl TestInfo {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
             .unwrap()
     }
+
+		pub fn post_data_result(deps: DepsMut, dr_id: Hash, result: DataResult, exit_code: u8) -> StdResult<Response> {
+			let msg = post_result::Sudo {
+					dr_id,
+					result,
+					exit_code,
+			};
+			sudo(deps, mock_env(), msg.into())
+	}
 }

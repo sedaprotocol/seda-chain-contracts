@@ -9,7 +9,7 @@ pub struct Sudo {
 
 impl Sudo {
     /// Posts a data request to the pool
-    pub fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
         let dr = state::load_req(deps.storage, &self.dr_id)?;
 
@@ -19,7 +19,7 @@ impl Sudo {
 
         let block_height: u64 = env.block.height;
 
-        let event = Event::new("seda-data-result").add_attributes([
+        let event = Event::new("seda-data-post-result").add_attributes([
             ("version", CONTRACT_VERSION.to_string()),
             ("dr_id", self.dr_id.to_hex()),
             ("block_height", block_height.to_string()),

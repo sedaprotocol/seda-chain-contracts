@@ -8,9 +8,9 @@ pub enum SudoMsg {
 }
 
 impl SudoMsg {
-    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         match self {
-            SudoMsg::PostDataResult(msg) => msg.execute(deps, env, info),
+            SudoMsg::PostDataResult(sudo) => sudo.execute(deps, env),
         }
     }
 }
