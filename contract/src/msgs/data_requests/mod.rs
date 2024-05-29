@@ -17,7 +17,6 @@ mod tests;
 
 #[derive(Clone)]
 pub enum DataRequestStatus {
-    AwaitingCommits,
     Committing,
     Revealing,
 }
@@ -31,7 +30,6 @@ impl<'a> PrimaryKey<'a> for &'a DataRequestStatus {
     fn key(&self) -> Vec<Key> {
         vec![Key::Ref(
             match self {
-                DataRequestStatus::AwaitingCommits => "awaiting_commits",
                 DataRequestStatus::Committing => "committing",
                 DataRequestStatus::Revealing => "revealing",
             }

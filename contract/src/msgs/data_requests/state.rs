@@ -50,10 +50,10 @@ pub fn insert_req(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> Re
 
     // set the status to AwaitingCommits
     let mut statuses = DATA_REQUESTS_BY_STATUS
-        .may_load(store, &DataRequestStatus::AwaitingCommits)?
+        .may_load(store, &DataRequestStatus::Committing)?
         .unwrap_or_default();
     statuses.insert(*dr_id);
-    DATA_REQUESTS_BY_STATUS.save(store, &DataRequestStatus::AwaitingCommits, &statuses)?;
+    DATA_REQUESTS_BY_STATUS.save(store, &DataRequestStatus::Committing, &statuses)?;
 
     Ok(())
 }
@@ -61,16 +61,6 @@ pub fn insert_req(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> Re
 pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdResult<()> {
     DATA_REQUESTS.save(store, dr_id, dr)?;
 
-    // First, update the status from AwaitingCommits to Committing
-    update_req_status(
-        store,
-        dr_id,
-        &DataRequestStatus::AwaitingCommits,
-        &DataRequestStatus::Committing,
-    )?;
-
-    // and then, if the replication factor has been reached, update the status from Committing to Revealing
-    // we do in this order otherwise it fails for replication factor 1
     if dr.replication_factor as usize == dr.commits.len() {
         update_req_status(
             store,

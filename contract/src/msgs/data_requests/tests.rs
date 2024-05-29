@@ -32,7 +32,7 @@ fn post_data_request() {
         Some(test_helpers::construct_dr(constructed_dr_id, dr_args, vec![])),
         received_value
     );
-    let await_commits = state::requests_by_status(&deps.storage, &DataRequestStatus::AwaitingCommits).unwrap();
+    let await_commits = state::requests_by_status(&deps.storage, &DataRequestStatus::Committing).unwrap();
     assert_eq!(1, await_commits.len());
     assert!(await_commits.contains(&constructed_dr_id));
 
