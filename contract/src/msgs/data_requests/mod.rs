@@ -19,6 +19,8 @@ mod tests;
 pub enum DataRequestStatus {
     Committing,
     Revealing,
+    Tallying,
+    Resolved,
 }
 
 impl<'a> PrimaryKey<'a> for &'a DataRequestStatus {
@@ -32,6 +34,8 @@ impl<'a> PrimaryKey<'a> for &'a DataRequestStatus {
             match self {
                 DataRequestStatus::Committing => "committing",
                 DataRequestStatus::Revealing => "revealing",
+                DataRequestStatus::Tallying => "tallying",
+                DataRequestStatus::Resolved => "resolved",
             }
             .as_bytes(),
         )]
@@ -72,40 +76,92 @@ pub struct DataRequest {
     /// Commitments submitted by executors
     pub commits:         HashMap<String, Hash>,
     /// Reveals submitted by executors
-    pub reveals:         HashMap<String, Hash>,
+    pub reveals:         HashMap<String, RevealBody>,
 }
 
-// /// Represents a resolved data result
-// #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-// pub struct DataResult {
-//     // DR Result
-//     /// Semantic Version String
-//     pub version: Version,
+impl DataRequest {
+    pub fn has_committer(&self, public_key: &str) -> bool {
+        self.commits.contains_key(public_key)
+    }
 
-//     /// Data Request Identifier
-//     pub dr_id:        Hash,
-//     /// Block Height at which data request was finalized
-//     pub block_height: u64,
-//     /// Exit code of Tally WASM binary execution
-//     pub exit_code:    u8,
-//     /// Result from Tally WASM binary execution
-//     pub result:       Bytes,
+    pub fn get_commitment(&self, public_key: &str) -> Option<&Hash> {
+        self.commits.get(public_key)
+    }
 
-//     // Fields from Data Request Execution
-//     /// Payback address set by the relayer
-//     pub payback_address: Bytes,
-//     /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
-//     pub seda_payload:    Bytes,
-// }
+    pub fn has_revealer(&self, public_key: &str) -> bool {
+        self.reveals.contains_key(public_key)
+    }
 
-// /// A revealed data request result that is hashed and signed by the executor
-// #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-// pub struct RevealBody {
-//     pub salt:      [u8; 32],
-//     pub exit_code: u8,
-//     pub gas_used:  u128,
-//     pub reveal:    Bytes,
-// }
+    pub fn reveal_started(&self) -> bool {
+        self.commits.len() >= self.replication_factor as usize
+    }
+
+    pub fn reveal_over(&self) -> bool {
+        self.reveals.len() >= self.replication_factor as usize
+    }
+
+    pub fn get_reveal(&self, public_key: &str) -> Option<&RevealBody> {
+        self.reveals.get(public_key)
+    }
+}
+
+/// Represents a resolved data result
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+pub struct DataResult {
+    // DR Result
+    /// Semantic Version String
+    pub version: Version,
+
+    /// Data Request Identifier
+    pub dr_id:        Hash,
+    /// Block Height at which data request was finalized
+    pub block_height: u64,
+    /// Exit code of Tally WASM binary execution
+    pub exit_code:    u8,
+    pub gas_used:     u128,
+    /// Result from Tally WASM binary execution
+    pub result:       Vec<u8>,
+
+    // Fields from Data Request Execution
+    /// Payback address set by the relayer
+    pub payback_address: Vec<u8>,
+    /// Payload set by SEDA Protocol (e.g. OEV-enabled data requests)
+    pub seda_payload:    Vec<u8>,
+}
+
+impl Hasher for DataResult {
+    fn hash(&self) -> Hash {
+        let mut hasher = Keccak256::new();
+        hasher.update(self.version.hash());
+        hasher.update(self.dr_id);
+        hasher.update(self.block_height.to_be_bytes());
+        hasher.update(self.exit_code.to_be_bytes());
+        hasher.update(self.result.hash());
+        hasher.update(&self.payback_address);
+        hasher.update(self.seda_payload.hash());
+        hasher.finalize().into()
+    }
+}
+
+/// A revealed data request result that is hashed and signed by the executor
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+pub struct RevealBody {
+    pub salt:      [u8; 32],
+    pub exit_code: u8,
+    pub gas_used:  u128,
+    pub reveal:    Vec<u8>,
+}
+
+impl Hasher for RevealBody {
+    fn hash(&self) -> Hash {
+        let mut hasher = Keccak256::new();
+        hasher.update(self.salt);
+        hasher.update(self.exit_code.to_be_bytes());
+        hasher.update(self.gas_used.to_be_bytes());
+        hasher.update(self.reveal.hash());
+        hasher.finalize().into()
+    }
+}
 
 #[cw_serde]
 pub struct PostDataRequestArgs {

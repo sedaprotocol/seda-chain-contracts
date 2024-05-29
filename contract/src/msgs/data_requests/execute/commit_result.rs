@@ -1,5 +1,4 @@
 use super::*;
-use crate::crypto::{hash, verify_proof};
 
 #[cw_serde]
 pub struct Execute {
@@ -24,14 +23,16 @@ impl Execute {
         verify_proof(&self.public_key, &self.proof, message_hash)?;
 
         // find the data request from the pool (if it exists, otherwise error)
-        let public_key_str = hex::encode(&self.public_key);
         let mut dr = state::load_req(deps.storage, &self.dr_id)?;
-        if dr.commits.contains_key(&public_key_str) {
+
+        // error if the user has already committed
+        let public_key_str = hex::encode(&self.public_key);
+        if dr.has_committer(&public_key_str) {
             return Err(ContractError::AlreadyCommitted);
         }
 
         // error if reveal stage has started (replication factor reached)
-        if u16::try_from(dr.commits.len()).unwrap() >= dr.replication_factor {
+        if dr.reveal_started() {
             return Err(ContractError::RevealStarted);
         }
 

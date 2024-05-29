@@ -4,6 +4,7 @@ use super::*;
 
 const DATA_REQUESTS: Map<&Hash, DataRequest> = Map::new("data_results_pool");
 const DATA_REQUESTS_BY_STATUS: Map<&DataRequestStatus, HashSet<Hash>> = Map::new("data_requests_by_status");
+const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 pub fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
     DATA_REQUESTS.has(deps.storage, &dr_id)
@@ -61,7 +62,7 @@ pub fn insert_req(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> Re
 pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdResult<()> {
     DATA_REQUESTS.save(store, dr_id, dr)?;
 
-    if dr.replication_factor as usize == dr.commits.len() {
+    if dr.reveal_started() {
         update_req_status(
             store,
             dr_id,
@@ -75,4 +76,31 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
 
 pub fn requests_by_status(store: &dyn Storage, status: &DataRequestStatus) -> StdResult<HashSet<Hash>> {
     Ok(DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default())
+}
+
+pub fn save(storage: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdResult<()> {
+    DATA_REQUESTS.save(storage, dr_id, dr)?;
+
+    if dr.reveal_over() {
+        // We update the status of the request from Revealing to Tallying
+        // So the chain can grab it and start tallying
+        update_req_status(
+            storage,
+            dr_id,
+            &DataRequestStatus::Revealing,
+            &DataRequestStatus::Tallying,
+        )?;
+    }
+
+    Ok(())
+}
+
+pub fn post_result(store: &mut dyn Storage, dr_id: &Hash, dr: &DataResult) -> StdResult<()> {
+    // we have to remove the request from the pool and save it to the results
+    DATA_REQUESTS.remove(store, dr_id);
+    DATA_RESULTS.save(store, dr_id, dr)?;
+    // We update the status of the request from Tallying to Resolved
+    update_req_status(store, dr_id, &DataRequestStatus::Tallying, &DataRequestStatus::Resolved)?;
+
+    Ok(())
 }
