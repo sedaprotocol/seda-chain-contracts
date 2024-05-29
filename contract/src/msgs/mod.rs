@@ -41,3 +41,17 @@ impl QueryHandler for msgs::QueryMsg {
         }
     }
 }
+
+#[cw_serde]
+#[serde(untagged)]
+pub enum SudoMsg {
+    DataRequest(data_requests::sudo::SudoMsg),
+}
+
+impl SudoMsg {
+    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        match self {
+            SudoMsg::DataRequest(msg) => msg.execute(deps, env, info),
+        }
+    }
+}

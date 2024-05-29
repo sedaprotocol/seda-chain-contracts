@@ -58,6 +58,8 @@ pub enum ContractError {
     AlreadyRevealed,
     #[error("RevealMismatch: Revealed result does not match the committed result")]
     RevealMismatch,
+    #[error("NotEnoughReveals: Not enough reveals to post the data result")]
+    NotEnoughReveals,
     #[error("NotProxy: Only proxy can pass a sender")]
     NotProxy,
     #[error("EmptyArg: Arg cannot be empty: {0}")]

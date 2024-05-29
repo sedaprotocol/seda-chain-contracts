@@ -49,7 +49,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
             return Err(ContractError::RevealMismatch);
         }
 
-        let mut response = Response::new().add_attribute("action", "reveal_data_result").add_event(
+        let response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
                 ("dr_id", self.dr_id.clone()),
@@ -59,52 +59,8 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         );
 
         // add the reveal to the data request state
-        let gas_used = self.reveal_body.gas_used;
-        let reveal = self.reveal_body.reveal.clone();
         dr.reveals.insert(self.public_key.clone(), self.reveal_body);
-        // TODO should be able to clean this clone after we separate
-        // post result from reveal result
-        state::reveal(deps.storage, &dr_id, dr.clone())?;
-
-        // TODO: move to sudo_post_result, this is a mocked tally
-        // if total reveals equals replication factor, resolve the DR
-        if dr.reveal_over() {
-            let block_height: u64 = env.block.height;
-            // TODO: get this from the tally module
-            let exit_code: u8 = 0;
-
-            let event = Event::new("seda-data-result").add_attributes([
-                ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", self.dr_id.clone()),
-                ("block_height", block_height.to_string()),
-                ("exit_code", exit_code.to_string()),
-                ("result", reveal.to_base64()),
-                ("payback_address", dr.payback_address.to_base64()),
-                ("seda_payload", dr.seda_payload.to_base64()),
-            ]);
-
-            // save the data result
-            let dr_result = DataResult {
-                version: dr.version,
-                dr_id: self.dr_id,
-                block_height: env.block.height,
-                exit_code,
-                gas_used,
-                result: reveal,
-                payback_address: dr.payback_address,
-                seda_payload: dr.seda_payload,
-                // TODO this is mocked behavior
-                // this should be received from the post result method in the future.
-                consensus: true,
-            };
-            state::post_result(deps.storage, &dr_id, &dr_result)?;
-
-            let result_id = dr_result.hash();
-            let event = event.add_attribute("result_id", result_id.to_hex());
-            response = response.add_event(event);
-
-            return Ok(response);
-        }
+        state::reveal(deps.storage, &dr_id, dr)?;
 
         Ok(response)
     }
