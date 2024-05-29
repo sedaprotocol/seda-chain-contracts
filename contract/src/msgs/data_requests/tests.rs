@@ -121,8 +121,6 @@ fn cannot_double_commit() {
     )
     .unwrap();
 
-    state::requests_by_status(&deps.storage, &DataRequestStatus::Committing).unwrap();
-
     // commit again as the same user
     test_helpers::commit_result(
         deps.as_mut(),
@@ -159,8 +157,6 @@ fn cannot_commit_after_replication_factor_reached() {
         None,
     )
     .unwrap();
-
-    state::requests_by_status(&deps.storage, &DataRequestStatus::Committing).unwrap();
 
     // commit again as a different user
     let new = TestExecutor::new("new", Some(2));
@@ -199,4 +195,393 @@ fn commits_wrong_signature_fails() {
         Some(10),
     )
     .unwrap();
+}
+
+#[test]
+fn reveal_result() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let alice = TestExecutor::new("alice", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 2);
+    test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // bob also commits
+    let bob = TestExecutor::new("bob", Some(2));
+    let bob_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "20".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        bob.info(),
+        &bob,
+        constructed_dr_id,
+        bob_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // alice reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+
+    let revealed = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    assert_eq!(1, revealed.len());
+    assert!(revealed.contains(&constructed_dr_id));
+}
+
+#[test]
+fn reveals_meet_replication_factor() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let alice = TestExecutor::new("alice", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 2);
+    test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // bob also commits
+    let bob = TestExecutor::new("bob", Some(2));
+    let bob_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "20".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        bob.info(),
+        &bob,
+        constructed_dr_id,
+        bob_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // alice reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+
+    // bob reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        bob.info(),
+        &bob,
+        constructed_dr_id,
+        bob_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+
+    // TODO this should check if status is Tallying.
+    // but for now we mock the tallying so its set to Resolved
+    let resolved = state::requests_by_status(&deps.storage, &DataRequestStatus::Resolved).unwrap();
+    assert_eq!(1, resolved.len());
+    assert!(resolved.contains(&constructed_dr_id));
+}
+
+#[test]
+#[should_panic(expected = "RevealNotStarted")]
+fn cannot_reveal_if_commit_rf_not_met() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let alice = TestExecutor::new("alice", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 2);
+    test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // alice reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "NotCommitted")]
+fn cannot_reveal_if_user_did_not_commit() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let alice = TestExecutor::new("alice", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 1);
+    test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // bob also commits
+    let bob = TestExecutor::new("bob", Some(2));
+    let bob_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "20".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+
+    // bob reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        bob.info(),
+        &bob,
+        constructed_dr_id,
+        bob_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+
+    let revealed = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    assert_eq!(1, revealed.len());
+    assert!(revealed.contains(&constructed_dr_id));
+}
+
+#[test]
+#[should_panic(expected = "AlreadyRevealed")]
+fn cannot_double_reveal() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let alice = TestExecutor::new("alice", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 2);
+    test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // bob also commits
+    let bob = TestExecutor::new("bob", Some(2));
+    let bob_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "20".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        bob.info(),
+        &bob,
+        constructed_dr_id,
+        bob_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // alice reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal.clone(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // alice reveals again
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "RevealMismatch")]
+fn reveal_must_match_commitment() {
+    let mut deps = mock_dependencies();
+    let creator = TestExecutor::new("creator", Some(2));
+    instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+
+    // post a data request
+    let alice = TestExecutor::new("alice", Some(2));
+    let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 2);
+    test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+
+    // commit a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        RevealBody {
+            salt:      alice.salt(),
+            reveal:    "11".hash().to_vec(),
+            gas_used:  0,
+            exit_code: 0,
+        }
+        .hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // bob also commits
+    let bob = TestExecutor::new("bob", Some(2));
+    let bob_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "20".hash().to_vec(),
+        gas_used:  0,
+        exit_code: 0,
+    };
+    test_helpers::commit_result(
+        deps.as_mut(),
+        bob.info(),
+        &bob,
+        constructed_dr_id,
+        bob_reveal.hash(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    // alice reveals
+    test_helpers::reveal_result(
+        deps.as_mut(),
+        alice.info(),
+        &alice,
+        constructed_dr_id,
+        alice_reveal,
+        None,
+        None,
+    )
+    .unwrap();
+
+    let revealed = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    assert_eq!(1, revealed.len());
+    assert!(revealed.contains(&constructed_dr_id));
 }

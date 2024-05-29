@@ -139,3 +139,34 @@ pub fn commit_result(
         msg.into(),
     )
 }
+
+pub fn reveal_result(
+    deps: DepsMut,
+    info: MessageInfo,
+    exec: &TestExecutor,
+    dr_id: Hash,
+    reveal_body: RevealBody,
+    msg_height: Option<u64>,
+    env_height: Option<u64>,
+) -> Result<Response, ContractError> {
+    let msg_hash = hash([
+        "reveal_data_result".as_bytes(),
+        &dr_id,
+        &msg_height.unwrap_or_default().to_be_bytes(),
+        &reveal_body.hash(),
+    ]);
+
+    let msg = reveal_result::Execute {
+        reveal_body,
+        dr_id,
+        public_key: exec.pub_key(),
+        proof: exec.prove(&msg_hash),
+    };
+
+    execute(
+        deps,
+        env_with_height(env_height.unwrap_or_default()),
+        info.clone(),
+        msg.into(),
+    )
+}

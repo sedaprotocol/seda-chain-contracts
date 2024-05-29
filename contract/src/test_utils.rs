@@ -65,7 +65,7 @@ impl TestExecutor {
         vrf.prove(&self.signing_key.to_bytes(), hash).unwrap()
     }
 
-    pub fn _salt(&self) -> Hash {
+    pub fn salt(&self) -> Hash {
         let mut hasher = Keccak256::new();
         hasher.update(self.name);
         hasher.finalize().into()
