@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use super::*;
 
 #[cw_serde]
@@ -16,10 +14,10 @@ pub enum QueryMsg {
     GetDataRequestReveal { dr_id: Hash, public_key: PublicKey },
     #[returns(HashMap<String, RevealBody>)]
     GetDataRequestReveals { dr_id: Hash },
-    #[returns(HashSet<DataRequest>)]
-    GetDataRequestbyStatus { status: DataRequestStatus },
     #[returns(DataResult)]
     GetResolvedDataRequest { dr_id: Hash },
+    #[returns(HashMap<String, DR>)]
+    GetDataRequestbyStatus { status: DataRequestStatus },
 }
 
 impl QueryMsg {
@@ -44,11 +42,11 @@ impl QueryMsg {
                 let dr = state::load_req(deps.storage, &dr_id)?;
                 to_json_binary(&dr.reveals)
             }
-            QueryMsg::GetDataRequestbyStatus { status } => {
-                to_json_binary(&state::requests_by_status(deps.storage, &status)?)
-            }
             QueryMsg::GetResolvedDataRequest { dr_id } => {
                 to_json_binary(&state::load_resolved_req(deps.storage, &dr_id)?)
+            }
+            QueryMsg::GetDataRequestbyStatus { status } => {
+                to_json_binary(&state::requests_by_status(deps.storage, &status)?)
             }
         }
     }

@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use super::*;
 
 const DATA_REQUESTS: Map<&Hash, DataRequest> = Map::new("data_results_pool");
@@ -73,8 +71,19 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
     Ok(())
 }
 
-pub fn requests_by_status(store: &dyn Storage, status: &DataRequestStatus) -> StdResult<HashSet<Hash>> {
-    Ok(DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default())
+pub fn requests_by_status(store: &dyn Storage, status: &DataRequestStatus) -> StdResult<HashMap<String, DR>> {
+    let hashes = DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default();
+
+    hashes
+        .into_iter()
+        .map(|hash| {
+            if status.is_resolved() {
+                DATA_RESULTS.load(store, &hash).map(|dr| (hash.to_hex(), dr.into()))
+            } else {
+                DATA_REQUESTS.load(store, &hash).map(|dr| (hash.to_hex(), dr.into()))
+            }
+        })
+        .collect::<StdResult<_>>()
 }
 
 pub fn save(storage: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdResult<()> {

@@ -170,3 +170,63 @@ pub fn reveal_result(
         msg.into(),
     )
 }
+
+pub fn get_data_request(deps: DepsMut, dr_id: Hash) -> Option<DataRequest> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        query::QueryMsg::GetDataRequest { dr_id }.into(),
+    )
+    .unwrap();
+    from_json(res).unwrap()
+}
+
+pub fn get_data_result_commit(deps: DepsMut, dr_id: Hash, public_key: Vec<u8>) -> Option<Hash> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        query::QueryMsg::GetDataRequestCommitment { dr_id, public_key }.into(),
+    )
+    .unwrap();
+    from_json(res).unwrap()
+}
+
+pub fn get_data_result_commits(deps: DepsMut, dr_id: Hash) -> HashMap<String, Hash> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        query::QueryMsg::GetDataRequestCommitments { dr_id }.into(),
+    )
+    .unwrap();
+    from_json(res).unwrap()
+}
+
+pub fn get_data_result_reveal(deps: DepsMut, dr_id: Hash, public_key: Vec<u8>) -> Option<RevealBody> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        query::QueryMsg::GetDataRequestReveal { dr_id, public_key }.into(),
+    )
+    .unwrap();
+    from_json(res).unwrap()
+}
+
+pub fn get_data_result_reveals(deps: DepsMut, dr_id: Hash) -> HashMap<String, RevealBody> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        query::QueryMsg::GetDataRequestCommitments { dr_id }.into(),
+    )
+    .unwrap();
+    from_json(res).unwrap()
+}
+
+pub fn get_data_requests_by_status(deps: DepsMut, status: DataRequestStatus) -> HashMap<String, DR> {
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        query::QueryMsg::GetDataRequestbyStatus { status }.into(),
+    )
+    .unwrap();
+    from_json(res).unwrap()
+}

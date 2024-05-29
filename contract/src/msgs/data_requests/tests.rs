@@ -32,9 +32,9 @@ fn post_data_request() {
         Some(test_helpers::construct_dr(constructed_dr_id, dr_args, vec![])),
         received_value
     );
-    let await_commits = state::requests_by_status(&deps.storage, &DataRequestStatus::Committing).unwrap();
+    let await_commits = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Committing);
     assert_eq!(1, await_commits.len());
-    assert!(await_commits.contains(&constructed_dr_id));
+    assert!(await_commits.contains_key(&constructed_dr_id.to_hex()));
 
     // nonexistent data request does not yet exist
     let value = test_helpers::get_dr(deps.as_mut(), "nonexistent".hash());
@@ -64,9 +64,9 @@ fn commit_result() {
     )
     .unwrap();
 
-    let commiting = state::requests_by_status(&deps.storage, &DataRequestStatus::Committing).unwrap();
+    let commiting = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Committing);
     assert_eq!(1, commiting.len());
-    assert!(commiting.contains(&constructed_dr_id));
+    assert!(commiting.contains_key(&constructed_dr_id.to_hex()));
 }
 
 #[test]
@@ -92,9 +92,9 @@ fn commits_meet_replication_factor() {
     )
     .unwrap();
 
-    let commiting = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    let commiting = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Revealing);
     assert_eq!(1, commiting.len());
-    assert!(commiting.contains(&constructed_dr_id));
+    assert!(commiting.contains_key(&constructed_dr_id.to_hex()));
 }
 
 #[test]
@@ -257,9 +257,9 @@ fn reveal_result() {
     )
     .unwrap();
 
-    let revealed = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    let revealed = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Revealing);
     assert_eq!(1, revealed.len());
-    assert!(revealed.contains(&constructed_dr_id));
+    assert!(revealed.contains_key(&constructed_dr_id.to_hex()));
 }
 
 #[test]
@@ -336,9 +336,9 @@ fn reveals_meet_replication_factor() {
 
     // TODO this should check if status is Tallying.
     // but for now we mock the tallying so its set to Resolved
-    let resolved = state::requests_by_status(&deps.storage, &DataRequestStatus::Resolved).unwrap();
+    let resolved = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Resolved);
     assert_eq!(1, resolved.len());
-    assert!(resolved.contains(&constructed_dr_id));
+    assert!(resolved.contains_key(&constructed_dr_id.to_hex()));
 }
 
 #[test]
@@ -435,9 +435,9 @@ fn cannot_reveal_if_user_did_not_commit() {
     )
     .unwrap();
 
-    let revealed = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    let revealed = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Revealing);
     assert_eq!(1, revealed.len());
-    assert!(revealed.contains(&constructed_dr_id));
+    assert!(revealed.contains_key(&constructed_dr_id.to_hex()));
 }
 
 #[test]
@@ -581,7 +581,7 @@ fn reveal_must_match_commitment() {
     )
     .unwrap();
 
-    let revealed = state::requests_by_status(&deps.storage, &DataRequestStatus::Revealing).unwrap();
+    let revealed = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Revealing);
     assert_eq!(1, revealed.len());
-    assert!(revealed.contains(&constructed_dr_id));
+    assert!(revealed.contains_key(&constructed_dr_id.to_hex()));
 }

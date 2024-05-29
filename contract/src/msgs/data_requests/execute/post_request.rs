@@ -29,9 +29,9 @@ impl Execute {
             .set_data(Binary::from(dr_id))
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", dr_id.hash_hex()),
-                ("dr_binary_id", self.posted_dr.dr_binary_id.hash_hex()),
-                ("tally_binary_id", self.posted_dr.tally_binary_id.hash_hex()),
+                ("dr_id", dr_id.to_hex()),
+                ("dr_binary_id", self.posted_dr.dr_binary_id.to_hex()),
+                ("tally_binary_id", self.posted_dr.tally_binary_id.to_hex()),
                 ("dr_inputs", to_json_string(&self.posted_dr.dr_inputs)?),
                 ("tally_inputs", to_json_string(&self.posted_dr.tally_inputs)?),
                 ("memo", to_json_string(&self.posted_dr.memo)?),

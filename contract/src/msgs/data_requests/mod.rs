@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cw_storage_plus::{Key, PrimaryKey};
 use semver::Version;
@@ -23,6 +23,12 @@ pub enum DataRequestStatus {
     Resolved,
 }
 
+impl DataRequestStatus {
+    pub fn is_resolved(&self) -> bool {
+        matches!(self, DataRequestStatus::Resolved)
+    }
+}
+
 impl<'a> PrimaryKey<'a> for &'a DataRequestStatus {
     type Prefix = ();
     type SubPrefix = ();
@@ -43,7 +49,7 @@ impl<'a> PrimaryKey<'a> for &'a DataRequestStatus {
 }
 
 /// Represents a data request at creation time
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[cw_serde]
 pub struct DataRequest {
     /// Identifier
     pub id: Hash,
@@ -105,8 +111,26 @@ impl DataRequest {
     }
 }
 
+#[cw_serde]
+pub enum DR {
+    Request(Box<DataRequest>),
+    Result(DataResult),
+}
+
+impl From<DataRequest> for DR {
+    fn from(dr: DataRequest) -> Self {
+        DR::Request(Box::new(dr))
+    }
+}
+
+impl From<DataResult> for DR {
+    fn from(dr: DataResult) -> Self {
+        DR::Result(dr)
+    }
+}
+
 /// Represents a resolved data result
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[cw_serde]
 pub struct DataResult {
     // DR Result
     /// Semantic Version String
@@ -144,7 +168,7 @@ impl Hasher for DataResult {
 }
 
 /// A revealed data request result that is hashed and signed by the executor
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[cw_serde]
 pub struct RevealBody {
     pub salt:      [u8; 32],
     pub exit_code: u8,

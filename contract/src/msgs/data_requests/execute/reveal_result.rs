@@ -53,7 +53,7 @@ impl Execute {
         let mut response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", self.dr_id.hash_hex()),
+                ("dr_id", self.dr_id.to_hex()),
                 ("executor", info.sender.into_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
             ]),
@@ -74,7 +74,7 @@ impl Execute {
 
             let event = Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", self.dr_id.hash_hex()),
+                ("dr_id", self.dr_id.to_hex()),
                 ("block_height", block_height.to_string()),
                 ("exit_code", exit_code.to_string()),
                 ("result", to_json_string(&reveal)?),
@@ -96,7 +96,7 @@ impl Execute {
             state::post_result(deps.storage, &self.dr_id, &dr_result)?;
 
             let result_id = dr_result.hash();
-            let event = event.add_attribute("result_id", result_id.hash_hex());
+            let event = event.add_attribute("result_id", result_id.to_hex());
             response = response.add_event(event);
 
             return Ok(response);

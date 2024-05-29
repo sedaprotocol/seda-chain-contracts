@@ -7,12 +7,20 @@ pub type Memo = Vec<u8>;
 pub type Hash = [u8; 32];
 pub type PublicKey = Vec<u8>;
 
+pub trait Hex: AsRef<[u8]> {
+    fn to_hex(&self) -> String {
+        hex::encode(self)
+    }
+}
+
+impl Hex for Hash {
+    fn to_hex(&self) -> String {
+        hex::encode(self)
+    }
+}
+
 pub trait Hasher {
     fn hash(&self) -> Hash;
-
-    fn hash_hex(&self) -> String {
-        hex::encode(self.hash())
-    }
 }
 
 impl Hasher for &str {
@@ -33,14 +41,6 @@ impl Hasher for String {
 impl Hasher for Version {
     fn hash(&self) -> Hash {
         self.to_string().hash()
-    }
-}
-
-impl<const N: usize> Hasher for [u8; N] {
-    fn hash(&self) -> Hash {
-        let mut hasher = Keccak256::new();
-        hasher.update(self);
-        hasher.finalize().into()
     }
 }
 
