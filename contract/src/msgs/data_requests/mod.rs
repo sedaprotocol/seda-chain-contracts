@@ -15,7 +15,7 @@ pub mod test_helpers;
 #[cfg(test)]
 mod tests;
 
-#[derive(Clone)]
+#[cw_serde]
 pub enum DataRequestStatus {
     Committing,
     Revealing,

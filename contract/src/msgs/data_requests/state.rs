@@ -7,8 +7,7 @@ const DATA_REQUESTS_BY_STATUS: Map<&DataRequestStatus, HashSet<Hash>> = Map::new
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 pub fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
-    DATA_REQUESTS.has(deps.storage, &dr_id)
-    // || DATA_RESULTS.has(deps.storage, &dr_id)
+    DATA_REQUESTS.has(deps.storage, &dr_id) || DATA_RESULTS.has(deps.storage, &dr_id)
 }
 
 pub fn may_load_req(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequest>> {
@@ -103,4 +102,8 @@ pub fn post_result(store: &mut dyn Storage, dr_id: &Hash, dr: &DataResult) -> St
     update_req_status(store, dr_id, &DataRequestStatus::Tallying, &DataRequestStatus::Resolved)?;
 
     Ok(())
+}
+
+pub(crate) fn load_resolved_req(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
+    DATA_RESULTS.load(store, dr_id)
 }
