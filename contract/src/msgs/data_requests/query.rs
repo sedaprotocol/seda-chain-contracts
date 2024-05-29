@@ -17,7 +17,7 @@ pub enum QueryMsg {
     #[returns(DataResult)]
     GetResolvedDataRequest { dr_id: Hash },
     #[returns(HashMap<String, DR>)]
-    GetDataRequestbyStatus { status: DataRequestStatus },
+    GetDataRequestsByStatus { status: DataRequestStatus },
 }
 
 impl QueryMsg {
@@ -45,7 +45,7 @@ impl QueryMsg {
             QueryMsg::GetResolvedDataRequest { dr_id } => {
                 to_json_binary(&state::load_resolved_req(deps.storage, &dr_id)?)
             }
-            QueryMsg::GetDataRequestbyStatus { status } => {
+            QueryMsg::GetDataRequestsByStatus { status } => {
                 to_json_binary(&state::requests_by_status(deps.storage, &status)?)
             }
         }

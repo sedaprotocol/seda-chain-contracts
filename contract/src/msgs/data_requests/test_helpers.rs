@@ -225,7 +225,7 @@ pub fn get_data_requests_by_status(deps: DepsMut, status: DataRequestStatus) -> 
     let res = query(
         deps.as_ref(),
         mock_env(),
-        query::QueryMsg::GetDataRequestbyStatus { status }.into(),
+        query::QueryMsg::GetDataRequestsByStatus { status }.into(),
     )
     .unwrap();
     from_json(res).unwrap()
