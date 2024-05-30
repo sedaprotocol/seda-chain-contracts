@@ -4,9 +4,15 @@ use thiserror::Error;
 use vrf_rs::error::VrfError;
 
 #[derive(Error, Debug, PartialEq)]
+#[cfg_attr(test, derive(Clone))]
 pub enum ContractError {
-    #[error("{0}")]
+    #[cfg(not(test))]
+    #[error(transparent)]
     Std(#[from] StdError),
+
+    #[cfg(test)]
+    #[error("{0}")]
+    Std(String),
 
     // staking contract errors
     #[error("NoFunds: No funds provided")]
@@ -57,6 +63,25 @@ pub enum ContractError {
     #[error("FromHex: Invalid hexadecimal input: {0}")]
     FromHex(#[from] FromHexError),
 
-    #[error("Proof Error: {0}")]
+    #[cfg(not(test))]
+    #[error(transparent)]
     Prove(#[from] VrfError),
+
+    #[cfg(test)]
+    #[error("{0}")]
+    Prove(String),
+}
+
+#[cfg(test)]
+impl From<StdError> for ContractError {
+    fn from(err: StdError) -> Self {
+        ContractError::Std(err.to_string())
+    }
+}
+
+#[cfg(test)]
+impl From<VrfError> for ContractError {
+    fn from(err: VrfError) -> Self {
+        ContractError::Prove(err.to_string())
+    }
 }

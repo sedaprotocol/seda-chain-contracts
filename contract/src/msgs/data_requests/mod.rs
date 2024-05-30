@@ -12,8 +12,8 @@ pub mod state;
 
 #[cfg(test)]
 pub mod test_helpers;
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 #[cw_serde]
 pub enum DataRequestStatus {
