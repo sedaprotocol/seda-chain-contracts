@@ -9,7 +9,7 @@ pub fn transfer_ownership(deps: DepsMut, info: MessageInfo, new_owner: String) -
     execute(deps, mock_env(), info, msg.into())
 }
 pub fn accept_ownership(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
-    let msg = accept_ownership::Execute;
+    let msg = accept_ownership::Execute {};
 
     execute(deps, mock_env(), info, msg.into())
 }

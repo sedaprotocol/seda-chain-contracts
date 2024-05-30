@@ -9,7 +9,7 @@ pub enum QueryMsg {
     #[returns(bool)]
     IsExecutorEligible { executor: PublicKey },
     #[returns(super::StakingConfig)]
-    GetStakingConfig,
+    GetStakingConfig {},
 }
 
 impl QueryMsg {
@@ -17,7 +17,7 @@ impl QueryMsg {
         match self {
             QueryMsg::GetStaker { executor } => to_json_binary(&utils::get_staker(deps, executor)?),
             QueryMsg::IsExecutorEligible { executor } => to_json_binary(&utils::is_executor_eligible(deps, executor)?),
-            QueryMsg::GetStakingConfig => to_json_binary(&CONFIG.load(deps.storage)?),
+            QueryMsg::GetStakingConfig {} => to_json_binary(&CONFIG.load(deps.storage)?),
         }
     }
 }

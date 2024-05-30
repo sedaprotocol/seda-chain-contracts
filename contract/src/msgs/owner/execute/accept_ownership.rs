@@ -1,7 +1,7 @@
 use super::*;
 
 #[cw_serde]
-pub struct Execute;
+pub struct Execute {}
 
 impl Execute {
     /// Accept transfer contract ownership (previously triggered by owner)

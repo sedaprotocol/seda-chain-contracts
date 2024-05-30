@@ -9,7 +9,6 @@ pub(in crate::msgs::owner) mod remove_from_allowlist;
 pub(in crate::msgs::owner) mod transfer_ownership;
 
 #[cw_serde]
-#[serde(untagged)]
 pub enum ExecuteMsg {
     TransferOwnership(transfer_ownership::Execute),
     AcceptOwnership(accept_ownership::Execute),
