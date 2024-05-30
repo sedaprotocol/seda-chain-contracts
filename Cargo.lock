@@ -784,8 +784,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vrf-rs"
-version = "0.1.0"
-source = "git+ssh://git@github.com/sedaprotocol/vrf-rs.git#5b66f2c0f4884b725733f8bb1539519e86c35166"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a804aa4c9e4f37dde2a098b9a374c121ba901fc860f6aea2484f9e868f12d06f"
 dependencies = [
  "elliptic-curve",
  "k256",
@@ -803,6 +804,6 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "zeroize"
-version = "1.7.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
+checksum = "ced3678a2879b30306d323f4542626697a464a97c0a07c9aebf7ebca65cd4dde"
