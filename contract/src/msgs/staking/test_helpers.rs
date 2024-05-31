@@ -6,12 +6,14 @@ use crate::{
     crypto::hash,
     types::{Hasher, PublicKey},
     TestExecutor,
+    TestInfo,
 };
 
-pub fn set_staking_config(deps: DepsMut, info: MessageInfo, config: StakingConfig) -> Result<Response, ContractError> {
-    let msg = config.into();
-
-    execute(deps, mock_env(), info, msg)
+impl TestInfo {
+    pub fn set_staking_config(&mut self, sender: &TestExecutor, config: StakingConfig) -> Result<(), ContractError> {
+        let msg = config.into();
+        self.execute(sender, &msg)
+    }
 }
 
 pub fn reg_and_stake(

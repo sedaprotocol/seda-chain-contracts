@@ -37,7 +37,7 @@ impl TestInfo {
         let mut app = AppBuilder::default()
             .with_api(MockApi::default().with_prefix("seda"))
             .build(no_init);
-        let contract = Box::new(ContractWrapper::new(execute, instantiate, query).with_sudo(sudo));
+        let contract = Box::new(ContractWrapper::new(execute, instantiate, query));
 
         let creator_addr = app.api().addr_make("creator");
         let creator = TestExecutor::new("creator", creator_addr.clone(), Some(1_000_000));
@@ -107,7 +107,7 @@ impl TestInfo {
         let res = self
             .app
             .execute_contract(sender.addr(), self.contract_addr.clone(), msg, &[])
-            .map_err(|e| e.downcast_ref::<ContractError>().cloned().unwrap())?;
+            .map_err(|e| dbg!(e).downcast_ref::<ContractError>().cloned().unwrap())?;
 
         Ok(match res.data {
             Some(data) => from_json(data).unwrap(),
