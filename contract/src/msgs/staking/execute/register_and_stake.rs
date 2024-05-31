@@ -35,14 +35,17 @@ impl Execute {
         let amount = get_attached_funds(&info.funds, &token)?;
 
         let minimum_stake_to_register = CONFIG.load(deps.storage)?.minimum_stake_to_register;
-        if amount < minimum_stake_to_register {
-            return Err(ContractError::InsufficientFunds(minimum_stake_to_register, amount));
+        if amount < minimum_stake_to_register.u128() {
+            return Err(ContractError::InsufficientFunds(
+                minimum_stake_to_register.u128(),
+                amount,
+            ));
         }
 
         let executor = Staker {
             memo:                      self.memo.clone(),
-            tokens_staked:             amount,
-            tokens_pending_withdrawal: 0,
+            tokens_staked:             Uint128::new(amount),
+            tokens_pending_withdrawal: Uint128::zero(),
         };
         STAKERS.save(deps.storage, &self.public_key, &executor)?;
 

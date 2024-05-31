@@ -10,7 +10,7 @@ use crate::{
 pub struct Execute {
     pub(in crate::msgs::staking) public_key: PublicKey,
     pub(in crate::msgs::staking) proof:      Vec<u8>,
-    pub(in crate::msgs::staking) amount:     u128,
+    pub(in crate::msgs::staking) amount:     Uint128,
 }
 
 impl Execute {
@@ -29,8 +29,8 @@ impl Execute {
         let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
         if self.amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
-                executor.tokens_pending_withdrawal,
-                self.amount,
+                executor.tokens_pending_withdrawal.u128(),
+                self.amount.u128(),
             ));
         }
 
@@ -41,7 +41,7 @@ impl Execute {
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
             to_address: info.sender.to_string(),
-            amount:     coins(self.amount, token),
+            amount:     coins(self.amount.u128(), token),
         };
 
         let sender = info.sender.into_string();

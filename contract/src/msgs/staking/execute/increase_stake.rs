@@ -29,7 +29,7 @@ impl Execute {
 
         // update staked tokens for executor
         let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
-        executor.tokens_staked += amount;
+        executor.tokens_staked += Uint128::new(amount);
         STAKERS.save(deps.storage, &self.public_key, &executor)?;
 
         Ok(Response::new().add_attribute("action", "increase-stake").add_events([

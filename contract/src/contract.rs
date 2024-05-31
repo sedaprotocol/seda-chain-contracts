@@ -1,6 +1,6 @@
-use cosmwasm_std::StdResult;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{StdResult, Uint128};
 use cw2::set_contract_version;
 
 use crate::{
@@ -32,8 +32,8 @@ pub fn instantiate(
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     PENDING_OWNER.save(deps.storage, &None)?;
     let init_config = StakingConfig {
-        minimum_stake_to_register:               INITIAL_MINIMUM_STAKE_TO_REGISTER,
-        minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
+        minimum_stake_to_register:               Uint128::new(INITIAL_MINIMUM_STAKE_TO_REGISTER),
+        minimum_stake_for_committee_eligibility: Uint128::new(INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY),
         allowlist_enabled:                       false,
     };
     CONFIG.save(deps.storage, &init_config)?;

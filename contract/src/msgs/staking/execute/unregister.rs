@@ -18,7 +18,7 @@ impl Execute {
 
         // require that the executor has no staked or tokens pending withdrawal
         let executor = STAKERS.load(deps.storage, &self.public_key)?;
-        if executor.tokens_staked > 0 || executor.tokens_pending_withdrawal > 0 {
+        if executor.tokens_staked > Uint128::zero() || executor.tokens_pending_withdrawal > Uint128::zero() {
             return Err(ContractError::ExecutorHasTokens);
         }
 
