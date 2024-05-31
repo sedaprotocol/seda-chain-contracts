@@ -32,6 +32,7 @@ pub struct TestInfo {
     app:           App,
     contract_addr: Addr,
     executors:     HashMap<&'static str, TestExecutor>,
+    chain_id:      String,
 }
 
 impl TestInfo {
@@ -44,11 +45,13 @@ impl TestInfo {
         let creator_addr = app.api().addr_make("creator");
         let creator = TestExecutor::new("creator", creator_addr.clone(), Some(1_000_000));
 
+        let chain_id = "seda_test".to_string();
+
         let code_id = app.store_code_with_creator(creator.addr(), contract);
         let init_msg = to_json_binary(&InstantiateMsg {
             token:    "aseda".to_string(),
             owner:    creator.addr().into_string(),
-            chain_id: "seda_test".to_string(),
+            chain_id: chain_id.clone(),
         })
         .unwrap();
 
@@ -70,6 +73,7 @@ impl TestInfo {
             app,
             contract_addr: Addr::unchecked(parsed.contract_address),
             executors,
+            chain_id,
         }
     }
 
@@ -99,6 +103,10 @@ impl TestInfo {
 
     pub fn app(&self) -> &App {
         &self.app
+    }
+
+    pub fn chain_id(&self) -> &[u8] {
+        self.chain_id.as_bytes()
     }
 
     pub fn set_block_height(&mut self, height: u64) {

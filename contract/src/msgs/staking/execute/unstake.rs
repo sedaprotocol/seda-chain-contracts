@@ -1,5 +1,10 @@
+use state::inc_get_seq;
+
 use super::{state::STAKERS, *};
-use crate::crypto::{hash, verify_proof};
+use crate::{
+    crypto::{hash, verify_proof},
+    state::CHAIN_ID,
+};
 
 #[cw_serde]
 pub struct Execute {
@@ -11,8 +16,14 @@ pub struct Execute {
 impl Execute {
     /// Unstakes tokens from a given staker, to be withdrawn after a delay.
     pub fn execute(self, deps: DepsMut, _env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
-        let message_hash = hash(["unstake".as_bytes(), &self.amount.to_be_bytes()]);
+        let message_hash = hash([
+            "unstake".as_bytes(),
+            &self.amount.to_be_bytes(),
+            chain_id.as_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+        ]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;

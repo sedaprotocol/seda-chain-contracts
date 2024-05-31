@@ -1,9 +1,10 @@
 use cosmwasm_std::{coins, BankMsg};
+use state::inc_get_seq;
 
 use super::{state::STAKERS, *};
 use crate::{
     crypto::{hash, verify_proof},
-    state::TOKEN,
+    state::{CHAIN_ID, TOKEN},
 };
 
 #[cw_serde]
@@ -16,8 +17,14 @@ pub struct Execute {
 impl Execute {
     /// Sends tokens back to the sender that are marked as pending withdrawal.
     pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
-        let message_hash = hash(["withdraw".as_bytes(), &self.amount.to_be_bytes()]);
+        let message_hash = hash([
+            "withdraw".as_bytes(),
+            &self.amount.to_be_bytes(),
+            chain_id.as_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+        ]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;

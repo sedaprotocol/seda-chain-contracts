@@ -75,7 +75,13 @@ impl TestInfo {
 
     #[track_caller]
     pub fn unstake(&mut self, sender: &TestExecutor, amount: u128) -> Result<(), ContractError> {
-        let msg_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
+        let seq = self.get_account_sequence(sender.pub_key());
+        let msg_hash = hash([
+            "unstake".as_bytes(),
+            &amount.to_be_bytes(),
+            self.chain_id(),
+            &seq.to_be_bytes(),
+        ]);
         let msg = unstake::Execute {
             public_key: sender.pub_key(),
             proof:      sender.prove(&msg_hash),
@@ -88,7 +94,13 @@ impl TestInfo {
 
     #[track_caller]
     pub fn withdraw(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
-        let msg_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
+        let seq = self.get_account_sequence(sender.pub_key());
+        let msg_hash = hash([
+            "withdraw".as_bytes(),
+            &amount.to_be_bytes(),
+            self.chain_id(),
+            &seq.to_be_bytes(),
+        ]);
         let msg = withdraw::Execute {
             public_key: sender.pub_key(),
             proof:      sender.prove(&msg_hash),
@@ -104,5 +116,10 @@ impl TestInfo {
     #[track_caller]
     pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
         self.query(query::QueryMsg::IsExecutorEligible { executor }).unwrap()
+    }
+
+    #[track_caller]
+    pub fn get_account_sequence(&self, public_key: PublicKey) -> u64 {
+        self.query(query::QueryMsg::GetAccountSeq { public_key }).unwrap()
     }
 }
