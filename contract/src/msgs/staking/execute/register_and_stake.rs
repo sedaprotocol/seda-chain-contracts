@@ -49,16 +49,21 @@ impl Execute {
         };
         STAKERS.save(deps.storage, &self.public_key, &executor)?;
 
-        Ok(Response::new().add_attribute("action", "register-and-stake").add_event(
-            Event::new("seda-register-and-stake").add_attributes([
-                ("version", CONTRACT_VERSION.to_string()),
-                ("executor", hex::encode(self.public_key)),
-                ("sender", info.sender.to_string()),
-                ("memo", self.memo.unwrap_or_default()),
-                ("tokens_staked", amount.to_string()),
-                ("tokens_pending_withdrawal", "0".to_string()),
-            ]),
-        ))
+        let mut event = Event::new("seda-register-and-stake").add_attributes([
+            ("version", CONTRACT_VERSION.to_string()),
+            ("executor", hex::encode(self.public_key)),
+            ("sender", info.sender.to_string()),
+            ("tokens_staked", amount.to_string()),
+            ("tokens_pending_withdrawal", "0".to_string()),
+        ]);
+        // https://github.com/CosmWasm/cosmwasm/issues/2163
+        if let Some(memo) = self.memo {
+            event = event.add_attribute("memo", memo);
+        }
+
+        Ok(Response::new()
+            .add_attribute("action", "register-and-stake")
+            .add_event(event))
     }
 }
 
