@@ -26,12 +26,12 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_owner(&self) -> Addr {
-        self.query(query::QueryMsg::GetOwner).unwrap()
+        self.query(query::QueryMsg::GetOwner {}).unwrap()
     }
 
     #[track_caller]
     pub fn get_pending_owner(&self) -> Option<Addr> {
-        self.query(query::QueryMsg::GetPendingOwner).unwrap()
+        self.query(query::QueryMsg::GetPendingOwner {}).unwrap()
     }
 
     #[track_caller]
