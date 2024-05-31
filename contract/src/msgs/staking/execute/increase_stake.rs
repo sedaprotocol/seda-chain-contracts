@@ -29,7 +29,7 @@ impl Execute {
 
         // update staked tokens for executor
         let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
-        executor.tokens_staked += Uint128::new(amount);
+        executor.tokens_staked += amount;
         STAKERS.save(deps.storage, &self.public_key, &executor)?;
 
         let mut event = Event::new("seda-data-request-executor").add_attributes([

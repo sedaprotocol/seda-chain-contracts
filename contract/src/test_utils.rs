@@ -6,10 +6,12 @@ use cosmwasm_std::{
     testing::{mock_info, MockApi},
     to_json_binary,
     Addr,
+    Coin,
     MessageInfo,
+    StdError,
     WasmMsg,
 };
-use cw_multi_test::{no_init, App, AppBuilder, ContractWrapper, Executor};
+use cw_multi_test::{no_init, App, AppBuilder, BankSudo, ContractWrapper, Executor};
 use cw_utils::parse_instantiate_response_data;
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
@@ -73,6 +75,18 @@ impl TestInfo {
     pub fn new_executor(&mut self, name: &'static str, amount: Option<u128>) -> TestExecutor {
         let addr = self.app.api().addr_make(name);
         let executor = TestExecutor::new(name, addr, amount);
+        if let Some(amount) = amount {
+            self.app
+                .sudo(
+                    BankSudo::Mint {
+                        to_address: executor.addr().into_string(),
+                        amount:     coins(amount, "aseda"),
+                    }
+                    .into(),
+                )
+                .unwrap();
+        }
+
         self.executors.insert(name, executor);
         self.executor(name).clone()
     }
@@ -107,9 +121,35 @@ impl TestInfo {
         let res = self
             .app
             .execute_contract(sender.addr(), self.contract_addr.clone(), msg, &[])
-            .map_err(|e| dbg!(e).downcast_ref::<ContractError>().cloned().unwrap())?;
+            .map_err(|e| e.downcast_ref::<ContractError>().cloned().unwrap())?;
 
         Ok(match res.data {
+            Some(data) => from_json(data).unwrap(),
+            None => from_json(to_json_binary(&serde_json::Value::Null).unwrap()).unwrap(),
+        })
+    }
+
+    #[track_caller]
+    pub fn execute_with_funds<R: DeserializeOwned>(
+        &mut self,
+        sender: &TestExecutor,
+        msg: &ExecuteMsg,
+        amount: u128,
+    ) -> Result<R, ContractError> {
+        let res = self
+            .app
+            .execute_contract(sender.addr(), self.contract_addr.clone(), msg, &coins(amount, "aseda"))
+            .map_err(|e| {
+                if let Some(c_err) = e.downcast_ref::<ContractError>() {
+                    c_err.clone()
+                } else if let Some(s_err) = e.downcast_ref::<StdError>() {
+                    return ContractError::Std(s_err.to_string());
+                } else {
+                    ContractError::Dbg(e.to_string())
+                }
+            });
+
+        Ok(match res?.data {
             Some(data) => from_json(data).unwrap(),
             None => from_json(to_json_binary(&serde_json::Value::Null).unwrap()).unwrap(),
         })
@@ -126,7 +166,7 @@ pub struct TestExecutor {
 }
 
 impl TestExecutor {
-    pub fn new(name: &'static str, addr: Addr, amount: Option<u128>) -> Self {
+    fn new(name: &'static str, addr: Addr, amount: Option<u128>) -> Self {
         let signing_key = SigningKey::random(&mut OsRng);
         let verifying_key = VerifyingKey::from(&signing_key);
         let public_key = verifying_key.to_encoded_point(true).to_bytes();
@@ -154,6 +194,10 @@ impl TestExecutor {
 
     pub fn info(&self) -> MessageInfo {
         self.info.clone()
+    }
+
+    fn funds(&self) -> &[Coin] {
+        &self.info.funds
     }
 
     pub fn set_amount(&mut self, amount: u128) {

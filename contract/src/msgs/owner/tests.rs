@@ -79,10 +79,10 @@ fn non_transferee_cannont_accept_ownership() {
 
 #[test]
 pub fn allowlist_works() {
-    let mut test_info = TestInfo::init();
+    let _test_info = TestInfo::init();
 
     // update the config with allowlist enabled
-    let new_config = StakingConfig {
+    let _new_config = StakingConfig {
         minimum_stake_to_register:               100u8.into(),
         minimum_stake_for_committee_eligibility: 200u8.into(),
         allowlist_enabled:                       true,

@@ -1,5 +1,3 @@
-use cosmwasm_std::testing::mock_info;
-
 use super::{utils::*, *};
 use crate::TestInfo;
 
@@ -124,62 +122,52 @@ fn non_owner_cannot_set_staking_config() {
 //     assert!(!executor_is_eligible);
 // }
 
-// #[test]
-// #[should_panic(expected = "NoFunds")]
-// fn no_funds_provided() {
-//     let mut deps = mock_dependencies();
+#[test]
+#[should_panic(expected = "NoFunds")]
+fn no_funds_provided() {
+    let mut test_info = TestInfo::init();
 
-//     let creator = mock_info("creator", &coins(2, "token"));
-//     let _res = instantiate_contract(deps.as_mut(), creator).unwrap();
-//     let anyone = TestExecutor::new("anyone", None);
+    let anyone = test_info.new_executor("anyone", None);
+    test_info.increase_stake(&anyone).unwrap();
+}
 
-//     test_info.increase_stake(deps.as_mut(), anyone.info(), &anyone).unwrap();
-// }
+#[test]
+#[should_panic(expected = "InsufficientFunds")]
+fn insufficient_funds() {
+    let mut test_info = TestInfo::init();
 
-// #[test]
-// #[should_panic(expected = "InsufficientFunds")]
-// fn insufficient_funds() {
-//     let mut deps = mock_dependencies();
+    // register a data request executor
+    let mut alice = test_info.new_executor("alice", Some(1000));
+    test_info.reg_and_stake(&alice, None, 1).unwrap();
 
-//     let mut alice = TestExecutor::new("alice", Some(1));
-//     let _res = instantiate_contract(deps.as_mut(), alice.info()).unwrap();
+    // try unstaking more than staked
+    alice.set_amount(0);
+    test_info.unstake(&alice, 2).unwrap();
+}
 
-//     // register a data request executor
-//     test_info.reg_and_stake(deps.as_mut(), alice.info(), &alice, None).unwrap();
+#[test]
+fn register_data_request_executor() {
+    let mut test_info = TestInfo::init();
 
-//     // try unstaking more than staked
-//     alice.set_amount(0);
-//     test_info.unstake(deps.as_mut(), alice.info(), &alice, 2).unwrap();
-// }
+    // fetching data request executor for an address that doesn't exist should return None
+    let anyone = test_info.new_executor("anyone", Some(2));
+    let value = test_info.get_staker(anyone.pub_key());
+    assert_eq!(value, None);
 
-// #[test]
-// fn register_data_request_executor() {
-//     let mut deps = mock_dependencies();
+    // someone registers a data request executor
+    test_info.reg_and_stake(&anyone, Some("memo".to_string()), 1).unwrap();
 
-//     let creator = mock_info("creator", &coins(2, "token"));
-//     let _res = instantiate_contract(deps.as_mut(), creator).unwrap();
-
-//     let anyone = TestExecutor::new("anyone", Some(2));
-//     // fetching data request executor for an address that doesn't exist should return None
-//     let value: Option<Staker> = test_info.get_staker(deps.as_mut(), anyone.pub_key());
-
-//     assert_eq!(value, None);
-
-//     // someone registers a data request executor
-//     let _res = test_info.reg_and_stake(deps.as_mut(), anyone.info(), &anyone, Some("memo".to_string())).unwrap();
-
-//     // should be able to fetch the data request executor
-
-//     let value: Option<Staker> = test_helpers::get_staker(deps.as_mut(), anyone.pub_key());
-//     assert_eq!(
-//         value,
-//         Some(Staker {
-//             memo:                      Some("memo".to_string()),
-//             tokens_staked:             2u8.into(),
-//             tokens_pending_withdrawal: 0u8.into(),
-//         }),
-//     );
-// }
+    // should be able to fetch the data request executor
+    let value = test_info.get_staker(anyone.pub_key());
+    assert_eq!(
+        value,
+        Some(Staker {
+            memo:                      Some("memo".to_string()),
+            tokens_staked:             1u8.into(),
+            tokens_pending_withdrawal: 0u8.into(),
+        }),
+    );
+}
 
 // #[test]
 // fn unregister_data_request_executor() {

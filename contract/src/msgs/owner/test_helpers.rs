@@ -40,7 +40,6 @@ impl TestInfo {
             new_owner: new_owner.addr().into_string(),
         }
         .into();
-        dbg!(to_json_string(&msg).unwrap());
         self.execute(sender, &msg)
     }
 }

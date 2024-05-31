@@ -1,8 +1,5 @@
-use cosmwasm_std::{from_json, testing::mock_env};
-
 use super::{execute::*, *};
 use crate::{
-    contract::{execute, query},
     crypto::hash,
     types::{Hasher, PublicKey},
     TestExecutor,
@@ -10,84 +7,83 @@ use crate::{
 };
 
 impl TestInfo {
+    #[track_caller]
     pub fn set_staking_config(&mut self, sender: &TestExecutor, config: StakingConfig) -> Result<(), ContractError> {
         let msg = config.into();
         self.execute(sender, &msg)
     }
-}
 
-pub fn reg_and_stake(
-    deps: DepsMut,
-    info: MessageInfo,
-    exec: &TestExecutor,
-    memo: Option<String>,
-) -> Result<Response, ContractError> {
-    let msg_hash = hash(["register_and_stake".as_bytes(), &memo.hash()]);
+    #[track_caller]
+    pub fn reg_and_stake(
+        &mut self,
+        sender: &TestExecutor,
+        memo: Option<String>,
+        amount: u128,
+    ) -> Result<(), ContractError> {
+        let msg_hash = hash(["register_and_stake".as_bytes(), &memo.hash()]);
 
-    let msg = register_and_stake::Execute {
-        public_key: exec.pub_key(),
-        proof: exec.prove(&msg_hash),
-        memo,
-    };
+        let msg = register_and_stake::Execute {
+            public_key: sender.pub_key(),
+            proof: sender.prove(&msg_hash),
+            memo,
+        }
+        .into();
 
-    execute(deps, mock_env(), info, msg.into())
-}
+        self.execute_with_funds(sender, &msg, amount)
+    }
 
-pub fn unregister(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
-    let msg_hash = hash(["unregister".as_bytes()]);
-    let msg = unregister::Execute {
-        public_key: exec.pub_key(),
-        proof:      exec.prove(&msg_hash),
-    };
+    #[track_caller]
+    pub fn unregister(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
+        let msg_hash = hash(["unregister".as_bytes()]);
+        let msg = unregister::Execute {
+            public_key: sender.pub_key(),
+            proof:      sender.prove(&msg_hash),
+        }
+        .into();
 
-    execute(deps, mock_env(), info, msg.into())
-}
+        self.execute(sender, &msg)
+    }
 
-pub fn get_staker(deps: DepsMut, executor: PublicKey) -> Option<Staker> {
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        query::QueryMsg::GetStaker { executor }.into(),
-    )
-    .unwrap();
-    let value: Option<Staker> = from_json(res).unwrap();
+    #[track_caller]
+    pub fn get_staker(&self, executor: PublicKey) -> Option<Staker> {
+        self.query(query::QueryMsg::GetStaker { executor }).unwrap()
+    }
 
-    value
-}
+    #[track_caller]
+    pub fn increase_stake(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
+        let msg_hash = hash(["increase_stake".as_bytes()]);
+        let msg = increase_stake::Execute {
+            public_key: sender.pub_key(),
+            proof:      sender.prove(&msg_hash),
+        }
+        .into();
 
-pub fn increase_stake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor) -> Result<Response, ContractError> {
-    let msg_hash = hash(["increase_stake".as_bytes()]);
-    let msg = increase_stake::Execute {
-        public_key: exec.pub_key(),
-        proof:      exec.prove(&msg_hash),
-    };
+        self.execute(sender, &msg)
+    }
 
-    execute(deps, mock_env(), info, msg.into())
-}
+    #[track_caller]
+    pub fn unstake(&mut self, sender: &TestExecutor, amount: u128) -> Result<(), ContractError> {
+        let msg_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
+        let msg = unstake::Execute {
+            public_key: sender.pub_key(),
+            proof:      sender.prove(&msg_hash),
+            amount:     amount.into(),
+        }
+        .into();
 
-pub fn unstake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor, amount: u128) -> Result<Response, ContractError> {
-    let msg_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
-    let msg = unstake::Execute {
-        public_key: exec.pub_key(),
-        proof:      exec.prove(&msg_hash),
-        amount:     amount.into(),
-    };
+        self.execute_with_funds(sender, &msg, amount)
+    }
 
-    execute(deps, mock_env(), info, msg.into())
-}
+    #[track_caller]
+    pub fn withdraw(&mut self, sender: &TestExecutor, amount: u128) -> Result<(), ContractError> {
+        let msg_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
+        let msg = withdraw::Execute {
+            public_key: sender.pub_key(),
+            proof:      sender.prove(&msg_hash),
+            amount:     amount.into(),
+        }
+        .into();
 
-pub fn withdraw(
-    deps: DepsMut,
-    info: MessageInfo,
-    exec: &TestExecutor,
-    amount: u128,
-) -> Result<Response, ContractError> {
-    let msg_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
-    let msg = withdraw::Execute {
-        public_key: exec.pub_key(),
-        proof:      exec.prove(&msg_hash),
-        amount:     amount.into(),
-    };
-
-    execute(deps, mock_env(), info, msg.into())
+        self.execute(sender, &msg)
+    }
 }

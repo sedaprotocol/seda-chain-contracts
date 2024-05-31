@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{StdError, Uint128};
 use hex::FromHexError;
 use thiserror::Error;
 use vrf_rs::error::VrfError;
@@ -13,6 +13,10 @@ pub enum ContractError {
     #[cfg(test)]
     #[error("{0}")]
     Std(String),
+
+    #[cfg(test)]
+    #[error("{0}")]
+    Dbg(String),
 
     // staking contract errors
     #[error("NoFunds: No funds provided")]
@@ -34,7 +38,7 @@ pub enum ContractError {
 
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
-    InsufficientFunds(u128, u128),
+    InsufficientFunds(Uint128, Uint128),
     #[error("DataRequestDoesNotExist {0}: Data request does not exist")]
     DataRequestDoesNotExist(String),
     #[error("DataRequestAlreadyExists: Data request already exists")]

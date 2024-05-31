@@ -29,8 +29,8 @@ impl Execute {
         let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
         if self.amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
-                executor.tokens_pending_withdrawal.u128(),
-                self.amount.u128(),
+                executor.tokens_pending_withdrawal,
+                self.amount,
             ));
         }
 

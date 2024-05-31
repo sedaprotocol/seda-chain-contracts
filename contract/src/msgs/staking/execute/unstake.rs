@@ -20,10 +20,7 @@ impl Execute {
         // error if amount is greater than staked tokens
         let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
         if self.amount > executor.tokens_staked {
-            return Err(ContractError::InsufficientFunds(
-                executor.tokens_staked.u128(),
-                self.amount.u128(),
-            ));
+            return Err(ContractError::InsufficientFunds(executor.tokens_staked, self.amount));
         }
 
         // update the executor
