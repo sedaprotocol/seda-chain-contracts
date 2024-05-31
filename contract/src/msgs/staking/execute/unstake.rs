@@ -12,7 +12,7 @@ impl Execute {
     /// Unstakes tokens from a given staker, to be withdrawn after a delay.
     pub fn execute(self, deps: DepsMut, _env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // compute message hash
-        let message_hash = hash(["unstake".as_bytes(), &self.amount.u128().to_be_bytes()]);
+        let message_hash = hash(["unstake".as_bytes(), &self.amount.to_be_bytes()]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;

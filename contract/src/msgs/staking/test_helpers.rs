@@ -67,8 +67,8 @@ pub fn unstake(deps: DepsMut, info: MessageInfo, exec: &TestExecutor, amount: u1
     let msg_hash = hash(["unstake".as_bytes(), &amount.to_be_bytes()]);
     let msg = unstake::Execute {
         public_key: exec.pub_key(),
-        proof: exec.prove(&msg_hash),
-        amount,
+        proof:      exec.prove(&msg_hash),
+        amount:     amount.into(),
     };
 
     execute(deps, mock_env(), info, msg.into())
@@ -83,8 +83,8 @@ pub fn withdraw(
     let msg_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
     let msg = withdraw::Execute {
         public_key: exec.pub_key(),
-        proof: exec.prove(&msg_hash),
-        amount,
+        proof:      exec.prove(&msg_hash),
+        amount:     amount.into(),
     };
 
     execute(deps, mock_env(), info, msg.into())

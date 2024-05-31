@@ -66,8 +66,8 @@ pub fn allowlist_works() {
     // update the config with allowlist enabled
     let owner = mock_info("owner", &coins(0, "token"));
     let new_config = StakingConfig {
-        minimum_stake_to_register:               100,
-        minimum_stake_for_committee_eligibility: 200,
+        minimum_stake_to_register:               100u8.into(),
+        minimum_stake_for_committee_eligibility: 200u8.into(),
         allowlist_enabled:                       true,
     };
     let res = staking_test_helpers::set_staking_config(deps.as_mut(), owner.clone(), new_config);
@@ -104,8 +104,8 @@ pub fn allowlist_works() {
 
     // update the config to disable the allowlist
     let new_config = StakingConfig {
-        minimum_stake_to_register:               100,
-        minimum_stake_for_committee_eligibility: 200,
+        minimum_stake_to_register:               100u8.into(),
+        minimum_stake_for_committee_eligibility: 200u8.into(),
         allowlist_enabled:                       false,
     };
     let res = staking_test_helpers::set_staking_config(deps.as_mut(), owner, new_config);

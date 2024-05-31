@@ -11,8 +11,8 @@ fn set_staking_config() {
     let _res = instantiate_contract(deps.as_mut(), creator.clone()).unwrap();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               200,
-        minimum_stake_for_committee_eligibility: 100,
+        minimum_stake_to_register:               200u8.into(),
+        minimum_stake_for_committee_eligibility: 100u8.into(),
         allowlist_enabled:                       false,
     };
 
@@ -52,8 +52,8 @@ fn deposit_stake_withdraw() {
         value,
         Some(Staker {
             memo:                      Some("address".to_string()),
-            tokens_staked:             1,
-            tokens_pending_withdrawal: 0,
+            tokens_staked:             1u8.into(),
+            tokens_pending_withdrawal: 0u8.into(),
         }),
     );
 
@@ -69,8 +69,8 @@ fn deposit_stake_withdraw() {
         value,
         Some(Staker {
             memo:                      Some("address".to_string()),
-            tokens_staked:             3,
-            tokens_pending_withdrawal: 0,
+            tokens_staked:             3u8.into(),
+            tokens_pending_withdrawal: 0u8.into(),
         }),
     );
 
@@ -86,8 +86,8 @@ fn deposit_stake_withdraw() {
         value,
         Some(Staker {
             memo:                      Some("address".to_string()),
-            tokens_staked:             2,
-            tokens_pending_withdrawal: 1,
+            tokens_staked:             2u8.into(),
+            tokens_pending_withdrawal: 1u8.into(),
         }),
     );
 
@@ -104,8 +104,8 @@ fn deposit_stake_withdraw() {
         value,
         Some(Staker {
             memo:                      Some("address".to_string()),
-            tokens_staked:             2,
-            tokens_pending_withdrawal: 0,
+            tokens_staked:             2u8.into(),
+            tokens_pending_withdrawal: 0u8.into(),
         }),
     );
 
@@ -168,8 +168,8 @@ fn register_data_request_executor() {
         value,
         Some(Staker {
             memo:                      Some("memo".to_string()),
-            tokens_staked:             2,
-            tokens_pending_withdrawal: 0,
+            tokens_staked:             2u8.into(),
+            tokens_pending_withdrawal: 0u8.into(),
         }),
     );
 }
@@ -193,8 +193,8 @@ fn unregister_data_request_executor() {
         value,
         Some(Staker {
             memo:                      Some("memo".to_string()),
-            tokens_staked:             2,
-            tokens_pending_withdrawal: 0,
+            tokens_staked:             2u8.into(),
+            tokens_pending_withdrawal: 0u8.into(),
         }),
     );
 
