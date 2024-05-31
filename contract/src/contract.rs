@@ -13,7 +13,7 @@ use crate::{
         InstantiateMsg,
         QueryMsg,
     },
-    state::TOKEN,
+    state::{CHAIN_ID, TOKEN},
 };
 
 // version info for migration info
@@ -30,6 +30,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     TOKEN.save(deps.storage, &msg.token)?;
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
+    CHAIN_ID.save(deps.storage, &msg.chain_id)?;
     PENDING_OWNER.save(deps.storage, &None)?;
     let init_config = StakingConfig {
         minimum_stake_to_register:               Uint128::new(INITIAL_MINIMUM_STAKE_TO_REGISTER),

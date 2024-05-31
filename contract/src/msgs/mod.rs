@@ -56,6 +56,7 @@ impl QueryMsg {
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub token: String,
-    pub owner: String,
+    pub token:    String,
+    pub owner:    String,
+    pub chain_id: String,
 }
