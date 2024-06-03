@@ -212,7 +212,7 @@ fn reveal_result() {
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "10".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -231,7 +231,7 @@ fn reveal_result() {
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "20".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -277,7 +277,7 @@ fn reveals_meet_replication_factor() {
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "10".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -296,7 +296,7 @@ fn reveals_meet_replication_factor() {
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "20".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -357,7 +357,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "10".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -400,7 +400,7 @@ fn cannot_reveal_if_user_did_not_commit() {
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "10".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -419,7 +419,7 @@ fn cannot_reveal_if_user_did_not_commit() {
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "20".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
 
@@ -456,7 +456,7 @@ fn cannot_double_reveal() {
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "10".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -475,7 +475,7 @@ fn cannot_double_reveal() {
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "20".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -530,7 +530,7 @@ fn reveal_must_match_commitment() {
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "10".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(
@@ -541,7 +541,7 @@ fn reveal_must_match_commitment() {
         RevealBody {
             salt:      alice.salt(),
             reveal:    "11".hash().to_vec(),
-            gas_used:  0,
+            gas_used:  0u128.into(),
             exit_code: 0,
         }
         .hash(),
@@ -555,7 +555,7 @@ fn reveal_must_match_commitment() {
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
         reveal:    "20".hash().to_vec(),
-        gas_used:  0,
+        gas_used:  0u128.into(),
         exit_code: 0,
     };
     test_helpers::commit_result(

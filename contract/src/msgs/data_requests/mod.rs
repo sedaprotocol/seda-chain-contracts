@@ -68,9 +68,9 @@ pub struct DataRequest {
     /// Amount of required DR executors
     pub replication_factor: u16,
     /// Amount of SEDA tokens per gas unit
-    pub gas_price:          u128,
+    pub gas_price:          Uint128,
     /// Maximum of gas units to be used by data request executors to resolve a data request
-    pub gas_limit:          u128,
+    pub gas_limit:          Uint128,
     /// Public info attached to DR
     pub memo:               Memo,
 
@@ -142,7 +142,7 @@ pub struct DataResult {
     pub block_height: u64,
     /// Exit code of Tally WASM binary execution
     pub exit_code:    u8,
-    pub gas_used:     u128,
+    pub gas_used:     Uint128,
     /// Result from Tally WASM binary execution
     pub result:       Vec<u8>,
 
@@ -172,7 +172,7 @@ impl Hasher for DataResult {
 pub struct RevealBody {
     pub salt:      [u8; 32],
     pub exit_code: u8,
-    pub gas_used:  u128,
+    pub gas_used:  Uint128,
     pub reveal:    Vec<u8>,
 }
 
@@ -195,8 +195,8 @@ pub struct PostDataRequestArgs {
     pub tally_binary_id:    Hash,
     pub tally_inputs:       Bytes,
     pub replication_factor: u16,
-    pub gas_price:          u128,
-    pub gas_limit:          u128,
+    pub gas_price:          Uint128,
+    pub gas_limit:          Uint128,
     pub memo:               Memo,
 }
 

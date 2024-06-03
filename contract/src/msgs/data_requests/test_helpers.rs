@@ -15,8 +15,8 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> (Hash, 
     let tally_inputs: Bytes = "tally_inputs".as_bytes().to_vec();
 
     // set by dr creator
-    let gas_price: u128 = 10;
-    let gas_limit: u128 = 10;
+    let gas_price = 10u128.into();
+    let gas_limit = 10u128.into();
 
     // memo
     let chain_id: u128 = 31337;

@@ -26,7 +26,7 @@ impl Execute {
         // TODO: review this event
         let res = Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(Binary::from(dr_id))
+            .set_data(to_json_binary(&dr_id)?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
                 ("dr_id", dr_id.to_hex()),
