@@ -100,6 +100,12 @@ impl TestInfo {
         &self.app
     }
 
+    pub fn set_block_height(&mut self, height: u64) {
+        self.app.update_block(|b| {
+            b.height = height;
+        });
+    }
+
     pub fn creator(&self) -> TestExecutor {
         self.executor("creator").clone()
     }
