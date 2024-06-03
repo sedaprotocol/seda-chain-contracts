@@ -16,7 +16,7 @@ impl TestInfo {
     #[track_caller]
     pub fn reg_and_stake(
         &mut self,
-        sender: &TestExecutor,
+        sender: &mut TestExecutor,
         memo: Option<String>,
         amount: u128,
     ) -> Result<(), ContractError> {
@@ -50,7 +50,19 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn increase_stake(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
+    pub fn increase_stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
+        let msg_hash = hash(["increase_stake".as_bytes()]);
+        let msg = increase_stake::Execute {
+            public_key: sender.pub_key(),
+            proof:      sender.prove(&msg_hash),
+        }
+        .into();
+
+        self.execute_with_funds(sender, &msg, amount)
+    }
+
+    #[track_caller]
+    pub fn increase_stake_no_funds(&mut self, sender: &mut TestExecutor) -> Result<(), ContractError> {
         let msg_hash = hash(["increase_stake".as_bytes()]);
         let msg = increase_stake::Execute {
             public_key: sender.pub_key(),
@@ -71,7 +83,7 @@ impl TestInfo {
         }
         .into();
 
-        self.execute_with_funds(sender, &msg, amount)
+        self.execute(sender, &msg)
     }
 
     #[track_caller]
@@ -85,5 +97,10 @@ impl TestInfo {
         .into();
 
         self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
+        self.query(query::QueryMsg::IsExecutorEligible { executor }).unwrap()
     }
 }

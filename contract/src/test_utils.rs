@@ -6,9 +6,9 @@ use cosmwasm_std::{
     testing::{mock_info, MockApi},
     to_json_binary,
     Addr,
-    Coin,
     MessageInfo,
     StdError,
+    Uint128,
     WasmMsg,
 };
 use cw_multi_test::{no_init, App, AppBuilder, BankSudo, ContractWrapper, Executor};
@@ -132,7 +132,7 @@ impl TestInfo {
     #[track_caller]
     pub fn execute_with_funds<R: DeserializeOwned>(
         &mut self,
-        sender: &TestExecutor,
+        sender: &mut TestExecutor,
         msg: &ExecuteMsg,
         amount: u128,
     ) -> Result<R, ContractError> {
@@ -150,7 +150,10 @@ impl TestInfo {
             });
 
         Ok(match res?.data {
-            Some(data) => from_json(data).unwrap(),
+            Some(data) => {
+                sender.sub_seda(amount);
+                from_json(data).unwrap()
+            }
             None => from_json(to_json_binary(&serde_json::Value::Null).unwrap()).unwrap(),
         })
     }
@@ -196,16 +199,16 @@ impl TestExecutor {
         self.info.clone()
     }
 
-    fn funds(&self) -> &[Coin] {
-        &self.info.funds
+    fn funds(&self) -> Uint128 {
+        self.info.funds.iter().find(|c| c.denom == "aseda").unwrap().amount
     }
 
-    pub fn set_amount(&mut self, amount: u128) {
+    pub fn set_seda(&mut self, amount: u128) {
         self.info = mock_info(self.name, &coins(amount, "aseda"));
     }
 
-    pub fn _remove_coins(&mut self) {
-        self.info = mock_info(self.name, &[]);
+    pub fn sub_seda(&mut self, amount: u128) {
+        self.info = mock_info(self.name, &coins(self.funds().u128() - amount, "aseda"));
     }
 
     pub fn prove(&self, hash: &[u8]) -> Vec<u8> {
