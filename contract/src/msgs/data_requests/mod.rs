@@ -187,7 +187,7 @@ impl Hasher for RevealBody {
     }
 }
 
-#[cw_serde]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct PostDataRequestArgs {
     pub version:            Version,
     pub dr_binary_id:       Hash,

@@ -85,13 +85,14 @@ impl TestInfo {
         posted_dr: PostDataRequestArgs,
         seda_payload: Vec<u8>,
         payback_address: Vec<u8>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Hash, ContractError> {
         let msg = post_request::Execute {
             posted_dr,
             seda_payload,
             payback_address,
         }
         .into();
+
         // someone posts a data request
         self.execute(sender, &msg)
     }
@@ -104,7 +105,7 @@ impl TestInfo {
         commitment: Hash,
         msg_height: Option<u64>,
         env_height: Option<u64>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<(), ContractError> {
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
             &dr_id,
@@ -132,7 +133,7 @@ impl TestInfo {
         reveal_body: RevealBody,
         msg_height: Option<u64>,
         env_height: Option<u64>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<(), ContractError> {
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
             &dr_id,
