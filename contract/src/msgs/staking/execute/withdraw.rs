@@ -16,13 +16,14 @@ pub struct Execute {
 
 impl Execute {
     /// Sends tokens back to the sender that are marked as pending withdrawal.
-    pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
         let message_hash = hash([
             "withdraw".as_bytes(),
             &self.amount.to_be_bytes(),
             chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
             &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 

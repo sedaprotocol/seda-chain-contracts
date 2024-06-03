@@ -80,6 +80,7 @@ impl TestInfo {
             "unstake".as_bytes(),
             &amount.to_be_bytes(),
             self.chain_id(),
+            self.contract_addr_bytes(),
             &seq.to_be_bytes(),
         ]);
         let msg = unstake::Execute {
@@ -99,6 +100,7 @@ impl TestInfo {
             "withdraw".as_bytes(),
             &amount.to_be_bytes(),
             self.chain_id(),
+            self.contract_addr_bytes(),
             &seq.to_be_bytes(),
         ]);
         let msg = withdraw::Execute {

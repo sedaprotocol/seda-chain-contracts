@@ -15,13 +15,14 @@ pub struct Execute {
 
 impl Execute {
     /// Unstakes tokens from a given staker, to be withdrawn after a delay.
-    pub fn execute(self, deps: DepsMut, _env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
         let message_hash = hash([
             "unstake".as_bytes(),
             &self.amount.to_be_bytes(),
             chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
             &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 

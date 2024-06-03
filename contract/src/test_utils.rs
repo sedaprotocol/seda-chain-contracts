@@ -123,6 +123,10 @@ impl TestInfo {
         self.contract_addr.as_str()
     }
 
+    pub fn contract_addr_bytes(&self) -> &[u8] {
+        self.contract_addr.as_bytes()
+    }
+
     pub fn query<M: Serialize, R: DeserializeOwned>(&self, msg: M) -> Result<R, cosmwasm_std::StdError> {
         self.app.wrap().query_wasm_smart(self.contract_addr(), &msg)
     }
