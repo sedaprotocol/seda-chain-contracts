@@ -121,9 +121,17 @@ impl TestInfo {
         let res = self
             .app
             .execute_contract(sender.addr(), self.contract_addr.clone(), msg, &[])
-            .map_err(|e| e.downcast_ref::<ContractError>().cloned().unwrap())?;
+            .map_err(|e| {
+                if let Some(c_err) = e.downcast_ref::<ContractError>() {
+                    c_err.clone()
+                } else if let Some(s_err) = e.downcast_ref::<StdError>() {
+                    return ContractError::Std(s_err.to_string());
+                } else {
+                    ContractError::Dbg(e.to_string())
+                }
+            });
 
-        Ok(match res.data {
+        Ok(match res?.data {
             Some(data) => from_json(data).unwrap(),
             None => from_json(to_json_binary(&serde_json::Value::Null).unwrap()).unwrap(),
         })
@@ -203,8 +211,8 @@ impl TestExecutor {
         self.info.funds.iter().find(|c| c.denom == "aseda").unwrap().amount
     }
 
-    pub fn set_seda(&mut self, amount: u128) {
-        self.info = mock_info(self.name, &coins(amount, "aseda"));
+    pub fn add_seda(&mut self, amount: u128) {
+        self.info = mock_info(self.name, &coins(self.funds().u128() + amount, "aseda"));
     }
 
     pub fn sub_seda(&mut self, amount: u128) {

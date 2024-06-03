@@ -79,61 +79,51 @@ fn non_transferee_cannont_accept_ownership() {
 
 #[test]
 pub fn allowlist_works() {
-    let _test_info = TestInfo::init();
+    let mut test_info = TestInfo::init();
 
     // update the config with allowlist enabled
-    let _new_config = StakingConfig {
-        minimum_stake_to_register:               100u8.into(),
-        minimum_stake_for_committee_eligibility: 200u8.into(),
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               10u8.into(),
+        minimum_stake_for_committee_eligibility: 20u8.into(),
         allowlist_enabled:                       true,
     };
-    // let res = staking_test_info.set_staking_config(deps.as_mut(), owner.clone(), new_config);
-    // assert!(res.is_ok());
+    test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
-    // // alice tries to register a data request executor, but she's not on the allowlist
-    // let mut alice = TestExecutor::new("alice", Some(100));
-    // let res = staking_test_info.reg_and_stake(deps.as_mut(), alice.info(), &alice, None);
-    // assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
+    // alice tries to register a data request executor, but she's not on the allowlist
+    let mut alice = test_info.new_executor("alice", Some(100));
+    let res = test_info.reg_and_stake(&mut alice, None, 10);
+    assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
-    // // add alice to the allowlist
-    // let res = test_info.add_to_allowlist(deps.as_mut(), owner.clone(), alice.pub_key());
-    // assert!(res.is_ok());
+    // add alice to the allowlist
+    test_info
+        .add_to_allowlist(&test_info.creator(), alice.pub_key())
+        .unwrap();
 
-    // // now alice can register a data request executor
-    // let res = staking_test_info.reg_and_stake(deps.as_mut(), alice.info(), &alice, None);
-    // assert!(res.is_ok());
+    // now alice can register a data request executor
+    test_info.reg_and_stake(&mut alice, None, 10).unwrap();
 
-    // // alice unstakes, withdraws, then unregisters herself
-    // alice.set_amount(0);
-    // let _res = staking_test_info
-    //     .unstake(deps.as_mut(), alice.info(), &alice, 100)
-    //     .unwrap();
-    // let _res = staking_test_info
-    //     .withdraw(deps.as_mut(), alice.info(), &alice, 100)
-    //     .unwrap();
-    // let res = staking_test_info.unregister(deps.as_mut(), alice.info(), &alice);
-    // assert!(res.is_ok());
+    // alice unstakes, withdraws, then unregisters herself
+    test_info.unstake(&alice, 10).unwrap();
+    test_info.withdraw(&mut alice, 10).unwrap();
+    test_info.unregister(&alice).unwrap();
 
-    // // remove alice from the allowlist
-    // let res = test_info.remove_from_allowlist(deps.as_mut(), owner.clone(), alice.pub_key());
-    // assert!(res.is_ok());
+    // remove alice from the allowlist
+    test_info
+        .remove_from_allowlist(&test_info.creator(), alice.pub_key())
+        .unwrap();
 
-    // // now alice can't register a data request executor
-    // alice.set_amount(2);
-    // let res = staking_test_info.reg_and_stake(deps.as_mut(), alice.info(), &alice, None);
-    // assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
+    // now alice can't register a data request executor
+    let res = test_info.reg_and_stake(&mut alice, None, 2);
+    assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
-    // // update the config to disable the allowlist
-    // let new_config = StakingConfig {
-    //     minimum_stake_to_register:               100,
-    //     minimum_stake_for_committee_eligibility: 200,
-    //     allowlist_enabled:                       false,
-    // };
-    // let res = staking_test_info.set_staking_config(deps.as_mut(), owner, new_config);
-    // assert!(res.is_ok());
+    // update the config to disable the allowlist
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               10u8.into(),
+        minimum_stake_for_committee_eligibility: 20u8.into(),
+        allowlist_enabled:                       false,
+    };
+    test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
-    // // now alice can register a data request executor
-    // alice.set_amount(100);
-    // let res = staking_test_info.reg_and_stake(deps.as_mut(), alice.info(), &alice, None);
-    // assert!(res.is_ok());
+    // now alice can register a data request executor
+    test_info.reg_and_stake(&mut alice, None, 100).unwrap();
 }

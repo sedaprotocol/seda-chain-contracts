@@ -87,7 +87,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn withdraw(&mut self, sender: &TestExecutor, amount: u128) -> Result<(), ContractError> {
+    pub fn withdraw(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let msg_hash = hash(["withdraw".as_bytes(), &amount.to_be_bytes()]);
         let msg = withdraw::Execute {
             public_key: sender.pub_key(),
@@ -96,7 +96,9 @@ impl TestInfo {
         }
         .into();
 
-        self.execute(sender, &msg)
+        let res = self.execute(sender, &msg);
+        sender.add_seda(10);
+        res
     }
 
     #[track_caller]

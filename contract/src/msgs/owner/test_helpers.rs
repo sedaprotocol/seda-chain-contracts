@@ -1,22 +1,6 @@
 use super::*;
 use crate::{TestExecutor, TestInfo};
 
-// pub fn add_to_allowlist(deps: DepsMut, info: MessageInfo, public_key: PublicKey) -> Result<Response, ContractError> {
-//     let msg = add_to_allowlist::Execute { public_key };
-
-//     execute(deps, mock_env(), info, msg.into())
-// }
-
-// pub fn remove_from_allowlist(
-//     deps: DepsMut,
-//     info: MessageInfo,
-//     public_key: PublicKey,
-// ) -> Result<Response, ContractError> {
-//     let msg = remove_from_allowlist::Execute { public_key };
-
-//     execute(deps, mock_env(), info, msg.into())
-// }
-
 impl TestInfo {
     #[track_caller]
     pub fn accept_ownership(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
@@ -40,6 +24,20 @@ impl TestInfo {
             new_owner: new_owner.addr().into_string(),
         }
         .into();
+        self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn add_to_allowlist(&mut self, sender: &TestExecutor, public_key: PublicKey) -> Result<(), ContractError> {
+        let msg = execute::add_to_allowlist::Execute { public_key }.into();
+
+        self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn remove_from_allowlist(&mut self, sender: &TestExecutor, public_key: PublicKey) -> Result<(), ContractError> {
+        let msg = execute::remove_from_allowlist::Execute { public_key }.into();
+
         self.execute(sender, &msg)
     }
 }

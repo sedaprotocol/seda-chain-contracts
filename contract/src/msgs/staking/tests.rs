@@ -74,7 +74,7 @@ fn deposit_stake_withdraw() {
     );
 
     // the data request executor withdraws 1
-    let _res = test_info.withdraw(&anyone, 1);
+    let _res = test_info.withdraw(&mut anyone, 1);
     let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
     assert!(executor_is_eligible);
 
@@ -116,7 +116,6 @@ fn insufficient_funds() {
     test_info.reg_and_stake(&mut alice, None, 1).unwrap();
 
     // try unstaking more than staked
-    alice.set_seda(0);
     test_info.unstake(&alice, 2).unwrap();
 }
 
@@ -183,7 +182,7 @@ fn unregister_data_request_executor() {
         }),
     );
 
-    test_info.withdraw(&anyone, 2).unwrap();
+    test_info.withdraw(&mut anyone, 2).unwrap();
     let value: Option<Staker> = test_info.get_staker(anyone.pub_key());
     assert_eq!(
         value,
