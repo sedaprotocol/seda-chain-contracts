@@ -51,9 +51,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> StdResult<Response> {
-    let res = sudo.execute(deps, env)?;
-    Ok(res)
+pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> Result<Response, ContractError> {
+    sudo.execute(deps, env)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
