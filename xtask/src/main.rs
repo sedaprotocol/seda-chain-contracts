@@ -53,7 +53,7 @@ fn print_help() -> Result<()> {
 fn wasm(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo build --release --lib --target wasm32-unknown-unknown --locked"
+        "cargo build -p seda-contract --release --lib --target wasm32-unknown-unknown --locked"
     )
     .env("RUSTFLAGS", "-C link-arg=-s")
     .run()?;

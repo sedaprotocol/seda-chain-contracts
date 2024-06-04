@@ -43,9 +43,7 @@ jobs:
         run: git diff --exit-code schema
 
       - name: 🦾 Compile WASM contract
-        run: cargo wasm --locked
-        env:
-          RUSTFLAGS: "-C link-arg=-s"
+        run: cargo wasm
         
 
   fmt:
