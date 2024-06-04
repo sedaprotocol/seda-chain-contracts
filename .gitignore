@@ -15,3 +15,6 @@
 # IDEs
 *.iml
 .idea
+
+# Generated test data
+tally_data_request_fixture.json
