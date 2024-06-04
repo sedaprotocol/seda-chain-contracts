@@ -116,7 +116,7 @@ fn cannot_commit_after_replication_factor_reached() {
 }
 
 #[test]
-#[should_panic(expected = "InvalidProof")]
+#[should_panic(expected = "verify: invalid proof")]
 fn commits_wrong_signature_fails() {
     let mut test_info = TestInfo::init();
 
