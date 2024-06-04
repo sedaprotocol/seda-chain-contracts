@@ -4,8 +4,8 @@ use super::{
 };
 
 /// Returns a staker with the given address, if it exists.
-pub fn get_staker(deps: Deps, executor: PublicKey) -> StdResult<Option<Staker>> {
-    let executor = STAKERS.may_load(deps.storage, &executor)?;
+pub fn get_staker(deps: Deps, executor: &PublicKey) -> StdResult<Option<Staker>> {
+    let executor = STAKERS.may_load(deps.storage, executor)?;
     Ok(executor)
 }
 
