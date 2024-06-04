@@ -3,7 +3,7 @@ use semver::{BuildMetadata, Prerelease};
 use super::{execute::*, *};
 use crate::{crypto::hash, TestExecutor, TestInfo};
 
-pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> (Hash, PostDataRequestArgs) {
+pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let dr_binary_id: Hash = "dr_binary_id".hash();
     let tally_binary_id: Hash = "tally_binary_id".hash();
     let dr_inputs: Bytes = "dr_inputs".as_bytes().to_vec();
@@ -28,7 +28,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> (Hash, 
         build: BuildMetadata::EMPTY,
     };
 
-    let posted_dr: PostDataRequestArgs = PostDataRequestArgs {
+    PostDataRequestArgs {
         version,
         dr_binary_id,
         tally_binary_id,
@@ -38,9 +38,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> (Hash, 
         replication_factor,
         gas_price,
         gas_limit,
-    };
-
-    (posted_dr.hash(), posted_dr)
+    }
 }
 
 pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs, seda_payload: Bytes) -> DataRequest {
