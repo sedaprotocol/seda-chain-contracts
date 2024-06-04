@@ -11,7 +11,7 @@ impl Sudo {
     /// Posts a data request to the pool
     pub fn execute(self, deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
-        let dr = state::load_req(deps.storage, &self.dr_id)?;
+        let dr = state::load_request(deps.storage, &self.dr_id)?;
 
         if !dr.reveal_over() {
             return Err(ContractError::NotEnoughReveals);

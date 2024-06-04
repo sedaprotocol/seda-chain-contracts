@@ -71,10 +71,10 @@ pub fn post_result(store: &mut dyn Storage, dr_id: &Hash, dr: &DataResult) -> St
     Ok(())
 }
 
-pub fn load_res(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
+pub fn load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
     DATA_RESULTS.load(store, dr_id)
 }
 
-pub fn may_load_res(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
-    dbg!(DATA_RESULTS.may_load(store, dr_id))
+pub fn may_load_resuslt(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
+    DATA_RESULTS.may_load(store, dr_id)
 }
