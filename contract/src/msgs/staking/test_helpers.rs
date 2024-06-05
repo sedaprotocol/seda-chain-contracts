@@ -122,7 +122,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_account_sequence(&self, public_key: PublicKey) -> u64 {
+    pub fn get_account_sequence(&self, public_key: PublicKey) -> Uint128 {
         self.query(query::QueryMsg::GetAccountSeq { public_key }).unwrap()
     }
 }
