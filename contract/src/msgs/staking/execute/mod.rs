@@ -22,11 +22,11 @@ impl ExecuteMsg {
         use self::*;
 
         match self {
-            ExecuteMsg::RegisterAndStake(msg) => msg.execute(deps, info),
+            ExecuteMsg::RegisterAndStake(msg) => msg.execute(deps, env, info),
             ExecuteMsg::IncreaseStake(msg) => msg.execute(deps, env, info),
             ExecuteMsg::Unstake(msg) => msg.execute(deps, env, info),
             ExecuteMsg::Withdraw(msg) => msg.execute(deps, env, info),
-            ExecuteMsg::Unregister(msg) => msg.execute(deps, info),
+            ExecuteMsg::Unregister(msg) => msg.execute(deps, env, info),
             ExecuteMsg::SetStakingConfig(msg) => msg.execute(deps, env, info),
         }
     }

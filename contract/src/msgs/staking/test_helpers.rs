@@ -20,7 +20,14 @@ impl TestInfo {
         memo: Option<String>,
         amount: u128,
     ) -> Result<(), ContractError> {
-        let msg_hash = hash(["register_and_stake".as_bytes(), &memo.hash()]);
+        let seq = self.get_account_sequence(sender.pub_key());
+        let msg_hash = hash([
+            "register_and_stake".as_bytes(),
+            &memo.hash(),
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
+        ]);
 
         let msg = register_and_stake::Execute {
             public_key: sender.pub_key(),
@@ -34,7 +41,13 @@ impl TestInfo {
 
     #[track_caller]
     pub fn unregister(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
-        let msg_hash = hash(["unregister".as_bytes()]);
+        let seq = self.get_account_sequence(sender.pub_key());
+        let msg_hash = hash([
+            "unregister".as_bytes(),
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
+        ]);
         let msg = unregister::Execute {
             public_key: sender.pub_key(),
             proof:      sender.prove(&msg_hash),
@@ -51,7 +64,13 @@ impl TestInfo {
 
     #[track_caller]
     pub fn increase_stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
-        let msg_hash = hash(["increase_stake".as_bytes()]);
+        let seq = self.get_account_sequence(sender.pub_key());
+        let msg_hash = hash([
+            "increase_stake".as_bytes(),
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
+        ]);
         let msg = increase_stake::Execute {
             public_key: sender.pub_key(),
             proof:      sender.prove(&msg_hash),
@@ -63,7 +82,13 @@ impl TestInfo {
 
     #[track_caller]
     pub fn increase_stake_no_funds(&mut self, sender: &mut TestExecutor) -> Result<(), ContractError> {
-        let msg_hash = hash(["increase_stake".as_bytes()]);
+        let seq = self.get_account_sequence(sender.pub_key());
+        let msg_hash = hash([
+            "increase_stake".as_bytes(),
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
+        ]);
         let msg = increase_stake::Execute {
             public_key: sender.pub_key(),
             proof:      sender.prove(&msg_hash),

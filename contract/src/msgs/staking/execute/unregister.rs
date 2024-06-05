@@ -1,5 +1,8 @@
-use super::{state::STAKERS, *};
-use crate::crypto::{hash, verify_proof};
+use super::*;
+use crate::{
+    crypto::{hash, verify_proof},
+    state::CHAIN_ID,
+};
 
 #[cw_serde]
 pub struct Execute {
@@ -9,20 +12,26 @@ pub struct Execute {
 
 impl Execute {
     /// Unregisters a staker, with the requirement that no tokens are staked or pending withdrawal.
-    pub fn execute(self, deps: DepsMut, _info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
-        let message_hash = hash(["unregister".as_bytes()]);
+        let message_hash = hash([
+            "unregister".as_bytes(),
+            chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
+            &state::inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+        ]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;
 
         // require that the executor has no staked or tokens pending withdrawal
-        let executor = STAKERS.load(deps.storage, &self.public_key)?;
+        let executor = state::STAKERS.load(deps.storage, &self.public_key)?;
         if executor.tokens_staked > Uint128::zero() || executor.tokens_pending_withdrawal > Uint128::zero() {
             return Err(ContractError::ExecutorHasTokens);
         }
 
-        STAKERS.remove(deps.storage, &self.public_key);
+        state::STAKERS.remove(deps.storage, &self.public_key);
 
         Ok(Response::new().add_attribute("action", "unregister").add_event(
             Event::new("seda-unregister").add_attributes([

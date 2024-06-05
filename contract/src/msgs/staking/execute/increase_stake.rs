@@ -1,8 +1,8 @@
 use self::staking::owner::utils::is_staker_allowed;
-use super::{state::STAKERS, *};
+use super::*;
 use crate::{
     crypto::{hash, verify_proof},
-    state::TOKEN,
+    state::{CHAIN_ID, TOKEN},
     utils::get_attached_funds,
 };
 
@@ -14,12 +14,18 @@ pub struct Execute {
 
 impl Execute {
     /// Deposits and stakes tokens for an already existing staker.
-    pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
         let amount = get_attached_funds(&info.funds, &token)?;
+        let chain_id = CHAIN_ID.load(deps.storage)?;
 
         // compute message hash
-        let message_hash = hash(["increase_stake".as_bytes()]);
+        let message_hash = hash([
+            "increase_stake".as_bytes(),
+            chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
+            &state::inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+        ]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;
@@ -28,9 +34,9 @@ impl Execute {
         is_staker_allowed(&deps, &self.public_key)?;
 
         // update staked tokens for executor
-        let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
+        let mut executor = state::STAKERS.load(deps.storage, &self.public_key)?;
         executor.tokens_staked += amount;
-        STAKERS.save(deps.storage, &self.public_key, &executor)?;
+        state::STAKERS.save(deps.storage, &self.public_key, &executor)?;
 
         let mut event = Event::new("seda-data-request-executor").add_attributes([
             ("version", CONTRACT_VERSION.to_string()),

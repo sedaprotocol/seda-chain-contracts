@@ -1,7 +1,6 @@
 use cosmwasm_std::{coins, BankMsg};
-use state::inc_get_seq;
 
-use super::{state::STAKERS, *};
+use super::*;
 use crate::{
     crypto::{hash, verify_proof},
     state::{CHAIN_ID, TOKEN},
@@ -24,7 +23,7 @@ impl Execute {
             &self.amount.to_be_bytes(),
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
-            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+            &state::inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof
@@ -34,7 +33,7 @@ impl Execute {
         let token = TOKEN.load(deps.storage)?;
 
         // error if amount is greater than pending tokens
-        let mut executor = STAKERS.load(deps.storage, &self.public_key)?;
+        let mut executor = state::STAKERS.load(deps.storage, &self.public_key)?;
         if self.amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_pending_withdrawal,
@@ -44,7 +43,7 @@ impl Execute {
 
         // update the executor
         executor.tokens_pending_withdrawal -= self.amount;
-        STAKERS.save(deps.storage, &self.public_key, &executor)?;
+        state::STAKERS.save(deps.storage, &self.public_key, &executor)?;
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {

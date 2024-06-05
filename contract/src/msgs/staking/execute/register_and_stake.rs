@@ -1,12 +1,9 @@
 use self::staking::owner::utils::is_staker_allowed;
-use super::{
-    state::{CONFIG, STAKERS},
-    *,
-};
+use super::*;
 use crate::{
     crypto::{hash, verify_proof},
     msgs::staking::Staker,
-    state::TOKEN,
+    state::{CHAIN_ID, TOKEN},
     types::{Hasher, PublicKey},
     utils::get_attached_funds,
 };
@@ -20,9 +17,16 @@ pub struct Execute {
 
 impl Execute {
     /// Registers a staker with an optional p2p multi address, requiring a token deposit.
-    pub fn execute(self, deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
-        let message_hash = hash(["register_and_stake".as_bytes(), &self.memo.hash()]);
+        let message_hash = hash([
+            "register_and_stake".as_bytes(),
+            &self.memo.hash(),
+            chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
+            &state::inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+        ]);
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;
@@ -34,7 +38,7 @@ impl Execute {
         let token = TOKEN.load(deps.storage)?;
         let amount = get_attached_funds(&info.funds, &token)?;
 
-        let minimum_stake_to_register = CONFIG.load(deps.storage)?.minimum_stake_to_register;
+        let minimum_stake_to_register = state::CONFIG.load(deps.storage)?.minimum_stake_to_register;
         if amount < minimum_stake_to_register {
             return Err(ContractError::InsufficientFunds(minimum_stake_to_register, amount));
         }
@@ -44,7 +48,7 @@ impl Execute {
             tokens_staked:             amount,
             tokens_pending_withdrawal: Uint128::zero(),
         };
-        STAKERS.save(deps.storage, &self.public_key, &executor)?;
+        state::STAKERS.save(deps.storage, &self.public_key, &executor)?;
 
         let mut event = Event::new("seda-register-and-stake").add_attributes([
             ("version", CONTRACT_VERSION.to_string()),
