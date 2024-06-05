@@ -104,11 +104,15 @@ impl TestInfo {
         msg_height: Option<u64>,
         env_height: Option<u64>,
     ) -> Result<(), ContractError> {
+        let seq = self.get_account_sequence(sender.pub_key());
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
             &dr_id,
             &msg_height.unwrap_or_default().to_be_bytes(),
             &commitment,
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
         ]);
 
         let msg = commit_result::Execute {
@@ -132,11 +136,15 @@ impl TestInfo {
         msg_height: Option<u64>,
         env_height: Option<u64>,
     ) -> Result<(), ContractError> {
+        let seq = self.get_account_sequence(sender.pub_key());
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
             &dr_id,
             &msg_height.unwrap_or_default().to_be_bytes(),
             &reveal_body.hash(),
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
         ]);
 
         let msg = reveal_result::Execute {
