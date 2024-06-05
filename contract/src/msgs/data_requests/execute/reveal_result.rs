@@ -1,4 +1,5 @@
 use super::*;
+use crate::state::{inc_get_seq, CHAIN_ID};
 
 #[cw_serde]
 pub struct Execute {
@@ -12,6 +13,8 @@ impl Execute {
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
     pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        let chain_id = CHAIN_ID.load(deps.storage)?;
+
         // compute hash of reveal body
         let reveal_body_hash = self.reveal_body.hash();
 
@@ -21,6 +24,9 @@ impl Execute {
             &self.dr_id,
             &env.block.height.to_be_bytes(),
             &reveal_body_hash,
+            chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof

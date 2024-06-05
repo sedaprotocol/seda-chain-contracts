@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     crypto::{hash, verify_proof},
-    state::CHAIN_ID,
+    state::{inc_get_seq, CHAIN_ID},
 };
 
 #[cw_serde]
@@ -21,7 +21,7 @@ impl Execute {
             &self.amount.to_be_bytes(),
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
-            &state::inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof

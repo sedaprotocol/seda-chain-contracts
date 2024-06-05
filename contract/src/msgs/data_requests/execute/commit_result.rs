@@ -1,4 +1,5 @@
 use super::*;
+use crate::state::{inc_get_seq, CHAIN_ID};
 
 #[cw_serde]
 pub struct Execute {
@@ -11,12 +12,16 @@ pub struct Execute {
 impl Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
     pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
         let message_hash = hash([
             "commit_data_result".as_bytes(),
             &self.dr_id,
             &env.block.height.to_be_bytes(),
             &self.commitment,
+            chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof

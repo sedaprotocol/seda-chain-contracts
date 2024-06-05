@@ -3,7 +3,7 @@ use super::*;
 use crate::{
     crypto::{hash, verify_proof},
     msgs::staking::Staker,
-    state::{CHAIN_ID, TOKEN},
+    state::{inc_get_seq, CHAIN_ID, TOKEN},
     types::{Hasher, PublicKey},
     utils::get_attached_funds,
 };
@@ -25,7 +25,7 @@ impl Execute {
             &self.memo.hash(),
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
-            &state::inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof

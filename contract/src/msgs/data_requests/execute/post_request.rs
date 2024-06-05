@@ -18,11 +18,7 @@ impl Execute {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
-        // TODO: verify the payback address... it's not a seda addr right?
-        // let Ok(addr) = Addr::from_slice(&self.payback_address) else {
-        //     return Err(ContractError::InvalidPaybackAddr);
-        // };
-
+        // TODO: verify the payback non seda address...
         // TODO: review this event
         let res = Response::new()
             .add_attribute("action", "post_data_request")
