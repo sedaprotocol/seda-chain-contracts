@@ -46,7 +46,7 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_staker(&self, executor: PublicKey) -> Option<Staker> {
-        self.query(query::QueryMsg::GetStaker { executor }).unwrap()
+        self.query(query::QueryMsg::GetStaker { public_key: executor }).unwrap()
     }
 
     #[track_caller]
@@ -117,7 +117,8 @@ impl TestInfo {
 
     #[track_caller]
     pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
-        self.query(query::QueryMsg::IsExecutorEligible { executor }).unwrap()
+        self.query(query::QueryMsg::IsExecutorEligible { public_key: executor })
+            .unwrap()
     }
 
     #[track_caller]
