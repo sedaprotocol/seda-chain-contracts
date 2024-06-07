@@ -15,6 +15,10 @@ pub mod data_requests;
 pub mod owner;
 pub mod staking;
 
+pub trait QueryHandler {
+    fn query(msg: Self, deps: Deps, _env: Env) -> StdResult<Binary>;
+}
+
 #[cw_serde]
 #[serde(untagged)]
 pub enum ExecuteMsg {
@@ -48,7 +52,7 @@ impl QueryMsg {
     pub fn query(self, deps: Deps, env: Env) -> StdResult<Binary> {
         match self {
             QueryMsg::DataRequest(msg) => msg.query(deps, env),
-            QueryMsg::Staking(msg) => msg.query(deps, env),
+            QueryMsg::Staking(msg) => QueryHandler::query(msg, deps, env),
             QueryMsg::Owner(msg) => msg.query(deps, env),
         }
     }

@@ -1,3 +1,5 @@
+use seda_contract_common::msgs::staking::{query::QueryMsg, Staker};
+
 use super::{execute::*, *};
 use crate::{
     crypto::hash,
@@ -59,7 +61,7 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_staker(&self, executor: PublicKey) -> Option<Staker> {
-        self.query(query::QueryMsg::GetStaker { public_key: executor }).unwrap()
+        self.query(QueryMsg::GetStaker { public_key: executor }).unwrap()
     }
 
     #[track_caller]
@@ -142,12 +144,12 @@ impl TestInfo {
 
     #[track_caller]
     pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
-        self.query(query::QueryMsg::IsExecutorEligible { public_key: executor })
+        self.query(QueryMsg::IsExecutorEligible { public_key: executor })
             .unwrap()
     }
 
     #[track_caller]
     pub fn get_account_sequence(&self, public_key: PublicKey) -> Uint128 {
-        self.query(query::QueryMsg::GetAccountSeq { public_key }).unwrap()
+        self.query(QueryMsg::GetAccountSeq { public_key }).unwrap()
     }
 }

@@ -1,3 +1,5 @@
+use seda_contract_common::msgs::staking::Staker;
+
 use super::*;
 use crate::TestInfo;
 

@@ -2,6 +2,8 @@ use super::*;
 
 pub mod execute;
 pub mod query;
+pub use seda_contract_common::msgs::staking::query::QueryMsg;
+
 pub mod state;
 pub mod utils;
 
@@ -10,14 +12,6 @@ mod tests;
 
 #[cfg(test)]
 pub mod test_helpers;
-
-/// A data request executor with staking info and optional p2p multi address
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-pub struct Staker {
-    pub memo:                      Option<String>,
-    pub tokens_staked:             Uint128,
-    pub tokens_pending_withdrawal: Uint128,
-}
 
 /// Governance-controlled configuration parameters
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]

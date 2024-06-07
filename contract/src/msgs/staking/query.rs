@@ -1,31 +1,12 @@
+pub use seda_contract_common::msgs::staking::query::QueryMsg;
+use seda_contract_common::msgs::staking::StakerAndSeq;
+
 use super::*;
 use crate::state::get_seq;
 
-#[cw_serde]
-pub struct StakerAndSeq {
-    pub staker: Option<Staker>,
-    pub seq:    Uint128,
-}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-
-pub enum QueryMsg {
-    #[returns(Option<Staker>)]
-    GetStaker { public_key: PublicKey },
-    #[returns(Uint128)]
-    GetAccountSeq { public_key: PublicKey },
-    #[returns(StakerAndSeq)]
-    GetStakerAndSeq { public_key: PublicKey },
-    #[returns(bool)]
-    IsExecutorEligible { public_key: PublicKey },
-    #[returns(super::StakingConfig)]
-    GetStakingConfig {},
-}
-
-impl QueryMsg {
-    pub fn query(self, deps: Deps, _env: Env) -> StdResult<Binary> {
-        match self {
+impl QueryHandler for QueryMsg {
+    fn query(msg: QueryMsg, deps: Deps, _env: Env) -> StdResult<Binary> {
+        match msg {
             QueryMsg::GetStaker { public_key: executor } => to_json_binary(&utils::get_staker(deps, &executor)?),
             QueryMsg::GetAccountSeq { public_key } => {
                 let seq: Uint128 = get_seq(deps.storage, &public_key)?.into();
@@ -44,9 +25,9 @@ impl QueryMsg {
     }
 }
 
-#[cfg(test)]
-impl From<QueryMsg> for super::QueryMsg {
-    fn from(value: QueryMsg) -> Self {
-        Self::Staking(value)
-    }
-}
+// #[cfg(test)]
+// impl From<QueryMsg> for super::QueryMsg {
+//     fn from(value: QueryMsg) -> Self {
+//         Self::Staking(value)
+//     }
+// }

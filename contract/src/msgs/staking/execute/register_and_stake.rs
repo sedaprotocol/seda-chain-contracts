@@ -1,8 +1,9 @@
+use seda_contract_common::msgs::staking::Staker;
+
 use self::staking::owner::utils::is_staker_allowed;
 use super::*;
 use crate::{
     crypto::{hash, verify_proof},
-    msgs::staking::Staker,
     state::{inc_get_seq, CHAIN_ID, TOKEN},
     types::{Hasher, PublicKey},
     utils::get_attached_funds,
