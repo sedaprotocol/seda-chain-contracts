@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     crypto::hash,
-    types::{Hasher, PublicKey},
+    types::{HashSelf, PublicKey},
     TestExecutor,
     TestInfo,
 };

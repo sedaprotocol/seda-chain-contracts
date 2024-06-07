@@ -150,7 +150,7 @@ pub struct DataResult {
     pub seda_payload:    Vec<u8>,
 }
 
-impl Hasher for DataResult {
+impl HashSelf for DataResult {
     fn hash(&self) -> Hash {
         let mut hasher = Keccak256::new();
         hasher.update(self.version.hash());
@@ -173,7 +173,7 @@ pub struct RevealBody {
     pub reveal:    Vec<u8>,
 }
 
-impl Hasher for RevealBody {
+impl HashSelf for RevealBody {
     fn hash(&self) -> Hash {
         let mut hasher = Keccak256::new();
         hasher.update(self.salt);
@@ -197,7 +197,7 @@ pub struct PostDataRequestArgs {
     pub memo:               Memo,
 }
 
-impl Hasher for PostDataRequestArgs {
+impl HashSelf for PostDataRequestArgs {
     fn hash(&self) -> Hash {
         // hash non-fixed-length inputs
         let mut dr_inputs_hasher = Keccak256::new();
