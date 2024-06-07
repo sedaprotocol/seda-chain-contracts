@@ -1,13 +1,7 @@
-use cosmwasm_std::{coins, BankMsg};
-pub(crate) use seda_contract_common::msgs::staking::execute::withdraw::Execute;
-
 use super::*;
-use crate::{
-    crypto::{hash, verify_proof},
-    state::{inc_get_seq, CHAIN_ID, TOKEN},
-};
+use crate::state::*;
 
-impl ExecuteHandler for Execute {
+impl ExecuteHandler for execute::withdraw::Execute {
     /// Sends tokens back to the sender that are marked as pending withdrawal.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;

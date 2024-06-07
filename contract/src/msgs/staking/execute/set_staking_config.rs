@@ -1,6 +1,5 @@
-use seda_contract_common::msgs::staking::StakingConfig;
+use owner::state::OWNER;
 
-use self::staking::owner::state::OWNER;
 use super::{state::CONFIG, *};
 
 impl ExecuteHandler for StakingConfig {

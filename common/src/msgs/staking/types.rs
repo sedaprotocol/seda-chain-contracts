@@ -1,10 +1,9 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
-use crate::types::U128;
+use super::*;
 
 /// A data request executor with staking info and optional p2p multi address
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[cfg_attr(feature = "cosmwasm", cw_serde)]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Serialize))]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct Staker {
     pub memo:                      Option<String>,
     pub tokens_staked:             U128,
@@ -12,7 +11,9 @@ pub struct Staker {
 }
 
 /// Governance-controlled configuration parameters
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[cfg_attr(feature = "cosmwasm", cw_serde)]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Serialize))]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct StakingConfig {
     /// Minimum amount of SEDA tokens required to register as a data request executor
     pub minimum_stake_to_register:               U128,
@@ -22,7 +23,15 @@ pub struct StakingConfig {
     pub allowlist_enabled:                       bool,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+impl From<StakingConfig> for crate::msgs::ExecuteMsg {
+    fn from(config: StakingConfig) -> Self {
+        super::execute::ExecuteMsg::SetStakingConfig(config).into()
+    }
+}
+
+#[cfg_attr(feature = "cosmwasm", cw_serde)]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Serialize))]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct StakerAndSeq {
     pub staker: Option<Staker>,
     pub seq:    U128,

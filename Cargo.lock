@@ -682,6 +682,7 @@ dependencies = [
  "hex",
  "k256",
  "schemars",
+ "seda-contract-common",
  "semver",
  "serde",
  "serde-big-array",
@@ -689,6 +690,18 @@ dependencies = [
  "sha3",
  "thiserror",
  "vrf-rs",
+]
+
+[[package]]
+name = "seda-contract-common"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "hex",
+ "semver",
+ "serde",
+ "sha3",
 ]
 
 [[package]]

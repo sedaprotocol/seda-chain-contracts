@@ -4,8 +4,9 @@ mod crypto;
 mod error;
 pub mod msgs;
 pub mod state;
-mod types;
 mod utils;
+
+use seda_contract_common::types;
 
 #[cfg(test)]
 mod test_utils;

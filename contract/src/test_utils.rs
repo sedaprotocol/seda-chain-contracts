@@ -17,6 +17,7 @@ use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
 };
+use seda_contract_common::msgs::*;
 use serde::{de::DeserializeOwned, Serialize};
 use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
@@ -24,7 +25,6 @@ use vrf_rs::Secp256k1Sha256;
 use crate::{
     contract::*,
     error::ContractError,
-    msgs::{ExecuteMsg, InstantiateMsg},
     types::{Hash, PublicKey},
 };
 

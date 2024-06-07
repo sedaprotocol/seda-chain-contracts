@@ -1,6 +1,7 @@
-pub use seda_contract_common::msgs::staking::execute::ExecuteMsg;
-
-use super::*;
+use super::{
+    msgs::staking::execute::{self, ExecuteMsg},
+    *,
+};
 
 pub(in crate::msgs::staking) mod set_staking_config;
 pub(in crate::msgs::staking) mod stake;

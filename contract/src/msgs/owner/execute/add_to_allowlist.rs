@@ -1,14 +1,8 @@
 use super::*;
 
-#[cw_serde]
-pub struct Execute {
-    /// The public key of the person.
-    pub(in crate::msgs::owner) public_key: PublicKey,
-}
-
-impl Execute {
+impl ExecuteHandler for execute::add_to_allowlist::Execute {
     /// Add a `Secp256k1PublicKey` to the allow list
-    pub fn execute(self, deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         // require the sender to be the OWNER
         let owner = OWNER.load(deps.storage)?;
         if info.sender != owner {
@@ -24,12 +18,5 @@ impl Execute {
                 ("pub_key", hex::encode(self.public_key)),
             ]),
         ))
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::AddToAllowlist(value).into()
     }
 }

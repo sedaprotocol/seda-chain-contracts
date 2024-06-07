@@ -1,12 +1,10 @@
-use seda_contract_common::msgs::staking::execute::unstake::Execute;
-
 use super::*;
 use crate::{
     crypto::{hash, verify_proof},
-    state::{inc_get_seq, CHAIN_ID},
+    state::*,
 };
 
-impl ExecuteHandler for Execute {
+impl ExecuteHandler for execute::unstake::Execute {
     /// Unstakes tokens from a given staker, to be withdrawn after a delay.
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;

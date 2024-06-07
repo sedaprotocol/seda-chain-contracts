@@ -1,16 +1,9 @@
-pub use seda_contract_common::msgs::staking::execute::stake::Execute;
-use seda_contract_common::msgs::staking::Staker;
+use owner::utils::is_staker_allowed;
 
-use self::staking::owner::utils::is_staker_allowed;
 use super::*;
-use crate::{
-    crypto::{hash, verify_proof},
-    state::{inc_get_seq, CHAIN_ID, TOKEN},
-    types::Hasher,
-    utils::get_attached_funds,
-};
+use crate::{state::*, utils::get_attached_funds};
 
-impl ExecuteHandler for Execute {
+impl ExecuteHandler for execute::stake::Execute {
     /// Stakes with an optional memo field, requiring a token deposit.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;

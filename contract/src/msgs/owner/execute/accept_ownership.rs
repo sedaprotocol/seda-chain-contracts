@@ -1,11 +1,8 @@
 use super::*;
 
-#[cw_serde]
-pub struct Execute {}
-
-impl Execute {
+impl ExecuteHandler for execute::accept_ownership::Execute {
     /// Accept transfer contract ownership (previously triggered by owner)
-    pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let pending_owner = PENDING_OWNER.load(deps.storage)?;
         if pending_owner.is_none() {
             return Err(ContractError::NoPendingOwnerFound);
@@ -20,12 +17,5 @@ impl Execute {
             .add_attribute("action", "accept-ownership")
             .add_events([Event::new("seda-accept-ownership")
                 .add_attributes([("version", CONTRACT_VERSION), ("new_owner", info.sender.as_ref())])]))
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::AcceptOwnership(value).into()
     }
 }

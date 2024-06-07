@@ -1,8 +1,3 @@
-#[cfg(feature = "cosmwasm")]
-use cosmwasm_schema::cw_serde;
-#[cfg(not(feature = "cosmwasm"))]
-use serde::Serialize;
-
 use super::*;
 
 pub mod stake;

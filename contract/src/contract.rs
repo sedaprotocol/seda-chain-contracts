@@ -2,7 +2,8 @@
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cosmwasm_std::{StdResult, Uint128};
 use cw2::set_contract_version;
-use seda_contract_common::msgs::staking::StakingConfig;
+use seda_contract_common::msgs::*;
+use staking::StakingConfig;
 
 use crate::{
     consts::{INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY, INITIAL_MINIMUM_STAKE_TO_REGISTER},
@@ -11,9 +12,7 @@ use crate::{
         owner::state::{OWNER, PENDING_OWNER},
         staking::state::CONFIG,
         ExecuteHandler,
-        ExecuteMsg,
-        InstantiateMsg,
-        QueryMsg,
+        QueryHandler,
     },
     state::{CHAIN_ID, TOKEN},
 };
