@@ -1,4 +1,5 @@
-use super::staking::StakingConfig;
+use seda_contract_common::msgs::staking::StakingConfig;
+
 use crate::{error::ContractError, TestInfo};
 
 #[test]
@@ -91,7 +92,7 @@ pub fn allowlist_works() {
 
     // alice tries to register a data request executor, but she's not on the allowlist
     let mut alice = test_info.new_executor("alice", Some(100));
-    let res = test_info.reg_and_stake(&mut alice, None, 10);
+    let res = test_info.stake(&mut alice, None, 10);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
     // add alice to the allowlist
@@ -100,12 +101,12 @@ pub fn allowlist_works() {
         .unwrap();
 
     // now alice can register a data request executor
-    test_info.reg_and_stake(&mut alice, None, 10).unwrap();
+    test_info.stake(&mut alice, None, 10).unwrap();
 
     // alice unstakes, withdraws, then unregisters herself
     test_info.unstake(&alice, 10).unwrap();
     test_info.withdraw(&mut alice, 10).unwrap();
-    test_info.unregister(&alice).unwrap();
+    // test_info.unregister(&alice).unwrap();
 
     // remove alice from the allowlist
     test_info
@@ -113,7 +114,7 @@ pub fn allowlist_works() {
         .unwrap();
 
     // now alice can't register a data request executor
-    let res = test_info.reg_and_stake(&mut alice, None, 2);
+    let res = test_info.stake(&mut alice, None, 2);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
     // update the config to disable the allowlist
@@ -125,5 +126,5 @@ pub fn allowlist_works() {
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
     // now alice can register a data request executor
-    test_info.reg_and_stake(&mut alice, None, 100).unwrap();
+    test_info.stake(&mut alice, None, 100).unwrap();
 }
