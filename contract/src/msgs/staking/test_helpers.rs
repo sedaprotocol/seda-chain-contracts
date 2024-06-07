@@ -3,7 +3,6 @@ use super::{
     *,
 };
 use crate::{
-    crypto::hash,
     types::{HashSelf, PublicKey},
     TestExecutor,
     TestInfo,

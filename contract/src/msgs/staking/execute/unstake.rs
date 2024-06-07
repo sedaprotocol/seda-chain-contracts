@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    crypto::{hash, verify_proof},
-    state::*,
-};
+use crate::state::*;
 
 impl ExecuteHandler for execute::unstake::Execute {
     /// Unstakes tokens from a given staker, to be withdrawn after a delay.

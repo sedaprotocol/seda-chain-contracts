@@ -1,16 +1,14 @@
 use cosmwasm_std::*;
 use cw_storage_plus::{Item, Map};
-use seda_contract_common::msgs::{
-    self,
-    staking::{Staker, StakingConfig},
+use seda_contract_common::{
+    crypto::*,
+    msgs::{
+        self,
+        staking::{Staker, StakingConfig},
+    },
 };
 
-use crate::{
-    contract::CONTRACT_VERSION,
-    crypto::{hash, verify_proof},
-    error::ContractError,
-    types::*,
-};
+use crate::{contract::CONTRACT_VERSION, error::ContractError, types::*};
 
 pub mod data_requests;
 pub mod owner;

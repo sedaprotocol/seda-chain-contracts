@@ -5,7 +5,7 @@ use super::{
     msgs::data_requests::{execute, query},
     *,
 };
-use crate::{crypto::hash, TestExecutor, TestInfo};
+use crate::{TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let dr_binary_id: Hash = "dr_binary_id".hash();

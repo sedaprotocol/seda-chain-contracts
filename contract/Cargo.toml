@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 exclude = [
-  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
-  "contract.wasm",
-  "hash.txt",
+	# Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+	"contract.wasm",
+	"hash.txt",
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -35,7 +35,7 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 hex = { workspace = true }
 schemars = { workspace = true }
-seda-contract-common ={ workspace = true, features = ["cosmwasm"]}
+seda-contract-common = { workspace = true, features = ["cosmwasm"] }
 semver = { workspace = true }
 serde = { workspace = true }
 serde-big-array = { workspace = true }
@@ -46,4 +46,8 @@ vrf-rs = { workspace = true }
 [dev-dependencies]
 cw-multi-test = { workspace = true }
 k256 = { workspace = true }
+seda-contract-common = { workspace = true, features = [
+	"cosmwasm",
+	"test-utils",
+] }
 serde_json = { workspace = true }

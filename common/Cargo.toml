@@ -5,6 +5,7 @@ edition = "2021"
 
 [features]
 cosmwasm = ["cosmwasm-schema", "cosmwasm-std"]
+test-utils = []
 
 [dependencies]
 cosmwasm-schema = { workspace = true, optional = true }
@@ -14,3 +15,5 @@ hex.workspace = true
 sha3.workspace = true
 semver.workspace = true
 serde = { workspace = true, optional = true }
+thiserror.workspace = true
+vrf-rs.workspace = true

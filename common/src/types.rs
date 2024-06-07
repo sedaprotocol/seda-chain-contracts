@@ -1,8 +1,5 @@
 #[cfg(feature = "cosmwasm")]
-use cosmwasm_std::Uint128;
-
-#[cfg(feature = "cosmwasm")]
-pub(crate) type U128 = Uint128;
+pub(crate) type U128 = cosmwasm_std::Uint128;
 #[cfg(not(feature = "cosmwasm"))]
 pub(crate) type U128 = String;
 

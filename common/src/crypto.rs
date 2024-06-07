@@ -1,14 +1,16 @@
 use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
 
-use crate::{error::ContractError, types::Hash};
+use crate::{error::Result, types::Hash};
 
-pub fn verify_proof(public_key: &[u8], proof: &[u8], hash: Hash) -> Result<(), ContractError> {
+pub fn verify_proof(public_key: &[u8], proof: &[u8], hash: Hash) -> Result<()> {
     let verifier = Secp256k1Sha256::default();
     let verifed = verifier.verify(public_key, proof, &hash);
 
     // If we don't get an error it's always ok
-    verifed.map_err(ContractError::from).map(|_| ())
+    verifed?;
+
+    Ok(())
 }
 
 pub fn hash<'a, I>(iter: I) -> [u8; 32]

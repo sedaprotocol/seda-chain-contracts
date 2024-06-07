@@ -703,6 +703,8 @@ dependencies = [
  "semver",
  "serde",
  "sha3",
+ "thiserror",
+ "vrf-rs",
 ]
 
 [[package]]
