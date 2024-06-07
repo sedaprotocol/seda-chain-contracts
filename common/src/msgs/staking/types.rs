@@ -1,12 +1,7 @@
-#[cfg(feature = "cosmwasm")]
-use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "cosmwasm")]
-type U128 = Uint128;
-#[cfg(not(feature = "cosmwasm"))]
-type U128 = String;
+use crate::types::U128;
 
 /// A data request executor with staking info and optional p2p multi address
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
