@@ -1,0 +1,14 @@
+[package]
+name = "seda-contract-common"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+cosmwasm = ["cosmwasm-schema", "cosmwasm-std"]
+
+[dependencies]
+cosmwasm-schema = { workspace = true, optional = true}
+cosmwasm-std = { workspace = true, optional = true}
+serde = { workspace = true }
+schemars = { workspace = true }
+
