@@ -5,8 +5,8 @@ use super::*;
 use crate::state::get_seq;
 
 impl QueryHandler for QueryMsg {
-    fn query(msg: QueryMsg, deps: Deps, _env: Env) -> StdResult<Binary> {
-        match msg {
+    fn query(self, deps: Deps, _env: Env) -> StdResult<Binary> {
+        match self {
             QueryMsg::GetStaker { public_key: executor } => to_json_binary(&utils::get_staker(deps, &executor)?),
             QueryMsg::GetAccountSeq { public_key } => {
                 let seq: Uint128 = get_seq(deps.storage, &public_key)?.into();
@@ -24,10 +24,3 @@ impl QueryHandler for QueryMsg {
         }
     }
 }
-
-// #[cfg(test)]
-// impl From<QueryMsg> for super::QueryMsg {
-//     fn from(value: QueryMsg) -> Self {
-//         Self::Staking(value)
-//     }
-// }

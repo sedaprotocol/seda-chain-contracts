@@ -1,8 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::*;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     contract::CONTRACT_VERSION,
@@ -16,9 +14,15 @@ pub mod owner;
 pub mod staking;
 
 pub trait QueryHandler {
-    fn query(msg: Self, deps: Deps, _env: Env) -> StdResult<Binary>;
+    fn query(self, deps: Deps, _env: Env) -> StdResult<Binary>;
 }
 
+pub trait ExecuteHandler {
+    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>;
+}
+
+// TODO: replace by ExecuteMsg from seda-contract-common
+// (Not yet replace because data request and owner still not there)
 #[cw_serde]
 #[serde(untagged)]
 pub enum ExecuteMsg {
@@ -27,8 +31,9 @@ pub enum ExecuteMsg {
     Owner(owner::execute::ExecuteMsg),
 }
 
-impl ExecuteMsg {
-    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+// impl ExecuteMsg {
+impl ExecuteHandler for ExecuteMsg {
+    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         match self {
             ExecuteMsg::DataRequest(msg) => msg.execute(deps, env, info),
             ExecuteMsg::Staking(msg) => msg.execute(deps, env, info),
@@ -52,7 +57,7 @@ impl QueryMsg {
     pub fn query(self, deps: Deps, env: Env) -> StdResult<Binary> {
         match self {
             QueryMsg::DataRequest(msg) => msg.query(deps, env),
-            QueryMsg::Staking(msg) => QueryHandler::query(msg, deps, env),
+            QueryMsg::Staking(msg) => msg.query(deps, env),
             QueryMsg::Owner(msg) => msg.query(deps, env),
         }
     }

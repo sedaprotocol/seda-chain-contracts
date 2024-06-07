@@ -1,4 +1,5 @@
 use cosmwasm_std::{coins, BankMsg};
+pub(crate) use seda_contract_common::msgs::staking::execute::withdraw::Execute;
 
 use super::*;
 use crate::{
@@ -6,16 +7,9 @@ use crate::{
     state::{inc_get_seq, CHAIN_ID, TOKEN},
 };
 
-#[cw_serde]
-pub struct Execute {
-    pub(in crate::msgs::staking) public_key: PublicKey,
-    pub(in crate::msgs::staking) proof:      Vec<u8>,
-    pub(in crate::msgs::staking) amount:     Uint128,
-}
-
-impl Execute {
+impl ExecuteHandler for Execute {
     /// Sends tokens back to the sender that are marked as pending withdrawal.
-    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
         let message_hash = hash([
@@ -41,9 +35,13 @@ impl Execute {
             ));
         }
 
-        // update the executor
+        // update the executor (remove if balances are zero)
         executor.tokens_pending_withdrawal -= self.amount;
-        state::STAKERS.save(deps.storage, &self.public_key, &executor)?;
+        if executor.tokens_pending_withdrawal.is_zero() && executor.tokens_staked.is_zero() {
+            state::STAKERS.remove(deps.storage, &self.public_key);
+        } else {
+            state::STAKERS.save(deps.storage, &self.public_key, &executor)?;
+        }
 
         // send the tokens back to the executor
         let bank_msg = BankMsg::Send {
@@ -65,6 +63,7 @@ impl Execute {
         if let Some(memo) = executor.memo {
             event = event.add_attribute("memo", memo);
         }
+
         Ok(Response::new()
             .add_message(bank_msg)
             .add_attribute("action", "withdraw")
@@ -76,12 +75,5 @@ impl Execute {
                     ("amount_withdrawn", self.amount.to_string()),
                 ]),
             ]))
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::Withdraw(value).into()
     }
 }

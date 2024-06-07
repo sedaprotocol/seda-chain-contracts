@@ -1,9 +1,11 @@
-use self::staking::owner::state::OWNER;
-use super::{state::CONFIG, StakingConfig, *};
+use seda_contract_common::msgs::staking::StakingConfig;
 
-impl StakingConfig {
+use self::staking::owner::state::OWNER;
+use super::{state::CONFIG, *};
+
+impl ExecuteHandler for StakingConfig {
     /// Set staking config
-    pub fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         if info.sender != OWNER.load(deps.storage)? {
             return Err(ContractError::NotOwner);
         }
@@ -20,12 +22,5 @@ impl StakingConfig {
                 ("minimum_stake_to_register", self.minimum_stake_to_register.to_string()),
                 ("allowlist_enabled", self.allowlist_enabled.to_string()),
             ])]))
-    }
-}
-
-#[cfg(test)]
-impl From<StakingConfig> for crate::msgs::ExecuteMsg {
-    fn from(config: StakingConfig) -> Self {
-        super::ExecuteMsg::SetStakingConfig(config).into()
     }
 }

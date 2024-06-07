@@ -1,19 +1,14 @@
+use seda_contract_common::msgs::staking::execute::unstake::Execute;
+
 use super::*;
 use crate::{
     crypto::{hash, verify_proof},
     state::{inc_get_seq, CHAIN_ID},
 };
 
-#[cw_serde]
-pub struct Execute {
-    pub(in crate::msgs::staking) public_key: PublicKey,
-    pub(in crate::msgs::staking) proof:      Vec<u8>,
-    pub(in crate::msgs::staking) amount:     Uint128,
-}
-
-impl Execute {
+impl ExecuteHandler for Execute {
     /// Unstakes tokens from a given staker, to be withdrawn after a delay.
-    pub fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
         let message_hash = hash([
@@ -63,12 +58,5 @@ impl Execute {
                 ("amount_unstaked", self.amount.to_string()),
             ]),
         ]))
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::Unstake(value).into()
     }
 }
