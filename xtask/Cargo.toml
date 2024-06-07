@@ -8,6 +8,7 @@ edition = "2021"
 anyhow.workspace = true
 hex.workspace = true
 seda-contract.workspace = true
+seda-contract-common.workspace = true
 semver.workspace = true
 serde_json.workspace = true
 rand.workspace = true

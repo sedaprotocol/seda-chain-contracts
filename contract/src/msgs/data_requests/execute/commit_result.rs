@@ -1,17 +1,9 @@
 use super::*;
 use crate::state::{inc_get_seq, CHAIN_ID};
 
-#[cw_serde]
-pub struct Execute {
-    pub(in crate::msgs::data_requests) dr_id:      Hash,
-    pub(in crate::msgs::data_requests) commitment: Hash,
-    pub(in crate::msgs::data_requests) public_key: PublicKey,
-    pub(in crate::msgs::data_requests) proof:      Vec<u8>,
-}
-
-impl Execute {
+impl ExecuteHandler for execute::commit_result::Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
-    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute message hash
         let message_hash = hash([
@@ -53,12 +45,5 @@ impl Execute {
                 ("commitment", hex::encode(self.commitment)),
             ]),
         ))
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::CommitDataResult(value).into()
     }
 }

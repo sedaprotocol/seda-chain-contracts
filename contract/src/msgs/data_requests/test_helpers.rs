@@ -1,6 +1,10 @@
-use semver::{BuildMetadata, Prerelease};
+use semver::{BuildMetadata, Prerelease, Version};
+use sha3::{Digest, Keccak256};
 
-use super::{execute::*, *};
+use super::{
+    msgs::data_requests::{execute, query},
+    *,
+};
 use crate::{crypto::hash, TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
@@ -84,7 +88,7 @@ impl TestInfo {
         seda_payload: Vec<u8>,
         payback_address: Vec<u8>,
     ) -> Result<Hash, ContractError> {
-        let msg = post_request::Execute {
+        let msg = execute::post_request::Execute {
             posted_dr,
             seda_payload,
             payback_address,
@@ -115,7 +119,7 @@ impl TestInfo {
             &seq.to_be_bytes(),
         ]);
 
-        let msg = commit_result::Execute {
+        let msg = execute::commit_result::Execute {
             dr_id,
             commitment,
             public_key: sender.pub_key(),
@@ -147,7 +151,7 @@ impl TestInfo {
             &seq.to_be_bytes(),
         ]);
 
-        let msg = reveal_result::Execute {
+        let msg = execute::reveal_result::Execute {
             reveal_body,
             dr_id,
             public_key: sender.pub_key(),

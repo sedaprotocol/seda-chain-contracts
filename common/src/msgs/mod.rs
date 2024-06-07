@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::*;
 
+pub mod data_requests;
 pub mod owner;
 pub mod staking;
 
@@ -13,7 +14,7 @@ pub mod staking;
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 #[serde(untagged)]
 pub enum ExecuteMsg {
-    // DataRequest(Box<data_requests::execute::ExecuteMsg>),
+    DataRequest(Box<data_requests::execute::ExecuteMsg>),
     Staking(staking::execute::ExecuteMsg),
     Owner(owner::execute::ExecuteMsg),
 }
@@ -26,7 +27,7 @@ pub enum ExecuteMsg {
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 #[serde(untagged)]
 pub enum QueryMsg {
-    // DataRequest(data_requests::query::QueryMsg),
+    DataRequest(data_requests::query::QueryMsg),
     Staking(staking::query::QueryMsg),
     Owner(owner::query::QueryMsg),
 }

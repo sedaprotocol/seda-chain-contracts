@@ -698,6 +698,7 @@ version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
+ "cw-storage-plus",
  "hex",
  "semver",
  "serde",
@@ -942,6 +943,7 @@ dependencies = [
  "hex",
  "rand",
  "seda-contract",
+ "seda-contract-common",
  "semver",
  "serde_json",
  "xshell",

@@ -1,18 +1,10 @@
 use super::*;
 use crate::state::{inc_get_seq, CHAIN_ID};
 
-#[cw_serde]
-pub struct Execute {
-    pub(in crate::msgs::data_requests) dr_id:       Hash,
-    pub(in crate::msgs::data_requests) reveal_body: RevealBody,
-    pub(in crate::msgs::data_requests) public_key:  PublicKey,
-    pub(in crate::msgs::data_requests) proof:       Vec<u8>,
-}
-
-impl Execute {
+impl ExecuteHandler for execute::reveal_result::Execute {
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
-    pub fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
 
         // compute hash of reveal body
@@ -109,12 +101,5 @@ impl Execute {
         }
 
         Ok(response)
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::RevealDataResult(value).into()
     }
 }

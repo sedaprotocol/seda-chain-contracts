@@ -1,15 +1,8 @@
 use super::*;
 
-#[cw_serde]
-pub struct Execute {
-    pub(in crate::msgs::data_requests) posted_dr:       PostDataRequestArgs,
-    pub(in crate::msgs::data_requests) seda_payload:    Bytes,
-    pub(in crate::msgs::data_requests) payback_address: Bytes,
-}
-
-impl Execute {
+impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
-    pub fn execute(self, deps: DepsMut, _info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, _env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // hash the inputs to get the data request id
         let dr_id = self.posted_dr.hash();
 
@@ -59,12 +52,5 @@ impl Execute {
         state::insert_req(deps.storage, &dr_id, &dr)?;
 
         Ok(res)
-    }
-}
-
-#[cfg(test)]
-impl From<Execute> for crate::msgs::ExecuteMsg {
-    fn from(value: Execute) -> Self {
-        super::ExecuteMsg::PostDataRequest(value).into()
     }
 }

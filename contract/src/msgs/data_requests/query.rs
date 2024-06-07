@@ -1,26 +1,7 @@
-use super::*;
+use super::{msgs::data_requests::query::QueryMsg, *};
 
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(DataRequest)]
-    GetDataRequest { dr_id: Hash },
-    #[returns(Option<Hash>)]
-    GetDataRequestCommitment { dr_id: Hash, public_key: PublicKey },
-    #[returns(HashMap<String, Hash>)]
-    GetDataRequestCommitments { dr_id: Hash },
-    #[returns(Option<RevealBody>)]
-    GetDataRequestReveal { dr_id: Hash, public_key: PublicKey },
-    #[returns(HashMap<String, RevealBody>)]
-    GetDataRequestReveals { dr_id: Hash },
-    #[returns(DataResult)]
-    GetResolvedDataRequest { dr_id: Hash },
-    #[returns(HashMap<String, DR>)]
-    GetDataRequestsByStatus { status: DataRequestStatus },
-}
-
-impl QueryMsg {
-    pub fn query(self, deps: Deps, _env: Env) -> StdResult<Binary> {
+impl QueryHandler for QueryMsg {
+    fn query(self, deps: Deps, _env: Env) -> StdResult<Binary> {
         match self {
             QueryMsg::GetDataRequest { dr_id } => to_json_binary(&state::may_load_req(deps.storage, &dr_id)?),
             QueryMsg::GetDataRequestCommitment { dr_id, public_key } => {
@@ -48,12 +29,5 @@ impl QueryMsg {
                 to_json_binary(&state::requests_by_status(deps.storage, &status)?)
             }
         }
-    }
-}
-
-#[cfg(test)]
-impl From<QueryMsg> for super::QueryMsg {
-    fn from(value: QueryMsg) -> Self {
-        Self::DataRequest(value)
     }
 }
