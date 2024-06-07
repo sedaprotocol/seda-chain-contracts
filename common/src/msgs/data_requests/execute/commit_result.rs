@@ -16,12 +16,14 @@ pub struct Execute {
 trait SignSelf {
     const METHOD_NAME: &'static str;
 
+    fn public_key(&self) -> &[u8];
+    fn proof(&self) -> &[u8];
     fn set_proof(&mut self, proof: Vec<u8>);
 
     // maybe needs to be an option if the struct has no fields
     fn fields(&self) -> impl IntoIterator<Item = &[u8]>;
 
-    fn sign(&mut self, signing_key: &[u8], chain_id: &str, contract_addr: &str, seq: u128) -> Result<()> {
+    fn hash(&self, chain_id: &str, contract_addr: &str, seq: u128) -> Hash {
         let seq = seq.to_be_bytes();
         let msg = std::iter::once(Self::METHOD_NAME.as_bytes()).chain(self.fields().into_iter().chain([
             chain_id.as_bytes(),
@@ -29,7 +31,11 @@ trait SignSelf {
             &seq,
         ]));
 
-        let msg_hash = hash(msg);
+        hash(msg)
+    }
+
+    fn sign(&mut self, signing_key: &[u8], chain_id: &str, contract_addr: &str, seq: u128) -> Result<()> {
+        let msg_hash = self.hash(chain_id, contract_addr, seq);
 
         let vrf = Secp256k1Sha256::default();
         let proof = vrf.prove(signing_key, &msg_hash)?;
@@ -37,6 +43,10 @@ trait SignSelf {
         self.set_proof(proof);
 
         Ok(())
+    }
+
+    fn verify(&self, chain_id: &str, contract_addr: &str, seq: u128) -> Result<()> {
+        verify_proof(self.public_key(), self.proof(), self.hash(chain_id, contract_addr, seq))
     }
 }
 
@@ -50,6 +60,14 @@ impl SignSelf for Execute {
 
     fn fields(&self) -> impl IntoIterator<Item = &[u8]> {
         [self.dr_id.as_slice(), self.commitment.as_slice()]
+    }
+
+    fn public_key(&self) -> &[u8] {
+        &self.public_key
+    }
+
+    fn proof(&self) -> &[u8] {
+        &self.proof
     }
 }
 
@@ -92,39 +110,56 @@ impl ExecuteBuilder {
     }
 }
 
-// Option 3: long new function
+// Option 3: plain functions
 impl Execute {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        signing_key: &[u8],
-        dr_id: Hash,
-        commitment: Hash,
-        public_key: PublicKey,
-        height: u64,
-        chain_id: &str,
-        contract_addr: &str,
-        seq: u128,
-    ) -> Result<Self> {
-        let msg_hash = hash([
-            "commit_data_result".as_bytes(),
-            &dr_id,
-            // this one does expect a height... but I think this is wrong and we should remove that??
-            &height.to_be_bytes(),
-            &commitment,
-            chain_id.as_bytes(),
-            contract_addr.as_bytes(),
-            &seq.to_be_bytes(),
-        ]);
-
-        // We should lazy static or something to avoid creating a new instance every time
-        let vrf = Secp256k1Sha256::default();
-
+    pub fn new(dr_id: Hash, commitment: Hash, public_key: PublicKey) -> Result<Self> {
         Ok(Execute {
             dr_id,
             commitment,
             public_key,
-            proof: vrf.prove(signing_key, &msg_hash)?,
+            proof: vec![],
         })
+    }
+
+    pub fn hash(&self, height: u64, chain_id: &str, contract_addr: &str, seq: u128) -> Hash {
+        hash([
+            "commit_data_result".as_bytes(),
+            &self.dr_id,
+            // this one does expect a height... but I think this is wrong and we should remove that??
+            &height.to_be_bytes(),
+            &self.commitment,
+            chain_id.as_bytes(),
+            contract_addr.as_bytes(),
+            &seq.to_be_bytes(),
+        ])
+    }
+
+    pub fn prove(
+        &mut self,
+        signing_key: &[u8],
+        height: u64,
+        chain_id: &str,
+        contract_addr: &str,
+        seq: u128,
+    ) -> Result<()> {
+        let msg_hash = self.hash(height, chain_id, contract_addr, seq);
+
+        // We should lazy static or something to avoid creating a new instance every time
+        let vrf = Secp256k1Sha256::default();
+        let proof = vrf.prove(signing_key, &msg_hash)?;
+
+        self.proof = proof;
+
+        Ok(())
+    }
+
+    pub fn verify(&self, height: u64, chain_id: &str, contract_addr: &str, seq: u128) -> Result<()> {
+        verify_proof(
+            &self.public_key,
+            &self.proof,
+            self.hash(height, chain_id, contract_addr, seq),
+        )
     }
 }
 
