@@ -179,7 +179,15 @@ impl HashSelf for RevealBody {
         let mut hasher = Keccak256::new();
         hasher.update(self.salt);
         hasher.update(self.exit_code.to_be_bytes());
+        #[cfg(feature = "cosmwasm")]
         hasher.update(self.gas_used.to_be_bytes());
+        #[cfg(not(feature = "cosmwasm"))]
+        hasher.update(
+            self.gas_used
+                .parse::<u128>()
+                .expect("`gas_used` should be parseable to u128")
+                .to_be_bytes(),
+        );
         hasher.update(self.reveal.hash());
         hasher.finalize().into()
     }
@@ -222,8 +230,24 @@ impl HashSelf for PostDataRequestArgs {
         dr_hasher.update(self.tally_binary_id);
         dr_hasher.update(tally_inputs_hash);
         dr_hasher.update(self.replication_factor.to_be_bytes());
+        #[cfg(feature = "cosmwasm")]
         dr_hasher.update(self.gas_price.to_be_bytes());
+        #[cfg(not(feature = "cosmwasm"))]
+        dr_hasher.update(
+            self.gas_price
+                .parse::<u128>()
+                .expect("`gas_price` should be parseable to u128")
+                .to_be_bytes(),
+        );
+        #[cfg(feature = "cosmwasm")]
         dr_hasher.update(self.gas_limit.to_be_bytes());
+        #[cfg(not(feature = "cosmwasm"))]
+        dr_hasher.update(
+            self.gas_price
+                .parse::<u128>()
+                .expect("`gas_limit` should be parseable to u128")
+                .to_be_bytes(),
+        );
         dr_hasher.update(memo_hash);
         dr_hasher.finalize().into()
     }
