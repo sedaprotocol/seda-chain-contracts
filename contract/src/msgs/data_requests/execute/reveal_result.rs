@@ -90,6 +90,9 @@ impl ExecuteHandler for execute::reveal_result::Execute {
                 result: reveal,
                 payback_address: dr.payback_address,
                 seda_payload: dr.seda_payload,
+                // TODO this is mocked behavior
+                // this should be received from the post result method in the future.
+                consensus: true,
             };
             state::post_result(deps.storage, &self.dr_id, &dr_result)?;
 

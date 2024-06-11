@@ -238,7 +238,7 @@ impl TestInfo {
         status: DataRequestStatus,
         offset: u64,
         limit: u32,
-    ) -> HashMap<String, DR> {
+    ) -> HashMap<String, DataRequest> {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
             .unwrap()
     }

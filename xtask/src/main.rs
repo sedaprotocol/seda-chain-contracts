@@ -2,7 +2,7 @@ use std::{collections::HashMap, env, process::Command};
 
 use anyhow::{bail, Context, Result};
 use rand::Rng;
-use seda_common::msgs::data_requests::{DataRequest, DR};
+use seda_common::msgs::data_requests::DataRequest;
 use serde_json::json;
 use xshell::{cmd, Shell};
 
@@ -74,7 +74,7 @@ fn create_data_request(
     tally_binary_id: [u8; 32],
     replication_factor: u16,
     tally_inputs: Vec<u8>,
-) -> (String, DR) {
+) -> (String, DataRequest) {
     let id = rand::random();
     let dr = DataRequest {
         version: semver::Version {
@@ -100,10 +100,10 @@ fn create_data_request(
         height: rand::random(),
     };
 
-    (hex::encode(id), DR::Request(Box::new(dr)))
+    (hex::encode(id), dr)
 }
 
-fn tally_test_fixture() -> HashMap<String, DR> {
+fn tally_test_fixture() -> HashMap<String, DataRequest> {
     let dr_binary_id: [u8; 32] = rand::random();
     let tally_binary_id: [u8; 32] = rand::random();
     let replication_factor = rand::thread_rng().gen_range(1..=3);

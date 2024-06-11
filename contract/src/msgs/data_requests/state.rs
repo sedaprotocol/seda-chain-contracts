@@ -78,14 +78,14 @@ pub fn requests_by_status(
     status: &DataRequestStatus,
     offset: u64,
     limit: u32,
-) -> StdResult<HashMap<String, DR>> {
+) -> StdResult<HashMap<String, DataRequest>> {
     let hashes = DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default();
 
     let start_index = offset as usize;
     let end_index = usize::min(start_index + limit as usize, hashes.len());
     hashes[start_index..end_index]
         .into_iter()
-        .map(|hash| DATA_REQUESTS.load(store, hash).map(|dr| (hash.to_hex(), dr.into())))
+        .map(|hash| DATA_REQUESTS.load(store, hash).map(|dr| (hash.to_hex(), dr)))
         .collect::<StdResult<_>>()
 }
 
