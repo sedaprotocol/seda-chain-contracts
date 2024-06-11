@@ -562,9 +562,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.84"
+version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec96c6a92621310b51366f1e28d05ef11489516e93be030060e5fc12024a49d6"
+checksum = "22244ce15aa966053a896d1accb3a6e68469b97c7f33f284b99f0d576879fc23"
 dependencies = [
  "unicode-ident",
 ]
@@ -695,7 +695,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.0.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/dr-by-status-pagination#214bd2333d9cbd3514fb09d6895972b30f2a7112"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/dr-by-status-pagination#5a578c03521d1df6ea34793fdf395e2530edb17e"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",

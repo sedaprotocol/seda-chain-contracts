@@ -76,12 +76,12 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
 pub fn requests_by_status(
     store: &dyn Storage,
     status: &DataRequestStatus,
-    page: u32,
+    offset: u32,
     limit: u32,
 ) -> StdResult<HashMap<String, DR>> {
     let hashes = DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default();
 
-    let start_index = ((page - 1) * limit) as usize;
+    let start_index = offset as usize;
     let end_index = usize::min(start_index + limit as usize, hashes.len());
     hashes[start_index..end_index]
         .into_iter()
