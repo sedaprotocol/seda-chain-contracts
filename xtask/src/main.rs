@@ -97,6 +97,7 @@ fn create_data_request(
         commits: Default::default(),
         reveals: Default::default(),
         payback_address: Default::default(),
+        height: rand::random(),
     };
 
     (hex::encode(id), DR::Request(Box::new(dr)))

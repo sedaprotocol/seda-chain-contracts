@@ -2,7 +2,7 @@ use super::*;
 
 impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
-    fn execute(self, deps: DepsMut, _env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // hash the inputs to get the data request id
         let dr_id = self.posted_dr.hash();
 
@@ -48,6 +48,8 @@ impl ExecuteHandler for execute::post_request::Execute {
             seda_payload:    self.seda_payload,
             commits:         Default::default(),
             reveals:         Default::default(),
+
+            height: env.block.height,
         };
         state::insert_req(deps.storage, &dr_id, &dr)?;
 

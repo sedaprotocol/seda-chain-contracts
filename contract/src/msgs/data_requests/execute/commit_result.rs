@@ -4,21 +4,6 @@ use crate::state::{inc_get_seq, CHAIN_ID};
 impl ExecuteHandler for execute::commit_result::Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-        let chain_id = CHAIN_ID.load(deps.storage)?;
-        // compute message hash
-        let message_hash = hash([
-            "commit_data_result".as_bytes(),
-            &self.dr_id,
-            &env.block.height.to_be_bytes(),
-            &self.commitment,
-            chain_id.as_bytes(),
-            env.contract.address.as_str().as_bytes(),
-            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
-        ]);
-
-        // verify the proof
-        verify_proof(&self.public_key, &self.proof, message_hash)?;
-
         // find the data request from the pool (if it exists, otherwise error)
         let mut dr = state::load_req(deps.storage, &self.dr_id)?;
 
@@ -32,6 +17,21 @@ impl ExecuteHandler for execute::commit_result::Execute {
         if dr.reveal_started() {
             return Err(ContractError::RevealStarted);
         }
+
+        let chain_id = CHAIN_ID.load(deps.storage)?;
+        // compute message hash
+        let message_hash = hash([
+            "commit_data_result".as_bytes(),
+            &self.dr_id,
+            &dr.height.to_be_bytes(),
+            &self.commitment,
+            chain_id.as_bytes(),
+            env.contract.address.as_str().as_bytes(),
+            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+        ]);
+
+        // verify the proof
+        verify_proof(&self.public_key, &self.proof, message_hash)?;
 
         // add the commitment to the data request
         dr.commits.insert(public_key_str, self.commitment);

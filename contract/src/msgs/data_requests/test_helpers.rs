@@ -1,3 +1,5 @@
+use core::panic;
+
 use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
@@ -45,7 +47,12 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     }
 }
 
-pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs, seda_payload: Bytes) -> DataRequest {
+pub fn construct_dr(
+    constructed_dr_id: Hash,
+    dr_args: PostDataRequestArgs,
+    seda_payload: Bytes,
+    height: u64,
+) -> DataRequest {
     let version = Version {
         major: 1,
         minor: 0,
@@ -71,6 +78,8 @@ pub fn construct_dr(constructed_dr_id: Hash, dr_args: PostDataRequestArgs, seda_
         commits: Default::default(),
         reveals: Default::default(),
         payback_address,
+
+        height,
     }
 }
 
@@ -87,6 +96,7 @@ impl TestInfo {
         posted_dr: PostDataRequestArgs,
         seda_payload: Vec<u8>,
         payback_address: Vec<u8>,
+        env_height: u64,
     ) -> Result<Hash, ContractError> {
         let msg = execute::post_request::Execute {
             posted_dr,
@@ -95,24 +105,23 @@ impl TestInfo {
         }
         .into();
 
+        if env_height < dbg!(self.block_height()) {
+            panic!("Invalid Test: Cannot post a data request in the past");
+        }
+        // set the chain height... will effect the height in the dr for us to sign.
+        self.set_block_height(env_height);
         // someone posts a data request
         self.execute(sender, &msg)
     }
 
     #[track_caller]
-    pub fn commit_result(
-        &mut self,
-        sender: &TestExecutor,
-        dr_id: Hash,
-        commitment: Hash,
-        msg_height: Option<u64>,
-        env_height: Option<u64>,
-    ) -> Result<(), ContractError> {
+    pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: Hash, commitment: Hash) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
+        let dr = self.get_dr(dr_id).unwrap();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
             &dr_id,
-            &msg_height.unwrap_or_default().to_be_bytes(),
+            &dr.height.to_be_bytes(),
             &commitment,
             self.chain_id(),
             self.contract_addr_bytes(),
@@ -127,7 +136,36 @@ impl TestInfo {
         }
         .into();
 
-        self.set_block_height(env_height.unwrap_or_default());
+        self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn commit_result_wrong_height(
+        &mut self,
+        sender: &TestExecutor,
+        dr_id: Hash,
+        commitment: Hash,
+    ) -> Result<(), ContractError> {
+        let seq = self.get_account_sequence(sender.pub_key());
+        let dr = self.get_dr(dr_id).unwrap();
+        let msg_hash = hash([
+            "commit_data_result".as_bytes(),
+            &dr_id,
+            &dr.height.saturating_sub(3).to_be_bytes(),
+            &commitment,
+            self.chain_id(),
+            self.contract_addr_bytes(),
+            &seq.to_be_bytes(),
+        ]);
+
+        let msg = execute::commit_result::Execute {
+            dr_id,
+            commitment,
+            public_key: sender.pub_key(),
+            proof: sender.prove(&msg_hash),
+        }
+        .into();
+
         self.execute(sender, &msg)
     }
 
@@ -137,14 +175,13 @@ impl TestInfo {
         sender: &TestExecutor,
         dr_id: Hash,
         reveal_body: RevealBody,
-        msg_height: Option<u64>,
-        env_height: Option<u64>,
     ) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
+        let dr = self.get_dr(dr_id).unwrap();
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
             &dr_id,
-            &msg_height.unwrap_or_default().to_be_bytes(),
+            &dr.height.to_be_bytes(),
             &reveal_body.hash(),
             self.chain_id(),
             self.contract_addr_bytes(),
@@ -159,7 +196,6 @@ impl TestInfo {
         }
         .into();
 
-        self.set_block_height(env_height.unwrap_or_default());
         self.execute(sender, &msg)
     }
 

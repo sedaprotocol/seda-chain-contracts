@@ -69,12 +69,16 @@ impl TestInfo {
         let parsed = parse_instantiate_response_data(res.data.unwrap().as_slice()).unwrap();
         assert!(parsed.data.is_none());
 
-        Self {
+        let mut info = Self {
             app,
             contract_addr: Addr::unchecked(parsed.contract_address),
             executors,
             chain_id,
-        }
+        };
+
+        info.set_block_height(0);
+
+        info
     }
 
     pub fn new_executor(&mut self, name: &'static str, amount: Option<u128>) -> TestExecutor {
@@ -107,6 +111,10 @@ impl TestInfo {
 
     pub fn chain_id(&self) -> &[u8] {
         self.chain_id.as_bytes()
+    }
+
+    pub fn block_height(&mut self) -> u64 {
+        self.app.block_info().height
     }
 
     pub fn set_block_height(&mut self, height: u64) {

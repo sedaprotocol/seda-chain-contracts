@@ -5,6 +5,14 @@ impl ExecuteHandler for execute::reveal_result::Execute {
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        // find the data request from the committed pool (if it exists, otherwise error)
+        let mut dr = state::load_req(deps.storage, &self.dr_id)?;
+
+        // error if reveal phase for this DR has not started (i.e. replication factor is not met)
+        if !dr.reveal_started() {
+            return Err(ContractError::RevealNotStarted);
+        }
+
         let chain_id = CHAIN_ID.load(deps.storage)?;
 
         // compute hash of reveal body
@@ -14,7 +22,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let message_hash = hash([
             "reveal_data_result".as_bytes(),
             &self.dr_id,
-            &env.block.height.to_be_bytes(),
+            &dr.height.to_be_bytes(),
             &reveal_body_hash,
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
@@ -23,14 +31,6 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         // verify the proof
         verify_proof(&self.public_key, &self.proof, message_hash)?;
-
-        // find the data request from the committed pool (if it exists, otherwise error)
-        let mut dr = state::load_req(deps.storage, &self.dr_id)?;
-
-        // error if reveal phase for this DR has not started (i.e. replication factor is not met)
-        if !dr.reveal_started() {
-            return Err(ContractError::RevealNotStarted);
-        }
 
         // error if data request executor has not submitted a commitment
         let public_key_str = hex::encode(&self.public_key);
