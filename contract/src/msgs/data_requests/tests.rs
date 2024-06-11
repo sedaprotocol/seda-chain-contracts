@@ -2,6 +2,72 @@ use super::*;
 use crate::TestInfo;
 
 #[test]
+fn query_drs_by_status_has_none() {
+    let test_info = TestInfo::init();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    assert_eq!(0, drs.len());
+}
+
+#[test]
+fn query_drs_by_status_has_one() {
+    let mut test_info = TestInfo::init();
+
+    let anyone = test_info.new_executor("anyone", Some(2));
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 3);
+    let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![]).unwrap();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    assert_eq!(1, drs.len());
+    assert!(drs.contains_key(&dr_id.to_hex()));
+}
+
+#[test]
+fn query_drs_by_status_limit_works() {
+    let mut test_info = TestInfo::init();
+
+    let anyone = test_info.new_executor("anyone", Some(2));
+
+    // post a data request
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
+    test_info.post_data_request(&anyone, dr1, vec![], vec![]).unwrap();
+
+    // post a scond data request
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 3);
+    test_info.post_data_request(&anyone, dr2, vec![], vec![]).unwrap();
+
+    // post a third data request
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
+    test_info.post_data_request(&anyone, dr3, vec![], vec![]).unwrap();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 2);
+    assert_eq!(2, drs.len());
+}
+
+#[test]
+fn query_drs_by_status_offset_works() {
+    let mut test_info = TestInfo::init();
+
+    let anyone = test_info.new_executor("anyone", Some(2));
+
+    // post a data request
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
+    test_info.post_data_request(&anyone, dr1, vec![], vec![]).unwrap();
+
+    // post a scond data request
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 3);
+    test_info.post_data_request(&anyone, dr2, vec![], vec![]).unwrap();
+
+    // post a third data request
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
+    test_info.post_data_request(&anyone, dr3, vec![], vec![]).unwrap();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 1, 2);
+    assert_eq!(2, drs.len());
+}
+
+#[test]
 fn post_data_request() {
     let mut test_info = TestInfo::init();
 
