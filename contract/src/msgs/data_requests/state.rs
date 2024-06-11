@@ -76,7 +76,7 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
 pub fn requests_by_status(
     store: &dyn Storage,
     status: &DataRequestStatus,
-    offset: u32,
+    offset: u64,
     limit: u32,
 ) -> StdResult<HashMap<String, DR>> {
     let hashes = DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default();
@@ -85,13 +85,7 @@ pub fn requests_by_status(
     let end_index = usize::min(start_index + limit as usize, hashes.len());
     hashes[start_index..end_index]
         .into_iter()
-        .map(|hash| {
-            if status.is_resolved() {
-                DATA_RESULTS.load(store, hash).map(|dr| (hash.to_hex(), dr.into()))
-            } else {
-                DATA_REQUESTS.load(store, hash).map(|dr| (hash.to_hex(), dr.into()))
-            }
-        })
+        .map(|hash| DATA_REQUESTS.load(store, hash).map(|dr| (hash.to_hex(), dr.into())))
         .collect::<StdResult<_>>()
 }
 
@@ -116,8 +110,7 @@ pub fn post_result(store: &mut dyn Storage, dr_id: &Hash, dr: &DataResult) -> St
     // we have to remove the request from the pool and save it to the results
     DATA_REQUESTS.remove(store, dr_id);
     DATA_RESULTS.save(store, dr_id, dr)?;
-    // We update the status of the request from Tallying to Resolved
-    update_req_status(store, dr_id, &DataRequestStatus::Tallying, &DataRequestStatus::Resolved)?;
+    // no need to update status as we remove it from the requests pool
 
     Ok(())
 }

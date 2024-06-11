@@ -255,11 +255,8 @@ fn reveals_meet_replication_factor() {
     // bob reveals
     test_info.reveal_result(&bob, dr_id, bob_reveal).unwrap();
 
-    // TODO this should check if status is Tallying.
-    // but for now we mock the tallying so its set to Resolved
-    let resolved = test_info.get_data_requests_by_status(DataRequestStatus::Resolved, 0, 10);
-    assert_eq!(1, resolved.len());
-    assert!(resolved.contains_key(&dr_id.to_hex()));
+    let resolved = test_info.get_data_result(dr_id).unwrap();
+    assert_eq!(resolved.dr_id, dr_id)
 }
 
 #[test]

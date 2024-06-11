@@ -205,6 +205,11 @@ impl TestInfo {
     }
 
     #[track_caller]
+    pub fn get_data_result(&self, dr_id: Hash) -> Option<DataResult> {
+        self.query(query::QueryMsg::GetDataResult { dr_id }).unwrap()
+    }
+
+    #[track_caller]
     pub fn get_data_result_commit(&self, dr_id: Hash, public_key: Vec<u8>) -> Option<Hash> {
         self.query(query::QueryMsg::GetDataRequestCommitment { dr_id, public_key })
             .unwrap()
@@ -231,7 +236,7 @@ impl TestInfo {
     pub fn get_data_requests_by_status(
         &self,
         status: DataRequestStatus,
-        offset: u32,
+        offset: u64,
         limit: u32,
     ) -> HashMap<String, DR> {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })

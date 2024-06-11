@@ -22,9 +22,7 @@ impl QueryHandler for QueryMsg {
                 let dr = state::load_req(deps.storage, &dr_id)?;
                 to_json_binary(&dr.reveals)
             }
-            QueryMsg::GetResolvedDataRequest { dr_id } => {
-                to_json_binary(&state::load_resolved_req(deps.storage, &dr_id)?)
-            }
+            QueryMsg::GetDataResult { dr_id } => to_json_binary(&state::load_resolved_req(deps.storage, &dr_id)?),
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
                 to_json_binary(&state::requests_by_status(deps.storage, &status, offset, limit)?)
             }
