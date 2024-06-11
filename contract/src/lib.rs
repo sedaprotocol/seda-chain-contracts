@@ -5,7 +5,7 @@ pub mod msgs;
 pub mod state;
 mod utils;
 
-use seda_contract_common::types;
+use seda_common::types;
 
 #[cfg(test)]
 mod test_utils;

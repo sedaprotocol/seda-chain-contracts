@@ -2,7 +2,7 @@
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cosmwasm_std::{StdResult, Uint128};
 use cw2::set_contract_version;
-use seda_contract_common::msgs::*;
+use seda_common::msgs::*;
 use staking::StakingConfig;
 
 use crate::{

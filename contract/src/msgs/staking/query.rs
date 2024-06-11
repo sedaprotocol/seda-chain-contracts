@@ -1,5 +1,5 @@
-pub use seda_contract_common::msgs::staking::query::QueryMsg;
-use seda_contract_common::msgs::staking::StakerAndSeq;
+pub use seda_common::msgs::staking::query::QueryMsg;
+use seda_common::msgs::staking::StakerAndSeq;
 
 use super::*;
 use crate::state::get_seq;

@@ -67,7 +67,7 @@ pub enum ContractError {
     FromHex(#[from] FromHexError),
 
     #[error(transparent)]
-    Common(#[from] seda_contract_common::error::Error),
+    Common(#[from] seda_common::error::Error),
 }
 
 #[cfg(test)]

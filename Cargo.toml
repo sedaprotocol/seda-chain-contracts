@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-	"common",
 	"contract",
 	# "fuzz",
 	"xtask",
@@ -25,21 +24,21 @@ cosmwasm-schema = "1.5.5"
 cosmwasm-std = { version = "1.5.5" }
 cw-multi-test = "1.1.0"
 cw-storage-plus = "1.2.0"
-cw2 = "1.1.2"
 cw-utils = "1.0.3"
+cw2 = "1.1.2"
 hex = "0.4.3"
 k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
 libfuzzer-sys = "0.4"
 rand = "0.8"
 schemars = { version = "0.8", features = ["semver"] }
+seda-common = { git = "https://github.com/sedaprotocol/seda-common-rs.git", version = "0.0.0" }
+semver = { version = "1.0", features = ["serde"] }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-big-array = { version = "0.5.1" }
 serde_json = "1.0.117"
 sha3 = "0.10"
 thiserror = { version = "1.0" }
-semver = { version = "1.0", features = ["serde"] }
 vrf-rs = "0.0.0"
 xshell = "0.2"
 
-seda-contract-common = { path = "./common"}
 seda-contract = { path = "./contract" }

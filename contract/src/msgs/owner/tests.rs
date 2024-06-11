@@ -1,4 +1,4 @@
-use seda_contract_common::msgs::staking::StakingConfig;
+use seda_common::msgs::staking::StakingConfig;
 
 use crate::{error::ContractError, TestInfo};
 

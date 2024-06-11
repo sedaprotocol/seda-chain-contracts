@@ -1,6 +1,6 @@
 use cosmwasm_std::*;
 use cw_storage_plus::{Item, Map};
-use seda_contract_common::{
+use seda_common::{
     crypto::*,
     msgs::{
         self,

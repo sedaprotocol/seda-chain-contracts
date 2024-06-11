@@ -1,4 +1,4 @@
-use seda_contract_common::msgs::staking::Staker;
+use seda_common::msgs::staking::Staker;
 
 use super::{
     state::{CONFIG, STAKERS},

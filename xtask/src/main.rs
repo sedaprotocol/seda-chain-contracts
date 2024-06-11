@@ -2,7 +2,7 @@ use std::{collections::HashMap, env, process::Command};
 
 use anyhow::{bail, Context, Result};
 use rand::Rng;
-use seda_contract_common::msgs::data_requests::{DataRequest, DR};
+use seda_common::msgs::data_requests::{DataRequest, DR};
 use serde_json::json;
 use xshell::{cmd, Shell};
 

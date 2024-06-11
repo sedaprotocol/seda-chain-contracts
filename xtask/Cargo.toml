@@ -3,12 +3,11 @@ name = "xtask"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
 anyhow.workspace = true
 hex.workspace = true
 seda-contract.workspace = true
-seda-contract-common.workspace = true
+seda-common.workspace = true
 semver.workspace = true
 serde_json.workspace = true
 rand.workspace = true

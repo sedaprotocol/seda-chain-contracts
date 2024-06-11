@@ -35,7 +35,7 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 hex = { workspace = true }
 schemars = { workspace = true }
-seda-contract-common = { workspace = true, features = ["cosmwasm"] }
+seda-common = { workspace = true, features = ["cosmwasm"] }
 semver = { workspace = true }
 serde = { workspace = true }
 serde-big-array = { workspace = true }
@@ -46,8 +46,5 @@ vrf-rs = { workspace = true }
 [dev-dependencies]
 cw-multi-test = { workspace = true }
 k256 = { workspace = true }
-seda-contract-common = { workspace = true, features = [
-	"cosmwasm",
-	"test-utils",
-] }
+seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }
 serde_json = { workspace = true }

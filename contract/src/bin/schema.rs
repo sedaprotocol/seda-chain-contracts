@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use seda_contract_common::msgs::*;
+use seda_common::msgs::*;
 
 fn main() {
     write_api! {
