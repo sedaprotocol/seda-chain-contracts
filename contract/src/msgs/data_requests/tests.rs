@@ -255,7 +255,7 @@ fn reveals_meet_replication_factor() {
     // bob reveals
     test_info.reveal_result(&bob, dr_id, bob_reveal).unwrap();
 
-    let resolved = test_info.get_data_result(dr_id).unwrap();
+    let resolved = test_info.get_data_result(dr_id);
     assert_eq!(resolved.dr_id, dr_id)
 }
 

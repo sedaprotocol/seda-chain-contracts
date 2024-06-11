@@ -200,12 +200,12 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_request(&self, dr_id: Hash) -> Option<DataRequest> {
+    pub fn get_data_request(&self, dr_id: Hash) -> DataRequest {
         self.query(query::QueryMsg::GetDataRequest { dr_id }).unwrap()
     }
 
     #[track_caller]
-    pub fn get_data_result(&self, dr_id: Hash) -> Option<DataResult> {
+    pub fn get_data_result(&self, dr_id: Hash) -> DataResult {
         self.query(query::QueryMsg::GetDataResult { dr_id }).unwrap()
     }
 
