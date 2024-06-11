@@ -1,6 +1,6 @@
 use super::*;
 
-const DATA_REQUESTS: Map<&Hash, DataRequest> = Map::new("data_results_pool");
+const DATA_REQUESTS: Map<&Hash, DataRequest> = Map::new("data_request_pool");
 const DATA_REQUESTS_BY_STATUS: Map<&DataRequestStatus, HashSet<Hash>> = Map::new("data_requests_by_status");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
