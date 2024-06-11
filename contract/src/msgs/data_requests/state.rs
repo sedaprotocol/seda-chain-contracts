@@ -1,7 +1,9 @@
+use indexmap::IndexSet;
+
 use super::*;
 
 const DATA_REQUESTS: Map<&Hash, DataRequest> = Map::new("data_request_pool");
-const DATA_REQUESTS_BY_STATUS: Map<&DataRequestStatus, HashSet<Hash>> = Map::new("data_requests_by_status");
+const DATA_REQUESTS_BY_STATUS: Map<&DataRequestStatus, IndexSet<Hash>> = Map::new("data_requests_by_status");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 pub fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
@@ -28,7 +30,7 @@ fn update_req_status(
         .unwrap_or_default();
 
     // Check if the request is in the current status set
-    if current.remove(dr_id) {
+    if current.swap_remove(dr_id) {
         // If it was, save the updated set back without the request
         DATA_REQUESTS_BY_STATUS.save(store, current_status, &current)?;
 
@@ -71,16 +73,23 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
     Ok(())
 }
 
-pub fn requests_by_status(store: &dyn Storage, status: &DataRequestStatus) -> StdResult<HashMap<String, DR>> {
+pub fn requests_by_status(
+    store: &dyn Storage,
+    status: &DataRequestStatus,
+    page: u32,
+    limit: u32,
+) -> StdResult<HashMap<String, DR>> {
     let hashes = DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default();
 
-    hashes
+    let start_index = ((page - 1) * limit) as usize;
+    let end_index = usize::min(start_index + limit as usize, hashes.len());
+    hashes[start_index..end_index]
         .into_iter()
         .map(|hash| {
             if status.is_resolved() {
-                DATA_RESULTS.load(store, &hash).map(|dr| (hash.to_hex(), dr.into()))
+                DATA_RESULTS.load(store, hash).map(|dr| (hash.to_hex(), dr.into()))
             } else {
-                DATA_REQUESTS.load(store, &hash).map(|dr| (hash.to_hex(), dr.into()))
+                DATA_REQUESTS.load(store, hash).map(|dr| (hash.to_hex(), dr.into()))
             }
         })
         .collect::<StdResult<_>>()

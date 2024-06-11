@@ -25,8 +25,8 @@ impl QueryHandler for QueryMsg {
             QueryMsg::GetResolvedDataRequest { dr_id } => {
                 to_json_binary(&state::load_resolved_req(deps.storage, &dr_id)?)
             }
-            QueryMsg::GetDataRequestsByStatus { status } => {
-                to_json_binary(&state::requests_by_status(deps.storage, &status)?)
+            QueryMsg::GetDataRequestsByStatus { status, page, limit } => {
+                to_json_binary(&state::requests_by_status(deps.storage, &status, page, limit)?)
             }
         }
     }

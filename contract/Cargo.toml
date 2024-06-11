@@ -34,6 +34,7 @@ cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
 hex = { workspace = true }
+indexmap = { workspace = true, features = ["serde"] }
 schemars = { workspace = true }
 seda-common = { workspace = true, features = ["cosmwasm"] }
 semver = { workspace = true }

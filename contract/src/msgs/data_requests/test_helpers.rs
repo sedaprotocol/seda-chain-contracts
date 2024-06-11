@@ -192,7 +192,8 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_requests_by_status(&self, status: DataRequestStatus) -> HashMap<String, DR> {
-        self.query(query::QueryMsg::GetDataRequestsByStatus { status }).unwrap()
+    pub fn get_data_requests_by_status(&self, status: DataRequestStatus, page: u32, limit: u32) -> HashMap<String, DR> {
+        self.query(query::QueryMsg::GetDataRequestsByStatus { status, page, limit })
+            .unwrap()
     }
 }
