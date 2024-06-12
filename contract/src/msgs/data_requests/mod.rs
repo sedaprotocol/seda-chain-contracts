@@ -7,8 +7,16 @@ use super::*;
 pub mod execute;
 pub mod query;
 pub mod state;
+pub mod types;
 
 #[cfg(test)]
-pub mod test_helpers;
+#[path = ""]
 #[cfg(test)]
-mod tests;
+mod test {
+    use super::*;
+    pub mod test_helpers;
+    mod tests;
+    mod types_tests;
+}
+
+// #[cfg(test)]
