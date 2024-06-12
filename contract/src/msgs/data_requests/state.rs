@@ -76,7 +76,7 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: &DataRequest) -> StdRes
 pub fn requests_by_status(
     store: &dyn Storage,
     status: &DataRequestStatus,
-    offset: u64,
+    offset: u32,
     limit: u32,
 ) -> StdResult<HashMap<String, DataRequest>> {
     let hashes = DATA_REQUESTS_BY_STATUS.may_load(store, status)?.unwrap_or_default();

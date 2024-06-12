@@ -236,7 +236,7 @@ impl TestInfo {
     pub fn get_data_requests_by_status(
         &self,
         status: DataRequestStatus,
-        offset: u64,
+        offset: u32,
         limit: u32,
     ) -> HashMap<String, DataRequest> {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
