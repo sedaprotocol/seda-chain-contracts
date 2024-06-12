@@ -10,7 +10,7 @@ use super::{
 use crate::{TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
-    let dr_binary_id: Hash = "dr_binary_id".hash();
+    let dr_binary_id: Hash = nonce.to_string().hash();
     let tally_binary_id: Hash = "tally_binary_id".hash();
     let dr_inputs: Bytes = "dr_inputs".as_bytes().to_vec();
     let tally_inputs: Bytes = "tally_inputs".as_bytes().to_vec();
