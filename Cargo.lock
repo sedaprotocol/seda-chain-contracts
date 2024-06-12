@@ -695,6 +695,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.0.0"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/status-map#82327b458e75b2a4a655b08c39b1f3af813d84f0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
