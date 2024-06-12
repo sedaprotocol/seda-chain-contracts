@@ -31,22 +31,27 @@ impl TestInfo<'_> {
         assert_eq!(self.map.key_to_index.may_load(&self.store, key).unwrap(), index);
     }
 
+    #[track_caller]
     fn insert(&mut self, key: u8, value: u8) {
         self.map.insert(&mut self.store, key, value).unwrap();
     }
 
+    #[track_caller]
     fn update(&mut self, key: u8, value: u8) {
         self.map.update(&mut self.store, key, &value).unwrap();
     }
 
+    #[track_caller]
     fn swap_remove(&mut self, key: u8) {
         self.map.swap_remove(&mut self.store, key).unwrap();
     }
 
+    #[track_caller]
     fn get_by_index(&self, index: u128) -> Option<u8> {
         self.map.get_by_index(&self.store, index).unwrap()
     }
 
+    #[track_caller]
     fn get_by_key(&self, key: u8) -> Option<u8> {
         self.map.get_by_key(&self.store, key).unwrap()
     }
@@ -105,7 +110,28 @@ fn enum_map_update_non_existing() {
 }
 
 #[test]
-fn enum_map_remove_last_key() {
+fn enum_map_remove_first() {
+    let mut test_info = TestInfo::init();
+    test_info.insert(1, 1); // 0
+    test_info.insert(2, 2); // 1
+    test_info.insert(3, 3); // 2
+
+    test_info.swap_remove(1);
+    test_info.assert_len(2);
+    test_info.assert_index_to_key(0, Some(3));
+    test_info.assert_key_to_index(3, Some(0));
+
+    // test that the index is updated
+    assert_eq!(test_info.get_by_index(0), Some(3));
+    assert_eq!(test_info.get_by_index(1), Some(2));
+    assert_eq!(test_info.get_by_index(2), None);
+
+    // test that the key is removed
+    assert_eq!(test_info.get_by_key(1), None);
+}
+
+#[test]
+fn enum_map_remove_last() {
     let mut test_info = TestInfo::init();
     test_info.insert(1, 1); // 0
     test_info.insert(2, 2); // 1
@@ -132,7 +158,7 @@ fn enum_map_remove_last_key() {
 }
 
 #[test]
-fn enum_map_remove_key() {
+fn enum_map_remove() {
     let mut test_info = TestInfo::init();
     test_info.insert(1, 1); // 0
     test_info.insert(2, 2); // 1
