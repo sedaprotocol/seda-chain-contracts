@@ -27,7 +27,6 @@ cw-storage-plus = "1.2.0"
 cw-utils = "1.0.3"
 cw2 = "1.1.2"
 hex = "0.4.3"
-indexmap = "2.2.6"
 k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
 libfuzzer-sys = "0.4"
 rand = "0.8"

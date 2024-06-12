@@ -51,7 +51,7 @@ impl ExecuteHandler for execute::post_request::Execute {
 
             height: env.block.height,
         };
-        state::insert_req(deps.storage, &dr_id, &dr)?;
+        state::insert_req(deps.storage, &dr_id, dr)?;
 
         Ok(res)
     }

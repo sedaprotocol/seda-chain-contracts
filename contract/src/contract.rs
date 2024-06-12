@@ -39,6 +39,7 @@ pub fn instantiate(
         allowlist_enabled:                       false,
     };
     CONFIG.save(deps.storage, &init_config)?;
+    crate::msgs::data_requests::state::init_data_requests(deps.storage)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }

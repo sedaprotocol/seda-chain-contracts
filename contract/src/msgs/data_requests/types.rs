@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cw_storage_plus::{Key, PrimaryKey};
+use cw_storage_plus::{Key, Prefixer, PrimaryKey};
 
 use super::*;
 
@@ -51,7 +51,7 @@ impl StatusValue {
     }
 }
 
-pub struct EnumerableMap<'a> {
+pub struct EnumerableStatusMap<'a> {
     pub len:            Item<'a, u128>,
     pub reqs:           Map<'a, &'a Hash, StatusValue>,
     pub index_to_key:   Map<'a, u128, Hash>,
@@ -60,9 +60,9 @@ pub struct EnumerableMap<'a> {
 }
 
 #[macro_export]
-macro_rules! enumerable_map {
+macro_rules! enumerable_status_map {
     ($namespace:literal) => {
-        EnumerableMap {
+        EnumerableStatusMap {
             len:            Item::new(concat!($namespace, "_len")),
             reqs:           Map::new(concat!($namespace, "_reqs")),
             index_to_key:   Map::new(concat!($namespace, "_index_to_key")),
@@ -72,16 +72,29 @@ macro_rules! enumerable_map {
     };
 }
 
-impl<'a> EnumerableMap<'_> {
+impl<'a> EnumerableStatusMap<'_> {
     pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
         self.len.save(store, &0)?;
         Ok(())
     }
 
+    pub fn has(&self, store: &dyn Storage, key: &Hash) -> bool {
+        self.key_to_index.has(store, key)
+    }
+
     pub fn update(&'a self, store: &mut dyn Storage, key: &Hash, req: &StatusValue) -> StdResult<()> {
-        if self.key_to_index.may_load(store, key)?.is_none() {
+        let Some(index) = self.key_to_index.may_load(store, key)? else {
             return Err(StdError::generic_err("Key does not exist"));
-        }
+        };
+
+        // remove the old status key
+        let old = self.reqs.load(store, key)?;
+        let old_status_key = StatusIndexKey::new(index, Some(old.status.clone()));
+        self.status_to_keys.remove(store, &old_status_key);
+
+        // update the status in both places
+        self.status_to_keys
+            .save(store, &StatusIndexKey::new(index, Some(req.status.clone())), key)?;
         self.reqs.save(store, key, req)
     }
 
@@ -89,35 +102,33 @@ impl<'a> EnumerableMap<'_> {
         self.len.load(store)
     }
 
-    pub fn get_by_key(&'a self, store: &dyn Storage, key: &Hash) -> StdResult<Option<DataRequest>> {
+    pub fn may_get_by_key(&'a self, store: &dyn Storage, key: &Hash) -> StdResult<Option<DataRequest>> {
         self.reqs.may_load(store, key).map(|opt| opt.map(|req| req.req))
     }
 
-    pub fn get_by_index(&'a self, store: &dyn Storage, index: u128) -> StdResult<Option<DataRequest>> {
+    pub fn get_by_key(&'a self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequest> {
+        self.reqs.load(store, key).map(|req| req.req)
+    }
+
+    pub fn may_get_by_index(&'a self, store: &dyn Storage, index: u128) -> StdResult<Option<DataRequest>> {
         if let Some(key) = self.index_to_key.may_load(store, index)? {
-            self.get_by_key(store, &key)
+            self.may_get_by_key(store, &key)
         } else {
             Ok(None)
         }
     }
 
-    pub fn insert(&self, store: &mut dyn Storage, key: &Hash, req: &StatusValue) -> StdResult<()> {
+    pub fn insert(&self, store: &mut dyn Storage, key: &Hash, req: DataRequest) -> StdResult<()> {
         if self.key_to_index.may_load(store, key)?.is_some() {
             return Err(StdError::generic_err("Key already exists"));
         }
 
         let index = self.len.load(store)?;
-        self.reqs.save(store, key, req)?;
+        self.reqs.save(store, key, &StatusValue::new(req))?;
         self.index_to_key.save(store, index, key)?;
         self.key_to_index.save(store, key, &index)?;
-        self.status_to_keys.save(
-            store,
-            &StatusIndexKey {
-                status: req.status.clone(),
-                index,
-            },
-            key,
-        )?;
+        self.status_to_keys
+            .save(store, &StatusIndexKey::new(index, None), key)?;
         self.len.save(store, &(index + 1))?;
         Ok(())
     }
@@ -172,8 +183,12 @@ impl<'a> EnumerableMap<'_> {
         &self,
         store: &dyn Storage,
         status: DataRequestStatus,
-    ) -> StdResult<Vec<DataRequest>> {
-        let mut requests = vec![];
+        offset: u32,
+        limit: u32,
+    ) -> StdResult<HashMap<String, DataRequest>> {
+        let mut requests = HashMap::new();
+        // TODO figure out how to use offset and limit with the map
+        dbg!(status.prefix());
         let keys = self
             .status_to_keys
             .prefix(status)
@@ -182,7 +197,7 @@ impl<'a> EnumerableMap<'_> {
         for key in keys {
             let (_, hash) = key?;
             let req = self.reqs.load(store, &hash)?;
-            requests.push(req.req);
+            requests.insert(hash.to_hex(), req.req);
         }
 
         Ok(requests)
