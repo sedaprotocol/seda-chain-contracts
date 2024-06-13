@@ -1,16 +1,16 @@
 use cosmwasm_schema::cw_serde;
-use cw_storage_plus::{Key, Prefixer, PrimaryKey};
+use cw_storage_plus::{Bound, Key, PrimaryKey};
 
 use super::*;
 
 #[cw_serde]
 pub struct StatusIndexKey {
-    pub index:  u128,
+    pub index:  u32,
     pub status: DataRequestStatus,
 }
 
 impl StatusIndexKey {
-    pub fn new(index: u128, status: Option<DataRequestStatus>) -> Self {
+    pub fn new(index: u32, status: Option<DataRequestStatus>) -> Self {
         Self {
             index,
             status: status.unwrap_or(DataRequestStatus::Committing),
@@ -22,12 +22,12 @@ impl StatusIndexKey {
 impl<'a> PrimaryKey<'a> for &'a StatusIndexKey {
     type Prefix = DataRequestStatus;
     type SubPrefix = ();
-    type Suffix = u128;
+    type Suffix = u32;
     type SuperSuffix = ();
 
     fn key(&self) -> Vec<Key> {
         let mut keys = self.status.key();
-        keys.push(Key::Val128(self.index.to_be_bytes()));
+        keys.push(Key::Val32(self.index.to_be_bytes()));
         keys
     }
 }
@@ -52,10 +52,10 @@ impl StatusValue {
 }
 
 pub struct EnumerableStatusMap<'a> {
-    pub len:            Item<'a, u128>,
+    pub len:            Item<'a, u32>,
     pub reqs:           Map<'a, &'a Hash, StatusValue>,
-    pub index_to_key:   Map<'a, u128, Hash>,
-    pub key_to_index:   Map<'a, &'a Hash, u128>,
+    pub index_to_key:   Map<'a, u32, Hash>,
+    pub key_to_index:   Map<'a, &'a Hash, u32>,
     pub status_to_keys: Map<'a, &'a StatusIndexKey, Hash>,
 }
 
@@ -98,7 +98,7 @@ impl<'a> EnumerableStatusMap<'_> {
         self.reqs.save(store, key, req)
     }
 
-    pub fn len(&'a self, store: &dyn Storage) -> Result<u128, StdError> {
+    pub fn len(&'a self, store: &dyn Storage) -> Result<u32, StdError> {
         self.len.load(store)
     }
 
@@ -110,7 +110,7 @@ impl<'a> EnumerableStatusMap<'_> {
         self.reqs.load(store, key).map(|req| req.req)
     }
 
-    pub fn may_get_by_index(&'a self, store: &dyn Storage, index: u128) -> StdResult<Option<DataRequest>> {
+    pub fn may_get_by_index(&'a self, store: &dyn Storage, index: u32) -> StdResult<Option<DataRequest>> {
         if let Some(key) = self.index_to_key.may_load(store, index)? {
             self.may_get_by_key(store, &key)
         } else {
@@ -187,12 +187,12 @@ impl<'a> EnumerableStatusMap<'_> {
         limit: u32,
     ) -> StdResult<HashMap<String, DataRequest>> {
         let mut requests = HashMap::new();
-        // TODO figure out how to use offset and limit with the map
-        dbg!(status.prefix());
+        let start = Bound::inclusive(offset);
+        let end = Bound::exclusive(limit);
         let keys = self
             .status_to_keys
             .prefix(status)
-            .range(store, None, None, Order::Ascending);
+            .range(store, Some(start), Some(end), Order::Ascending);
 
         for key in keys {
             let (_, hash) = key?;

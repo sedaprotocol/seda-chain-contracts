@@ -19,17 +19,17 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn assert_len(&self, expected: u128) {
+    fn assert_len(&self, expected: u32) {
         assert_eq!(self.map.len(&self.store).unwrap(), expected);
     }
 
     #[track_caller]
-    fn assert_index_to_key(&self, index: u128, key: Option<Hash>) {
+    fn assert_index_to_key(&self, index: u32, key: Option<Hash>) {
         assert_eq!(self.map.index_to_key.may_load(&self.store, index).unwrap(), key);
     }
 
     #[track_caller]
-    fn assert_key_to_index(&self, key: &Hash, index: Option<u128>) {
+    fn assert_key_to_index(&self, key: &Hash, index: Option<u32>) {
         assert_eq!(self.map.key_to_index.may_load(&self.store, key).unwrap(), index);
     }
 
@@ -57,7 +57,7 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn get_by_index(&self, index: u128) -> Option<DataRequest> {
+    fn get_by_index(&self, index: u32) -> Option<DataRequest> {
         self.map.may_get_by_index(&self.store, index).unwrap()
     }
 
@@ -67,15 +67,22 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn get_requests_by_status(&self, status: DataRequestStatus) -> HashMap<String, DataRequest> {
-        self.map.get_requests_by_status(&self.store, status, 0, 10).unwrap()
+    fn get_requests_by_status(
+        &self,
+        status: DataRequestStatus,
+        offset: u32,
+        limit: u32,
+    ) -> HashMap<String, DataRequest> {
+        self.map
+            .get_requests_by_status(&self.store, status, limit, offset)
+            .unwrap()
     }
 }
 
 fn create_test_dr(nonce: u128) -> (Hash, DataRequest) {
     let args = calculate_dr_id_and_args(nonce, 2);
     let id = nonce.to_string().hash();
-    let dr = construct_dr(id, args, vec![], 1);
+    let dr = construct_dr(id, args, vec![], nonce as u64);
     (id, dr)
 }
 
@@ -266,13 +273,48 @@ fn get_requests_by_status() {
         &StatusValue::with_status(req2.clone(), DataRequestStatus::Revealing),
     );
 
-    let committing = test_info.get_requests_by_status(DataRequestStatus::Committing);
+    let committing = test_info.get_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(committing.len(), 1);
     assert_eq!(committing.get(&key1.to_hex()).unwrap(), &req1);
 
-    let revealing = test_info.get_requests_by_status(DataRequestStatus::Revealing);
-    dbg!(key2.to_hex());
+    let revealing = test_info.get_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(revealing.len(), 1);
-    dbg!(revealing);
-    assert_eq!(committing.get(&key2.to_hex()).unwrap(), &req2);
+    assert_eq!(revealing.get(&key2.to_hex()).unwrap(), &req2);
+}
+
+#[test]
+fn get_requests_by_status_pagination() {
+    let mut test_info = TestInfo::init();
+
+    let mut reqs = Vec::with_capacity(10);
+
+    // indexes 0 - 9
+    for i in 0..10 {
+        let (key, req) = create_test_dr(i);
+        dbg!(i);
+        test_info.insert(&key, req.clone());
+        reqs.push(req);
+    }
+
+    // [3, 4]
+    let three_four = test_info.get_requests_by_status(DataRequestStatus::Committing, 4, 2);
+    three_four.iter().for_each(|r| {
+        dbg!(r.1.height);
+    });
+    assert_eq!(three_four.len(), 2);
+    // assert_eq!(dbg!(reqs.get(3)), dbg!(three_four.get(&reqs[3].dr_binary_id.to_hex())));
+    // assert_eq!(dbg!(reqs.get(4)), dbg!(three_four.get(&reqs[4].dr_binary_id.to_hex())));
+
+    dbg!("fuck");
+    // [5, 9]
+    // let five_nine = test_info.get_requests_by_status(DataRequestStatus::Committing, 5, 5);
+    // five_nine.iter().for_each(|r| {
+    //     dbg!(r.1.height);
+    // });
+    // assert_eq!(five_nine.len(), 5);
+    // assert_eq!(reqs.get(5), three_four.get(&reqs[5].dr_binary_id.to_hex()));
+    // assert_eq!(reqs.get(6), three_four.get(&reqs[6].dr_binary_id.to_hex()));
+    // assert_eq!(reqs.get(7), three_four.get(&reqs[7].dr_binary_id.to_hex()));
+    // assert_eq!(reqs.get(8), three_four.get(&reqs[8].dr_binary_id.to_hex()));
+    // assert_eq!(reqs.get(9), three_four.get(&reqs[9].dr_binary_id.to_hex()));
 }
