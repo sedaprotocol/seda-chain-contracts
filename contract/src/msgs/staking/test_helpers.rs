@@ -2,11 +2,7 @@ use super::{
     msgs::staking::{execute, query},
     *,
 };
-use crate::{
-    types::{HashSelf, PublicKey},
-    TestExecutor,
-    TestInfo,
-};
+use crate::{common_types::HashSelf, types::PublicKey, TestExecutor, TestInfo};
 
 impl TestInfo {
     #[track_caller]
@@ -22,6 +18,7 @@ impl TestInfo {
         memo: Option<String>,
         amount: u128,
     ) -> Result<(), ContractError> {
+        let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
         let msg_hash = hash([
             "stake".as_bytes(),
@@ -32,8 +29,8 @@ impl TestInfo {
         ]);
 
         let msg = execute::stake::Execute {
-            public_key: sender.pub_key(),
-            proof: sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof: sender.prove_hex(&msg_hash),
             memo,
         }
         .into();
@@ -43,7 +40,10 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_staker(&self, executor: PublicKey) -> Option<Staker> {
-        self.query(query::QueryMsg::GetStaker { public_key: executor }).unwrap()
+        self.query(query::QueryMsg::GetStaker {
+            public_key: executor.to_hex(),
+        })
+        .unwrap()
     }
 
     #[track_caller]
@@ -56,8 +56,8 @@ impl TestInfo {
             &seq.to_be_bytes(),
         ]);
         let msg = execute::stake::Execute {
-            public_key: sender.pub_key(),
-            proof:      sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof:      sender.prove_hex(&msg_hash),
             memo:       None,
         }
         .into();
@@ -71,6 +71,7 @@ impl TestInfo {
         sender: &mut TestExecutor,
         memo: Option<String>,
     ) -> Result<(), ContractError> {
+        let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
         let msg_hash = hash([
             "stake".as_bytes(),
@@ -80,8 +81,8 @@ impl TestInfo {
             &seq.to_be_bytes(),
         ]);
         let msg = execute::stake::Execute {
-            public_key: sender.pub_key(),
-            proof: sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof: sender.prove_hex(&msg_hash),
             memo,
         }
         .into();
@@ -100,8 +101,8 @@ impl TestInfo {
             &seq.to_be_bytes(),
         ]);
         let msg = execute::unstake::Execute {
-            public_key: sender.pub_key(),
-            proof:      sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof:      sender.prove_hex(&msg_hash),
             amount:     amount.into(),
         }
         .into();
@@ -120,8 +121,8 @@ impl TestInfo {
             &seq.to_be_bytes(),
         ]);
         let msg = execute::withdraw::Execute {
-            public_key: sender.pub_key(),
-            proof:      sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof:      sender.prove_hex(&msg_hash),
             amount:     amount.into(),
         }
         .into();
@@ -133,12 +134,17 @@ impl TestInfo {
 
     #[track_caller]
     pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
-        self.query(query::QueryMsg::IsExecutorEligible { public_key: executor })
-            .unwrap()
+        self.query(query::QueryMsg::IsExecutorEligible {
+            public_key: executor.to_hex(),
+        })
+        .unwrap()
     }
 
     #[track_caller]
     pub fn get_account_sequence(&self, public_key: PublicKey) -> Uint128 {
-        self.query(query::QueryMsg::GetAccountSeq { public_key }).unwrap()
+        self.query(query::QueryMsg::GetAccountSeq {
+            public_key: public_key.to_hex(),
+        })
+        .unwrap()
     }
 }

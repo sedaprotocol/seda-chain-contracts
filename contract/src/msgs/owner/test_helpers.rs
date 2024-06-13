@@ -32,14 +32,20 @@ impl TestInfo {
 
     #[track_caller]
     pub fn add_to_allowlist(&mut self, sender: &TestExecutor, public_key: PublicKey) -> Result<(), ContractError> {
-        let msg = execute::add_to_allowlist::Execute { public_key }.into();
+        let msg = execute::add_to_allowlist::Execute {
+            public_key: public_key.to_hex(),
+        }
+        .into();
 
         self.execute(sender, &msg)
     }
 
     #[track_caller]
     pub fn remove_from_allowlist(&mut self, sender: &TestExecutor, public_key: PublicKey) -> Result<(), ContractError> {
-        let msg = execute::remove_from_allowlist::Execute { public_key }.into();
+        let msg = execute::remove_from_allowlist::Execute {
+            public_key: public_key.to_hex(),
+        }
+        .into();
 
         self.execute(sender, &msg)
     }

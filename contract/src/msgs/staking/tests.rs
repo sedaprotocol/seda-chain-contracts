@@ -67,7 +67,7 @@ fn deposit_stake_withdraw() {
     assert_eq!(
         value,
         Some(Staker {
-            memo:                      Some("address".to_string()),
+            memo:                      Some("address".as_bytes().into()),
             tokens_staked:             2u8.into(),
             tokens_pending_withdrawal: 1u8.into(),
         }),
@@ -83,7 +83,7 @@ fn deposit_stake_withdraw() {
     assert_eq!(
         value,
         Some(Staker {
-            memo:                      Some("address".to_string()),
+            memo:                      Some("address".to_string().as_bytes().into()),
             tokens_staked:             2u8.into(),
             tokens_pending_withdrawal: 0u8.into(),
         }),
@@ -138,7 +138,7 @@ fn register_data_request_executor() {
     assert_eq!(
         value,
         Some(Staker {
-            memo:                      Some("memo".to_string()),
+            memo:                      Some("memo".to_string().as_bytes().into()),
             tokens_staked:             1u8.into(),
             tokens_pending_withdrawal: 0u8.into(),
         }),
@@ -158,7 +158,7 @@ fn unregister_data_request_executor() {
     assert_eq!(
         value,
         Some(Staker {
-            memo:                      Some("memo".to_string()),
+            memo:                      Some("memo".to_string().as_bytes().into()),
             tokens_staked:             2u8.into(),
             tokens_pending_withdrawal: 0u8.into(),
         }),
@@ -174,7 +174,7 @@ fn unregister_data_request_executor() {
     assert_eq!(
         value,
         Some(Staker {
-            memo:                      Some("memo".to_string()),
+            memo:                      Some("memo".to_string().as_bytes().into()),
             tokens_staked:             0u8.into(),
             tokens_pending_withdrawal: 2u8.into(),
         }),

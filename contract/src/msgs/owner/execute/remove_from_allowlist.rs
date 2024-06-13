@@ -10,13 +10,14 @@ impl ExecuteHandler for execute::remove_from_allowlist::Execute {
         }
 
         // remove the address from the allowlist
-        ALLOWLIST.remove(deps.storage, &self.public_key);
+        let public_key = PublicKey::from_hex_str(&self.public_key)?;
+        ALLOWLIST.remove(deps.storage, &public_key);
 
         Ok(Response::new()
             .add_attribute("action", "remove-from-allowlist")
-            .add_event(Event::new("remove-from-allowlist").add_attributes([
-                ("version", CONTRACT_VERSION.to_string()),
-                ("pub_key", hex::encode(self.public_key)),
-            ])))
+            .add_event(
+                Event::new("remove-from-allowlist")
+                    .add_attributes([("version", CONTRACT_VERSION.to_string()), ("pub_key", self.public_key)]),
+            ))
     }
 }

@@ -8,14 +8,14 @@ use seda_common::{
     },
 };
 
-use crate::{contract::CONTRACT_VERSION, error::ContractError, types::*};
+use crate::{common_types::*, contract::CONTRACT_VERSION, error::ContractError, types::*};
 
 pub mod data_requests;
 pub mod owner;
 pub mod staking;
 
 pub trait QueryHandler {
-    fn query(self, deps: Deps, env: Env) -> StdResult<Binary>;
+    fn query(self, deps: Deps, env: Env) -> Result<Binary, ContractError>;
 }
 
 pub trait ExecuteHandler {
@@ -33,7 +33,7 @@ impl ExecuteHandler for msgs::ExecuteMsg {
 }
 
 impl QueryHandler for msgs::QueryMsg {
-    fn query(self, deps: Deps, env: Env) -> StdResult<Binary> {
+    fn query(self, deps: Deps, env: Env) -> Result<Binary, ContractError> {
         match self {
             msgs::QueryMsg::DataRequest(msg) => msg.query(deps, env),
             msgs::QueryMsg::Staking(msg) => msg.query(deps, env),

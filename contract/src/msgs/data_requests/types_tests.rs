@@ -300,15 +300,15 @@ fn get_requests_by_status_pagination() {
     // [3, 4]
     let three_four = test_info.get_requests_by_status(DataRequestStatus::Committing, 3, 2);
     assert_eq!(three_four.len(), 2);
-    assert_eq!(reqs.get(3), three_four.get(&reqs[3].dr_binary_id.to_hex()));
-    assert_eq!(reqs.get(4), three_four.get(&reqs[4].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(3), three_four.get(&reqs[3].dr_binary_id));
+    assert_eq!(reqs.get(4), three_four.get(&reqs[4].dr_binary_id));
 
     // [5, 9]
     let five_nine = test_info.get_requests_by_status(DataRequestStatus::Committing, 5, 5);
     assert_eq!(five_nine.len(), 5);
-    assert_eq!(reqs.get(5), five_nine.get(&reqs[5].dr_binary_id.to_hex()));
-    assert_eq!(reqs.get(6), five_nine.get(&reqs[6].dr_binary_id.to_hex()));
-    assert_eq!(reqs.get(7), five_nine.get(&reqs[7].dr_binary_id.to_hex()));
-    assert_eq!(reqs.get(8), five_nine.get(&reqs[8].dr_binary_id.to_hex()));
-    assert_eq!(reqs.get(9), five_nine.get(&reqs[9].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(5), five_nine.get(&reqs[5].dr_binary_id));
+    assert_eq!(reqs.get(6), five_nine.get(&reqs[6].dr_binary_id));
+    assert_eq!(reqs.get(7), five_nine.get(&reqs[7].dr_binary_id));
+    assert_eq!(reqs.get(8), five_nine.get(&reqs[8].dr_binary_id));
+    assert_eq!(reqs.get(9), five_nine.get(&reqs[9].dr_binary_id));
 }

@@ -5,23 +5,25 @@ impl ExecuteHandler for execute::withdraw::Execute {
     /// Sends tokens back to the sender that are marked as pending withdrawal.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let chain_id = CHAIN_ID.load(deps.storage)?;
+        let public_key = PublicKey::from_hex_str(&self.public_key)?;
         // compute message hash
         let message_hash = hash([
             "withdraw".as_bytes(),
             &self.amount.to_be_bytes(),
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
-            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+            &inc_get_seq(deps.storage, &public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof
-        verify_proof(&self.public_key, &self.proof, message_hash)?;
+        let proof = Vec::<u8>::from_hex_str(&self.proof)?;
+        verify_proof(&public_key, &proof, message_hash)?;
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
 
         // error if amount is greater than pending tokens
-        let mut executor = state::STAKERS.load(deps.storage, &self.public_key)?;
+        let mut executor = state::STAKERS.load(deps.storage, &public_key)?;
         if self.amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_pending_withdrawal,
@@ -32,9 +34,9 @@ impl ExecuteHandler for execute::withdraw::Execute {
         // update the executor (remove if balances are zero)
         executor.tokens_pending_withdrawal -= self.amount;
         if executor.tokens_pending_withdrawal.is_zero() && executor.tokens_staked.is_zero() {
-            state::STAKERS.remove(deps.storage, &self.public_key);
+            state::STAKERS.remove(deps.storage, &public_key);
         } else {
-            state::STAKERS.save(deps.storage, &self.public_key, &executor)?;
+            state::STAKERS.save(deps.storage, &public_key, &executor)?;
         }
 
         // send the tokens back to the executor
@@ -44,7 +46,7 @@ impl ExecuteHandler for execute::withdraw::Execute {
         };
 
         let sender = info.sender.into_string();
-        let mut event = Event::new("seda-data-request-executor").add_attributes([
+        let event = Event::new("seda-data-request-executor").add_attributes([
             ("version", CONTRACT_VERSION.to_string()),
             ("executor", sender.clone()),
             ("tokens_staked", executor.tokens_staked.to_string()),
@@ -52,11 +54,8 @@ impl ExecuteHandler for execute::withdraw::Execute {
                 "tokens_pending_withdrawal",
                 executor.tokens_pending_withdrawal.to_string(),
             ),
+            ("memo", executor.memo.map(|m| m.to_base64()).unwrap_or_default()),
         ]);
-        // https://github.com/CosmWasm/cosmwasm/issues/2163
-        if let Some(memo) = executor.memo {
-            event = event.add_attribute("memo", memo);
-        }
 
         Ok(Response::new()
             .add_message(bank_msg)

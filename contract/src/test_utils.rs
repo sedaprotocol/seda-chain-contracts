@@ -17,16 +17,12 @@ use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
 };
-use seda_common::msgs::*;
+use seda_common::{msgs::*, types::ToHexStr};
 use serde::{de::DeserializeOwned, Serialize};
 use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
 
-use crate::{
-    contract::*,
-    error::ContractError,
-    types::{Hash, PublicKey},
-};
+use crate::{common_types::Hash, contract::*, error::ContractError, types::PublicKey};
 
 pub struct TestInfo {
     app:           App,
@@ -207,7 +203,7 @@ impl TestExecutor {
     fn new(name: &'static str, addr: Addr, amount: Option<u128>) -> Self {
         let signing_key = SigningKey::random(&mut OsRng);
         let verifying_key = VerifyingKey::from(&signing_key);
-        let public_key = verifying_key.to_encoded_point(true).to_bytes();
+        let public_key = verifying_key.to_encoded_point(true).as_bytes().try_into().unwrap();
         let coins = if let Some(amount) = amount {
             coins(amount, "aseda")
         } else {
@@ -217,7 +213,7 @@ impl TestExecutor {
             name,
             addr,
             signing_key,
-            public_key: public_key.to_vec(),
+            public_key,
             info: mock_info(name, &coins),
         }
     }
@@ -227,7 +223,11 @@ impl TestExecutor {
     }
 
     pub fn pub_key(&self) -> PublicKey {
-        self.public_key.clone()
+        self.public_key
+    }
+
+    pub fn pub_key_hex(&self) -> String {
+        self.public_key.to_hex()
     }
 
     pub fn info(&self) -> MessageInfo {
@@ -251,10 +251,15 @@ impl TestExecutor {
         vrf.prove(&self.signing_key.to_bytes(), hash).unwrap()
     }
 
-    pub fn salt(&self) -> Hash {
+    pub fn prove_hex(&self, hash: &[u8]) -> String {
+        self.prove(hash).to_hex()
+    }
+
+    pub fn salt(&self) -> String {
         let mut hasher = Keccak256::new();
         hasher.update(self.name);
-        hasher.finalize().into()
+        let hash: Hash = hasher.finalize().into();
+        hash.to_hex()
     }
 }
 

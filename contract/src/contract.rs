@@ -1,6 +1,6 @@
+use cosmwasm_std::Uint128;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
-use cosmwasm_std::{StdResult, Uint128};
 use cw2::set_contract_version;
 use seda_common::msgs::*;
 use staking::StakingConfig;
@@ -50,6 +50,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     msg.query(deps, env)
 }

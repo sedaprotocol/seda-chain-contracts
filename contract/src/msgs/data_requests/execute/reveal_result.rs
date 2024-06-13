@@ -6,7 +6,8 @@ impl ExecuteHandler for execute::reveal_result::Execute {
     /// This removes the data request from the pool and creates a new entry in the data results.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
-        let mut dr = state::load_req(deps.storage, &self.dr_id)?;
+        let dr_id = Hash::from_hex_str(&self.dr_id)?;
+        let mut dr = state::load_req(deps.storage, &dr_id)?;
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)
         if !dr.reveal_started() {
@@ -14,44 +15,44 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         }
 
         let chain_id = CHAIN_ID.load(deps.storage)?;
-
         // compute hash of reveal body
+        let public_key = PublicKey::from_hex_str(&self.public_key)?;
         let reveal_body_hash = self.reveal_body.hash();
-
         // compute message hash
         let message_hash = hash([
             "reveal_data_result".as_bytes(),
-            &self.dr_id,
+            self.dr_id.as_bytes(),
             &dr.height.to_be_bytes(),
             &reveal_body_hash,
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
-            &inc_get_seq(deps.storage, &self.public_key)?.to_be_bytes(),
+            &inc_get_seq(deps.storage, &public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof
-        verify_proof(&self.public_key, &self.proof, message_hash)?;
+        let proof = Vec::<u8>::from_hex_str(&self.proof)?;
+        verify_proof(&public_key, &proof, message_hash)?;
 
         // error if data request executor has not submitted a commitment
-        let public_key_str = hex::encode(&self.public_key);
-        let Some(committed_dr_result) = dr.get_commitment(&public_key_str) else {
+        let Some(committed_dr_result) = dr.get_commitment(&self.public_key) else {
             return Err(ContractError::NotCommitted);
         };
 
         // error if data request executor has already submitted a reveal
-        if dr.has_revealer(&public_key_str) {
+        if dr.has_revealer(&self.public_key) {
             return Err(ContractError::AlreadyRevealed);
         }
 
         // error if the commitment hash does not match the reveal
-        if &reveal_body_hash != committed_dr_result {
+        // it's cheaper to hex -> byte array than hash -> hex
+        if reveal_body_hash != Hash::from_hex_str(committed_dr_result)? {
             return Err(ContractError::RevealMismatch);
         }
 
         let mut response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", self.dr_id.to_hex()),
+                ("dr_id", self.dr_id.clone()),
                 ("executor", info.sender.into_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
             ]),
@@ -60,10 +61,10 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         // add the reveal to the data request state
         let gas_used = self.reveal_body.gas_used;
         let reveal = self.reveal_body.reveal.clone();
-        dr.reveals.insert(public_key_str, self.reveal_body);
+        dr.reveals.insert(self.public_key.clone(), self.reveal_body);
         // TODO should be able to clean this clone after we separate
         // post result from reveal result
-        state::reveal(deps.storage, &self.dr_id, dr.clone())?;
+        state::reveal(deps.storage, &dr_id, dr.clone())?;
 
         // TODO: move to sudo_post_result, this is a mocked tally
         // if total reveals equals replication factor, resolve the DR
@@ -74,12 +75,12 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
             let event = Event::new("seda-data-result").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", self.dr_id.to_hex()),
+                ("dr_id", self.dr_id.clone()),
                 ("block_height", block_height.to_string()),
                 ("exit_code", exit_code.to_string()),
-                ("result", to_json_string(&reveal)?),
-                ("payback_address", to_json_string(&dr.payback_address)?),
-                ("seda_payload", to_json_string(&dr.seda_payload)?),
+                ("result", reveal.to_base64()),
+                ("payback_address", dr.payback_address.to_base64()),
+                ("seda_payload", dr.seda_payload.to_base64()),
             ]);
 
             // save the data result
@@ -96,7 +97,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
                 // this should be received from the post result method in the future.
                 consensus: true,
             };
-            state::post_result(deps.storage, &self.dr_id, &dr_result)?;
+            state::post_result(deps.storage, &dr_id, &dr_result)?;
 
             let result_id = dr_result.hash();
             let event = event.add_attribute("result_id", result_id.to_hex());

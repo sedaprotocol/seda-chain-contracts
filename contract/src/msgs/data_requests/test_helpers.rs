@@ -10,10 +10,10 @@ use super::{
 use crate::{TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
-    let dr_binary_id: Hash = nonce.to_string().hash();
-    let tally_binary_id: Hash = "tally_binary_id".hash();
-    let dr_inputs: Bytes = "dr_inputs".as_bytes().to_vec();
-    let tally_inputs: Bytes = "tally_inputs".as_bytes().to_vec();
+    let dr_binary_id = nonce.to_string().hash().to_hex();
+    let tally_binary_id = "tally_binary_id".hash().to_hex();
+    let dr_inputs = "dr_inputs".as_bytes().into();
+    let tally_inputs = "tally_inputs".as_bytes().into();
 
     // set by dr creator
     let gas_price = 10u128.into();
@@ -24,7 +24,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     let mut hasher = Keccak256::new();
     hasher.update(chain_id.to_be_bytes());
     hasher.update(nonce.to_be_bytes());
-    let memo = hasher.finalize().to_vec();
+    let memo = hasher.finalize();
 
     let version = Version {
         major: 1,
@@ -40,7 +40,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
         tally_binary_id,
         dr_inputs,
         tally_inputs,
-        memo,
+        memo: memo.as_slice().into(),
         replication_factor,
         gas_price,
         gas_limit,
@@ -50,7 +50,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
 pub fn construct_dr(
     constructed_dr_id: Hash,
     dr_args: PostDataRequestArgs,
-    seda_payload: Bytes,
+    seda_payload: Vec<u8>,
     height: u64,
 ) -> DataRequest {
     let version = Version {
@@ -61,10 +61,10 @@ pub fn construct_dr(
         build: BuildMetadata::EMPTY,
     };
 
-    let payback_address: Bytes = Vec::new();
+    let payback_address: Vec<u8> = Vec::new();
     DataRequest {
         version,
-        id: constructed_dr_id,
+        id: constructed_dr_id.to_hex(),
 
         dr_binary_id: dr_args.dr_binary_id,
         tally_binary_id: dr_args.tally_binary_id,
@@ -74,10 +74,10 @@ pub fn construct_dr(
         replication_factor: dr_args.replication_factor,
         gas_price: dr_args.gas_price,
         gas_limit: dr_args.gas_limit,
-        seda_payload,
+        seda_payload: seda_payload.into(),
         commits: Default::default(),
         reveals: Default::default(),
-        payback_address,
+        payback_address: payback_address.into(),
 
         height,
     }
@@ -86,7 +86,8 @@ pub fn construct_dr(
 impl TestInfo {
     #[track_caller]
     pub fn get_dr(&self, dr_id: Hash) -> Option<DataRequest> {
-        self.query(query::QueryMsg::GetDataRequest { dr_id }).unwrap()
+        self.query(query::QueryMsg::GetDataRequest { dr_id: dr_id.to_hex() })
+            .unwrap()
     }
 
     #[track_caller]
@@ -100,8 +101,8 @@ impl TestInfo {
     ) -> Result<Hash, ContractError> {
         let msg = execute::post_request::Execute {
             posted_dr,
-            seda_payload,
-            payback_address,
+            seda_payload: seda_payload.into(),
+            payback_address: payback_address.into(),
         }
         .into();
 
@@ -118,11 +119,13 @@ impl TestInfo {
     pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: Hash, commitment: Hash) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
+        let dr_id = dr_id.to_hex();
+        let commitment = commitment.to_hex();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
-            &dr_id,
+            dr_id.as_bytes(),
             &dr.height.to_be_bytes(),
-            &commitment,
+            commitment.as_bytes(),
             self.chain_id(),
             self.contract_addr_bytes(),
             &seq.to_be_bytes(),
@@ -131,8 +134,8 @@ impl TestInfo {
         let msg = execute::commit_result::Execute {
             dr_id,
             commitment,
-            public_key: sender.pub_key(),
-            proof: sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof: sender.prove_hex(&msg_hash),
         }
         .into();
 
@@ -148,11 +151,13 @@ impl TestInfo {
     ) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
+        let dr_id = dr_id.to_hex();
+        let commitment = commitment.to_hex();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
-            &dr_id,
+            dr_id.as_bytes(),
             &dr.height.saturating_sub(3).to_be_bytes(),
-            &commitment,
+            commitment.as_bytes(),
             self.chain_id(),
             self.contract_addr_bytes(),
             &seq.to_be_bytes(),
@@ -161,8 +166,8 @@ impl TestInfo {
         let msg = execute::commit_result::Execute {
             dr_id,
             commitment,
-            public_key: sender.pub_key(),
-            proof: sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof: sender.prove_hex(&msg_hash),
         }
         .into();
 
@@ -178,9 +183,10 @@ impl TestInfo {
     ) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
+        let dr_id = dr_id.to_hex();
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
-            &dr_id,
+            dr_id.as_bytes(),
             &dr.height.to_be_bytes(),
             &reveal_body.hash(),
             self.chain_id(),
@@ -191,8 +197,8 @@ impl TestInfo {
         let msg = execute::reveal_result::Execute {
             reveal_body,
             dr_id,
-            public_key: sender.pub_key(),
-            proof: sender.prove(&msg_hash),
+            public_key: sender.pub_key_hex(),
+            proof: sender.prove_hex(&msg_hash),
         }
         .into();
 
@@ -201,34 +207,42 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_data_request(&self, dr_id: Hash) -> DataRequest {
-        self.query(query::QueryMsg::GetDataRequest { dr_id }).unwrap()
+        self.query(query::QueryMsg::GetDataRequest { dr_id: dr_id.to_hex() })
+            .unwrap()
     }
 
     #[track_caller]
     pub fn get_data_result(&self, dr_id: Hash) -> DataResult {
-        self.query(query::QueryMsg::GetDataResult { dr_id }).unwrap()
+        self.query(query::QueryMsg::GetDataResult { dr_id: dr_id.to_hex() })
+            .unwrap()
     }
 
     #[track_caller]
-    pub fn get_data_result_commit(&self, dr_id: Hash, public_key: Vec<u8>) -> Option<Hash> {
-        self.query(query::QueryMsg::GetDataRequestCommitment { dr_id, public_key })
-            .unwrap()
+    pub fn get_data_result_commit(&self, dr_id: Hash, public_key: PublicKey) -> Option<Hash> {
+        self.query(query::QueryMsg::GetDataRequestCommitment {
+            dr_id:      dr_id.to_hex(),
+            public_key: public_key.to_hex(),
+        })
+        .unwrap()
     }
 
     #[track_caller]
     pub fn get_data_result_commits(&self, dr_id: Hash) -> HashMap<String, Hash> {
-        self.query(query::QueryMsg::GetDataRequestCommitments { dr_id })
+        self.query(query::QueryMsg::GetDataRequestCommitments { dr_id: dr_id.to_hex() })
             .unwrap()
     }
 
-    pub fn get_data_result_reveal(&self, dr_id: Hash, public_key: Vec<u8>) -> Option<RevealBody> {
-        self.query(query::QueryMsg::GetDataRequestReveal { dr_id, public_key })
-            .unwrap()
+    pub fn get_data_result_reveal(&self, dr_id: Hash, public_key: PublicKey) -> Option<RevealBody> {
+        self.query(query::QueryMsg::GetDataRequestReveal {
+            dr_id:      dr_id.to_hex(),
+            public_key: public_key.to_hex(),
+        })
+        .unwrap()
     }
 
     #[track_caller]
     pub fn get_data_result_reveals(&self, dr_id: Hash) -> HashMap<String, RevealBody> {
-        self.query(query::QueryMsg::GetDataRequestCommitments { dr_id })
+        self.query(query::QueryMsg::GetDataRequestCommitments { dr_id: dr_id.to_hex() })
             .unwrap()
     }
 

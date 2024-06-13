@@ -13,27 +13,28 @@ impl ExecuteHandler for execute::post_request::Execute {
 
         // TODO: verify the payback non seda address...
         // TODO: review this event
+        let hex_dr_id = dr_id.to_hex();
         let res = Response::new()
             .add_attribute("action", "post_data_request")
             .set_data(to_json_binary(&dr_id)?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("dr_id", dr_id.to_hex()),
-                ("dr_binary_id", self.posted_dr.dr_binary_id.to_hex()),
-                ("tally_binary_id", self.posted_dr.tally_binary_id.to_hex()),
-                ("dr_inputs", to_json_string(&self.posted_dr.dr_inputs)?),
-                ("tally_inputs", to_json_string(&self.posted_dr.tally_inputs)?),
-                ("memo", to_json_string(&self.posted_dr.memo)?),
+                ("dr_id", hex_dr_id.clone()),
+                ("dr_binary_id", self.posted_dr.dr_binary_id.clone()),
+                ("tally_binary_id", self.posted_dr.tally_binary_id.clone()),
+                ("dr_inputs", self.posted_dr.dr_inputs.to_base64()),
+                ("tally_inputs", self.posted_dr.tally_inputs.to_base64()),
+                ("memo", self.posted_dr.memo.to_base64()),
                 ("replication_factor", self.posted_dr.replication_factor.to_string()),
                 ("gas_price", self.posted_dr.gas_price.to_string()),
                 ("gas_limit", self.posted_dr.gas_limit.to_string()),
-                ("seda_payload", to_json_string(&self.seda_payload)?),
-                ("payback_address", to_json_string(&self.payback_address)?),
+                ("seda_payload", self.seda_payload.to_base64()),
+                ("payback_address", self.payback_address.to_base64()),
             ]));
 
         // save the data request
         let dr = DataRequest {
-            id:                 dr_id,
+            id:                 hex_dr_id,
             version:            self.posted_dr.version,
             dr_binary_id:       self.posted_dr.dr_binary_id,
             dr_inputs:          self.posted_dr.dr_inputs,

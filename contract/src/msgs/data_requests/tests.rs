@@ -197,7 +197,7 @@ fn reveal_result() {
     // alice commits a data result
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "10".hash().to_vec(),
+        reveal:    "10".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -207,7 +207,7 @@ fn reveal_result() {
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "20".hash().to_vec(),
+        reveal:    "20".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -233,7 +233,7 @@ fn reveals_meet_replication_factor() {
     // alice commits a data result
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "10".hash().to_vec(),
+        reveal:    "10".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -243,7 +243,7 @@ fn reveals_meet_replication_factor() {
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "20".hash().to_vec(),
+        reveal:    "20".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -256,7 +256,7 @@ fn reveals_meet_replication_factor() {
     test_info.reveal_result(&bob, dr_id, bob_reveal).unwrap();
 
     let resolved = test_info.get_data_result(dr_id);
-    assert_eq!(resolved.dr_id, dr_id)
+    assert_eq!(resolved.dr_id, dr_id.to_hex())
 }
 
 #[test]
@@ -272,7 +272,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
     // alice commits a data result
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "10".hash().to_vec(),
+        reveal:    "10".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -295,7 +295,7 @@ fn cannot_reveal_if_user_did_not_commit() {
     // alice commits a data result
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "10".hash().to_vec(),
+        reveal:    "10".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -305,7 +305,7 @@ fn cannot_reveal_if_user_did_not_commit() {
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "20".hash().to_vec(),
+        reveal:    "20".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -331,7 +331,7 @@ fn cannot_double_reveal() {
     // alice commits a data result
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "10".hash().to_vec(),
+        reveal:    "10".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -341,7 +341,7 @@ fn cannot_double_reveal() {
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "20".hash().to_vec(),
+        reveal:    "20".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -367,7 +367,7 @@ fn reveal_must_match_commitment() {
     // alice commits a data result
     let alice_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "10".hash().to_vec(),
+        reveal:    "10".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
@@ -377,7 +377,7 @@ fn reveal_must_match_commitment() {
             dr_id,
             RevealBody {
                 salt:      alice.salt(),
-                reveal:    "11".hash().to_vec(),
+                reveal:    "11".hash().into(),
                 gas_used:  0u128.into(),
                 exit_code: 0,
             }
@@ -389,7 +389,7 @@ fn reveal_must_match_commitment() {
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
         salt:      alice.salt(),
-        reveal:    "20".hash().to_vec(),
+        reveal:    "20".hash().into(),
         gas_used:  0u128.into(),
         exit_code: 0,
     };
