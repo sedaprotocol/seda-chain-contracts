@@ -187,8 +187,8 @@ impl<'a> EnumerableStatusMap<'_> {
         limit: u32,
     ) -> StdResult<HashMap<String, DataRequest>> {
         let mut requests = HashMap::new();
-        let start = Bound::inclusive(offset);
-        let end = Bound::exclusive(limit);
+        let start = Bound::inclusive(dbg!(offset));
+        let end = Bound::exclusive(dbg!(offset + limit));
         let keys = self
             .status_to_keys
             .prefix(status)

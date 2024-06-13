@@ -74,7 +74,7 @@ impl TestInfo<'_> {
         limit: u32,
     ) -> HashMap<String, DataRequest> {
         self.map
-            .get_requests_by_status(&self.store, status, limit, offset)
+            .get_requests_by_status(&self.store, status, offset, limit)
             .unwrap()
     }
 }
@@ -291,30 +291,25 @@ fn get_requests_by_status_pagination() {
     // indexes 0 - 9
     for i in 0..10 {
         let (key, req) = create_test_dr(i);
-        dbg!(i);
         test_info.insert(&key, req.clone());
         reqs.push(req);
     }
 
     // [3, 4]
-    let three_four = test_info.get_requests_by_status(DataRequestStatus::Committing, 4, 2);
-    three_four.iter().for_each(|r| {
+    let three_four = test_info.get_requests_by_status(DataRequestStatus::Committing, 3, 2);
+    assert_eq!(three_four.len(), 2);
+    assert_eq!(reqs.get(3), three_four.get(&reqs[3].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(4), three_four.get(&reqs[4].dr_binary_id.to_hex()));
+
+    // [5, 9]
+    let five_nine = test_info.get_requests_by_status(DataRequestStatus::Committing, 5, 5);
+    five_nine.iter().for_each(|r| {
         dbg!(r.1.height);
     });
-    assert_eq!(three_four.len(), 2);
-    // assert_eq!(dbg!(reqs.get(3)), dbg!(three_four.get(&reqs[3].dr_binary_id.to_hex())));
-    // assert_eq!(dbg!(reqs.get(4)), dbg!(three_four.get(&reqs[4].dr_binary_id.to_hex())));
-
-    dbg!("fuck");
-    // [5, 9]
-    // let five_nine = test_info.get_requests_by_status(DataRequestStatus::Committing, 5, 5);
-    // five_nine.iter().for_each(|r| {
-    //     dbg!(r.1.height);
-    // });
-    // assert_eq!(five_nine.len(), 5);
-    // assert_eq!(reqs.get(5), three_four.get(&reqs[5].dr_binary_id.to_hex()));
-    // assert_eq!(reqs.get(6), three_four.get(&reqs[6].dr_binary_id.to_hex()));
-    // assert_eq!(reqs.get(7), three_four.get(&reqs[7].dr_binary_id.to_hex()));
-    // assert_eq!(reqs.get(8), three_four.get(&reqs[8].dr_binary_id.to_hex()));
-    // assert_eq!(reqs.get(9), three_four.get(&reqs[9].dr_binary_id.to_hex()));
+    assert_eq!(five_nine.len(), 5);
+    assert_eq!(reqs.get(5), five_nine.get(&reqs[5].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(6), five_nine.get(&reqs[6].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(7), five_nine.get(&reqs[7].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(8), five_nine.get(&reqs[8].dr_binary_id.to_hex()));
+    assert_eq!(reqs.get(9), five_nine.get(&reqs[9].dr_binary_id.to_hex()));
 }
