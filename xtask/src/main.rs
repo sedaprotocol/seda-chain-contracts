@@ -2,7 +2,7 @@ use std::{collections::HashMap, env, process::Command};
 
 use anyhow::{bail, Context, Result};
 use rand::Rng;
-use seda_common::msgs::data_requests::DataRequest;
+use seda_common::{msgs::data_requests::DataRequest, types::ToHexStr};
 use serde_json::json;
 use xshell::{cmd, Shell};
 
@@ -75,7 +75,7 @@ fn create_data_request(
     replication_factor: u16,
     tally_inputs: Vec<u8>,
 ) -> (String, DataRequest) {
-    let id = rand::random();
+    let id: [u8; 32] = rand::random();
     let dr = DataRequest {
         version: semver::Version {
             major: 1,
@@ -84,11 +84,11 @@ fn create_data_request(
             pre:   semver::Prerelease::EMPTY,
             build: semver::BuildMetadata::EMPTY,
         },
-        id,
-        dr_binary_id,
-        tally_binary_id,
+        id: id.to_hex(),
+        dr_binary_id: dr_binary_id.to_hex(),
+        tally_binary_id: tally_binary_id.to_hex(),
         dr_inputs: Default::default(),
-        tally_inputs,
+        tally_inputs: tally_inputs.into(),
         memo: Default::default(),
         replication_factor,
         gas_price: 10u128.into(),
