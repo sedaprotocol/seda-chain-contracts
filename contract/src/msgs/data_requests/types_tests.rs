@@ -47,8 +47,8 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn update(&mut self, key: &Hash, value: &StatusValue) {
-        self.map.update(&mut self.store, key, value).unwrap();
+    fn update(&mut self, key: &Hash, dr: DataRequest, status: Option<DataRequestStatus>) {
+        self.map.update(&mut self.store, key, dr, status).unwrap();
     }
 
     #[track_caller]
@@ -134,11 +134,16 @@ fn enum_map_update() {
     let mut test_info = TestInfo::init();
     let (key1, dr1) = create_test_dr(1);
     let (_, dr2) = create_test_dr(2);
-    test_info.insert(&key1, dr1);
-    test_info.update(&key1, &StatusValue::new(dr2.clone()));
+
+    test_info.insert(&key1, dr1.clone());
+    test_info.assert_len(1);
+    assert_eq!(test_info.get_by_index(0), Some(dr1));
+    test_info.assert_status_index_to_key(dbg!(StatusIndexKey::new(0, None)), Some(key1));
+
+    test_info.update(&key1, dr2.clone(), None);
     test_info.assert_len(1);
     assert_eq!(test_info.get_by_index(0), Some(dr2));
-    test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), Some(key1));
+    test_info.assert_status_index_to_key(dbg!(StatusIndexKey::new(0, None)), Some(key1));
 }
 
 #[test]
@@ -146,7 +151,7 @@ fn enum_map_update() {
 fn enum_map_update_non_existing() {
     let mut test_info = TestInfo::init();
     let (key, req) = create_test_dr(1);
-    test_info.update(&key, &StatusValue::new(req));
+    test_info.update(&key, req, None);
 }
 
 #[test]
@@ -268,10 +273,7 @@ fn get_requests_by_status() {
 
     let (key2, req2) = create_test_dr(2);
     test_info.insert(&key2, req2.clone());
-    test_info.update(
-        &key2,
-        &StatusValue::with_status(req2.clone(), DataRequestStatus::Revealing),
-    );
+    test_info.update(&key2, req2.clone(), Some(DataRequestStatus::Revealing));
 
     let committing = test_info.get_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(committing.len(), 1);
@@ -303,9 +305,6 @@ fn get_requests_by_status_pagination() {
 
     // [5, 9]
     let five_nine = test_info.get_requests_by_status(DataRequestStatus::Committing, 5, 5);
-    five_nine.iter().for_each(|r| {
-        dbg!(r.1.height);
-    });
     assert_eq!(five_nine.len(), 5);
     assert_eq!(reqs.get(5), five_nine.get(&reqs[5].dr_binary_id.to_hex()));
     assert_eq!(reqs.get(6), five_nine.get(&reqs[6].dr_binary_id.to_hex()));

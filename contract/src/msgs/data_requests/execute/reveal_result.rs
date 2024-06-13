@@ -61,7 +61,9 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let gas_used = self.reveal_body.gas_used;
         let reveal = self.reveal_body.reveal.clone();
         dr.reveals.insert(public_key_str, self.reveal_body);
-        state::save(deps.storage, &self.dr_id, &dr)?;
+        // TODO should be able to clean this clone after we separate
+        // post result from reveal result
+        state::reveal(deps.storage, &self.dr_id, dr.clone())?;
 
         // TODO: move to sudo_post_result, this is a mocked tally
         // if total reveals equals replication factor, resolve the DR

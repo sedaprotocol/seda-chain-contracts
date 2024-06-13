@@ -82,7 +82,13 @@ impl<'a> EnumerableStatusMap<'_> {
         self.key_to_index.has(store, key)
     }
 
-    pub fn update(&'a self, store: &mut dyn Storage, key: &Hash, req: &StatusValue) -> StdResult<()> {
+    pub fn update(
+        &'a self,
+        store: &mut dyn Storage,
+        key: &Hash,
+        dr: DataRequest,
+        status: Option<DataRequestStatus>,
+    ) -> StdResult<()> {
         let Some(index) = self.key_to_index.may_load(store, key)? else {
             return Err(StdError::generic_err("Key does not exist"));
         };
@@ -90,12 +96,15 @@ impl<'a> EnumerableStatusMap<'_> {
         // remove the old status key
         let old = self.reqs.load(store, key)?;
         let old_status_key = StatusIndexKey::new(index, Some(old.status.clone()));
-        self.status_to_keys.remove(store, &old_status_key);
-
-        // update the status in both places
-        self.status_to_keys
-            .save(store, &StatusIndexKey::new(index, Some(req.status.clone())), key)?;
-        self.reqs.save(store, key, req)
+        let status = if let Some(status) = status {
+            self.status_to_keys.remove(store, &old_status_key);
+            self.status_to_keys
+                .save(store, &StatusIndexKey::new(index, Some(status.clone())), key)?;
+            status
+        } else {
+            old.status
+        };
+        self.reqs.save(store, key, &StatusValue::with_status(dr, status))
     }
 
     pub fn len(&'a self, store: &dyn Storage) -> Result<u32, StdError> {
@@ -187,8 +196,8 @@ impl<'a> EnumerableStatusMap<'_> {
         limit: u32,
     ) -> StdResult<HashMap<String, DataRequest>> {
         let mut requests = HashMap::new();
-        let start = Bound::inclusive(dbg!(offset));
-        let end = Bound::exclusive(dbg!(offset + limit));
+        let start = Bound::inclusive(offset);
+        let end = Bound::exclusive(offset + limit);
         let keys = self
             .status_to_keys
             .prefix(status)

@@ -35,7 +35,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         // add the commitment to the data request
         dr.commits.insert(public_key_str, self.commitment);
-        state::commit(deps.storage, &self.dr_id, &dr)?;
+        state::commit(deps.storage, &self.dr_id, dr)?;
 
         Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([
