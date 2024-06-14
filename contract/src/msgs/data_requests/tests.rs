@@ -222,44 +222,6 @@ fn reveal_result() {
 }
 
 #[test]
-fn reveals_meet_replication_factor() {
-    let mut test_info = TestInfo::init();
-
-    // post a data request
-    let alice = test_info.new_executor("alice", Some(2));
-    let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
-
-    // alice commits a data result
-    let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
-        exit_code: 0,
-    };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
-
-    // bob also commits
-    let bob = test_info.new_executor("bob", Some(2));
-    let bob_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "20".hash().into(),
-        gas_used:  0u128.into(),
-        exit_code: 0,
-    };
-    test_info.commit_result(&bob, dr_id, bob_reveal.hash()).unwrap();
-
-    // alice reveals
-    test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
-
-    // bob reveals
-    test_info.reveal_result(&bob, dr_id, bob_reveal).unwrap();
-
-    let resolved = test_info.get_data_result(dr_id);
-    assert_eq!(resolved.dr_id, dr_id.to_hex())
-}
-
-#[test]
 #[should_panic(expected = "RevealNotStarted")]
 fn cannot_reveal_if_commit_rf_not_met() {
     let mut test_info = TestInfo::init();
@@ -403,106 +365,66 @@ fn reveal_must_match_commitment() {
     assert!(revealed.contains_key(&dr_id.to_hex()));
 }
 
-// #[test]
-// fn post_data_result() {
-//     let mut deps = mock_dependencies();
-//     let creator = TestExecutor::new("creator", Some(2));
-//     instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+#[test]
+fn post_data_result() {
+    let mut test_info = TestInfo::init();
 
-//     // post a data request
-//     let alice = TestExecutor::new("alice", Some(2));
-//     let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 1);
-//     test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+    // post a data request
+    // post a data request
+    let alice = test_info.new_executor("alice", Some(2));
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
-//     // commit a data result
-//     let alice_reveal = RevealBody {
-//         salt:      alice.salt(),
-//         reveal:    "10".hash().to_vec(),
-//         gas_used:  0,
-//         exit_code: 0,
-//     };
-//     test_helpers::commit_result(
-//         deps.as_mut(),
-//         alice.info(),
-//         &alice,
-//         constructed_dr_id,
-//         alice_reveal.hash(),
-//         None,
-//         None,
-//     )
-//     .unwrap();
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().into(),
+        gas_used:  0u128.into(),
+        exit_code: 0,
+    };
+    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
 
-//     // alice reveals
-//     test_helpers::reveal_result(
-//         deps.as_mut(),
-//         alice.info(),
-//         &alice,
-//         constructed_dr_id,
-//         alice_reveal.clone(),
-//         None,
-//         None,
-//     )
-//     .unwrap();
+    // owner posts a data result
+    let dr = test_info.get_data_request(dr_id);
+    let result = test_helpers::construct_result(dr, alice_reveal, 0);
+    test_info.post_data_result(dr_id, result, 0).unwrap();
+}
 
-//     // post a data result
-//     let result = test_helpers::construct_result(dr_args, alice_reveal, 0, vec![], vec![]);
-//     test_helpers::post_data_result(deps.as_mut(), constructed_dr_id, result, 0).unwrap();
+#[test]
+#[should_panic = "NotEnoughReveals"]
+fn cant_post_if_replication_factor_not_met() {
+    let mut test_info = TestInfo::init();
 
-//     let resolved = test_helpers::get_data_requests_by_status(deps.as_mut(), DataRequestStatus::Resolved);
-//     assert_eq!(1, resolved.len());
-//     assert!(resolved.contains_key(&constructed_dr_id.to_hex()));
-// }
+    // post a data request
+    let alice = test_info.new_executor("alice", Some(2));
+    let dr = test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
-// #[test]
-// #[should_panic(expected = "Unauthorized")]
-// fn post_data_result_only_sudoers() {
-//     let mut deps = mock_dependencies();
-//     let creator = TestExecutor::new("creator", Some(2));
-//     instantiate_contract(deps.as_mut(), creator.info()).unwrap();
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().into(),
+        gas_used:  0u128.into(),
+        exit_code: 0,
+    };
+    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
 
-//     // let contract = ContractWrapper::new(
-//     //     crate::contract::execute,
-//     //     crate::contract::instantiate,
-//     //     crate::contract::query,
-//     // )
-//     // .with_sudo(sudo);
+    // bob also commits
+    let bob = test_info.new_executor("bob", Some(2));
+    let bob_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "20".hash().into(),
+        gas_used:  0u128.into(),
+        exit_code: 0,
+    };
+    test_info.commit_result(&bob, dr_id, bob_reveal.hash()).unwrap();
 
-//     // post a data request
-//     let alice = TestExecutor::new("alice", Some(2));
-//     let (constructed_dr_id, dr_args) = test_helpers::calculate_dr_id_and_args(1, 1);
-//     test_helpers::post_data_request(deps.as_mut(), alice.info(), dr_args.clone(), vec![], vec![]).unwrap();
+    // alice reveals
+    test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
 
-//     // commit a data result
-//     let alice_reveal = RevealBody {
-//         salt:      alice.salt(),
-//         reveal:    "10".hash().to_vec(),
-//         gas_used:  0,
-//         exit_code: 0,
-//     };
-//     test_helpers::commit_result(
-//         deps.as_mut(),
-//         alice.info(),
-//         &alice,
-//         constructed_dr_id,
-//         alice_reveal.hash(),
-//         None,
-//         None,
-//     )
-//     .unwrap();
-
-//     // alice reveals
-//     test_helpers::reveal_result(
-//         deps.as_mut(),
-//         alice.info(),
-//         &alice,
-//         constructed_dr_id,
-//         alice_reveal.clone(),
-//         None,
-//         None,
-//     )
-//     .unwrap();
-
-//     // post a data result
-//     let result = test_helpers::construct_result(dr_args, alice_reveal, 0, vec![], vec![]);
-//     test_helpers::post_data_result(deps.as_mut(), constructed_dr_id, result, 0).unwrap();
-// }
+    // post a data result
+    let dr = test_info.get_data_request(dr_id);
+    let result = test_helpers::construct_result(dr, alice_reveal, 0);
+    test_info.post_data_result(dr_id, result, 0).unwrap();
+}

@@ -7,7 +7,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
         let dr_id = Hash::from_hex_str(&self.dr_id)?;
-        let mut dr = state::load_req(deps.storage, &dr_id)?;
+        let mut dr = state::load_request(deps.storage, &dr_id)?;
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)
         if !dr.reveal_started() {

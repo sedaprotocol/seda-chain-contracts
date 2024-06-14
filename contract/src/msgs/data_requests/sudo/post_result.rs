@@ -1,6 +1,6 @@
 use super::*;
 
-#[cw_serde]
+#[cosmwasm_schema::cw_serde]
 pub struct Sudo {
     pub(in crate::msgs::data_requests) dr_id:     Hash,
     pub(in crate::msgs::data_requests) result:    DataResult,
@@ -38,7 +38,6 @@ impl Sudo {
     }
 }
 
-#[cfg(test)]
 impl From<Sudo> for crate::msgs::SudoMsg {
     fn from(value: Sudo) -> Self {
         super::SudoMsg::PostDataResult(value).into()

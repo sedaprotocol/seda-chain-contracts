@@ -1,4 +1,5 @@
 use cosmwasm_schema::write_api;
+use seda_common::msgs::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use seda_contract::msgs::SudoMsg;
 
 fn main() {

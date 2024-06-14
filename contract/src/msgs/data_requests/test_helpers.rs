@@ -81,6 +81,20 @@ pub fn construct_dr(
     }
 }
 
+pub fn construct_result(dr: DataRequest, reveal: RevealBody, exit_code: u8) -> DataResult {
+    DataResult {
+        version: dr.version,
+        dr_id: dr.id,
+        block_height: dr.height,
+        exit_code,
+        gas_used: reveal.gas_used,
+        result: reveal.reveal,
+        payback_address: dr.payback_address,
+        seda_payload: dr.seda_payload,
+        consensus: true,
+    }
+}
+
 impl TestInfo {
     #[track_caller]
     pub fn get_dr(&self, dr_id: Hash) -> Option<DataRequest> {
@@ -104,7 +118,7 @@ impl TestInfo {
         }
         .into();
 
-        if env_height < dbg!(self.block_height()) {
+        if env_height < self.block_height() {
             panic!("Invalid Test: Cannot post a data request in the past");
         }
         // set the chain height... will effect the height in the dr for us to sign.
@@ -204,6 +218,17 @@ impl TestInfo {
     }
 
     #[track_caller]
+    pub fn post_data_result(&mut self, dr_id: Hash, result: DataResult, exit_code: u8) -> Result<(), ContractError> {
+        let msg = sudo::post_result::Sudo {
+            dr_id,
+            result,
+            exit_code,
+        }
+        .into();
+        self.sudo(&msg)
+    }
+
+    #[track_caller]
     pub fn get_data_request(&self, dr_id: Hash) -> DataRequest {
         self.query(query::QueryMsg::GetDataRequest { dr_id: dr_id.to_hex() })
             .unwrap()
@@ -211,8 +236,7 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_data_result(&self, dr_id: Hash) -> DataResult {
-        self.query(query::QueryMsg::GetDataResult { dr_id: dr_id.to_hex() })
-            .unwrap()
+        dbg!(self.query(query::QueryMsg::GetDataResult { dr_id: dr_id.to_hex() })).unwrap()
     }
 
     #[track_caller]
@@ -253,14 +277,5 @@ impl TestInfo {
     ) -> HashMap<String, DataRequest> {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
             .unwrap()
-    }
-
-    pub fn post_data_result(deps: DepsMut, dr_id: Hash, result: DataResult, exit_code: u8) -> StdResult<Response> {
-        let msg = post_result::Sudo {
-            dr_id,
-            result,
-            exit_code,
-        };
-        sudo(deps, mock_env(), msg.into())
     }
 }

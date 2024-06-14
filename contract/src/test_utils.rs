@@ -22,7 +22,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
 
-use crate::{common_types::Hash, contract::*, error::ContractError, types::PublicKey};
+use crate::{common_types::Hash, contract::*, error::ContractError, msgs::SudoMsg, types::PublicKey};
 
 pub struct TestInfo {
     app:           App,
@@ -36,7 +36,7 @@ impl TestInfo {
         let mut app = AppBuilder::default()
             .with_api(MockApi::default().with_prefix("seda"))
             .build(no_init);
-        let contract = Box::new(ContractWrapper::new(execute, instantiate, query));
+        let contract = Box::new(ContractWrapper::new(execute, instantiate, query).with_sudo(sudo));
 
         let creator_addr = app.api().addr_make("creator");
         let creator = TestExecutor::new("creator", creator_addr.clone(), Some(1_000_000));
@@ -133,6 +133,24 @@ impl TestInfo {
 
     pub fn query<M: Serialize, R: DeserializeOwned>(&self, msg: M) -> Result<R, cosmwasm_std::StdError> {
         self.app.wrap().query_wasm_smart(self.contract_addr(), &msg)
+    }
+
+    #[track_caller]
+    pub fn sudo<R: DeserializeOwned>(&mut self, msg: &SudoMsg) -> Result<R, ContractError> {
+        let res = self.app.wasm_sudo(self.contract_addr.clone(), msg).map_err(|e| {
+            if let Some(c_err) = e.downcast_ref::<ContractError>() {
+                c_err.clone()
+            } else if let Some(s_err) = e.downcast_ref::<StdError>() {
+                return ContractError::Std(s_err.to_string());
+            } else {
+                ContractError::Dbg(e.to_string())
+            }
+        });
+
+        Ok(match res?.data {
+            Some(data) => from_json(data).unwrap(),
+            None => from_json(to_json_binary(&serde_json::Value::Null).unwrap()).unwrap(),
+        })
     }
 
     #[track_caller]

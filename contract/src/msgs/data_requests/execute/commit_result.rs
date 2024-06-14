@@ -6,7 +6,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the pool (if it exists, otherwise error)
         let dr_id = Hash::from_hex_str(&self.dr_id)?;
-        let mut dr = state::load_req(deps.storage, &dr_id)?;
+        let mut dr = state::load_request(deps.storage, &dr_id)?;
 
         // error if the user has already committed
         if dr.has_committer(&self.public_key) {

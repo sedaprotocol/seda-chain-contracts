@@ -42,7 +42,7 @@ impl QueryHandler for msgs::QueryMsg {
     }
 }
 
-#[cw_serde]
+#[cosmwasm_schema::cw_serde]
 #[serde(untagged)]
 pub enum SudoMsg {
     DataRequest(data_requests::sudo::SudoMsg),
