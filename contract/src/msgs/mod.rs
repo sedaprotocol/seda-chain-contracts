@@ -5,6 +5,7 @@ use seda_common::{
     msgs::{
         self,
         staking::{Staker, StakingConfig},
+        SudoMsg,
     },
 };
 
@@ -20,6 +21,10 @@ pub trait QueryHandler {
 
 pub trait ExecuteHandler {
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>;
+}
+
+pub trait SudoHandler {
+    fn sudo(self, deps: DepsMut, env: Env) -> Result<Response, ContractError>;
 }
 
 impl ExecuteHandler for msgs::ExecuteMsg {
@@ -42,16 +47,10 @@ impl QueryHandler for msgs::QueryMsg {
     }
 }
 
-#[cosmwasm_schema::cw_serde]
-#[serde(untagged)]
-pub enum SudoMsg {
-    DataRequest(data_requests::sudo::SudoMsg),
-}
-
-impl SudoMsg {
-    pub fn execute(self, deps: DepsMut, env: Env) -> Result<Response, ContractError> {
+impl SudoHandler for SudoMsg {
+    fn sudo(self, deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         match self {
-            SudoMsg::DataRequest(sudo) => sudo.execute(deps, env),
+            SudoMsg::DataRequest(sudo) => sudo.sudo(deps, env),
         }
     }
 }

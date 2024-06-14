@@ -22,7 +22,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
 
-use crate::{common_types::Hash, contract::*, error::ContractError, msgs::SudoMsg, types::PublicKey};
+use crate::{common_types::Hash, contract::*, error::ContractError, types::PublicKey};
 
 pub struct TestInfo {
     app:           App,

@@ -13,7 +13,7 @@ use crate::{
         staking::state::CONFIG,
         ExecuteHandler,
         QueryHandler,
-        SudoMsg,
+        SudoHandler,
     },
     state::{CHAIN_ID, TOKEN},
 };
@@ -52,7 +52,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> Result<Response, ContractError> {
-    sudo.execute(deps, env)
+    sudo.sudo(deps, env)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

@@ -2,7 +2,7 @@ use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
 use super::{
-    msgs::data_requests::{execute, query},
+    msgs::data_requests::{execute, query, sudo},
     *,
 };
 use crate::{TestExecutor, TestInfo};
@@ -220,7 +220,7 @@ impl TestInfo {
     #[track_caller]
     pub fn post_data_result(&mut self, dr_id: Hash, result: DataResult, exit_code: u8) -> Result<(), ContractError> {
         let msg = sudo::post_result::Sudo {
-            dr_id,
+            dr_id: dr_id.to_hex(),
             result,
             exit_code,
         }
