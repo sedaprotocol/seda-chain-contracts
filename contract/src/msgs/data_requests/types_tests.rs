@@ -7,13 +7,13 @@ use crate::enumerable_status_map;
 
 struct TestInfo<'a> {
     pub store: MockStorage,
-    pub map:   EnumerableStatusMap<'a>,
+    pub map:   DataRequestsMap<'a>,
 }
 
 impl TestInfo<'_> {
     fn init() -> Self {
         let mut store = MockStorage::new();
-        let map: EnumerableStatusMap = enumerable_status_map!("test");
+        let map: DataRequestsMap = enumerable_status_map!("test");
         map.initialize(&mut store).unwrap();
         Self { store, map }
     }

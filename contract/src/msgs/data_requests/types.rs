@@ -51,7 +51,7 @@ impl StatusValue {
     }
 }
 
-pub struct EnumerableStatusMap<'a> {
+pub struct DataRequestsMap<'a> {
     pub len:            Item<'a, u32>,
     pub reqs:           Map<'a, &'a Hash, StatusValue>,
     pub index_to_key:   Map<'a, u32, Hash>,
@@ -62,7 +62,7 @@ pub struct EnumerableStatusMap<'a> {
 #[macro_export]
 macro_rules! enumerable_status_map {
     ($namespace:literal) => {
-        EnumerableStatusMap {
+        DataRequestsMap {
             len:            Item::new(concat!($namespace, "_len")),
             reqs:           Map::new(concat!($namespace, "_reqs")),
             index_to_key:   Map::new(concat!($namespace, "_index_to_key")),
@@ -72,7 +72,7 @@ macro_rules! enumerable_status_map {
     };
 }
 
-impl<'a> EnumerableStatusMap<'_> {
+impl<'a> DataRequestsMap<'_> {
     pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
         self.len.save(store, &0)?;
         Ok(())

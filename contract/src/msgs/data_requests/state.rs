@@ -1,9 +1,9 @@
-use types::EnumerableStatusMap;
+use types::DataRequestsMap;
 
 use super::*;
 use crate::enumerable_status_map;
 
-const DATA_REQUESTS: EnumerableStatusMap = enumerable_status_map!("data_request_pool");
+const DATA_REQUESTS: DataRequestsMap = enumerable_status_map!("data_request_pool");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 pub fn init_data_requests(store: &mut dyn Storage) -> Result<(), ContractError> {
