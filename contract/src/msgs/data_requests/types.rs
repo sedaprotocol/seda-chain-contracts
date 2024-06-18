@@ -194,20 +194,18 @@ impl<'a> DataRequestsMap<'_> {
         status: DataRequestStatus,
         offset: u32,
         limit: u32,
-    ) -> StdResult<HashMap<String, DataRequest>> {
-        let mut requests = HashMap::new();
+    ) -> StdResult<Vec<DataRequest>> {
         let start = Bound::inclusive(offset);
         let end = Bound::exclusive(offset + limit);
-        let keys = self
+        let requests = self
             .status_to_keys
             .prefix(status)
-            .range(store, Some(start), Some(end), Order::Ascending);
-
-        for key in keys {
-            let (_, hash) = key?;
-            let req = self.reqs.load(store, &hash)?;
-            requests.insert(hash.to_hex(), req.req);
-        }
+            .range(store, Some(start), Some(end), Order::Ascending)
+            .map(|key| {
+                let (_, key) = key?;
+                self.reqs.load(store, &key).map(|req| req.req)
+            })
+            .collect::<StdResult<Vec<_>>>()?;
 
         Ok(requests)
     }

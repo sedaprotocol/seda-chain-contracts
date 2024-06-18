@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use msgs::data_requests::*;
 
 use super::*;

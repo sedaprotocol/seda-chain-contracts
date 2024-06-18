@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
@@ -269,12 +271,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_requests_by_status(
-        &self,
-        status: DataRequestStatus,
-        offset: u32,
-        limit: u32,
-    ) -> HashMap<String, DataRequest> {
+    pub fn get_data_requests_by_status(&self, status: DataRequestStatus, offset: u32, limit: u32) -> Vec<DataRequest> {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
             .unwrap()
     }

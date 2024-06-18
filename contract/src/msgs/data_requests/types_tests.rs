@@ -67,12 +67,7 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn get_requests_by_status(
-        &self,
-        status: DataRequestStatus,
-        offset: u32,
-        limit: u32,
-    ) -> HashMap<String, DataRequest> {
+    fn get_requests_by_status(&self, status: DataRequestStatus, offset: u32, limit: u32) -> Vec<DataRequest> {
         self.map
             .get_requests_by_status(&self.store, status, offset, limit)
             .unwrap()
@@ -277,11 +272,11 @@ fn get_requests_by_status() {
 
     let committing = test_info.get_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(committing.len(), 1);
-    assert_eq!(committing.get(&key1.to_hex()).unwrap(), &req1);
+    assert!(committing.contains(&req1));
 
     let revealing = test_info.get_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(revealing.len(), 1);
-    assert_eq!(revealing.get(&key2.to_hex()).unwrap(), &req2);
+    assert!(revealing.contains(&req2));
 }
 
 #[test]
@@ -300,15 +295,15 @@ fn get_requests_by_status_pagination() {
     // [3, 4]
     let three_four = test_info.get_requests_by_status(DataRequestStatus::Committing, 3, 2);
     assert_eq!(three_four.len(), 2);
-    assert_eq!(reqs.get(3), three_four.get(&reqs[3].dr_binary_id));
-    assert_eq!(reqs.get(4), three_four.get(&reqs[4].dr_binary_id));
+    assert!(three_four.contains(&reqs[3]));
+    assert!(three_four.contains(&reqs[4]));
 
     // [5, 9]
     let five_nine = test_info.get_requests_by_status(DataRequestStatus::Committing, 5, 5);
     assert_eq!(five_nine.len(), 5);
-    assert_eq!(reqs.get(5), five_nine.get(&reqs[5].dr_binary_id));
-    assert_eq!(reqs.get(6), five_nine.get(&reqs[6].dr_binary_id));
-    assert_eq!(reqs.get(7), five_nine.get(&reqs[7].dr_binary_id));
-    assert_eq!(reqs.get(8), five_nine.get(&reqs[8].dr_binary_id));
-    assert_eq!(reqs.get(9), five_nine.get(&reqs[9].dr_binary_id));
+    assert!(five_nine.contains(&reqs[5]));
+    assert!(five_nine.contains(&reqs[6]));
+    assert!(five_nine.contains(&reqs[7]));
+    assert!(five_nine.contains(&reqs[8]));
+    assert!(five_nine.contains(&reqs[9]));
 }

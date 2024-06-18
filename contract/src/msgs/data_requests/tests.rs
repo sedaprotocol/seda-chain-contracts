@@ -20,7 +20,7 @@ fn query_drs_by_status_has_one() {
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, drs.len());
-    assert!(drs.contains_key(&dr_id.to_hex()));
+    assert!(drs.iter().any(|r| r.id == dr_id.to_hex()));
 }
 
 #[test]
@@ -91,7 +91,7 @@ fn post_data_request() {
     assert_eq!(Some(test_helpers::construct_dr(dr_id, dr, vec![], 1)), received_value);
     let await_commits = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, await_commits.len());
-    assert!(await_commits.contains_key(&dr_id.to_hex()));
+    assert!(await_commits.iter().any(|r| r.id == dr_id.to_hex()));
 
     // nonexistent data request does not yet exist
     let value = test_info.get_dr("nonexistent".hash());
@@ -113,7 +113,9 @@ fn commit_result() {
     // check if the data request is in the committing state before meeting the replication factor
     let commiting = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, commiting.len());
-    assert!(commiting.contains_key(&dr_id.to_hex()));
+    dbg!(&commiting);
+    dbg!(dr_id.to_hex());
+    assert!(commiting.iter().any(|r| r.id == dr_id.to_hex()));
 }
 
 #[test]
@@ -129,9 +131,9 @@ fn commits_meet_replication_factor() {
     test_info.commit_result(&anyone, dr_id, "0xcommitment".hash()).unwrap();
 
     // check if the data request is in the revealing state after meeting the replication factor
-    let commiting = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, commiting.len());
-    assert!(commiting.contains_key(&dr_id.to_hex()));
+    let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    assert_eq!(1, revealing.len());
+    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
 }
 
 #[test]
@@ -216,9 +218,9 @@ fn reveal_result() {
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
 
-    let revealed = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealed.len());
-    assert!(revealed.contains_key(&dr_id.to_hex()));
+    let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    assert_eq!(1, revealing.len());
+    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
 }
 
 #[test]
@@ -275,9 +277,9 @@ fn cannot_reveal_if_user_did_not_commit() {
     // bob reveals
     test_info.reveal_result(&bob, dr_id, bob_reveal).unwrap();
 
-    let revealed = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealed.len());
-    assert!(revealed.contains_key(&dr_id.to_hex()));
+    let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    assert_eq!(1, revealing.len());
+    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
 }
 
 #[test]
@@ -360,9 +362,9 @@ fn reveal_must_match_commitment() {
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
 
-    let revealed = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealed.len());
-    assert!(revealed.contains_key(&dr_id.to_hex()));
+    let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    assert_eq!(1, revealing.len());
+    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
 }
 
 #[test]

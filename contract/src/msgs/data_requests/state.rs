@@ -45,7 +45,7 @@ pub fn requests_by_status(
     status: DataRequestStatus,
     offset: u32,
     limit: u32,
-) -> StdResult<HashMap<String, DataRequest>> {
+) -> StdResult<Vec<DataRequest>> {
     DATA_REQUESTS.get_requests_by_status(store, status, offset, limit)
 }
 
