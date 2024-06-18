@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, process::Command};
+use std::{env, process::Command};
 
 use anyhow::{bail, Context, Result};
 use rand::Rng;
@@ -74,9 +74,9 @@ fn create_data_request(
     tally_binary_id: [u8; 32],
     replication_factor: u16,
     tally_inputs: Vec<u8>,
-) -> (String, DataRequest) {
+) -> DataRequest {
     let id: [u8; 32] = rand::random();
-    let dr = DataRequest {
+    DataRequest {
         version: semver::Version {
             major: 1,
             minor: 0,
@@ -98,12 +98,10 @@ fn create_data_request(
         reveals: Default::default(),
         payback_address: Default::default(),
         height: rand::random(),
-    };
-
-    (hex::encode(id), dr)
+    }
 }
 
-fn tally_test_fixture() -> HashMap<String, DataRequest> {
+fn tally_test_fixture() -> Vec<DataRequest> {
     let dr_binary_id: [u8; 32] = rand::random();
     let tally_binary_id: [u8; 32] = rand::random();
     let replication_factor = rand::thread_rng().gen_range(1..=3);
