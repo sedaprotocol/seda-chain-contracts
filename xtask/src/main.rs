@@ -1,8 +1,11 @@
-use std::{env, process::Command};
+use std::{collections::HashMap, env, process::Command};
 
 use anyhow::{bail, Context, Result};
 use rand::Rng;
-use seda_common::{msgs::data_requests::DataRequest, types::ToHexStr};
+use seda_common::{
+    msgs::data_requests::{DataRequest, RevealBody},
+    types::{HashSelf, ToHexStr},
+};
 use serde_json::json;
 use xshell::{cmd, Shell};
 
@@ -74,6 +77,7 @@ fn create_data_request(
     tally_binary_id: [u8; 32],
     replication_factor: u16,
     tally_inputs: Vec<u8>,
+    reveals: HashMap<String, RevealBody>,
 ) -> DataRequest {
     let id: [u8; 32] = rand::random();
     DataRequest {
@@ -95,25 +99,39 @@ fn create_data_request(
         gas_limit: 20u128.into(),
         seda_payload: Default::default(),
         commits: Default::default(),
-        reveals: Default::default(),
+        reveals,
         payback_address: Default::default(),
         height: rand::random(),
     }
 }
 
-fn tally_test_fixture() -> Vec<DataRequest> {
+fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
     let dr_binary_id: [u8; 32] = rand::random();
     let tally_binary_id: [u8; 32] = rand::random();
-    let replication_factor = rand::thread_rng().gen_range(1..=3);
 
-    (0..replication_factor)
+    (0..n)
         .map(|_| {
             let inputs = [rand::thread_rng().gen_range::<u8, _>(1..=10); 5]
                 .into_iter()
                 .flat_map(|i| i.to_be_bytes())
                 .collect();
+            let replication_factor = rand::thread_rng().gen_range(1..=3);
 
-            create_data_request(dr_binary_id, tally_binary_id, replication_factor, inputs)
+            let salt: [u8; 32] = rand::random();
+            let reveals = (0..replication_factor)
+                .map(|_| {
+                    let reveal = RevealBody {
+                        salt:      salt.to_hex(),
+                        exit_code: 0,
+                        gas_used:  10u128.into(),
+                        reveal:    rand::thread_rng().gen_range(1..=100u8).to_be_bytes().into(),
+                    };
+
+                    (reveal.hash().to_hex(), reveal)
+                })
+                .collect();
+
+            create_data_request(dr_binary_id, tally_binary_id, replication_factor, inputs, reveals)
         })
         .collect()
 }
@@ -125,14 +143,11 @@ fn tally_data_req_fixture(_sh: &Shell) -> Result<()> {
         .write(true)
         .open("tally_data_request_fixture.json")?;
 
-    let mut test_two_dr_ready_to_tally_data = tally_test_fixture();
-    test_two_dr_ready_to_tally_data.extend(tally_test_fixture());
-
     serde_json::to_writer(
         file,
         &json!({
-            "test_one_dr_ready_to_tally": tally_test_fixture(),
-            "test_two_dr_ready_to_tally": test_two_dr_ready_to_tally_data,
+            "test_one_dr_ready_to_tally": tally_test_fixture(1),
+            "test_two_dr_ready_to_tally": tally_test_fixture(2),
         }),
     )?;
 
