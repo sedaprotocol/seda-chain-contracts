@@ -50,7 +50,7 @@ pub fn requests_by_status(
 }
 
 pub fn reveal(storage: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
-    let status = if dr.reveal_over() {
+    let status = if dr.is_tallying() {
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
         Some(DataRequestStatus::Tallying)

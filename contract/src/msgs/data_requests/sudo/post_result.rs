@@ -7,7 +7,7 @@ impl SudoHandler for sudo::post_result::Sudo {
         let dr_id = Hash::from_hex_str(&self.dr_id)?;
         let dr = state::load_request(deps.storage, &dr_id)?;
 
-        if !dr.reveal_over() {
+        if !dr.is_tallying() {
             return Err(ContractError::NotEnoughReveals);
         }
 
