@@ -435,3 +435,46 @@ fn cant_post_if_replication_factor_not_met() {
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
     test_info.post_data_result(dr_id, result, 0).unwrap();
 }
+
+#[test]
+fn check_data_request_id() {
+    // Expected DR ID for following DR:
+    // {
+    //     "version": "0.0.1",
+    //     "dr_binary_id": "044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d",
+    //     "dr_inputs": "ZHJfaW5wdXRz",
+    //     "tally_binary_id": "3a1561a3d854e446801b339c137f87dbd2238f481449c00d3470cfcc2a4e24a1",
+    //     "tally_inputs": "dGFsbHlfaW5wdXRz",
+    //     "replication_factor": 1,
+    //     "consensus_filter": "AA==",
+    //     "gas_price": "10",
+    //     "gas_limit": "10",
+    //     "memo": "XTtTqpLgvyGr54/+ov83JyG852lp7VqzBrC10UpsIjg="
+    //   }
+    let expected_dr_id = "5b9194faf640b6c9b6fcb266dd3a1b3af9c11c8bb322528c89838f0aaff30e89";
+
+    // compute and check if dr id matches expected value
+    let dr = test_helpers::calculate_dr_id_and_args(0, 1);
+    let dr_id = dr.try_hash().unwrap();
+    assert_eq!(hex::encode(dr_id), expected_dr_id);
+}
+
+#[test]
+fn check_data_result_id() {
+    let expected_result_id = "65b9ad604def6d03d1aaaa31d1601861d16c3cff6dba1c8d30ef2a4ea996a7bf";
+    let dr_args = test_helpers::calculate_dr_id_and_args(0, 1);
+
+    // reveal sample
+    let alice_reveal = RevealBody {
+        salt:      "123".into(),
+        reveal:    "10".hash().into(),
+        gas_used:  20u128.into(),
+        exit_code: 0,
+    };
+
+    // check if data result id matches expected value
+    let dr = test_helpers::construct_dr(dr_args, vec![], 12345);
+    let result = test_helpers::construct_result(dr, alice_reveal, 0);
+    let result_id = result.try_hash().unwrap();
+    assert_eq!(hex::encode(result_id), expected_result_id);
+}
