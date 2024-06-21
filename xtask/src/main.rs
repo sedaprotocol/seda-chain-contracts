@@ -95,6 +95,7 @@ fn create_data_request(
         tally_inputs: tally_inputs.into(),
         memo: Default::default(),
         replication_factor,
+        consensus_filter: Default::default(),
         gas_price: 10u128.into(),
         gas_limit: 20u128.into(),
         seda_payload: Default::default(),

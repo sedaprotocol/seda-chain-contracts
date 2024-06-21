@@ -25,7 +25,7 @@ impl SudoHandler for sudo::post_result::Sudo {
 
         state::post_result(deps.storage, &dr_id, &self.result)?;
 
-        let result_id = self.result.hash();
+        let result_id = self.result.try_hash()?;
         let event = event.add_attribute("result_id", result_id.to_hex());
 
         Ok(Response::new().add_event(event))

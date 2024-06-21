@@ -4,7 +4,7 @@ impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // hash the inputs to get the data request id
-        let dr_id = self.posted_dr.hash();
+        let dr_id = self.posted_dr.try_hash()?;
 
         // require the data request id to be unique
         if state::data_request_or_result_exists(deps.as_ref(), dr_id) {
@@ -41,6 +41,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             tally_binary_id:    self.posted_dr.tally_binary_id,
             tally_inputs:       self.posted_dr.tally_inputs,
             replication_factor: self.posted_dr.replication_factor,
+            consensus_filter:   self.posted_dr.consensus_filter,
             gas_price:          self.posted_dr.gas_price,
             gas_limit:          self.posted_dr.gas_limit,
             memo:               self.posted_dr.memo,

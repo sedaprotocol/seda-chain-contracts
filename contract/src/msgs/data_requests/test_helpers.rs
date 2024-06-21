@@ -27,12 +27,14 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     let memo = hasher.finalize();
 
     let version = Version {
-        major: 1,
+        major: 0,
         minor: 0,
-        patch: 0,
+        patch: 1,
         pre:   Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
+
+    let consensus_filter = vec![0u8].into();
 
     PostDataRequestArgs {
         version,
@@ -42,29 +44,26 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
         tally_inputs,
         memo: memo.as_slice().into(),
         replication_factor,
+        consensus_filter,
         gas_price,
         gas_limit,
     }
 }
 
-pub fn construct_dr(
-    constructed_dr_id: Hash,
-    dr_args: PostDataRequestArgs,
-    seda_payload: Vec<u8>,
-    height: u64,
-) -> DataRequest {
+pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height: u64) -> DataRequest {
     let version = Version {
-        major: 1,
+        major: 0,
         minor: 0,
-        patch: 0,
+        patch: 1,
         pre:   Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
+    let dr_id = dr_args.try_hash().unwrap();
 
     let payback_address: Vec<u8> = Vec::new();
     DataRequest {
         version,
-        id: constructed_dr_id.to_hex(),
+        id: dr_id.to_hex(),
 
         dr_binary_id: dr_args.dr_binary_id,
         tally_binary_id: dr_args.tally_binary_id,
@@ -72,6 +71,7 @@ pub fn construct_dr(
         tally_inputs: dr_args.tally_inputs,
         memo: dr_args.memo,
         replication_factor: dr_args.replication_factor,
+        consensus_filter: dr_args.consensus_filter,
         gas_price: dr_args.gas_price,
         gas_limit: dr_args.gas_limit,
         seda_payload: seda_payload.into(),

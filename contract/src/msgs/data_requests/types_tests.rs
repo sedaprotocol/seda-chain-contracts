@@ -77,7 +77,7 @@ impl TestInfo<'_> {
 fn create_test_dr(nonce: u128) -> (Hash, DataRequest) {
     let args = calculate_dr_id_and_args(nonce, 2);
     let id = nonce.to_string().hash();
-    let dr = construct_dr(id, args, vec![], nonce as u64);
+    let dr = construct_dr(args, vec![], nonce as u64);
     (id, dr)
 }
 

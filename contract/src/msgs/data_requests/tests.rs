@@ -72,7 +72,12 @@ fn post_data_request() {
     let mut test_info = TestInfo::init();
 
     // data request with id 0x69... does not yet exist
-    let value = test_info.get_dr("0x69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f".hash());
+    let value = test_info.get_dr(
+        hex::decode("69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f")
+            .unwrap()
+            .try_into()
+            .unwrap(),
+    );
     assert_eq!(None, value);
 
     // post a data request
@@ -88,7 +93,7 @@ fn post_data_request() {
 
     // should be able to fetch data request with id 0x69...
     let received_value = test_info.get_dr(dr_id);
-    assert_eq!(Some(test_helpers::construct_dr(dr_id, dr, vec![], 1)), received_value);
+    assert_eq!(Some(test_helpers::construct_dr(dr, vec![], 1)), received_value);
     let await_commits = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, await_commits.len());
     assert!(await_commits.iter().any(|r| r.id == dr_id.to_hex()));
