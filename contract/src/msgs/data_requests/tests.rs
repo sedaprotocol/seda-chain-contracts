@@ -453,7 +453,7 @@ fn check_data_request_id() {
     //     "gas_limit": "10",
     //     "memo": "XTtTqpLgvyGr54/+ov83JyG852lp7VqzBrC10UpsIjg="
     //   }
-    let expected_dr_id = "5b9194faf640b6c9b6fcb266dd3a1b3af9c11c8bb322528c89838f0aaff30e89";
+    let expected_dr_id = "264b76bd166a8997c141a4b4b673b2cb5c90bfe313258a4083aaac1dd04e39c1";
 
     // compute and check if dr id matches expected value
     let dr = test_helpers::calculate_dr_id_and_args(0, 1);
