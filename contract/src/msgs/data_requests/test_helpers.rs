@@ -202,7 +202,7 @@ impl TestInfo {
             "reveal_data_result".as_bytes(),
             dr_id.as_bytes(),
             &dr.height.to_be_bytes(),
-            &reveal_body.hash(),
+            &reveal_body.try_hash()?,
             self.chain_id(),
             self.contract_addr_bytes(),
             &seq.to_be_bytes(),

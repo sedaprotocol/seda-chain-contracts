@@ -1,5 +1,3 @@
-use sha3::{Digest, Keccak256};
-
 use super::*;
 use crate::TestInfo;
 
@@ -86,11 +84,11 @@ fn post_data_request() {
     let anyone = test_info.new_executor("anyone", Some(2));
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
     let dr_id = test_info
-        .post_data_request(&anyone, dr.clone(), vec![], vec![], 1)
+        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
 
     // expect an error when trying to post it again
-    let res = test_info.post_data_request(&anyone, dr.clone(), vec![], vec![], 1);
+    let res = test_info.post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1);
     assert!(res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists));
 
     // should be able to fetch data request with id 0x69...
@@ -210,7 +208,9 @@ fn reveal_result() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
 
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
@@ -220,7 +220,9 @@ fn reveal_result() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&bob, dr_id, bob_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .unwrap();
 
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
@@ -247,7 +249,9 @@ fn cannot_reveal_if_commit_rf_not_met() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
 
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
@@ -270,7 +274,9 @@ fn cannot_reveal_if_user_did_not_commit() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
 
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
@@ -306,7 +312,9 @@ fn cannot_double_reveal() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
 
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
@@ -316,7 +324,9 @@ fn cannot_double_reveal() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&bob, dr_id, bob_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .unwrap();
 
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
@@ -352,7 +362,8 @@ fn reveal_must_match_commitment() {
                 gas_used:  0u128.into(),
                 exit_code: 0,
             }
-            .hash(),
+            .try_hash()
+            .unwrap(),
         )
         .unwrap();
 
@@ -364,7 +375,9 @@ fn reveal_must_match_commitment() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&bob, dr_id, bob_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .unwrap();
 
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
@@ -391,7 +404,9 @@ fn post_data_result() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
     test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
 
     // owner posts a data result
@@ -417,7 +432,9 @@ fn cant_post_if_replication_factor_not_met() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&alice, dr_id, alice_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
 
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
@@ -427,7 +444,9 @@ fn cant_post_if_replication_factor_not_met() {
         gas_used:  0u128.into(),
         exit_code: 0,
     };
-    test_info.commit_result(&bob, dr_id, bob_reveal.hash()).unwrap();
+    test_info
+        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .unwrap();
 
     // alice reveals
     test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
@@ -466,7 +485,7 @@ fn check_data_result_id() {
     // Expected RESULT ID for the following Data Result:
     // {
     //     "version": "0.0.1",
-    //     "dr_id": "5b9194faf640b6c9b6fcb266dd3a1b3af9c11c8bb322528c89838f0aaff30e89",
+    //     "dr_id": "264b76bd166a8997c141a4b4b673b2cb5c90bfe313258a4083aaac1dd04e39c1",
     //     "consensus": true,
     //     "exit_code": 0,
     //     "result": "Ghkvq84TmIuEmU1ClubNxBjVXi8df5QhiNQEC5T8V6w=",
@@ -475,7 +494,7 @@ fn check_data_result_id() {
     //     "payback_address": "",
     //     "seda_payload": ""
     //   }
-    let expected_result_id = "fdfa57ccc79ac0da09292a3b854b487749a5bbeeb5bdd9cf4c394f6422e38e0a";
+    let expected_result_id = "c07800e3f74a3c4b1bf9e70d338b511c2f44b016528b63095efe4012cb1170ff";
     let dr_args = test_helpers::calculate_dr_id_and_args(0, 1);
 
     // reveal sample
@@ -489,6 +508,7 @@ fn check_data_result_id() {
     // check if data result id matches expected value
     let dr = test_helpers::construct_dr(dr_args, vec![0x04, 0x05, 0x06], 12345);
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
+
     let result_id = result.try_hash().unwrap();
 
     assert_eq!(hex::encode(result_id), expected_result_id);

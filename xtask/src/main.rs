@@ -4,7 +4,7 @@ use anyhow::{bail, Context, Result};
 use rand::Rng;
 use seda_common::{
     msgs::data_requests::{DataRequest, RevealBody},
-    types::{HashSelf, ToHexStr},
+    types::{ToHexStr, TryHashSelf},
 };
 use serde_json::json;
 use xshell::{cmd, Shell};
@@ -68,7 +68,8 @@ fn wasm_opt(sh: &Shell) -> Result<()> {
     cmd!(
 			sh,
 			"wasm-opt -Os --signext-lowering target/wasm32-unknown-unknown/release/seda_contract.wasm -o target/seda_contract.wasm"
-		).run()?;
+		)
+    .run()?;
     Ok(())
 }
 
@@ -128,7 +129,13 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
                         reveal:    rand::thread_rng().gen_range(1..=100u8).to_be_bytes().into(),
                     };
 
-                    (reveal.hash().to_hex(), reveal)
+                    (
+                        reveal
+                            .try_hash()
+                            .expect("Could not hash reveal due to base64 result")
+                            .to_hex(),
+                        reveal,
+                    )
                 })
                 .collect();
 

@@ -17,7 +17,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         // compute hash of reveal body
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
-        let reveal_body_hash = self.reveal_body.hash();
+        let reveal_body_hash = self.reveal_body.try_hash()?;
         // compute message hash
         let message_hash = hash([
             "reveal_data_result".as_bytes(),
