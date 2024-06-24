@@ -60,7 +60,7 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
     };
     let dr_id = dr_args.try_hash().unwrap();
 
-    let payback_address: Vec<u8> = Vec::new();
+    let payback_address: Vec<u8> = vec![1, 2, 3];
     DataRequest {
         version,
         id: dr_id.to_hex(),

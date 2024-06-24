@@ -1,3 +1,5 @@
+use sha3::{Digest, Keccak256};
+
 use super::*;
 use crate::TestInfo;
 
@@ -461,7 +463,19 @@ fn check_data_request_id() {
 
 #[test]
 fn check_data_result_id() {
-    let expected_result_id = "65b9ad604def6d03d1aaaa31d1601861d16c3cff6dba1c8d30ef2a4ea996a7bf";
+    // Expected RESULT ID for the following Data Result:
+    // {
+    //     "version": "0.0.1",
+    //     "dr_id": "5b9194faf640b6c9b6fcb266dd3a1b3af9c11c8bb322528c89838f0aaff30e89",
+    //     "consensus": true,
+    //     "exit_code": 0,
+    //     "result": "Ghkvq84TmIuEmU1ClubNxBjVXi8df5QhiNQEC5T8V6w=",
+    //     "block_height": 12345,
+    //     "gas_used": "20",
+    //     "payback_address": "",
+    //     "seda_payload": ""
+    //   }
+    let expected_result_id = "fdfa57ccc79ac0da09292a3b854b487749a5bbeeb5bdd9cf4c394f6422e38e0a";
     let dr_args = test_helpers::calculate_dr_id_and_args(0, 1);
 
     // reveal sample
@@ -473,8 +487,9 @@ fn check_data_result_id() {
     };
 
     // check if data result id matches expected value
-    let dr = test_helpers::construct_dr(dr_args, vec![], 12345);
+    let dr = test_helpers::construct_dr(dr_args, vec![0x04, 0x05, 0x06], 12345);
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
     let result_id = result.try_hash().unwrap();
+
     assert_eq!(hex::encode(result_id), expected_result_id);
 }
