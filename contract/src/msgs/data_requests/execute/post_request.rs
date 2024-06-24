@@ -16,7 +16,7 @@ impl ExecuteHandler for execute::post_request::Execute {
         let hex_dr_id = dr_id.to_hex();
         let res = Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(to_json_binary(&dr_id)?)
+            .set_data(to_json_binary(&hex_dr_id)?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
                 ("dr_id", hex_dr_id.clone()),

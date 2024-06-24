@@ -64,7 +64,6 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
     DataRequest {
         version,
         id: dr_id.to_hex(),
-
         dr_binary_id: dr_args.dr_binary_id,
         tally_binary_id: dr_args.tally_binary_id,
         dr_inputs: dr_args.dr_inputs,
@@ -99,9 +98,11 @@ pub fn construct_result(dr: DataRequest, reveal: RevealBody, exit_code: u8) -> D
 
 impl TestInfo {
     #[track_caller]
-    pub fn get_dr(&self, dr_id: Hash) -> Option<DataRequest> {
-        self.query(query::QueryMsg::GetDataRequest { dr_id: dr_id.to_hex() })
-            .unwrap()
+    pub fn get_dr(&self, dr_id: &str) -> Option<DataRequest> {
+        self.query(query::QueryMsg::GetDataRequest {
+            dr_id: dr_id.to_string(),
+        })
+        .unwrap()
     }
 
     #[track_caller]
@@ -112,7 +113,7 @@ impl TestInfo {
         seda_payload: Vec<u8>,
         payback_address: Vec<u8>,
         env_height: u64,
-    ) -> Result<Hash, ContractError> {
+    ) -> Result<String, ContractError> {
         let msg = execute::post_request::Execute {
             posted_dr,
             seda_payload: seda_payload.into(),
@@ -130,10 +131,9 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: Hash, commitment: Hash) -> Result<(), ContractError> {
+    pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
-        let dr_id = dr_id.to_hex();
         let commitment = commitment.to_hex();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
@@ -146,7 +146,7 @@ impl TestInfo {
         ]);
 
         let msg = execute::commit_result::Execute {
-            dr_id,
+            dr_id: dr_id.to_string(),
             commitment,
             public_key: sender.pub_key_hex(),
             proof: sender.prove_hex(&msg_hash),
@@ -160,12 +160,11 @@ impl TestInfo {
     pub fn commit_result_wrong_height(
         &mut self,
         sender: &TestExecutor,
-        dr_id: Hash,
+        dr_id: &str,
         commitment: Hash,
     ) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
-        let dr_id = dr_id.to_hex();
         let commitment = commitment.to_hex();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
@@ -178,7 +177,7 @@ impl TestInfo {
         ]);
 
         let msg = execute::commit_result::Execute {
-            dr_id,
+            dr_id: dr_id.to_string(),
             commitment,
             public_key: sender.pub_key_hex(),
             proof: sender.prove_hex(&msg_hash),
@@ -192,12 +191,11 @@ impl TestInfo {
     pub fn reveal_result(
         &mut self,
         sender: &TestExecutor,
-        dr_id: Hash,
+        dr_id: &str,
         reveal_body: RevealBody,
     ) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
-        let dr_id = dr_id.to_hex();
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
             dr_id.as_bytes(),
@@ -210,7 +208,7 @@ impl TestInfo {
 
         let msg = execute::reveal_result::Execute {
             reveal_body,
-            dr_id,
+            dr_id: dr_id.to_string(),
             public_key: sender.pub_key_hex(),
             proof: sender.prove_hex(&msg_hash),
         }
@@ -220,9 +218,9 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn post_data_result(&mut self, dr_id: Hash, result: DataResult, exit_code: u8) -> Result<(), ContractError> {
+    pub fn post_data_result(&mut self, dr_id: String, result: DataResult, exit_code: u8) -> Result<(), ContractError> {
         let msg = sudo::post_result::Sudo {
-            dr_id: dr_id.to_hex(),
+            dr_id,
             result,
             exit_code,
         }
@@ -231,9 +229,11 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_request(&self, dr_id: Hash) -> DataRequest {
-        self.query(query::QueryMsg::GetDataRequest { dr_id: dr_id.to_hex() })
-            .unwrap()
+    pub fn get_data_request(&self, dr_id: &String) -> DataRequest {
+        self.query(query::QueryMsg::GetDataRequest {
+            dr_id: dr_id.to_string(),
+        })
+        .unwrap()
     }
 
     #[track_caller]

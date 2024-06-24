@@ -20,7 +20,7 @@ fn query_drs_by_status_has_one() {
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, drs.len());
-    assert!(drs.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(drs.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -72,12 +72,7 @@ fn post_data_request() {
     let mut test_info = TestInfo::init();
 
     // data request with id 0x69... does not yet exist
-    let value = test_info.get_dr(
-        hex::decode("69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f")
-            .unwrap()
-            .try_into()
-            .unwrap(),
-    );
+    let value = test_info.get_dr("69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f");
     assert_eq!(None, value);
 
     // post a data request
@@ -92,14 +87,14 @@ fn post_data_request() {
     assert!(res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists));
 
     // should be able to fetch data request with id 0x69...
-    let received_value = test_info.get_dr(dr_id);
+    let received_value = test_info.get_dr(&dr_id);
     assert_eq!(Some(test_helpers::construct_dr(dr, vec![], 1)), received_value);
     let await_commits = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, await_commits.len());
-    assert!(await_commits.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(await_commits.iter().any(|r| r.id == dr_id));
 
     // nonexistent data request does not yet exist
-    let value = test_info.get_dr("nonexistent".hash());
+    let value = test_info.get_dr("00f0f00f0f00f0f0000000f0fff0ff0ff0ffff0fff00000f000ff000000f000f");
     assert_eq!(None, value);
 }
 
@@ -113,14 +108,12 @@ fn commit_result() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info.commit_result(&anyone, dr_id, "0xcommitment".hash()).unwrap();
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 
     // check if the data request is in the committing state before meeting the replication factor
     let commiting = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, commiting.len());
-    dbg!(&commiting);
-    dbg!(dr_id.to_hex());
-    assert!(commiting.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(commiting.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -133,12 +126,12 @@ fn commits_meet_replication_factor() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info.commit_result(&anyone, dr_id, "0xcommitment".hash()).unwrap();
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 
     // check if the data request is in the revealing state after meeting the replication factor
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(revealing.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -152,10 +145,14 @@ fn cannot_double_commit() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info.commit_result(&anyone, dr_id, "0xcommitment1".hash()).unwrap();
+    test_info
+        .commit_result(&anyone, &dr_id, "0xcommitment1".hash())
+        .unwrap();
 
     // try to commit again as the same user
-    test_info.commit_result(&anyone, dr_id, "0xcommitment2".hash()).unwrap();
+    test_info
+        .commit_result(&anyone, &dr_id, "0xcommitment2".hash())
+        .unwrap();
 }
 
 #[test]
@@ -169,11 +166,11 @@ fn cannot_commit_after_replication_factor_reached() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info.commit_result(&anyone, dr_id, "0xcommitment".hash()).unwrap();
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 
     // commit again as a different user
     let new = test_info.new_executor("new", Some(2));
-    test_info.commit_result(&new, dr_id, "0xcommitment".hash()).unwrap();
+    test_info.commit_result(&new, &dr_id, "0xcommitment".hash()).unwrap();
 }
 
 #[test]
@@ -188,7 +185,7 @@ fn commits_wrong_signature_fails() {
 
     // commit a data result
     test_info
-        .commit_result_wrong_height(&anyone, dr_id, "0xcommitment".hash())
+        .commit_result_wrong_height(&anyone, &dr_id, "0xcommitment".hash())
         .unwrap();
 }
 
@@ -209,7 +206,7 @@ fn reveal_result() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -221,15 +218,15 @@ fn reveal_result() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
-    test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(revealing.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -250,11 +247,11 @@ fn cannot_reveal_if_commit_rf_not_met() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
-    test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 }
 
 #[test]
@@ -275,7 +272,7 @@ fn cannot_reveal_if_user_did_not_commit() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -288,11 +285,11 @@ fn cannot_reveal_if_user_did_not_commit() {
     };
 
     // bob reveals
-    test_info.reveal_result(&bob, dr_id, bob_reveal).unwrap();
+    test_info.reveal_result(&bob, &dr_id, bob_reveal).unwrap();
 
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(revealing.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -313,7 +310,7 @@ fn cannot_double_reveal() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -325,14 +322,14 @@ fn cannot_double_reveal() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
-    test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // alice reveals again
-    test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 }
 
 #[test]
@@ -355,7 +352,7 @@ fn reveal_must_match_commitment() {
     test_info
         .commit_result(
             &alice,
-            dr_id,
+            &dr_id,
             RevealBody {
                 salt:      alice.salt(),
                 reveal:    "11".hash().into(),
@@ -376,15 +373,15 @@ fn reveal_must_match_commitment() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
-    test_info.reveal_result(&alice, dr_id, alice_reveal).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id.to_hex()));
+    assert!(revealing.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -405,12 +402,12 @@ fn post_data_result() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
-    test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // owner posts a data result
-    let dr = test_info.get_data_request(dr_id);
+    let dr = test_info.get_data_request(&dr_id);
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
     test_info.post_data_result(dr_id, result, 0).unwrap();
 }
@@ -433,7 +430,7 @@ fn cant_post_if_replication_factor_not_met() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&alice, dr_id, alice_reveal.try_hash().unwrap())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -445,14 +442,14 @@ fn cant_post_if_replication_factor_not_met() {
         exit_code: 0,
     };
     test_info
-        .commit_result(&bob, dr_id, bob_reveal.try_hash().unwrap())
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
-    test_info.reveal_result(&alice, dr_id, alice_reveal.clone()).unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // post a data result
-    let dr = test_info.get_data_request(dr_id);
+    let dr = test_info.get_data_request(&dr_id);
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
     test_info.post_data_result(dr_id, result, 0).unwrap();
 }
