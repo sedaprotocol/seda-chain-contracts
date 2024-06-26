@@ -146,44 +146,84 @@ impl<'a> DataRequestsMap<'_> {
     /// Swaps the last req with the req to remove.
     /// Then pops the last req.
     pub fn swap_remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
-        let req_index = match self.key_to_index.may_load(store, key)? {
-            Some(index) => index,
-            None => return Err(StdError::generic_err("Key does not exist")),
-        };
+        // Load the (index, status) of the req to remove
+        let req_index = self
+            .key_to_index
+            .may_load(store, key)?
+            .ok_or_else(|| StdError::generic_err("Key does not exist"))?;
+        let req_status = self.reqs.load(store, key)?.status;
 
-        let last_index = self.len.load(store)? - 1;
+        // Get the current lengt
+        let total_items = self.len.load(store)?;
+
+        // Shouldn't be reachable
+        if total_items == 0 {
+            unreachable!("No items in the map, so key should not exist");
+        }
+
+        // Handle case when removing the last or only item
+        // means we can just remove the key and return
+        if total_items == 1 || req_index == total_items - 1 {
+            self.index_to_key.remove(store, req_index);
+            self.key_to_index.remove(store, key);
+            self.reqs.remove(store, key);
+            self.status_to_keys.remove(
+                store,
+                &StatusIndexKey {
+                    status: req_status,
+                    index:  req_index,
+                },
+            );
+            self.len.save(store, &(total_items - 1))?;
+            return Ok(());
+        }
+
+        // Swap the last item into the position of the removed item
+        let last_index = total_items - 1;
         let last_key = self.index_to_key.load(store, last_index)?;
-        let StatusValue {
-            req: _,
-            status: last_status,
-        } = self.reqs.load(store, &last_key)?;
+        let last_status = self.reqs.load(store, &last_key)?.status;
 
-        // swap the last item with the item to remove in the index to key
+        // Update mapping for the swapped item
         self.index_to_key.save(store, req_index, &last_key)?;
-        self.status_to_keys.save(
-            store,
-            &StatusIndexKey {
-                status: last_status.clone(),
-                index:  req_index,
-            },
-            &last_key,
-        )?;
-        // update the key to index for the last key
         self.key_to_index.save(store, &last_key, &req_index)?;
-        // remove the last index
-        self.index_to_key.remove(store, last_index);
-        self.status_to_keys.remove(
-            store,
-            &StatusIndexKey {
-                status: last_status,
-                index:  last_index,
-            },
-        );
-        // remove the key asked for removal
-        self.reqs.remove(store, key);
-        self.key_to_index.remove(store, key);
 
-        // Decrement the length of items by 1
+        // Update status_to_keys mapping
+        // in a block to make reading the code easier
+        {
+            // Remove the entry for the last element from the status_to_keys map.
+            // This is necessary because the last element will either be moved to a new index.
+            self.status_to_keys.remove(
+                store,
+                &StatusIndexKey {
+                    status: last_status.clone(),
+                    index:  last_index,
+                },
+            );
+            // Remove the entry for the element that is being removed from the status_to_keys map.
+            self.status_to_keys.remove(
+                store,
+                &StatusIndexKey {
+                    status: req_status,
+                    index:  req_index,
+                },
+            );
+            // Add a new entry for the element that was previously last in the status_to_keys map at its new index.
+            self.status_to_keys.save(
+                store,
+                &StatusIndexKey {
+                    status: last_status,
+                    index:  req_index,
+                },
+                &last_key,
+            )?;
+        }
+
+        // Remove original entries for the removed item
+        self.index_to_key.remove(store, last_index);
+        self.key_to_index.remove(store, key);
+        self.reqs.remove(store, key);
+
+        // Update length
         self.len.save(store, &last_index)?;
         Ok(())
     }

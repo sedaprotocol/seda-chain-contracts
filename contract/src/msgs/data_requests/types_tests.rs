@@ -308,3 +308,22 @@ fn get_requests_by_status_pagination() {
     assert!(five_nine.contains(&reqs[8]));
     assert!(five_nine.contains(&reqs[9]));
 }
+
+#[test]
+#[should_panic(expected = "Key does not exist")]
+fn remove_from_empty() {
+    let mut test_info = TestInfo::init();
+    test_info.swap_remove(&1.to_string().hash());
+}
+
+#[test]
+fn remove_only_item() {
+    let mut test_info = TestInfo::init();
+    let (key, req) = create_test_dr(1);
+    test_info.insert(&key, req.clone());
+    test_info.swap_remove(&key);
+    test_info.assert_len(0);
+    test_info.assert_index_to_key(0, None);
+    test_info.assert_key_to_index(&key, None);
+    test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), None);
+}

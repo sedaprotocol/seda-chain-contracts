@@ -8,7 +8,6 @@ pub mod state;
 pub mod sudo;
 pub mod types;
 
-#[cfg(test)]
 #[path = ""]
 #[cfg(test)]
 mod test {

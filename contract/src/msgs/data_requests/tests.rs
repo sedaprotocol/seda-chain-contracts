@@ -530,6 +530,12 @@ fn post_data_result_with_more_drs_in_the_pool() {
         exit_code: 0,
     };
 
+    assert_eq!(
+        2,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
+            .len()
+    );
     // Commit 2 drs
     test_info
         .commit_result(&alice, &dr_id1, alice_reveal.try_hash().unwrap())
@@ -537,27 +543,49 @@ fn post_data_result_with_more_drs_in_the_pool() {
     test_info
         .commit_result(&alice, &dr_id2, alice_reveal.try_hash().unwrap())
         .unwrap();
+    assert_eq!(
+        0,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
+            .len()
+    );
+    assert_eq!(
+        2,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
+            .len()
+    );
 
+    // reveal first dr
     test_info.reveal_result(&alice, &dr_id1, alice_reveal.clone()).unwrap();
+    assert_eq!(
+        1,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
+            .len()
+    );
 
     // Check drs to be tallied
     let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-    assert_eq!(dr_to_be_tallied.len(), 1);
+    assert_eq!(1, dr_to_be_tallied.len());
+    assert_eq!(dr_to_be_tallied[0].id, dr_id1);
 
     // Post only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
     let dr = dr_to_be_tallied[0].clone();
     let result1 = test_helpers::construct_result(dr.clone(), alice_reveal.clone(), 0);
     test_info.post_data_result(dr.id, result1, 0).unwrap();
-
-    // TODO: The following is failing
-    let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-    assert_eq!(dr_to_be_tallied.len(), 0);
+    assert_eq!(
+        0,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
+            .len()
+    );
 
     // Reveal the other dr
     test_info.reveal_result(&alice, &dr_id2, alice_reveal.clone()).unwrap();
     let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-    assert_eq!(dr_to_be_tallied.len(), 1);
+    assert_eq!(1, dr_to_be_tallied.len());
 
     // Post last dr result
     let dr = dr_to_be_tallied[0].clone();
@@ -565,6 +593,10 @@ fn post_data_result_with_more_drs_in_the_pool() {
     test_info.post_data_result(dr.id, result1, 0).unwrap();
 
     // Check dr to be tallied is empty
-    let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-    assert_eq!(dr_to_be_tallied.len(), 0);
+    assert_eq!(
+        0,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
+            .len()
+    );
 }
