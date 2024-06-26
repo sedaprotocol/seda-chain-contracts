@@ -1,5 +1,5 @@
 use super::*;
-use crate::state::{inc_get_seq, CHAIN_ID};
+use crate::state::CHAIN_ID;
 
 impl ExecuteHandler for execute::commit_result::Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
@@ -28,7 +28,6 @@ impl ExecuteHandler for execute::commit_result::Execute {
             self.commitment.as_bytes(),
             chain_id.as_bytes(),
             env.contract.address.as_str().as_bytes(),
-            &inc_get_seq(deps.storage, &public_key)?.to_be_bytes(),
         ]);
 
         // verify the proof

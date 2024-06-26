@@ -132,7 +132,6 @@ impl TestInfo {
 
     #[track_caller]
     pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
-        let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
         let commitment = commitment.to_hex();
         let msg_hash = hash([
@@ -142,7 +141,6 @@ impl TestInfo {
             commitment.as_bytes(),
             self.chain_id(),
             self.contract_addr_bytes(),
-            &seq.to_be_bytes(),
         ]);
 
         let msg = execute::commit_result::Execute {
@@ -163,7 +161,6 @@ impl TestInfo {
         dr_id: &str,
         commitment: Hash,
     ) -> Result<(), ContractError> {
-        let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
         let commitment = commitment.to_hex();
         let msg_hash = hash([
@@ -173,7 +170,6 @@ impl TestInfo {
             commitment.as_bytes(),
             self.chain_id(),
             self.contract_addr_bytes(),
-            &seq.to_be_bytes(),
         ]);
 
         let msg = execute::commit_result::Execute {
@@ -194,7 +190,6 @@ impl TestInfo {
         dr_id: &str,
         reveal_body: RevealBody,
     ) -> Result<(), ContractError> {
-        let seq = self.get_account_sequence(sender.pub_key());
         let dr = self.get_dr(dr_id).unwrap();
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
@@ -203,7 +198,6 @@ impl TestInfo {
             &reveal_body.try_hash()?,
             self.chain_id(),
             self.contract_addr_bytes(),
-            &seq.to_be_bytes(),
         ]);
 
         let msg = execute::reveal_result::Execute {
