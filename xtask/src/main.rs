@@ -59,6 +59,7 @@ fn wasm(sh: &Shell) -> Result<()> {
         "cargo build -p seda-contract --release --lib --target wasm32-unknown-unknown --locked"
     )
     .env("RUSTFLAGS", "-C link-arg=-s")
+    .env("GIT_REVISION", get_git_version()?)
     .run()?;
     Ok(())
 }
@@ -160,4 +161,17 @@ fn tally_data_req_fixture(_sh: &Shell) -> Result<()> {
     )?;
 
     Ok(())
+}
+
+fn get_git_version() -> Result<String> {
+    let git_version = Command::new("git")
+        .args(["describe", "--always", "--dirty=-modified", "--tags"])
+        .output()
+        .context("Invoking git describe")?;
+    if !git_version.status.success() {
+        return Ok("unknown".to_string());
+    }
+
+    let version = String::from_utf8(git_version.stdout)?;
+    Ok(version)
 }

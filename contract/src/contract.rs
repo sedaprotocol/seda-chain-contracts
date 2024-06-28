@@ -21,6 +21,7 @@ use crate::{
 // version info for migration info
 const CONTRACT_NAME: &str = "staking";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const GIT_REVISION: &str = env!("GIT_REVISION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -42,7 +43,9 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &init_config)?;
     crate::msgs::data_requests::state::init_data_requests(deps.storage)?;
 
-    Ok(Response::new().add_attribute("method", "instantiate"))
+    Ok(Response::new()
+        .add_attribute("method", "instantiate")
+        .add_attribute("git_revision", GIT_REVISION))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
