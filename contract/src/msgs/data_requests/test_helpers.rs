@@ -223,18 +223,11 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn post_data_results(
-        &mut self,
-        dr_id: Vec<String>,
-        result: Vec<DataResult>,
-        exit_code: Vec<u8>,
-    ) -> Result<(), ContractError> {
+    pub fn post_data_results(&mut self, results: Vec<(String, DataResult, u8)>) -> Result<(), ContractError> {
         let msg = sudo::post_results::Sudo {
-            results: dr_id
+            results: results
                 .into_iter()
-                .zip(result)
-                .zip(exit_code)
-                .map(|((dr_id, result), exit_code)| sudo::PostResult {
+                .map(|(dr_id, result, exit_code)| sudo::PostResult {
                     dr_id,
                     result,
                     exit_code,

@@ -458,7 +458,7 @@ fn post_data_results() {
     let dr2 = test_info.get_data_request(&dr_id2);
     let result2 = test_helpers::construct_result(dr2, alice_reveal2, 0);
     test_info
-        .post_data_results(vec![dr_id1.clone(), dr_id2.clone()], vec![result1, result2], vec![0, 0])
+        .post_data_results(vec![(dr_id1.clone(), result1, 0), (dr_id2.clone(), result2, 0)])
         .unwrap();
 
     // check we can get the results
