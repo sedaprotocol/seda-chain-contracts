@@ -389,7 +389,6 @@ fn post_data_result() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    // post a data request
     let alice = test_info.new_executor("alice", Some(2));
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
@@ -409,7 +408,62 @@ fn post_data_result() {
     // owner posts a data result
     let dr = test_info.get_data_request(&dr_id);
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
-    test_info.post_data_result(dr_id, result, 0).unwrap();
+    test_info.post_data_result(dr_id.clone(), result, 0).unwrap();
+
+    // check we can get the results
+    let _res1 = test_info.get_data_result(&dr_id);
+}
+
+#[test]
+fn post_data_results() {
+    let mut test_info = TestInfo::init();
+
+    // post data request 1
+    let alice = test_info.new_executor("alice", Some(2));
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id1 = test_info.post_data_request(&alice, dr1, vec![], vec![], 1).unwrap();
+
+    // alice commits data result 1
+    let alice_reveal1 = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().into(),
+        gas_used:  0u128.into(),
+        exit_code: 0,
+    };
+    test_info
+        .commit_result(&alice, &dr_id1, alice_reveal1.try_hash().unwrap())
+        .unwrap();
+    test_info.reveal_result(&alice, &dr_id1, alice_reveal1.clone()).unwrap();
+
+    // post data request 2
+    let alice = test_info.new_executor("alice", Some(2));
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
+    let dr_id2 = test_info.post_data_request(&alice, dr2, vec![], vec![], 2).unwrap();
+
+    // alice commits data result 2
+    let alice_reveal2 = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().into(),
+        gas_used:  0u128.into(),
+        exit_code: 0,
+    };
+    test_info
+        .commit_result(&alice, &dr_id2, alice_reveal2.try_hash().unwrap())
+        .unwrap();
+    test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
+
+    // owner posts data results
+    let dr1 = test_info.get_data_request(&dr_id1);
+    let result1 = test_helpers::construct_result(dr1, alice_reveal1, 0);
+    let dr2 = test_info.get_data_request(&dr_id2);
+    let result2 = test_helpers::construct_result(dr2, alice_reveal2, 0);
+    test_info
+        .post_data_results(vec![dr_id1.clone(), dr_id2.clone()], vec![result1, result2], vec![0, 0])
+        .unwrap();
+
+    // check we can get the results
+    let _res1 = test_info.get_data_result(&dr_id1);
+    let _res2 = test_info.get_data_result(&dr_id2);
 }
 
 #[test]

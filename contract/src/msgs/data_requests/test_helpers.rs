@@ -213,7 +213,7 @@ impl TestInfo {
 
     #[track_caller]
     pub fn post_data_result(&mut self, dr_id: String, result: DataResult, exit_code: u8) -> Result<(), ContractError> {
-        let msg = sudo::post_result::Sudo {
+        let msg = sudo::PostResult {
             dr_id,
             result,
             exit_code,
@@ -223,7 +223,30 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_request(&self, dr_id: &String) -> DataRequest {
+    pub fn post_data_results(
+        &mut self,
+        dr_id: Vec<String>,
+        result: Vec<DataResult>,
+        exit_code: Vec<u8>,
+    ) -> Result<(), ContractError> {
+        let msg = sudo::post_results::Sudo {
+            results: dr_id
+                .into_iter()
+                .zip(result)
+                .zip(exit_code)
+                .map(|((dr_id, result), exit_code)| sudo::PostResult {
+                    dr_id,
+                    result,
+                    exit_code,
+                })
+                .collect(),
+        }
+        .into();
+        self.sudo(&msg)
+    }
+
+    #[track_caller]
+    pub fn get_data_request(&self, dr_id: &str) -> DataRequest {
         self.query(query::QueryMsg::GetDataRequest {
             dr_id: dr_id.to_string(),
         })
@@ -231,8 +254,11 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_result(&self, dr_id: Hash) -> DataResult {
-        dbg!(self.query(query::QueryMsg::GetDataResult { dr_id: dr_id.to_hex() })).unwrap()
+    pub fn get_data_result(&self, dr_id: &str) -> DataResult {
+        dbg!(self.query(query::QueryMsg::GetDataResult {
+            dr_id: dr_id.to_string(),
+        }))
+        .unwrap()
     }
 
     #[track_caller]
