@@ -16,7 +16,7 @@ fn post_result(result: sudo::PostResult, deps: &mut DepsMut, env: &Env) -> Resul
 
     let block_height: u64 = env.block.height;
 
-    let event = Event::new("seda-data-post-result").add_attributes([
+    let event = Event::new("seda-result").add_attributes([
         ("version", CONTRACT_VERSION.to_string()),
         ("dr_id", result.dr_id),
         ("block_height", block_height.to_string()),

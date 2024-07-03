@@ -1,7 +1,7 @@
 use super::*;
 
 impl SudoHandler for sudo::post_results::Sudo {
-    /// Posts a data request to the pool
+    /// Posts data results to the contract
     fn sudo(self, mut deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         let mut response = Response::new();
         for event in self
