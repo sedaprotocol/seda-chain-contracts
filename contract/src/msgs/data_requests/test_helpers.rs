@@ -205,6 +205,8 @@ impl TestInfo {
             dr_id: dr_id.to_string(),
             public_key: sender.pub_key_hex(),
             proof: sender.prove_hex(&msg_hash),
+            stderr: vec![],
+            stdout: vec![],
         }
         .into();
 

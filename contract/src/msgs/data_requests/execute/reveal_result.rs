@@ -54,6 +54,8 @@ impl ExecuteHandler for execute::reveal_result::Execute {
                 ("dr_id", self.dr_id.clone()),
                 ("executor", info.sender.into_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
+                ("stdout", to_json_string(&self.stdout)?),
+                ("stderr", to_json_string(&self.stderr)?),
             ]),
         );
 
