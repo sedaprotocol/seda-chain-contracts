@@ -654,3 +654,29 @@ fn post_data_result_with_more_drs_in_the_pool() {
             .len()
     );
 }
+
+#[test]
+fn get_data_requests_by_status_with_more_drs_in_pool() {
+    let mut test_info = TestInfo::init();
+
+    let alice = test_info.new_executor("alice", Some(2));
+    let alice_reveal = RevealBody {
+        salt:      alice.salt(),
+        reveal:    "10".hash().into(),
+        gas_used:  0u128.into(),
+        exit_code: 0,
+    };
+
+    for i in 1..25 {
+        let dr = test_helpers::calculate_dr_id_and_args(i, 1);
+        let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+        if i < 15 {
+            test_info.commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+        }
+
+    }
+
+    let comitting = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    assert_eq!(comitting.len(), 10);
+}
