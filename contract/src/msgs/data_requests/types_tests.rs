@@ -24,6 +24,14 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
+    fn assert_status_len(&self, expected: u32, status: &DataRequestStatus) {
+        assert_eq!(
+            self.map.get_status_len_item(status).load(&self.store).unwrap(),
+            expected
+        );
+    }
+
+    #[track_caller]
     fn assert_index_to_key(&self, index: u32, key: Option<Hash>) {
         assert_eq!(self.map.index_to_key.may_load(&self.store, index).unwrap(), key);
     }
@@ -94,6 +102,7 @@ fn enum_map_insert() {
     let (key, val) = create_test_dr(1);
     test_info.insert(&key, val);
     test_info.assert_len(1);
+    test_info.assert_status_len(1, &DataRequestStatus::Committing);
     test_info.assert_index_to_key(0, Some(key));
     test_info.assert_key_to_index(&key, Some(0));
     test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), Some(key));
@@ -133,13 +142,15 @@ fn enum_map_update() {
 
     test_info.insert(&key1, dr1.clone());
     test_info.assert_len(1);
+    test_info.assert_status_len(1, &DataRequestStatus::Committing);
     assert_eq!(test_info.get_by_index(0), Some(dr1));
-    test_info.assert_status_index_to_key(dbg!(StatusIndexKey::new(0, None)), Some(key1));
+    test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), Some(key1));
 
     test_info.update(&key1, dr2.clone(), None);
     test_info.assert_len(1);
+    test_info.assert_status_len(1, &DataRequestStatus::Committing);
     assert_eq!(test_info.get_by_index(0), Some(dr2));
-    test_info.assert_status_index_to_key(dbg!(StatusIndexKey::new(0, None)), Some(key1));
+    test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), Some(key1));
 }
 
 #[test]
@@ -163,6 +174,7 @@ fn enum_map_remove_first() {
 
     test_info.swap_remove(&key1);
     test_info.assert_len(2);
+    test_info.assert_status_len(2, &DataRequestStatus::Committing);
     test_info.assert_index_to_key(0, Some(key3));
     test_info.assert_key_to_index(&key3, Some(0));
     test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), Some(key3));
@@ -188,9 +200,11 @@ fn enum_map_remove_last() {
     test_info.insert(&key2, req2.clone()); // 1
     test_info.insert(&key3, req3.clone()); // 2
     test_info.assert_len(3);
+    test_info.assert_status_len(3, &DataRequestStatus::Committing);
 
     test_info.swap_remove(&key3);
     test_info.assert_len(2);
+    test_info.assert_status_len(2, &DataRequestStatus::Committing);
     test_info.assert_index_to_key(2, None);
     test_info.assert_key_to_index(&key3, None);
     test_info.assert_status_index_to_key(StatusIndexKey::new(2, None), None);
@@ -226,9 +240,11 @@ fn enum_map_remove() {
     test_info.insert(&key3, req3.clone()); // 2
     test_info.insert(&key4, req4.clone()); // 3
     test_info.assert_len(4);
+    test_info.assert_status_len(4, &DataRequestStatus::Committing);
 
     test_info.swap_remove(&key2);
     test_info.assert_len(3);
+    test_info.assert_status_len(3, &DataRequestStatus::Committing);
     test_info.assert_index_to_key(1, Some(key4));
     test_info.assert_key_to_index(&key4, Some(1));
 
@@ -323,6 +339,7 @@ fn remove_only_item() {
     test_info.insert(&key, req.clone());
     test_info.swap_remove(&key);
     test_info.assert_len(0);
+    test_info.assert_status_len(0, &DataRequestStatus::Committing);
     test_info.assert_index_to_key(0, None);
     test_info.assert_key_to_index(&key, None);
     test_info.assert_status_index_to_key(StatusIndexKey::new(0, None), None);

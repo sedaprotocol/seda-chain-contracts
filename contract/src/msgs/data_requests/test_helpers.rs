@@ -250,9 +250,9 @@ impl TestInfo {
 
     #[track_caller]
     pub fn get_data_result(&self, dr_id: &str) -> DataResult {
-        dbg!(self.query(query::QueryMsg::GetDataResult {
+        self.query(query::QueryMsg::GetDataResult {
             dr_id: dr_id.to_string(),
-        }))
+        })
         .unwrap()
     }
 

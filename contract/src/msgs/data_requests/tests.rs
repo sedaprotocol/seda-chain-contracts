@@ -667,16 +667,37 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
         exit_code: 0,
     };
 
-    for i in 1..25 {
+    for i in 0..25 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
         let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
         if i < 15 {
-            test_info.commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+            test_info
+                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+                .unwrap();
         }
 
+        if i < 3 {
+            test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+        }
     }
 
-    let comitting = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(comitting.len(), 10);
+    assert_eq!(
+        10,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 10)
+            .len()
+    );
+    assert_eq!(
+        12,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 15)
+            .len()
+    );
+    assert_eq!(
+        3,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 15)
+            .len()
+    );
 }
