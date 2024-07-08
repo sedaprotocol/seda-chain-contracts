@@ -703,7 +703,7 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
 }
 
 #[test]
-fn get_data_requests_by_status_with_more_drs_in_pool_aaaaaaa() {
+fn get_data_requests_by_status_with_many_more_drs_in_pool() {
     let mut test_info = TestInfo::init();
 
     let alice = test_info.new_executor("alice", Some(2));
@@ -725,16 +725,36 @@ fn get_data_requests_by_status_with_more_drs_in_pool_aaaaaaa() {
                 .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
                 .unwrap();
 
-            test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
+            // test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
 
             let dr = test_helpers::calculate_dr_id_and_args(i + 20000, 1);
             test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
         }
     }
+    assert_eq!(
+        100,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .len()
+    );
+    assert_eq!(
+        50,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .len()
+    );
+    assert_eq!(
+        0,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .len()
+    );
 
-    let requests = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100);
-
-    for (i, request) in requests.iter().enumerate() {
+    for (i, request) in test_info
+        .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+        .into_iter()
+        .enumerate()
+    {
         if i % 4 == 0 {
             test_info
                 .reveal_result(&alice, &request.id, alice_reveal.clone())
@@ -745,23 +765,52 @@ fn get_data_requests_by_status_with_more_drs_in_pool_aaaaaaa() {
         }
     }
 
-    let requests = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
+    assert_eq!(
+        113,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .len()
+    );
+    assert_eq!(
+        37,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .len()
+    );
+    assert_eq!(
+        13,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .len()
+    );
 
-    for (i, request) in requests.iter().enumerate() {
+    for (i, request) in test_info
+        .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+        .into_iter()
+        .enumerate()
+    {
         if i % 8 == 0 {
             let dr_info = test_info.get_data_request(&request.id);
             let result = test_helpers::construct_result(dr_info.clone(), alice_reveal.clone(), 0);
             test_info.post_data_result(request.id.to_string(), result, 0).unwrap();
-
-            test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
         }
     }
-
-    let a = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
-    let b = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100);
-    let c = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-
-    dbg!(a.len());
-    dbg!(b.len());
-    dbg!(c.len());
+    assert_eq!(
+        113,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .len()
+    );
+    assert_eq!(
+        37,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .len()
+    );
+    assert_eq!(
+        11,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .len()
+    );
 }

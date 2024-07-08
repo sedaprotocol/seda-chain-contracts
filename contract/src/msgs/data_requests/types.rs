@@ -1,102 +1,184 @@
-use cosmwasm_schema::cw_serde;
-use cw_storage_plus::{Bound, Key, PrimaryKey};
+use cosmwasm_std::Storage;
+use cw_storage_plus::Bound;
 
 use super::*;
 
-#[cw_serde]
-pub struct StatusIndexKey {
-    pub index:  u32,
-    pub status: DataRequestStatus,
+// Map DrID -> DataRequest
+// EnumrableSet of DrID's per status.
+
+pub struct EnumerableSet<'a> {
+    pub len:          Item<'a, u32>,
+    pub key_to_index: Map<'a, &'a Hash, u32>,
+    pub index_to_key: Map<'a, u32, Hash>,
 }
 
-impl StatusIndexKey {
-    pub fn new(index: u32, status: Option<DataRequestStatus>) -> Self {
-        Self {
-            index,
-            status: status.unwrap_or(DataRequestStatus::Committing),
+#[macro_export]
+macro_rules! enumerable_set {
+    ($namespace:expr) => {
+        EnumerableSet {
+            len:          Item::new(concat!($namespace, "_len")),
+            key_to_index: Map::new(concat!($namespace, "_key_to_index")),
+            index_to_key: Map::new(concat!($namespace, "_index_to_key")),
         }
+    };
+}
+
+impl EnumerableSet<'_> {
+    pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
+        self.len.save(store, &0)?;
+        Ok(())
     }
-}
 
-// Implement PrimaryKey for StatusIndexKey
-impl<'a> PrimaryKey<'a> for &'a StatusIndexKey {
-    type Prefix = DataRequestStatus;
-    type SubPrefix = ();
-    type Suffix = u32;
-    type SuperSuffix = ();
-
-    fn key(&self) -> Vec<Key> {
-        let mut keys = self.status.key();
-        keys.push(Key::Val32(self.index.to_be_bytes()));
-        keys
+    /// Returns true if the key exists in the set in O(1) time.
+    fn has(&self, store: &dyn Storage, key: &Hash) -> bool {
+        self.key_to_index.has(store, key)
     }
-}
 
-#[cw_serde]
-pub struct StatusValue {
-    pub req:    DataRequest,
-    pub status: DataRequestStatus,
-}
+    /// Returns the length of the set in O(1) time.
+    pub fn len(&self, store: &dyn Storage) -> StdResult<u32> {
+        self.len.load(store)
+    }
 
-impl StatusValue {
-    pub fn new(req: DataRequest) -> Self {
-        Self {
-            req,
-            status: DataRequestStatus::Committing,
+    // /// Returns the key at the given index in O(1) time.
+    // fn at(&self, store: &dyn Storage, index: u32) -> StdResult<Option<Hash>> {
+    //     self.index_to_key.may_load(store, index)
+    // }
+
+    /// Adds a key to the set in O(1) time.
+    fn add(&self, store: &mut dyn Storage, key: &Hash) -> StdResult<()> {
+        if self.has(store, key) {
+            return Err(StdError::generic_err("Key already exists"));
         }
+
+        let index = self.len(store)?;
+        self.key_to_index.save(store, key, &index)?;
+        self.index_to_key.save(store, index, key)?;
+        self.len.save(store, &(index + 1))?;
+        Ok(())
     }
 
-    pub fn with_status(req: DataRequest, status: DataRequestStatus) -> Self {
-        Self { req, status }
+    /// Removes a key from the set in O(1) time.
+    fn remove(&self, store: &mut dyn Storage, key: &Hash) -> StdResult<()> {
+        let index = self
+            .key_to_index
+            .may_load(store, key)?
+            .ok_or_else(|| StdError::generic_err("Key does not exist"))?;
+        let total_items = self.len(store)?;
+
+        // Shouldn't be reachable
+        if total_items == 0 {
+            unreachable!("No items in the set, so key should not exist");
+        }
+
+        // Handle case when removing the last or only item
+        // means we can just remove the key and return
+        if total_items == 1 || index == total_items - 1 {
+            self.index_to_key.remove(store, index);
+            self.key_to_index.remove(store, key);
+            self.len.save(store, &(total_items - 1))?;
+            return Ok(());
+        }
+
+        // Swap the last item into the position of the removed item
+        let last_index = total_items - 1;
+        let last_key = self.index_to_key.load(store, last_index)?;
+
+        // Update mapping for the swapped item
+        self.index_to_key.save(store, index, &last_key)?;
+        self.key_to_index.save(store, &last_key, &index)?;
+
+        // Remove original entries for the removed item
+        self.index_to_key.remove(store, last_index);
+        self.key_to_index.remove(store, key);
+
+        // Update length
+        self.len.save(store, &last_index)?;
+        Ok(())
     }
 }
 
 pub struct DataRequestsMap<'a> {
-    pub len:            Item<'a, u32>,
-    pub committing_len: Item<'a, u32>,
-    pub revealing_len:  Item<'a, u32>,
-    pub tallying_len:   Item<'a, u32>,
-    pub reqs:           Map<'a, &'a Hash, StatusValue>,
-    pub index_to_key:   Map<'a, u32, Hash>,
-    pub key_to_index:   Map<'a, &'a Hash, u32>,
-    pub status_to_keys: Map<'a, &'a StatusIndexKey, Hash>,
+    pub reqs:       Map<'a, &'a Hash, DataRequest>,
+    pub committing: EnumerableSet<'a>,
+    pub revealing:  EnumerableSet<'a>,
+    pub tallying:   EnumerableSet<'a>,
 }
 
 #[macro_export]
 macro_rules! enumerable_status_map {
     ($namespace:literal) => {
         DataRequestsMap {
-            len:            Item::new(concat!($namespace, "_len")),
-            committing_len: Item::new(concat!($namespace, "_committing_len")),
-            revealing_len:  Item::new(concat!($namespace, "_revealing_len")),
-            tallying_len:   Item::new(concat!($namespace, "_tallying_len")),
-            reqs:           Map::new(concat!($namespace, "_reqs")),
-            index_to_key:   Map::new(concat!($namespace, "_index_to_key")),
-            key_to_index:   Map::new(concat!($namespace, "_key_to_index")),
-            status_to_keys: Map::new(concat!($namespace, "_status_to_keys")),
+            reqs:       Map::new(concat!($namespace, "_reqs")),
+            committing: $crate::enumerable_set!(concat!($namespace, "_committing")),
+            revealing:  $crate::enumerable_set!(concat!($namespace, "_revealing")),
+            tallying:   $crate::enumerable_set!(concat!($namespace, "_tallying")),
         }
     };
 }
 
 impl DataRequestsMap<'_> {
     pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
-        self.len.save(store, &0)?;
-        self.committing_len.save(store, &0)?;
-        self.revealing_len.save(store, &0)?;
-        self.tallying_len.save(store, &0)?;
+        self.committing.initialize(store)?;
+        self.revealing.initialize(store)?;
+        self.tallying.initialize(store)?;
         Ok(())
     }
 
-    pub fn get_status_len_item(&self, status: &DataRequestStatus) -> &Item<u32> {
-        match status {
-            DataRequestStatus::Committing => &self.committing_len,
-            DataRequestStatus::Revealing => &self.revealing_len,
-            DataRequestStatus::Tallying => &self.tallying_len,
-        }
+    pub fn has(&self, store: &dyn Storage, key: &Hash) -> bool {
+        self.reqs.has(store, key)
     }
 
-    pub fn has(&self, store: &dyn Storage, key: &Hash) -> bool {
-        self.key_to_index.has(store, key)
+    fn add_to_status(&self, store: &mut dyn Storage, key: &Hash, status: &DataRequestStatus) -> StdResult<()> {
+        match status {
+            DataRequestStatus::Committing => self.committing.add(store, key)?,
+            DataRequestStatus::Revealing => self.revealing.add(store, key)?,
+            DataRequestStatus::Tallying => self.tallying.add(store, key)?,
+        }
+
+        Ok(())
+    }
+
+    fn remove_from_status(&self, store: &mut dyn Storage, key: &Hash, status: &DataRequestStatus) -> StdResult<()> {
+        match status {
+            DataRequestStatus::Committing => self.committing.remove(store, key)?,
+            DataRequestStatus::Revealing => self.revealing.remove(store, key)?,
+            DataRequestStatus::Tallying => self.tallying.remove(store, key)?,
+        }
+
+        Ok(())
+    }
+
+    pub fn insert(
+        &self,
+        store: &mut dyn Storage,
+        key: &Hash,
+        req: DataRequest,
+        status: &DataRequestStatus,
+    ) -> StdResult<()> {
+        if self.has(store, key) {
+            return Err(StdError::generic_err("Key already exists"));
+        }
+
+        self.reqs.save(store, key, &req)?;
+        self.add_to_status(store, key, status)?;
+
+        Ok(())
+    }
+
+    fn find_status(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequestStatus> {
+        if self.committing.has(store, key) {
+            return Ok(DataRequestStatus::Committing);
+        }
+
+        if self.revealing.has(store, key) {
+            return Ok(DataRequestStatus::Revealing);
+        }
+
+        if self.tallying.has(store, key) {
+            return Ok(DataRequestStatus::Tallying);
+        }
+
+        Err(StdError::generic_err("Key does not exist"))
     }
 
     pub fn update(
@@ -106,179 +188,80 @@ impl DataRequestsMap<'_> {
         dr: DataRequest,
         status: Option<DataRequestStatus>,
     ) -> StdResult<()> {
-        let Some(old) = self.reqs.may_load(store, key)? else {
+        // Check if the key exists
+        if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
-        };
+        }
 
-        let status = status.unwrap_or(old.status.clone());
+        // If we need to update the status, we need to remove the key from the current status
+        if let Some(status) = status {
+            // Grab the current status.
+            let current_status = self.find_status(store, key)?;
+            // world view = we should only update from committing -> revealing -> tallying.
+            // Either the concept is fundamentally flawed or the implementation is wrong.
+            match current_status {
+                DataRequestStatus::Committing => {
+                    assert_eq!(
+                        status,
+                        DataRequestStatus::Revealing,
+                        "Cannot update a request status from committing to anything other than revealing"
+                    )
+                }
+                DataRequestStatus::Revealing => {
+                    assert_eq!(
+                        status,
+                        DataRequestStatus::Tallying,
+                        "Cannot update a request status from revealing to anything other than tallying"
+                    );
+                }
+                DataRequestStatus::Tallying => {
+                    assert_ne!(
+                        current_status,
+                        DataRequestStatus::Tallying,
+                        "Cannot update a request's status that is tallying"
+                    );
+                }
+            }
 
-        self.swap_remove(store, key)?;
-        self.insert_with_status(store, key, dr, status)?;
+            // remove from current status, then add to new one.
+            self.remove_from_status(store, key, &current_status)?;
+            self.add_to_status(store, key, &status)?;
+        }
+
+        // always update the request
+        self.reqs.save(store, key, &dr)?;
         Ok(())
     }
 
-    pub fn len(&self, store: &dyn Storage) -> Result<u32, StdError> {
-        self.len.load(store)
+    pub fn may_get(&self, store: &dyn Storage, key: &Hash) -> StdResult<Option<DataRequest>> {
+        self.reqs.may_load(store, key)
     }
 
-    pub fn may_get_by_key(&self, store: &dyn Storage, key: &Hash) -> StdResult<Option<DataRequest>> {
-        self.reqs.may_load(store, key).map(|opt| opt.map(|req| req.req))
-    }
-
-    pub fn get_by_key(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequest> {
-        self.reqs.load(store, key).map(|req| req.req)
-    }
-
-    pub fn may_get_by_index(&self, store: &dyn Storage, index: u32) -> StdResult<Option<DataRequest>> {
-        if let Some(key) = self.index_to_key.may_load(store, index)? {
-            self.may_get_by_key(store, &key)
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub fn insert(&self, store: &mut dyn Storage, key: &Hash, req: DataRequest) -> StdResult<()> {
-        if self.key_to_index.may_load(store, key)?.is_some() {
-            return Err(StdError::generic_err("Key already exists"));
-        }
-
-        let index = self.len.load(store)?;
-        let status_len_item = self.get_status_len_item(&DataRequestStatus::Committing);
-        let status_index = status_len_item.load(store)?;
-
-        // save the request
-        self.reqs.save(store, key, &StatusValue::new(req))?;
-        self.index_to_key.save(store, index, key)?;
-        self.key_to_index.save(store, key, &index)?;
-        self.status_to_keys
-            .save(store, &StatusIndexKey::new(status_index, None), key)?;
-
-        // increment the indexes
-        self.len.save(store, &(index + 1))?;
-        status_len_item.save(store, &(status_index + 1))?;
-        Ok(())
-    }
-
-    // only to be internally used by update
-    fn insert_with_status(
-        &self,
-        store: &mut dyn Storage,
-        key: &Hash,
-        req: DataRequest,
-        status: DataRequestStatus,
-    ) -> StdResult<()> {
-        if self.key_to_index.may_load(store, key)?.is_some() {
-            return Err(StdError::generic_err("Key already exists"));
-        }
-
-        let index = self.len.load(store)?;
-        let status_len_item = self.get_status_len_item(&status);
-        let status_index = status_len_item.load(store)?;
-
-        // Correctly save the new status key
-        self.reqs
-            .save(store, key, &StatusValue::with_status(req, status.clone()))?;
-        self.index_to_key.save(store, index, key)?;
-        self.key_to_index.save(store, key, &index)?;
-        self.status_to_keys
-            .save(store, &StatusIndexKey::new(status_index, Some(status)), key)?;
-
-        // Increment the indexes
-        self.len.save(store, &(index + 1))?;
-        status_len_item.save(store, &(status_index + 1))?;
-        Ok(())
+    pub fn get(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequest> {
+        self.reqs.load(store, key)
     }
 
     /// Removes an req from the map by key.
     /// Swaps the last req with the req to remove.
     /// Then pops the last req.
-    pub fn swap_remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
-        // Load the (index, status) of the req to remove
-        let req_index = self
-            .key_to_index
-            .may_load(store, key)?
-            .ok_or_else(|| StdError::generic_err("Key does not exist"))?;
-        let req_status = self.reqs.load(store, key)?.status;
-
-        // Get the current length
-        let total_items = self.len.load(store)?;
-
-        // Shouldn't be reachable
-        if total_items == 0 {
-            unreachable!("No items in the map, so key should not exist");
+    pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
+        if !self.has(store, key) {
+            return Err(StdError::generic_err("Key does not exist"));
         }
 
-        let status_len_item = self.get_status_len_item(&req_status);
-        let req_status_index = status_len_item.load(store)? - 1;
+        // world view = we only remove a data request that is done tallying.
+        // Either the concept is fundamentally flawed or the implementation is wrong.
+        let current_status = self.find_status(store, key)?;
+        assert_eq!(
+            current_status,
+            DataRequestStatus::Tallying,
+            "Cannot remove a request that is not tallying"
+        );
 
-        // Handle case when removing the last or only item
-        // means we can just remove the key and return
-        if total_items == 1 || req_index == total_items - 1 {
-            self.index_to_key.remove(store, req_index);
-            self.key_to_index.remove(store, key);
-            self.reqs.remove(store, key);
-            self.status_to_keys.remove(
-                store,
-                &StatusIndexKey {
-                    status: req_status,
-                    index:  req_status_index,
-                },
-            );
-            self.len.save(store, &(total_items - 1))?;
-            status_len_item.save(store, &req_status_index)?;
-            return Ok(());
-        }
-
-        // Swap the last item into the position of the removed item
-        let last_index = total_items - 1;
-        let last_key = self.index_to_key.load(store, last_index)?;
-        let last_status = self.reqs.load(store, &last_key)?.status;
-        let last_status_len_item = self.get_status_len_item(&last_status);
-        let last_status_index = last_status_len_item.load(store)? - 1;
-
-        // Update mapping for the swapped item
-        self.index_to_key.save(store, req_index, &last_key)?;
-        self.key_to_index.save(store, &last_key, &req_index)?;
-
-        // Update status_to_keys mapping
-        // in a block to make reading the code easier
-        {
-            // Remove the entry for the last element from the status_to_keys map.
-            // This is necessary because the last element will either be moved to a new index.
-            self.status_to_keys.remove(
-                store,
-                &StatusIndexKey {
-                    status: last_status.clone(),
-                    index:  last_status_index,
-                },
-            );
-            // Remove the entry for the element that is being removed from the status_to_keys map.
-            self.status_to_keys.remove(
-                store,
-                &StatusIndexKey {
-                    status: req_status,
-                    index:  req_status_index,
-                },
-            );
-            // Add a new entry for the element that was previously last in the status_to_keys map at its new index.
-            self.status_to_keys.save(
-                store,
-                &StatusIndexKey {
-                    status: last_status,
-                    index:  req_index,
-                },
-                &last_key,
-            )?;
-        }
-
-        // Remove original entries for the removed item
-        self.index_to_key.remove(store, last_index);
-        self.key_to_index.remove(store, key);
+        // remove the request
         self.reqs.remove(store, key);
-
-        // Update length
-        self.len.save(store, &last_index)?;
-        status_len_item.save(store, &req_status_index)?;
+        // remove from the status
+        self.remove_from_status(store, key, &current_status)?;
 
         Ok(())
     }
@@ -286,21 +269,21 @@ impl DataRequestsMap<'_> {
     pub fn get_requests_by_status(
         &self,
         store: &dyn Storage,
-        status: DataRequestStatus,
+        status: &DataRequestStatus,
         offset: u32,
         limit: u32,
     ) -> StdResult<Vec<DataRequest>> {
-        let start = Bound::inclusive(offset);
-        let end = Bound::exclusive(offset + limit);
-        let requests = self
-            .status_to_keys
-            .prefix(status)
-            .range(store, Some(start), Some(end), Order::Ascending)
-            .map(|key| {
-                let (_, key) = key?;
-                self.reqs.load(store, &key).map(|req| req.req)
-            })
-            .collect::<StdResult<Vec<_>>>()?;
+        let start = Some(Bound::inclusive(offset));
+        let end = Some(Bound::exclusive(offset + limit));
+        let requests = match status {
+            DataRequestStatus::Committing => &self.committing,
+            DataRequestStatus::Revealing => &self.revealing,
+            DataRequestStatus::Tallying => &self.tallying,
+        }
+        .index_to_key
+        .range(store, start, end, Order::Ascending)
+        .flat_map(|result| result.map(|(_, key)| self.reqs.load(store, &key)))
+        .collect::<StdResult<Vec<_>>>()?;
 
         Ok(requests)
     }

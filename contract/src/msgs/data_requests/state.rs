@@ -1,4 +1,4 @@
-use types::DataRequestsMap;
+use types::*;
 
 use super::*;
 use crate::enumerable_status_map;
@@ -15,16 +15,16 @@ pub fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
 }
 
 pub fn may_get_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequest>> {
-    DATA_REQUESTS.may_get_by_key(store, dr_id)
+    DATA_REQUESTS.may_get(store, dr_id)
 }
 
 pub fn load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataRequest> {
-    DATA_REQUESTS.get_by_key(store, dr_id)
+    DATA_REQUESTS.get(store, dr_id)
 }
 
-pub fn insert_request(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> Result<(), ContractError> {
+pub fn post_request(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> Result<(), ContractError> {
     // insert the data request
-    DATA_REQUESTS.insert(store, dr_id, dr)?;
+    DATA_REQUESTS.insert(store, dr_id, dr, &DataRequestStatus::Committing)?;
 
     Ok(())
 }
@@ -42,7 +42,7 @@ pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdResu
 
 pub fn requests_by_status(
     store: &dyn Storage,
-    status: DataRequestStatus,
+    status: &DataRequestStatus,
     offset: u32,
     limit: u32,
 ) -> StdResult<Vec<DataRequest>> {
@@ -64,7 +64,7 @@ pub fn reveal(storage: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdRe
 
 pub fn post_result(store: &mut dyn Storage, dr_id: &Hash, dr: &DataResult) -> StdResult<()> {
     // we have to remove the request from the pool and save it to the results
-    DATA_REQUESTS.swap_remove(store, dr_id)?;
+    DATA_REQUESTS.remove(store, dr_id)?;
     DATA_RESULTS.save(store, dr_id, dr)?;
     // no need to update status as we remove it from the requests pool
 

@@ -26,7 +26,7 @@ impl QueryHandler for QueryMsg {
                 to_json_binary(&state::load_result(deps.storage, &Hash::from_hex_str(&dr_id)?)?)?
             }
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
-                to_json_binary(&state::requests_by_status(deps.storage, status, offset, limit)?)?
+                to_json_binary(&state::requests_by_status(deps.storage, &status, offset, limit)?)?
             }
         };
 
