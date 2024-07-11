@@ -14,5 +14,4 @@ mod test {
     use super::*;
     pub mod test_helpers;
     mod tests;
-    mod types_tests;
 }
