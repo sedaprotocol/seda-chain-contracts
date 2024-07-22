@@ -75,6 +75,6 @@ pub fn load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
     DATA_RESULTS.load(store, dr_id)
 }
 
-pub fn may_load_resuslt(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
+pub fn may_load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
     DATA_RESULTS.may_load(store, dr_id)
 }

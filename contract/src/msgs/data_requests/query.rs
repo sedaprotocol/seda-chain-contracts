@@ -12,8 +12,8 @@ impl QueryHandler for QueryMsg {
             }
             QueryMsg::GetDataRequestCommitments { dr_id } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
-                let comittments = dr.map(|dr| dr.commits).unwrap_or_default();
-                to_json_binary(&comittments)?
+                let commitments = dr.map(|dr| dr.commits).unwrap_or_default();
+                to_json_binary(&commitments)?
             }
             QueryMsg::GetDataRequestReveal { dr_id, public_key } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
@@ -25,7 +25,7 @@ impl QueryHandler for QueryMsg {
                 to_json_binary(&reveals)?
             }
             QueryMsg::GetDataResult { dr_id } => {
-                to_json_binary(&state::may_load_resuslt(deps.storage, &Hash::from_hex_str(&dr_id)?)?)?
+                to_json_binary(&state::may_load_result(deps.storage, &Hash::from_hex_str(&dr_id)?)?)?
             }
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
                 to_json_binary(&state::requests_by_status(deps.storage, &status, offset, limit)?)?
