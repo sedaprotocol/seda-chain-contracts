@@ -72,7 +72,7 @@ fn post_data_request() {
     let mut test_info = TestInfo::init();
 
     // data request with id 0x69... does not yet exist
-    let value = test_info.get_dr("69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f");
+    let value = test_info.get_data_request("69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f");
     assert_eq!(None, value);
 
     // post a data request
@@ -87,14 +87,14 @@ fn post_data_request() {
     assert!(res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists));
 
     // should be able to fetch data request with id 0x69...
-    let received_value = test_info.get_dr(&dr_id);
+    let received_value = test_info.get_data_request(&dr_id);
     assert_eq!(Some(test_helpers::construct_dr(dr, vec![], 1)), received_value);
     let await_commits = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, await_commits.len());
     assert!(await_commits.iter().any(|r| r.id == dr_id));
 
     // nonexistent data request does not yet exist
-    let value = test_info.get_dr("00f0f00f0f00f0f0000000f0fff0ff0ff0ffff0fff00000f000ff000000f000f");
+    let value = test_info.get_data_request("00f0f00f0f00f0f0000000f0fff0ff0ff0ffff0fff00000f000ff000000f000f");
     assert_eq!(None, value);
 }
 
@@ -406,7 +406,7 @@ fn post_data_result() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // owner posts a data result
-    let dr = test_info.get_data_request(&dr_id);
+    let dr = test_info.get_data_request(&dr_id).unwrap();
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
     test_info.post_data_result(dr_id.clone(), result, 0).unwrap();
 
@@ -453,9 +453,9 @@ fn post_data_results() {
     test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
 
     // owner posts data results
-    let dr1 = test_info.get_data_request(&dr_id1);
+    let dr1 = test_info.get_data_request(&dr_id1).unwrap();
     let result1 = test_helpers::construct_result(dr1, alice_reveal1, 0);
-    let dr2 = test_info.get_data_request(&dr_id2);
+    let dr2 = test_info.get_data_request(&dr_id2).unwrap();
     let result2 = test_helpers::construct_result(dr2, alice_reveal2, 0);
     test_info
         .post_data_results(vec![(dr_id1.clone(), result1, 0), (dr_id2.clone(), result2, 0)])
@@ -503,7 +503,7 @@ fn cant_post_if_replication_factor_not_met() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // post a data result
-    let dr = test_info.get_data_request(&dr_id);
+    let dr = test_info.get_data_request(&dr_id).unwrap();
     let result = test_helpers::construct_result(dr, alice_reveal, 0);
     test_info.post_data_result(dr_id, result, 0).unwrap();
 }
@@ -790,7 +790,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         .enumerate()
     {
         if i % 8 == 0 {
-            let dr_info = test_info.get_data_request(&request.id);
+            let dr_info = test_info.get_data_request(&request.id).unwrap();
             let result = test_helpers::construct_result(dr_info.clone(), alice_reveal.clone(), 0);
             test_info.post_data_result(request.id.to_string(), result, 0).unwrap();
         }

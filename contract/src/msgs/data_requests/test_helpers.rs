@@ -98,14 +98,6 @@ pub fn construct_result(dr: DataRequest, reveal: RevealBody, exit_code: u8) -> D
 
 impl TestInfo {
     #[track_caller]
-    pub fn get_dr(&self, dr_id: &str) -> Option<DataRequest> {
-        self.query(query::QueryMsg::GetDataRequest {
-            dr_id: dr_id.to_string(),
-        })
-        .unwrap()
-    }
-
-    #[track_caller]
     pub fn post_data_request(
         &mut self,
         sender: &TestExecutor,
@@ -132,7 +124,7 @@ impl TestInfo {
 
     #[track_caller]
     pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
-        let dr = self.get_dr(dr_id).unwrap();
+        let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
@@ -161,7 +153,7 @@ impl TestInfo {
         dr_id: &str,
         commitment: Hash,
     ) -> Result<(), ContractError> {
-        let dr = self.get_dr(dr_id).unwrap();
+        let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
         let msg_hash = hash([
             "commit_data_result".as_bytes(),
@@ -190,7 +182,7 @@ impl TestInfo {
         dr_id: &str,
         reveal_body: RevealBody,
     ) -> Result<(), ContractError> {
-        let dr = self.get_dr(dr_id).unwrap();
+        let dr = self.get_data_request(dr_id).unwrap();
         let msg_hash = hash([
             "reveal_data_result".as_bytes(),
             dr_id.as_bytes(),
@@ -241,7 +233,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_request(&self, dr_id: &str) -> DataRequest {
+    pub fn get_data_request(&self, dr_id: &str) -> Option<DataRequest> {
         self.query(query::QueryMsg::GetDataRequest {
             dr_id: dr_id.to_string(),
         })
@@ -249,7 +241,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_result(&self, dr_id: &str) -> DataResult {
+    pub fn get_data_result(&self, dr_id: &str) -> Option<DataResult> {
         self.query(query::QueryMsg::GetDataResult {
             dr_id: dr_id.to_string(),
         })
@@ -257,7 +249,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_result_commit(&self, dr_id: Hash, public_key: PublicKey) -> Option<Hash> {
+    pub fn get_data_request_commit(&self, dr_id: Hash, public_key: PublicKey) -> Option<Hash> {
         self.query(query::QueryMsg::GetDataRequestCommitment {
             dr_id:      dr_id.to_hex(),
             public_key: public_key.to_hex(),
@@ -266,12 +258,12 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_result_commits(&self, dr_id: Hash) -> HashMap<String, Hash> {
+    pub fn get_data_request_commits(&self, dr_id: Hash) -> HashMap<String, Hash> {
         self.query(query::QueryMsg::GetDataRequestCommitments { dr_id: dr_id.to_hex() })
             .unwrap()
     }
 
-    pub fn get_data_result_reveal(&self, dr_id: Hash, public_key: PublicKey) -> Option<RevealBody> {
+    pub fn get_data_request_reveal(&self, dr_id: Hash, public_key: PublicKey) -> Option<RevealBody> {
         self.query(query::QueryMsg::GetDataRequestReveal {
             dr_id:      dr_id.to_hex(),
             public_key: public_key.to_hex(),
@@ -280,7 +272,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn get_data_result_reveals(&self, dr_id: Hash) -> HashMap<String, RevealBody> {
+    pub fn get_data_request_reveals(&self, dr_id: Hash) -> HashMap<String, RevealBody> {
         self.query(query::QueryMsg::GetDataRequestCommitments { dr_id: dr_id.to_hex() })
             .unwrap()
     }

@@ -14,7 +14,7 @@ pub fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
     DATA_REQUESTS.has(deps.storage, &dr_id) || DATA_RESULTS.has(deps.storage, &dr_id)
 }
 
-pub fn may_get_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequest>> {
+pub fn may_load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequest>> {
     DATA_REQUESTS.may_get(store, dr_id)
 }
 
