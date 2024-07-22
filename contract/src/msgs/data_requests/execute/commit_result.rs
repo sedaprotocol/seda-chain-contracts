@@ -1,3 +1,5 @@
+use staking::state::{CONFIG, STAKERS};
+
 use super::*;
 use crate::state::CHAIN_ID;
 
@@ -20,6 +22,15 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
+
+        // Check if the staker has enough funds staked to commit
+        let staked = STAKERS.load(deps.storage, &public_key)?;
+        let minimum_stake = CONFIG.load(deps.storage)?.minimum_stake_to_register;
+
+        if staked.tokens_staked < minimum_stake {
+            return Err(ContractError::InsufficientFunds(minimum_stake, staked.tokens_staked));
+        }
+
         // compute message hash
         let message_hash = hash([
             "commit_data_result".as_bytes(),

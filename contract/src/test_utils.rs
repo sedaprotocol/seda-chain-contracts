@@ -279,6 +279,11 @@ impl TestExecutor {
         let hash: Hash = hasher.finalize().into();
         hash.to_hex()
     }
+
+    pub fn stake(&mut self, test_info: &mut TestInfo, amount: u128) -> Result<(), ContractError> {
+        test_info.stake(self, None, amount)?;
+        Ok(())
+    }
 }
 
 #[test]
