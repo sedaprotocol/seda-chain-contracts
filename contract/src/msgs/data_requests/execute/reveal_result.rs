@@ -4,7 +4,7 @@ use crate::state::CHAIN_ID;
 impl ExecuteHandler for execute::reveal_result::Execute {
     /// Posts a data result of a data request with an attached result.
     /// This removes the data request from the pool and creates a new entry in the data results.
-    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
         let dr_id = Hash::from_hex_str(&self.dr_id)?;
         let mut dr = state::load_request(deps.storage, &dr_id)?;
@@ -52,7 +52,6 @@ impl ExecuteHandler for execute::reveal_result::Execute {
             Event::new("seda-reveal").add_attributes([
                 ("dr_id", self.dr_id.clone()),
                 ("reveal", to_json_string(&self.reveal_body)?),
-                ("executor", info.sender.into_string()),
                 ("stdout", to_json_string(&self.stdout)?),
                 ("stderr", to_json_string(&self.stderr)?),
                 ("executor", self.public_key.to_string()),
