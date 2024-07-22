@@ -3,7 +3,7 @@ use crate::state::CHAIN_ID;
 
 impl ExecuteHandler for execute::commit_result::Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
-    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the pool (if it exists, otherwise error)
         let dr_id = Hash::from_hex_str(&self.dr_id)?;
         let mut dr = state::load_request(deps.storage, &dr_id)?;
@@ -41,10 +41,10 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([
-                ("version", CONTRACT_VERSION.to_string()),
                 ("dr_id", self.dr_id),
-                ("executor", info.sender.into_string()),
                 ("commitment", self.commitment),
+                ("executor", self.public_key),
+                ("version", CONTRACT_VERSION.to_string()),
             ]),
         ))
     }

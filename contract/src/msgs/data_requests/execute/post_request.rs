@@ -18,18 +18,19 @@ impl ExecuteHandler for execute::post_request::Execute {
             .add_attribute("action", "post_data_request")
             .set_data(to_json_binary(&hex_dr_id)?)
             .add_event(Event::new("seda-data-request").add_attributes([
-                ("version", CONTRACT_VERSION.to_string()),
                 ("dr_id", hex_dr_id.clone()),
                 ("dr_binary_id", self.posted_dr.dr_binary_id.clone()),
-                ("tally_binary_id", self.posted_dr.tally_binary_id.clone()),
                 ("dr_inputs", self.posted_dr.dr_inputs.to_base64()),
+                ("tally_binary_id", self.posted_dr.tally_binary_id.clone()),
                 ("tally_inputs", self.posted_dr.tally_inputs.to_base64()),
-                ("memo", self.posted_dr.memo.to_base64()),
                 ("replication_factor", self.posted_dr.replication_factor.to_string()),
+                ("consensus_filter", self.posted_dr.consensus_filter.to_base64()),
                 ("gas_price", self.posted_dr.gas_price.to_string()),
                 ("gas_limit", self.posted_dr.gas_limit.to_string()),
+                ("memo", self.posted_dr.memo.to_base64()),
                 ("seda_payload", self.seda_payload.to_base64()),
                 ("payback_address", self.payback_address.to_base64()),
+                ("version", self.posted_dr.version.to_string()),
             ]));
 
         // save the data request
