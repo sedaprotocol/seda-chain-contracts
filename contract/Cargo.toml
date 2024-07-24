@@ -29,23 +29,23 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-cosmwasm-schema = { workspace = true }
-cosmwasm-std = { workspace = true }
-cw-storage-plus = { workspace = true }
-cw-utils = { workspace = true }
-cw2 = { workspace = true }
-hex = { workspace = true }
-schemars = { workspace = true }
+cosmwasm-schema.workspace = true
+cosmwasm-std.workspace = true
+cw-storage-plus.workspace = true
+cw-utils.workspace = true
+cw2.workspace = true
+hex.workspace = true
+schemars.workspace = true
 seda-common = { workspace = true, features = ["cosmwasm"] }
-semver = { workspace = true }
-serde = { workspace = true }
-serde-big-array = { workspace = true }
-sha3 = { workspace = true }
-thiserror = { workspace = true }
-vrf-rs = { workspace = true }
+semver.workspace = true
+serde.workspace = true
+serde-big-array.workspace = true
+sha3.workspace = true
+thiserror.workspace = true
+vrf-rs.workspace = true
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
-k256 = { workspace = true }
+cw-multi-test.workspace = true
+k256.workspace = true
 seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }
-serde_json = { workspace = true }
+serde_json.workspace = true
