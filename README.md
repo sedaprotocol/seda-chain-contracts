@@ -32,7 +32,7 @@ To learn how to contribute, please read [contributing](CONTRIBUTING.md).
 
 ## Dependencies
 
-Before starting, make sure you have [rustup](https://rustup.rs/) along with a recent `rustc` and `cargo` version installed. Currently, we are testing on 1.65.0+. You need to have the `wasm32-unknown-unknown` target installed as well.
+Before starting, make sure you have [rustup](https://rustup.rs/) along with a recent `rustc` and `cargo` version installed. Currently, we are testing on 1.70.0+. You need to have the `wasm32-unknown-unknown` target installed as well.
 
 You can check that via:
 
