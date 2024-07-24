@@ -1,6 +1,5 @@
 [alias]
 schema = "run --bin schema"
-unit-test = "test --lib"
 wasm = "run --package xtask -- wasm"
 wasm-opt = "run --package xtask -- wasm-opt"
 xtask = "run --package xtask --"

@@ -6,6 +6,9 @@ members = [
 	"xtask",
 ]
 
+[workspace.package]
+rust-version = "1.65.0"
+
 [profile.release]
 opt-level = 3
 debug = false

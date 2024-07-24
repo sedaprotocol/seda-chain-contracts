@@ -53,8 +53,6 @@ For creating the PR, please follow the instructions below.
 5. Finally, please assign at least two of the following reviewers to your PR:
    - [FranklinWaller](https://github.com/FranklinWaller)
    - [gluax](https://github.com/gluax)
-   - [jamesondh](https://github.com/jamesondh)
    - [mariocao](https://github.com/mariocao)
-   - [mennatabuelnaga](https://github.com/mennatabuelnaga)
    - [Thomasvdam](https://github.com/Thomasvdam)
    

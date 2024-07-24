@@ -1,5 +1,11 @@
 # Developing
 
+[1]: https://rustup.rs/
+[2]: https://github.com/WebAssembly/binaryen
+[3]: https://github.com/sedaprotocol/seda-chain
+[4]: https://nexte.st/
+
+
 ## Environment set up
 
 - Install [rustup][1]. Once installed, make sure you have the wasm32 target:
@@ -10,41 +16,40 @@
   rustup target add wasm32-unknown-unknown
   ```
 
-- Install [Docker][2] (only if running cosmwasm/rust-optimizer image to compile contracts)
+- Install [wasm-opt][2] (only if you need to produce an optimized version of the wasm): `cargo install wasm-opt --locked`
 
-- Install [seda-chaind][3]
+- Install [sedad][3]
 
-## Compiling and running tests
+## Compiling
 
-```sh
-# this will produce wasm builds in ./target/wasm32-unknown-unknown/release
-cargo wasm
+You can build a release version, but not optimized with `cargo wasm` which outputs `target/wasm32-unknown-unknown/release/seda_contract.wasm`.
 
-# this runs unit tests with helpful backtraces
-RUST_BACKTRACE=1 cargo unit-test
+If you want an optimized version of the wasm you can instead run `cargo wasm-opt` which outputs to `target/seda_contract.wasm`. This is the version you would want to upload to the chain.
 
-# auto-generate json schema
-cargo schema -p data-requests
-cargo schema -p proxy
-cargo schema -p staking
-```
+## Building Schema
+
+You can build the json schema with `cargo schema`.
 
 ## Linting
 
-`rustfmt` is used to format any Rust source code:
+`rustfmt` is used to format any Rust source code, we do use nightly format features: `cargo +nightly fmt`.
 
-```bash
-cargo +nightly fmt
-```
+Nightly can be installed with: `rustup install nightly`. 
 
-`clippy` is used as a linting tool:
+`clippy` is used as the linting tool: `cargo clippy -- -D warnings`
 
-```bash
-cargo clippy
-```
+## Testing
 
-## Fuzzing
+### Unit
 
+Unit testing can be done with: `cargo test`.
+
+You could also install [nextest][4], with `cargo install cargo-nextest --locked`, then run `cargo nextest`. Nextest is a faster test runner for Rust.
+
+### Fuzzing
+
+Not yet set-up again.
+<!-- 
 To install fuzzing deps you can run:
 
 ```sh
@@ -143,157 +148,11 @@ Error: Fuzz target exited with exit status: 77
 Just note the two following things:
 
 1. To run cargo fuzz yourself currently on the this repo you must do `cargo +nightly-2024-01-21 fuzz ...`, or just run the commands above.
-2. These failures are gitignored. The goal is to minimize and create a unit test.
+2. These failures are gitignored. The goal is to minimize and create a unit test. -->
 
-## Preparing the Wasm bytecode for production
+## xtask
 
-Before we upload it to a chain, we need to ensure the smallest output size possible,
-as this will be included in the body of a transaction. We also want to have a
-reproducible build process, so third parties can verify that the uploaded Wasm
-code did indeed come from the claimed Rust code.
+We use `cargo xtask` to help automate lot's of various actions.
+It doesn't require any additional installations to use `xtask`, it's just a more rust-esque way of doing a `Makefile`.
 
-The recommended method uses `rust-optimizer`, a docker image to
-produce an extremely small build output in a consistent manner. The suggested way
-to run it is this:
-
-```sh
-docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer:0.14.0
-```
-
-Or, If you're on an arm64 machine, you should use a docker image built with arm64.
-
-```sh
-docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer-arm64:0.14.0
-```
-
-We must mount the contract code to `/code`. You can use a absolute path instead of `$(pwd)` if you don't want to `cd` to the directory first. The other two volumes are nice for speedup. Mounting `/code/target` in particular is useful to avoid docker overwriting your local dev files with root permissions. Note the `/code/target` cache is unique for each contract being compiled to limit interference, while the registry cache is global.
-
-This is rather slow compared to local compilations, especially the first compile of a given contract. The use of the two volume caches is very useful to speed up following compiles of the same contract.
-
-This produces an `artifacts` directory including a WASM binary for each contract, as well as `checksums.txt`, containing the Sha256 hash of the wasm file. The wasm file is compiled deterministically (anyone else running the same docker on the same git commit should get the identical file with the same Sha256 hash). It is also stripped and minimized for upload to a blockchain (we will also gzip it in the uploading process to make it even smaller).
-
-## Verification
-
-This project utilizes [`cargo-crev`](https://github.com/crev-dev/cargo-crev), a language and ecosystem agnostic, distributed code review system. For use, [see the Getting Started guide](https://github.com/crev-dev/cargo-crev/blob/master/cargo-crev/src/doc/getting_started.md).
-
-Additionally, one may use [`cosmwasm-verify`](https://github.com/CosmWasm/cosmwasm-verify) to reproduce the build for verification. See the repository link for use.
-
-## Uploading contracts and setting up cross-dependencies
-
-To deploy and set up all contracts, the Proxy must first be instantiated followed by all of the other contracts, since the Proxy address is used as an argument when instantiating the other contracts. After all contracts are instantiated and to complete the circular dependency, the other contracts must then be set on the Proxy via Execute calls.
-
-Define environment variables:
-
-```bash
-TXN_GAS_FLAGS="--gas-prices 100000000000aseda --gas auto --gas-adjustment 1.6"
-CHAIN_ID=seda-1-devnet
-SEDA_BINARY_PATH=/path/to/sedad
-SEDA_CHAIN_RPC=https://rpc.devnet.seda.xyz
-SEDA_DEV_ACCOUNT=FILL_ME_IN
-```
-
-Upload Proxy contract:
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm store ./artifacts/proxy_contract.wasm --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC --from $SEDA_DEV_ACCOUNT $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo $OUTPUT | jq -r '.txhash')
-
-OUTPUT="$($SEDA_BINARY_PATH query tx $TXHASH --node $SEDA_CHAIN_RPC --output json)"
-PROXY_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-```
-
-Instantiate Proxy
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm instantiate $PROXY_CODE_ID '{\"token\":\"aseda\"}' --no-admin --from $SEDA_DEV_ACCOUNT --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC --label proxy$PROXY_CODE_ID $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-
-OUTPUT="$($SEDA_BINARY_PATH query tx $TXHASH --node $SEDA_CHAIN_RPC --output json)"
-PROXY_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-```
-
-Upload DataRequests contract
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm store artifacts/data_requests.wasm --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC --from $SEDA_DEV_ACCOUNT $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo $OUTPUT | jq -r '.txhash')
-
-OUTPUT="$($SEDA_BINARY_PATH query tx $dr_store_tx_hash --node $RPC_URL --output json)"
-DRS_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-```
-
-Instantiate DataRequests
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm instantiate $DRS_CODE_ID '{\"token\":\"aseda\",\"proxy\": \"$PROXY_CONTRACT_ADDRESS\",\"owner\":\"$SEDA_DEV_ACCOUNT\"}' --no-admin --from $SEDA_DEV_ACCOUNT --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC --label proxy$PROXY_CODE_ID $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-
-OUTPUT="$($SEDA_BINARY_PATH query tx $TXHASH --node $RPC_URL --output json)"
-DRS_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-```
-
-Upload Staking contract
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm store artifacts/staking.wasm --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC --from $SEDA_DEV_ACCOUNT $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo $OUTPUT | jq -r '.txhash')
-
-OUTPUT="$($SEDA_BINARY_PATH query tx $dr_store_tx_hash --node $RPC_URL --output json)"
-STAKING_CODE_ID=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
-```
-
-Instantiate Staking
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm instantiate $STAKING_CODE_ID '{\"token\":\"aseda\",\"proxy\": \"$PROXY_CONTRACT_ADDRESS\",\"owner\":\"$SEDA_DEV_ACCOUNT\"}' --no-admin --from $SEDA_DEV_ACCOUNT --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC --label proxy$PROXY_CODE_ID $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-
-OUTPUT="$($SEDA_BINARY_PATH query tx $TXHASH --node $RPC_URL --output json)"
-STAKING_CONTRACT_ADDRESS=$(echo "$OUTPUT" | jq -r '.logs[].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
-```
-
-Set DataRequests on Proxy
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm execute $PROXY_CONTRACT_ADDRESS '{\"set_data_requests\":{\"contract\":\"$DRS_CONTRACT_ADDRESS\"}}' --from $SEDA_DEV_ACCOUNT --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-```
-
-Set Staking on Proxy
-
-```bash
-CMD="$SEDA_BINARY_PATH tx wasm execute $PROXY_CONTRACT_ADDRESS '{\"set_staking\":{\"contract\":\"$STAKING_CONTRACT_ADDRESS\"}}' --from $SEDA_DEV_ACCOUNT --chain-id $CHAIN_ID --node $SEDA_CHAIN_RPC $TXN_GAS_FLAGS -y --output json"
-OUTPUT=$($CMD)
-TXHASH=$(echo "$OUTPUT" | jq -r '.txhash')
-```
-
-## License
-
-Contents of this repository are open source under [MIT License](LICENSE).
-
-[1]: https://rustup.rs/
-[2]: https://docs.docker.com/get-docker/
-[3]: https://github.com/sedaprotocol/seda-chain
-
-
-CODE ID 4: proxy
-seda18cszlvm6pze0x9sz32qnjq4vtd45xehqs8dq7cwy8yhq35wfnn3qcpcpur
-
-CODE ID 5: drs
-seda1yvgh8xeju5dyr0zxlkvq09htvhjj20fncp5g58np4u25g8rkpgjsdry9nq
-
-CODE ID 6: staking
-seda16jzpxp0e8550c9aht6q9svcux30vtyyyyxv5w2l2djjra46580wsdj8gs3
+You can read more about [xtask](https://github.com/matklad/cargo-xtask) and it's benefits at that link.
