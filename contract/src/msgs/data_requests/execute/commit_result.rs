@@ -25,7 +25,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         // Check if the staker has enough funds staked to commit
         let staked = STAKERS.load(deps.storage, &public_key)?;
-        let minimum_stake = CONFIG.load(deps.storage)?.minimum_stake_to_register;
+        let minimum_stake = CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility;
 
         if staked.tokens_staked < minimum_stake {
             return Err(ContractError::InsufficientFunds(minimum_stake, staked.tokens_staked));
