@@ -152,7 +152,7 @@ Just note the two following things:
 
 ## xtask
 
-We use `cargo xtask` to help automate lot's of various actions.
-It doesn't require any additional installations to use `xtask`, it's just a more rust-esque way of doing a `Makefile`.
+We use `cargo xtask` to help automate lots of various actions.
+It doesn't require any additional installations to use `xtask`, its just a more rust-esque way of doing a `Makefile`.
 
 You can read more about [xtask](https://github.com/matklad/cargo-xtask) and it's benefits at that link.
