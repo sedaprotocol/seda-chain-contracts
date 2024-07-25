@@ -126,24 +126,21 @@ impl TestInfo {
     pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
-        let msg_hash = hash([
-            "commit_data_result".as_bytes(),
-            dr_id.as_bytes(),
-            &dr.height.to_be_bytes(),
-            commitment.as_bytes(),
-            self.chain_id(),
-            self.contract_addr_bytes(),
-        ]);
 
-        let msg = execute::commit_result::Execute {
+        let mut msg = execute::commit_result::Execute {
             dr_id: dr_id.to_string(),
             commitment,
             public_key: sender.pub_key_hex(),
-            proof: sender.prove_hex(&msg_hash),
-        }
-        .into();
+            proof: Default::default(),
+        };
+        msg.proof = msg
+            .sign(
+                &sender.sign_key(),
+                &msg.msg_hash(self.chain_id(), self.contract_addr(), dr.height)?,
+            )?
+            .to_hex();
 
-        self.execute(sender, &msg)
+        self.execute(sender, &msg.into())
     }
 
     #[track_caller]
@@ -155,24 +152,21 @@ impl TestInfo {
     ) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
-        let msg_hash = hash([
-            "commit_data_result".as_bytes(),
-            dr_id.as_bytes(),
-            &dr.height.saturating_sub(3).to_be_bytes(),
-            commitment.as_bytes(),
-            self.chain_id(),
-            self.contract_addr_bytes(),
-        ]);
 
-        let msg = execute::commit_result::Execute {
+        let mut msg = execute::commit_result::Execute {
             dr_id: dr_id.to_string(),
             commitment,
             public_key: sender.pub_key_hex(),
-            proof: sender.prove_hex(&msg_hash),
-        }
-        .into();
+            proof: Default::default(),
+        };
+        msg.proof = msg
+            .sign(
+                &sender.sign_key(),
+                &msg.msg_hash(self.chain_id(), self.contract_addr(), dr.height.saturating_sub(3))?,
+            )?
+            .to_hex();
 
-        self.execute(sender, &msg)
+        self.execute(sender, &msg.into())
     }
 
     #[track_caller]
@@ -183,26 +177,24 @@ impl TestInfo {
         reveal_body: RevealBody,
     ) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
-        let msg_hash = hash([
-            "reveal_data_result".as_bytes(),
-            dr_id.as_bytes(),
-            &dr.height.to_be_bytes(),
-            &reveal_body.try_hash()?,
-            self.chain_id(),
-            self.contract_addr_bytes(),
-        ]);
+        let reveal_body_hash = reveal_body.try_hash()?;
 
-        let msg = execute::reveal_result::Execute {
+        let mut msg = execute::reveal_result::Execute {
             reveal_body,
             dr_id: dr_id.to_string(),
             public_key: sender.pub_key_hex(),
-            proof: sender.prove_hex(&msg_hash),
+            proof: Default::default(),
             stderr: vec![],
             stdout: vec![],
-        }
-        .into();
+        };
+        msg.proof = msg
+            .sign(
+                &sender.sign_key(),
+                &msg.msg_hash(self.chain_id(), self.contract_addr(), (dr.height, reveal_body_hash))?,
+            )?
+            .to_hex();
 
-        self.execute(sender, &msg)
+        self.execute(sender, &msg.into())
     }
 
     #[track_caller]

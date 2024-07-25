@@ -105,8 +105,8 @@ impl TestInfo {
         &self.app
     }
 
-    pub fn chain_id(&self) -> &[u8] {
-        self.chain_id.as_bytes()
+    pub fn chain_id(&self) -> &str {
+        self.chain_id.as_str()
     }
 
     pub fn block_height(&mut self) -> u64 {
@@ -262,6 +262,10 @@ impl TestExecutor {
 
     pub fn sub_seda(&mut self, amount: u128) {
         self.info = mock_info(self.name, &coins(self.funds().u128() - amount, "aseda"));
+    }
+
+    pub fn sign_key(&self) -> Vec<u8> {
+        self.signing_key.to_bytes().to_vec()
     }
 
     pub fn prove(&self, hash: &[u8]) -> Vec<u8> {

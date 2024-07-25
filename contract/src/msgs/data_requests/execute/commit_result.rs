@@ -20,7 +20,6 @@ impl ExecuteHandler for execute::commit_result::Execute {
             return Err(ContractError::RevealStarted);
         }
 
-        let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
 
         // Check if the staker has enough funds staked to commit
@@ -31,19 +30,10 @@ impl ExecuteHandler for execute::commit_result::Execute {
             return Err(ContractError::InsufficientFunds(minimum_stake, staked.tokens_staked));
         }
 
-        // compute message hash
-        let message_hash = hash([
-            "commit_data_result".as_bytes(),
-            self.dr_id.as_bytes(),
-            &dr.height.to_be_bytes(),
-            self.commitment.as_bytes(),
-            chain_id.as_bytes(),
-            env.contract.address.as_str().as_bytes(),
-        ]);
-
         // verify the proof
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         let proof = Vec::<u8>::from_hex_str(&self.proof)?;
-        verify_proof(&public_key, &proof, message_hash)?;
+        self.verify(&public_key, &proof, &chain_id, env.contract.address.as_str(), dr.height)?;
 
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;

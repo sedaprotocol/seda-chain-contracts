@@ -1,12 +1,9 @@
 use cosmwasm_std::*;
 use cw_storage_plus::{Item, Map};
-use seda_common::{
-    crypto::*,
-    msgs::{
-        self,
-        staking::{Staker, StakingConfig},
-        SudoMsg,
-    },
+use seda_common::msgs::{
+    self,
+    staking::{Staker, StakingConfig},
+    SudoMsg,
 };
 
 use crate::{common_types::*, contract::CONTRACT_VERSION, error::ContractError, types::*};

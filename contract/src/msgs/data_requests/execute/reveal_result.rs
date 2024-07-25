@@ -14,23 +14,18 @@ impl ExecuteHandler for execute::reveal_result::Execute {
             return Err(ContractError::RevealNotStarted);
         }
 
+        // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
-        // compute hash of reveal body
+        let proof = Vec::<u8>::from_hex_str(&self.proof)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
         let reveal_body_hash = self.reveal_body.try_hash()?;
-        // compute message hash
-        let message_hash = hash([
-            "reveal_data_result".as_bytes(),
-            self.dr_id.as_bytes(),
-            &dr.height.to_be_bytes(),
-            &reveal_body_hash,
-            chain_id.as_bytes(),
-            env.contract.address.as_str().as_bytes(),
-        ]);
-
-        // verify the proof
-        let proof = Vec::<u8>::from_hex_str(&self.proof)?;
-        verify_proof(&public_key, &proof, message_hash)?;
+        self.verify(
+            &public_key,
+            &proof,
+            &chain_id,
+            env.contract.address.as_str(),
+            (dr.height, reveal_body_hash),
+        )?;
 
         // error if data request executor has not submitted a commitment
         let Some(committed_dr_result) = dr.get_commitment(&self.public_key) else {

@@ -6,20 +6,17 @@ use crate::{state::*, utils::get_attached_funds};
 impl ExecuteHandler for execute::stake::Execute {
     /// Stakes with an optional memo field, requiring a token deposit.
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-        let chain_id = CHAIN_ID.load(deps.storage)?;
-        let public_key = PublicKey::from_hex_str(&self.public_key)?;
-        // compute message hash
-        let message_hash = hash([
-            "stake".as_bytes(),
-            &self.memo.hash(),
-            chain_id.as_bytes(),
-            env.contract.address.as_str().as_bytes(),
-            &inc_get_seq(deps.storage, &public_key)?.to_be_bytes(),
-        ]);
-
         // verify the proof
+        let chain_id = CHAIN_ID.load(deps.storage)?;
         let proof = Vec::<u8>::from_hex_str(&self.proof)?;
-        verify_proof(&public_key, &proof, message_hash)?;
+        let public_key = PublicKey::from_hex_str(&self.public_key)?;
+        self.verify(
+            &public_key,
+            &proof,
+            &chain_id,
+            env.contract.address.as_str(),
+            inc_get_seq(deps.storage, &public_key)?,
+        )?;
 
         // if allowlist is on, check if the signer is in the allowlist
         is_staker_allowed(&deps, &public_key)?;
