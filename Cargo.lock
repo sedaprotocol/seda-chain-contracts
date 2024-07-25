@@ -693,6 +693,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.0.0"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/proof-traits#e63a0db33a5476e516de8450d83fb5cb12213f79"
 dependencies = [
  "base64 0.22.1",
  "cosmwasm-schema",
