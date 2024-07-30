@@ -21,19 +21,17 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let mut msg = execute::stake::Execute {
-            public_key: sender.pub_key_hex(),
-            proof: Default::default(),
+        let msg = execute::stake::Execute::new(
+            sender.pub_key_hex(),
             memo,
-        };
-        msg.proof = msg
-            .sign(
-                &sender.sign_key(),
-                &msg.msg_hash(self.chain_id(), self.contract_addr(), seq.into())?,
-            )?
-            .to_hex();
+            &sender.sign_key(),
+            self.chain_id(),
+            self.contract_addr(),
+            seq.into(),
+        )?
+        .into();
 
-        self.execute_with_funds(sender, &msg.into(), amount)
+        self.execute_with_funds(sender, &msg, amount)
     }
 
     #[track_caller]
@@ -48,19 +46,17 @@ impl TestInfo {
     pub fn increase_stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let mut msg = execute::stake::Execute {
-            public_key: sender.pub_key_hex(),
-            proof:      Default::default(),
-            memo:       None,
-        };
-        msg.proof = msg
-            .sign(
-                &sender.sign_key(),
-                &msg.msg_hash(self.chain_id(), self.contract_addr(), seq.into())?,
-            )?
-            .to_hex();
+        let msg = execute::stake::Execute::new(
+            sender.pub_key_hex(),
+            None,
+            &sender.sign_key(),
+            self.chain_id(),
+            self.contract_addr(),
+            seq.into(),
+        )?
+        .into();
 
-        self.execute_with_funds(sender, &msg.into(), amount)
+        self.execute_with_funds(sender, &msg, amount)
     }
 
     #[track_caller]
@@ -72,57 +68,51 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let mut msg = execute::stake::Execute {
-            public_key: sender.pub_key_hex(),
-            proof: Default::default(),
+        let msg = execute::stake::Execute::new(
+            sender.pub_key_hex(),
             memo,
-        };
-        msg.proof = msg
-            .sign(
-                &sender.sign_key(),
-                &msg.msg_hash(self.chain_id(), self.contract_addr(), seq.into())?,
-            )?
-            .to_hex();
+            &sender.sign_key(),
+            self.chain_id(),
+            self.contract_addr(),
+            seq.into(),
+        )?
+        .into();
 
-        self.execute(sender, &msg.into())
+        self.execute(sender, &msg)
     }
 
     #[track_caller]
     pub fn unstake(&mut self, sender: &TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let mut msg = execute::unstake::Execute {
-            public_key: sender.pub_key_hex(),
-            proof:      Default::default(),
-            amount:     amount.into(),
-        };
-        msg.proof = msg
-            .sign(
-                &sender.sign_key(),
-                &msg.msg_hash(self.chain_id(), self.contract_addr(), seq.into())?,
-            )?
-            .to_hex();
+        let msg = execute::unstake::Execute::new(
+            sender.pub_key_hex(),
+            amount.into(),
+            &sender.sign_key(),
+            self.chain_id(),
+            self.contract_addr(),
+            seq.into(),
+        )?
+        .into();
 
-        self.execute(sender, &msg.into())
+        self.execute(sender, &msg)
     }
 
     #[track_caller]
     pub fn withdraw(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let mut msg = execute::withdraw::Execute {
-            public_key: sender.pub_key_hex(),
-            proof:      Default::default(),
-            amount:     amount.into(),
-        };
-        msg.proof = msg
-            .sign(
-                &sender.sign_key(),
-                &msg.msg_hash(self.chain_id(), self.contract_addr(), seq.into())?,
-            )?
-            .to_hex();
+        let msg = execute::withdraw::Execute::new(
+            sender.pub_key_hex(),
+            amount.into(),
+            &sender.sign_key(),
+            self.chain_id(),
+            self.contract_addr(),
+            seq.into(),
+        )?
+        .into();
 
-        let res = self.execute(sender, &msg.into());
+        let res = self.execute(sender, &msg);
         sender.add_seda(10);
         res
     }

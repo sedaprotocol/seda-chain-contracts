@@ -16,15 +16,14 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
-        let proof = Vec::<u8>::from_hex_str(&self.proof)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
         let reveal_body_hash = self.reveal_body.try_hash()?;
         self.verify(
             &public_key,
-            &proof,
             &chain_id,
             env.contract.address.as_str(),
-            (dr.height, reveal_body_hash),
+            dr.height,
+            reveal_body_hash,
         )?;
 
         // error if data request executor has not submitted a commitment

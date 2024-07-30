@@ -32,8 +32,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
-        let proof = Vec::<u8>::from_hex_str(&self.proof)?;
-        self.verify(&public_key, &proof, &chain_id, env.contract.address.as_str(), dr.height)?;
+        self.verify(&public_key, &chain_id, env.contract.address.as_str(), dr.height)?;
 
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;
