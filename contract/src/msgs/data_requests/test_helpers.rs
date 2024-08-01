@@ -127,17 +127,16 @@ impl TestInfo {
         let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
 
-        let msg = execute::commit_result::Execute::new(
+        let factory = execute::commit_result::Execute::factory(
             dr_id.to_string(),
             commitment,
             sender.pub_key_hex(),
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             dr.height,
-        )?
-        .into();
-        // msg.sign(signing_key, msg_hash)
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute(sender, &msg)
     }
@@ -152,16 +151,16 @@ impl TestInfo {
         let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
 
-        let msg = execute::commit_result::Execute::new(
+        let factory = execute::commit_result::Execute::factory(
             dr_id.to_string(),
             commitment,
             sender.pub_key_hex(),
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             dr.height.saturating_sub(3),
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute(sender, &msg)
     }
@@ -176,19 +175,19 @@ impl TestInfo {
         let dr = self.get_data_request(dr_id).unwrap();
         let reveal_body_hash = reveal_body.try_hash()?;
 
-        let msg = execute::reveal_result::Execute::new(
+        let factory = execute::reveal_result::Execute::factory(
             dr_id.to_string(),
             reveal_body,
             sender.pub_key_hex(),
             vec![],
             vec![],
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             dr.height,
             reveal_body_hash,
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute(sender, &msg)
     }

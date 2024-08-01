@@ -21,15 +21,15 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let msg = execute::stake::Execute::new(
+        let factory = execute::stake::Execute::factory(
             sender.pub_key_hex(),
             memo,
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             seq.into(),
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute_with_funds(sender, &msg, amount)
     }
@@ -46,15 +46,15 @@ impl TestInfo {
     pub fn increase_stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let msg = execute::stake::Execute::new(
+        let factory = execute::stake::Execute::factory(
             sender.pub_key_hex(),
             None,
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             seq.into(),
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute_with_funds(sender, &msg, amount)
     }
@@ -68,15 +68,15 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let msg = execute::stake::Execute::new(
+        let factory = execute::stake::Execute::factory(
             sender.pub_key_hex(),
             memo,
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             seq.into(),
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute(sender, &msg)
     }
@@ -85,15 +85,15 @@ impl TestInfo {
     pub fn unstake(&mut self, sender: &TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let msg = execute::unstake::Execute::new(
+        let factory = execute::unstake::Execute::factory(
             sender.pub_key_hex(),
             amount.into(),
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             seq.into(),
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         self.execute(sender, &msg)
     }
@@ -102,15 +102,15 @@ impl TestInfo {
     pub fn withdraw(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let msg = execute::withdraw::Execute::new(
+        let factory = execute::withdraw::Execute::factory(
             sender.pub_key_hex(),
             amount.into(),
-            &sender.sign_key(),
             self.chain_id(),
             self.contract_addr(),
             seq.into(),
-        )?
-        .into();
+        );
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof).into();
 
         let res = self.execute(sender, &msg);
         sender.add_seda(10);
