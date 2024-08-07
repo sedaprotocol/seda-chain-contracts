@@ -1,4 +1,4 @@
-use owner::utils::is_staker_allowed;
+use owner::{state::ALLOWLIST, utils::is_staker_allowed};
 
 use super::*;
 use crate::{state::*, utils::get_attached_funds};

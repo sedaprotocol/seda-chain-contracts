@@ -31,9 +31,9 @@ k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
 libfuzzer-sys = "0.4"
 rand = "0.8"
 schemars = { version = "0.8", features = ["semver"] }
-seda-common = { git = "https://github.com/sedaprotocol/seda-common-rs.git", branch = "main" }
+# seda-common = { git = "https://github.com/sedaprotocol/seda-common-rs.git", branch = "main" }
 # leaving this in to make local development easier
-# seda-common = { path = "../seda-common-rs" }
+seda-common = { path = "../seda-common-rs" }
 semver = { version = "1.0", features = ["serde"] }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-big-array = { version = "0.5.1" }

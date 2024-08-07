@@ -1,5 +1,7 @@
 use seda_common::msgs::staking::{Staker, StakingConfig};
 
+use crate::enumerable_status_map;
+
 use super::*;
 
 /// Governance-controlled configuration parameters.

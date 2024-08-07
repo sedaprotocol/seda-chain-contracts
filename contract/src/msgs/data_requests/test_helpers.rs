@@ -30,7 +30,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
         major: 0,
         minor: 0,
         patch: 1,
-        pre:   Prerelease::EMPTY,
+        pre: Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
 
@@ -55,7 +55,7 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
         major: 0,
         minor: 0,
         patch: 1,
-        pre:   Prerelease::EMPTY,
+        pre: Prerelease::EMPTY,
         build: BuildMetadata::EMPTY,
     };
     let dr_id = dr_args.try_hash().unwrap();
@@ -251,7 +251,7 @@ impl TestInfo {
     #[track_caller]
     pub fn get_data_request_commit(&self, dr_id: Hash, public_key: PublicKey) -> Option<Hash> {
         self.query(query::QueryMsg::GetDataRequestCommitment {
-            dr_id:      dr_id.to_hex(),
+            dr_id: dr_id.to_hex(),
             public_key: public_key.to_hex(),
         })
         .unwrap()
@@ -265,7 +265,7 @@ impl TestInfo {
 
     pub fn get_data_request_reveal(&self, dr_id: Hash, public_key: PublicKey) -> Option<RevealBody> {
         self.query(query::QueryMsg::GetDataRequestReveal {
-            dr_id:      dr_id.to_hex(),
+            dr_id: dr_id.to_hex(),
             public_key: public_key.to_hex(),
         })
         .unwrap()
@@ -281,5 +281,14 @@ impl TestInfo {
     pub fn get_data_requests_by_status(&self, status: DataRequestStatus, offset: u32, limit: u32) -> Vec<DataRequest> {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
             .unwrap()
+    }
+
+    #[track_caller]
+    pub fn is_eligible(&self, dr_id: &str, public_key: PublicKey) -> bool {
+        self.query(query::QueryMsg::IsEligible {
+            dr_id: dr_id.to_string(),
+            public_key: public_key.to_hex(),
+        })
+        .unwrap()
     }
 }

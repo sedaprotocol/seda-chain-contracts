@@ -16,6 +16,7 @@ use cw_utils::parse_instantiate_response_data;
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
+    elliptic_curve::rand_core::SeedableRng
 };
 use seda_common::{msgs::*, types::ToHexStr};
 use serde::{de::DeserializeOwned, Serialize};
@@ -27,7 +28,7 @@ use crate::{common_types::Hash, contract::*, error::ContractError, types::Public
 pub struct TestInfo {
     app:           App,
     contract_addr: Addr,
-    executors:     HashMap<&'static str, TestExecutor>,
+    executors:     HashMap<String, TestExecutor>,
     chain_id:      String,
 }
 
@@ -52,7 +53,7 @@ impl TestInfo {
         .unwrap();
 
         let mut executors = HashMap::new();
-        executors.insert("creator", creator.clone());
+        executors.insert("creator".to_string(), creator.clone());
 
         let msg = WasmMsg::Instantiate {
             admin: None,
@@ -92,12 +93,31 @@ impl TestInfo {
                 .unwrap();
         }
 
-        self.executors.insert(name, executor);
+        self.executors.insert(name.to_string(), executor);
+        self.executor(name).clone()
+    }
+
+    pub fn new_executor_from_seed(&mut self, name: &str, amount: Option<u128>) -> TestExecutor {
+        let addr = self.app.api().addr_make(name);
+        let executor = TestExecutor::from_seed(name, addr, amount);
+        if let Some(amount) = amount {
+            self.app
+                .sudo(
+                    BankSudo::Mint {
+                        to_address: executor.addr().into_string(),
+                        amount:     coins(amount, "aseda"),
+                    }
+                    .into(),
+                )
+                .unwrap();
+        }
+
+        self.executors.insert(name.to_string(), executor);
         self.executor(name).clone()
     }
 
     #[track_caller]
-    pub fn executor(&self, name: &'static str) -> &TestExecutor {
+    pub fn executor(&self, name: &str) -> &TestExecutor {
         self.executors.get(name).unwrap()
     }
 
@@ -210,7 +230,7 @@ impl TestInfo {
 
 #[derive(Debug, Clone)]
 pub struct TestExecutor {
-    pub name:    &'static str,
+    pub name:    String,
     addr:        Addr,
     signing_key: SigningKey,
     public_key:  PublicKey,
@@ -228,7 +248,26 @@ impl TestExecutor {
             vec![]
         };
         TestExecutor {
-            name,
+            name: name.to_string(),
+            addr,
+            signing_key,
+            public_key,
+            info: mock_info(name, &coins),
+        }
+    }
+
+    pub fn from_seed(name: &str, addr: Addr, amount: Option<u128>) -> Self {
+        let seed = Keccak256::digest(name.as_bytes()).to_vec();
+        let signing_key = SigningKey::from_slice(&seed).unwrap();
+        let verifying_key = VerifyingKey::from(&signing_key);
+        let public_key = verifying_key.to_encoded_point(true).as_bytes().try_into().unwrap();
+        let coins = if let Some(amount) = amount {
+            coins(amount, "aseda")
+        } else {
+            vec![]
+        };
+        TestExecutor {
+            name: name.to_string(),
             addr,
             signing_key,
             public_key,
@@ -257,11 +296,11 @@ impl TestExecutor {
     }
 
     pub fn add_seda(&mut self, amount: u128) {
-        self.info = mock_info(self.name, &coins(self.funds().u128() + amount, "aseda"));
+        self.info = mock_info(&self.name, &coins(self.funds().u128() + amount, "aseda"));
     }
 
     pub fn sub_seda(&mut self, amount: u128) {
-        self.info = mock_info(self.name, &coins(self.funds().u128() - amount, "aseda"));
+        self.info = mock_info(&self.name, &coins(self.funds().u128() - amount, "aseda"));
     }
 
     pub fn prove(&self, hash: &[u8]) -> Vec<u8> {
@@ -275,7 +314,7 @@ impl TestExecutor {
 
     pub fn salt(&self) -> String {
         let mut hasher = Keccak256::new();
-        hasher.update(self.name);
+        hasher.update(self.name.clone());
         let hash: Hash = hasher.finalize().into();
         hash.to_hex()
     }

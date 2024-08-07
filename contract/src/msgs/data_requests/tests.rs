@@ -1,3 +1,5 @@
+use msgs::QueryMsg;
+
 use super::*;
 use crate::TestInfo;
 
@@ -200,9 +202,9 @@ fn reveal_result() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -212,9 +214,9 @@ fn reveal_result() {
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "20".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "20".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -241,9 +243,9 @@ fn cannot_reveal_if_commit_rf_not_met() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -266,9 +268,9 @@ fn cannot_reveal_if_user_did_not_commit() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -278,9 +280,9 @@ fn cannot_reveal_if_user_did_not_commit() {
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "20".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "20".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
 
@@ -304,9 +306,9 @@ fn cannot_double_reveal() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -316,9 +318,9 @@ fn cannot_double_reveal() {
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "20".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "20".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -344,9 +346,9 @@ fn reveal_must_match_commitment() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -354,9 +356,9 @@ fn reveal_must_match_commitment() {
             &alice,
             &dr_id,
             RevealBody {
-                salt:      alice.salt(),
-                reveal:    "11".hash().into(),
-                gas_used:  0u128.into(),
+                salt: alice.salt(),
+                reveal: "11".hash().into(),
+                gas_used: 0u128.into(),
                 exit_code: 0,
             }
             .try_hash()
@@ -367,9 +369,9 @@ fn reveal_must_match_commitment() {
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "20".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "20".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -395,9 +397,9 @@ fn post_data_result() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -425,9 +427,9 @@ fn post_data_results() {
 
     // alice commits data result 1
     let alice_reveal1 = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -442,9 +444,9 @@ fn post_data_results() {
 
     // alice commits data result 2
     let alice_reveal2 = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -478,9 +480,9 @@ fn cant_post_if_replication_factor_not_met() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -490,9 +492,9 @@ fn cant_post_if_replication_factor_not_met() {
     // bob also commits
     let bob = test_info.new_executor("bob", Some(2));
     let bob_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "20".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "20".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
     test_info
@@ -550,9 +552,9 @@ fn check_data_result_id() {
 
     // reveal sample
     let alice_reveal = RevealBody {
-        salt:      "123".into(),
-        reveal:    "10".hash().into(),
-        gas_used:  20u128.into(),
+        salt: "123".into(),
+        reveal: "10".hash().into(),
+        gas_used: 20u128.into(),
         exit_code: 0,
     };
 
@@ -578,9 +580,9 @@ fn post_data_result_with_more_drs_in_the_pool() {
 
     // Same commits & reveals for all drs
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
 
@@ -661,9 +663,9 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
 
     let alice = test_info.new_executor("alice", Some(2));
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
 
@@ -708,9 +710,9 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
 
     let alice = test_info.new_executor("alice", Some(2));
     let alice_reveal = RevealBody {
-        salt:      alice.salt(),
-        reveal:    "10".hash().into(),
-        gas_used:  0u128.into(),
+        salt: alice.salt(),
+        reveal: "10".hash().into(),
+        gas_used: 0u128.into(),
         exit_code: 0,
     };
 
@@ -813,4 +815,113 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
             .len()
     );
+}
+
+#[test]
+fn is_eligible_test() {
+    let mut test_info = TestInfo::init();
+
+    let mut alice = test_info.new_executor_from_seed("alice", Some(1));
+    let mut bob = test_info.new_executor_from_seed("bob", Some(1));
+    let mut carol = test_info.new_executor_from_seed("carol", Some(1));
+    let mut dave = test_info.new_executor_from_seed("dave", Some(1));
+
+    test_info.stake(&mut alice, None, 1).unwrap();
+    test_info.stake(&mut bob, None, 1).unwrap();
+    test_info.stake(&mut carol, None, 1).unwrap();
+    test_info.stake(&mut dave, None, 1).unwrap();
+
+    // DR with RF=1
+    let dr = test_helpers::calculate_dr_id_and_args(1, 3);
+
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    let mut eligible: Vec<&str> = vec![];
+
+    if test_info.is_eligible(&dr_id, alice.pub_key()) {
+        eligible.push("Alice");
+    }
+
+    if test_info.is_eligible(&dr_id, bob.pub_key()) {
+        eligible.push("Bob");
+    }
+
+    if test_info.is_eligible(&dr_id, carol.pub_key()) {
+        eligible.push("Carol");
+    }
+
+    if test_info.is_eligible(&dr_id, dave.pub_key()) {
+        eligible.push("Dave");
+    }
+
+    assert_eq!(eligible, vec!["Alice", "Bob", "Carol"]);
+}
+
+
+#[test]
+fn is_eligible_test_no_overflow() {
+    let mut test_info = TestInfo::init();
+    let mut stakers = vec![];
+
+    for n in 0..10 {
+        let name = format!("Staker {}", n);
+        stakers.push(test_info.new_executor_from_seed(&name, Some(1)));
+    }
+
+    stakers.sort_by_key(|s| s.pub_key());
+
+    for mut staker in stakers.iter_mut() {
+        test_info.stake(&mut staker, None, 1).unwrap();
+    }
+
+    // DR with RF=1
+    let dr = test_helpers::calculate_dr_id_and_args(1, 3);
+
+    let dr_id = test_info.post_data_request(&stakers.get(0).unwrap(), dr, vec![], vec![], 1).unwrap();
+
+    let mut eligible: Vec<usize> = vec![];
+    for (index, staker) in stakers.into_iter().enumerate() {
+        if test_info.is_eligible(&dr_id, staker.pub_key()) {
+            println!("Staker {}(index {}) is eligible", staker.pub_key_hex(), index);
+            eligible.push(index);
+        } else {
+            println!("Staker {}-(index {}) is NOT eligible", staker.pub_key_hex(), index);
+        }
+    }
+
+    assert_eq!(eligible, vec![7,8,9]);
+}
+
+#[test]
+fn is_eligible_test_overflow() {
+    let mut test_info = TestInfo::init();
+    let mut stakers = vec![];
+
+    for n in 0..10 {
+        let name = format!("Staker {}", n);
+        stakers.push(test_info.new_executor_from_seed(&name, Some(1)));
+    }
+
+    stakers.sort_by_key(|s| s.pub_key());
+
+    for mut staker in stakers.iter_mut() {
+        test_info.stake(&mut staker, None, 1).unwrap();
+    }
+
+    // DR with RF=1
+    let dr = test_helpers::calculate_dr_id_and_args(7, 5);
+
+    let dr_id = test_info.post_data_request(&stakers.get(0).unwrap(), dr, vec![], vec![], 1).unwrap();
+    let mut count = 0;
+
+    let mut eligible: Vec<usize> = vec![];
+    for (index, staker) in stakers.into_iter().enumerate() {
+        if test_info.is_eligible(&dr_id, staker.pub_key()) {
+            count += 1;
+            eligible.push(index);
+        }
+    }
+
+    assert_eq!(count, 5);
+    assert_eq!(eligible, vec![0,6,7,8,9]);
 }
