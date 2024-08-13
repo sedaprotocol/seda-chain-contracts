@@ -19,7 +19,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
             .count();
         if usize::from(self.posted_dr.replication_factor) > stakers_length {
-            return Err(ContractError::DataRequestReplicationFactorTooHigh);
+            return Err(ContractError::DataRequestReplicationFactorTooHigh(stakers_length));
         }
 
         // TODO: verify the payback non seda address...

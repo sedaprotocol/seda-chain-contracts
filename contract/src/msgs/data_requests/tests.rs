@@ -911,5 +911,5 @@ fn post_data_request_replication_factor_too_high() {
     // expect an error when trying to post it again
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
     let res = test_info.post_data_request(&sender, dr.clone(), vec![], vec![1, 2, 3], 1);
-    assert!(res.is_err_and(|x| x == ContractError::DataRequestReplicationFactorTooHigh));
+    assert!(res.is_err_and(|x| x == ContractError::DataRequestReplicationFactorTooHigh(1)));
 }
