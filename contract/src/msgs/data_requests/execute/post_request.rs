@@ -1,3 +1,5 @@
+use staking::state::STAKERS;
+
 use super::*;
 
 impl ExecuteHandler for execute::post_request::Execute {
@@ -9,6 +11,15 @@ impl ExecuteHandler for execute::post_request::Execute {
         // require the data request id to be unique
         if state::data_request_or_result_exists(deps.as_ref(), dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
+        }
+
+        // TODO: this operation is O(n) and can be improved
+        // require the data request replication factor to be bigger than amount of stakers
+        let stakers_length = STAKERS
+            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .count();
+        if usize::from(self.posted_dr.replication_factor) > stakers_length {
+            return Err(ContractError::DataRequestReplicationFactorTooHigh);
         }
 
         // TODO: verify the payback non seda address...

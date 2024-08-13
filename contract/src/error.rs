@@ -42,6 +42,10 @@ pub enum ContractError {
     DataRequestDoesNotExist(String),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
+    #[error(
+        "ReplicationFactorExceedsExecutorCount: The specified replication factor exceeds the available number of executors"
+    )]
+    DataRequestReplicationFactorTooHigh,
     #[error("Invalid payback address")]
     InvalidPaybackAddr,
     #[error("IneligibleExecutor: Caller is not an eligible data request executor")]
