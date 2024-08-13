@@ -9,8 +9,10 @@ use seda_common::msgs::{
 use crate::{common_types::*, contract::CONTRACT_VERSION, error::ContractError, types::*};
 
 pub mod data_requests;
+mod enumerable_set;
 pub mod owner;
 pub mod staking;
+pub use enumerable_set::EnumerableSet;
 
 pub trait QueryHandler {
     fn query(self, deps: Deps, env: Env) -> Result<Binary, ContractError>;

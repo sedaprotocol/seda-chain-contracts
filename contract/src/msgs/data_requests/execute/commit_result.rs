@@ -37,7 +37,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;
         dr.commits.insert(self.public_key.clone(), commitment);
-        state::commit(deps.storage, &dr_id, dr)?;
+        state::commit(deps.storage, dr_id.into(), dr)?;
 
         Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([

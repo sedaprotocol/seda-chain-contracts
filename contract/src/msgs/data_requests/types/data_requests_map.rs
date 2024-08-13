@@ -1,10 +1,12 @@
+use std::rc::Rc;
+
 use super::*;
 
 pub struct DataRequestsMap<'a> {
     pub reqs:       Map<'a, &'a Hash, DataRequest>,
-    pub committing: EnumerableSet<'a>,
-    pub revealing:  EnumerableSet<'a>,
-    pub tallying:   EnumerableSet<'a>,
+    pub committing: EnumerableSet<'a, Hash>,
+    pub revealing:  EnumerableSet<'a, Hash>,
+    pub tallying:   EnumerableSet<'a, Hash>,
 }
 
 impl DataRequestsMap<'_> {
@@ -19,7 +21,7 @@ impl DataRequestsMap<'_> {
         self.reqs.has(store, key)
     }
 
-    fn add_to_status(&self, store: &mut dyn Storage, key: &Hash, status: &DataRequestStatus) -> StdResult<()> {
+    fn add_to_status(&self, store: &mut dyn Storage, key: Rc<Hash>, status: &DataRequestStatus) -> StdResult<()> {
         match status {
             DataRequestStatus::Committing => self.committing.add(store, key)?,
             DataRequestStatus::Revealing => self.revealing.add(store, key)?,
@@ -29,7 +31,7 @@ impl DataRequestsMap<'_> {
         Ok(())
     }
 
-    fn remove_from_status(&self, store: &mut dyn Storage, key: &Hash, status: &DataRequestStatus) -> StdResult<()> {
+    fn remove_from_status(&self, store: &mut dyn Storage, key: Rc<Hash>, status: &DataRequestStatus) -> StdResult<()> {
         match status {
             DataRequestStatus::Committing => self.committing.remove(store, key)?,
             DataRequestStatus::Revealing => self.revealing.remove(store, key)?,
@@ -42,26 +44,26 @@ impl DataRequestsMap<'_> {
     pub fn insert(
         &self,
         store: &mut dyn Storage,
-        key: &Hash,
+        key: Rc<Hash>,
         req: DataRequest,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
-        if self.has(store, key) {
+        if self.has(store, &key) {
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        self.reqs.save(store, key, &req)?;
+        self.reqs.save(store, &key, &req)?;
         self.add_to_status(store, key, status)?;
 
         Ok(())
     }
 
-    fn find_status(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequestStatus> {
-        if self.committing.has(store, key) {
+    fn find_status(&self, store: &dyn Storage, key: Rc<Hash>) -> StdResult<DataRequestStatus> {
+        if self.committing.has(store, key.clone()) {
             return Ok(DataRequestStatus::Committing);
         }
 
-        if self.revealing.has(store, key) {
+        if self.revealing.has(store, key.clone()) {
             return Ok(DataRequestStatus::Revealing);
         }
 
@@ -75,19 +77,19 @@ impl DataRequestsMap<'_> {
     pub fn update(
         &self,
         store: &mut dyn Storage,
-        key: &Hash,
+        key: Rc<Hash>,
         dr: DataRequest,
         status: Option<DataRequestStatus>,
     ) -> StdResult<()> {
         // Check if the key exists
-        if !self.has(store, key) {
+        if !self.has(store, &key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
         // If we need to update the status, we need to remove the key from the current status
         if let Some(status) = status {
             // Grab the current status.
-            let current_status = self.find_status(store, key)?;
+            let current_status = self.find_status(store, key.clone())?;
             // world view = we should only update from committing -> revealing -> tallying.
             // Either the concept is fundamentally flawed or the implementation is wrong.
             match current_status {
@@ -115,12 +117,12 @@ impl DataRequestsMap<'_> {
             }
 
             // remove from current status, then add to new one.
-            self.remove_from_status(store, key, &current_status)?;
-            self.add_to_status(store, key, &status)?;
+            self.remove_from_status(store, key.clone(), &current_status)?;
+            self.add_to_status(store, key.clone(), &status)?;
         }
 
         // always update the request
-        self.reqs.save(store, key, &dr)?;
+        self.reqs.save(store, &key, &dr)?;
         Ok(())
     }
 
@@ -135,14 +137,14 @@ impl DataRequestsMap<'_> {
     /// Removes an req from the map by key.
     /// Swaps the last req with the req to remove.
     /// Then pops the last req.
-    pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
-        if !self.has(store, key) {
+    pub fn remove(&self, store: &mut dyn Storage, key: Rc<Hash>) -> Result<(), StdError> {
+        if !self.has(store, &key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
         // world view = we only remove a data request that is done tallying.
         // Either the concept is fundamentally flawed or the implementation is wrong.
-        let current_status = self.find_status(store, key)?;
+        let current_status = self.find_status(store, key.clone())?;
         assert_eq!(
             current_status,
             DataRequestStatus::Tallying,
@@ -150,7 +152,7 @@ impl DataRequestsMap<'_> {
         );
 
         // remove the request
-        self.reqs.remove(store, key);
+        self.reqs.remove(store, &key);
         // remove from the status
         self.remove_from_status(store, key, &current_status)?;
 

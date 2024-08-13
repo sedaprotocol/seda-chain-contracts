@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use types::*;
 
 use super::*;
@@ -22,14 +24,14 @@ pub fn load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataRequest>
     DATA_REQUESTS.get(store, dr_id)
 }
 
-pub fn post_request(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> Result<(), ContractError> {
+pub fn post_request(store: &mut dyn Storage, dr_id: Rc<Hash>, dr: DataRequest) -> Result<(), ContractError> {
     // insert the data request
     DATA_REQUESTS.insert(store, dr_id, dr, &DataRequestStatus::Committing)?;
 
     Ok(())
 }
 
-pub fn commit(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
+pub fn commit(store: &mut dyn Storage, dr_id: Rc<Hash>, dr: DataRequest) -> StdResult<()> {
     let status = if dr.reveal_started() {
         Some(DataRequestStatus::Revealing)
     } else {
@@ -49,7 +51,7 @@ pub fn requests_by_status(
     DATA_REQUESTS.get_requests_by_status(store, status, offset, limit)
 }
 
-pub fn reveal(storage: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
+pub fn reveal(storage: &mut dyn Storage, dr_id: Rc<Hash>, dr: DataRequest) -> StdResult<()> {
     let status = if dr.is_tallying() {
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
@@ -62,10 +64,10 @@ pub fn reveal(storage: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdRe
     Ok(())
 }
 
-pub fn post_result(store: &mut dyn Storage, dr_id: &Hash, dr: &DataResult) -> StdResult<()> {
+pub fn post_result(store: &mut dyn Storage, dr_id: Rc<Hash>, dr: &DataResult) -> StdResult<()> {
     // we have to remove the request from the pool and save it to the results
+    DATA_RESULTS.save(store, &dr_id, dr)?;
     DATA_REQUESTS.remove(store, dr_id)?;
-    DATA_RESULTS.save(store, dr_id, dr)?;
     // no need to update status as we remove it from the requests pool
 
     Ok(())
