@@ -29,7 +29,7 @@ pub fn new_public_key() -> (SigningKey, PublicKey) {
     let verifying_key = VerifyingKey::from(&signing_key);
     let public_key = verifying_key.to_encoded_point(true).as_bytes().try_into().unwrap();
 
-    (signing_key, public_key)
+    (signing_key, PublicKey(public_key))
 }
 
 pub struct TestInfo {
@@ -251,7 +251,7 @@ impl TestExecutor {
     }
 
     pub fn pub_key(&self) -> PublicKey {
-        self.public_key
+        self.public_key.clone()
     }
 
     pub fn pub_key_hex(&self) -> String {

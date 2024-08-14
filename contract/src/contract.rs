@@ -10,7 +10,7 @@ use crate::{
     error::ContractError,
     msgs::{
         owner::state::{OWNER, PENDING_OWNER},
-        staking::state::CONFIG,
+        staking::state::{CONFIG, STAKERS},
         ExecuteHandler,
         QueryHandler,
         SudoHandler,
@@ -41,6 +41,7 @@ pub fn instantiate(
         allowlist_enabled:                       false,
     };
     CONFIG.save(deps.storage, &init_config)?;
+    STAKERS.initialize(deps.storage)?;
     crate::msgs::data_requests::state::init_data_requests(deps.storage)?;
 
     Ok(Response::new()

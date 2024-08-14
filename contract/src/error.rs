@@ -39,7 +39,7 @@ pub enum ContractError {
     #[error(
         "ReplicationFactorExceedsExecutorCount: The specified replication factor exceeds the available number of executors ({0})"
     )]
-    DataRequestReplicationFactorTooHigh(usize),
+    DataRequestReplicationFactorTooHigh(u32),
     #[error("AlreadyCommitted: Caller has already committed on this data request")]
     AlreadyCommitted,
     #[error("RevealNotStarted: Reveal stage has not started yet")]

@@ -1,8 +1,61 @@
+use common_types::ToHexStr;
+use cw_storage_plus::PrimaryKey;
 use error::ContractError;
+use serde::{Deserialize, Serialize};
 
 use super::*;
 
-pub type PublicKey = [u8; 33];
+#[derive(Clone, Debug)]
+pub struct PublicKey(pub [u8; 33]);
+
+impl AsRef<[u8]> for PublicKey {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl Serialize for PublicKey {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&hex::encode(self.0))
+    }
+}
+
+impl<'de> Deserialize<'de> for PublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        PublicKey::from_hex_str(&s).map_err(serde::de::Error::custom)
+    }
+}
+
+impl FromHexStr for PublicKey {
+    fn from_hex_str(s: &str) -> Result<Self, ContractError> {
+        let decoded = hex::decode(s)?;
+        let array: [u8; 33] = decoded
+            .try_into()
+            .map_err(|d: Vec<u8>| ContractError::InvalidPublicKeyLength(d.len()))?;
+        Ok(Self(array))
+    }
+}
+
+impl<'a> PrimaryKey<'a> for PublicKey {
+    type Prefix = ();
+    type SubPrefix = ();
+    type Suffix = ();
+    type SuperSuffix = ();
+
+    fn key(&self) -> Vec<cw_storage_plus::Key> {
+        self.0.key()
+    }
+}
+
+impl ToHexStr for PublicKey {
+    fn to_hex(&self) -> String {
+        self.0.to_hex()
+    }
+}
 
 pub trait FromHexStr: Sized {
     fn from_hex_str(s: &str) -> Result<Self, ContractError>;
@@ -14,16 +67,6 @@ impl FromHexStr for common_types::Hash {
         let array = decoded
             .try_into()
             .map_err(|d: Vec<u8>| ContractError::InvalidHashLength(d.len()))?;
-        Ok(array)
-    }
-}
-
-impl FromHexStr for PublicKey {
-    fn from_hex_str(s: &str) -> Result<Self, ContractError> {
-        let decoded = hex::decode(s)?;
-        let array = decoded
-            .try_into()
-            .map_err(|d: Vec<u8>| ContractError::InvalidPublicKeyLength(d.len()))?;
         Ok(array)
     }
 }

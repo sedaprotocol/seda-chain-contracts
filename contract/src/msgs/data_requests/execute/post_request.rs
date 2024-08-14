@@ -12,10 +12,8 @@ impl ExecuteHandler for execute::post_request::Execute {
 
         // TODO: this operation is O(n) and can be improved
         // require the data request replication factor to be bigger than amount of stakers
-        let stakers_length = STAKERS
-            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .count();
-        if usize::from(self.posted_dr.replication_factor) > stakers_length {
+        let stakers_length = STAKERS.len(deps.storage)?;
+        if self.posted_dr.replication_factor as u32 > stakers_length {
             return Err(ContractError::DataRequestReplicationFactorTooHigh(stakers_length));
         }
 

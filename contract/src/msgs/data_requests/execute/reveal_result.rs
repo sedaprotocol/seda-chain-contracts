@@ -19,7 +19,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
         let reveal_body_hash = self.reveal_body.try_hash()?;
         self.verify(
-            &public_key,
+            public_key.as_ref(),
             &chain_id,
             env.contract.address.as_str(),
             dr.height,

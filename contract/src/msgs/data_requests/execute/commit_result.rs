@@ -23,16 +23,16 @@ impl ExecuteHandler for execute::commit_result::Execute {
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
 
         // Check if the staker has enough funds staked to commit
-        let staked = STAKERS.load(deps.storage, &public_key)?;
+        let staker = STAKERS.get_staker(deps.storage, &public_key)?;
         let minimum_stake = CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility;
 
-        if staked.tokens_staked < minimum_stake {
-            return Err(ContractError::InsufficientFunds(minimum_stake, staked.tokens_staked));
+        if staker.tokens_staked < minimum_stake {
+            return Err(ContractError::InsufficientFunds(minimum_stake, staker.tokens_staked));
         }
 
         // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
-        self.verify(&public_key, &chain_id, env.contract.address.as_str(), dr.height)?;
+        self.verify(public_key.as_ref(), &chain_id, env.contract.address.as_str(), dr.height)?;
 
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;

@@ -8,14 +8,14 @@ impl ExecuteHandler for execute::unstake::Execute {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
         self.verify(
-            &public_key,
+            public_key.as_ref(),
             &chain_id,
             env.contract.address.as_str(),
             inc_get_seq(deps.storage, &public_key)?,
         )?;
 
         // error if amount is greater than staked tokens
-        let mut executor = state::STAKERS.load(deps.storage, &public_key)?;
+        let mut executor = state::STAKERS.get_staker(deps.storage, &public_key)?;
         if self.amount > executor.tokens_staked {
             return Err(ContractError::InsufficientFunds(executor.tokens_staked, self.amount));
         }
@@ -23,7 +23,7 @@ impl ExecuteHandler for execute::unstake::Execute {
         // update the executor
         executor.tokens_staked -= self.amount;
         executor.tokens_pending_withdrawal += self.amount;
-        state::STAKERS.save(deps.storage, &public_key, &executor)?;
+        state::STAKERS.update(deps.storage, public_key.into(), &executor)?;
 
         // TODO: emit when pending tokens can be withdrawn
 

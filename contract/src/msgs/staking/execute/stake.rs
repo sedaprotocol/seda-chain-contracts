@@ -10,7 +10,7 @@ impl ExecuteHandler for execute::stake::Execute {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
         self.verify(
-            &public_key,
+            public_key.as_ref(),
             &chain_id,
             env.contract.address.as_str(),
             inc_get_seq(deps.storage, &public_key)?,
@@ -24,7 +24,7 @@ impl ExecuteHandler for execute::stake::Execute {
         let amount = get_attached_funds(&info.funds, &token)?;
 
         // fetch executor from state
-        let executor = match state::STAKERS.may_load(deps.storage, &public_key)? {
+        match state::STAKERS.may_get_staker(deps.storage, &public_key)? {
             // new executor
             None => {
                 let minimum_stake_to_register = state::CONFIG.load(deps.storage)?.minimum_stake_to_register;
@@ -32,11 +32,15 @@ impl ExecuteHandler for execute::stake::Execute {
                     return Err(ContractError::InsufficientFunds(minimum_stake_to_register, amount));
                 }
 
-                Staker {
-                    memo:                      self.memo.clone(),
-                    tokens_staked:             amount,
-                    tokens_pending_withdrawal: Uint128::zero(),
-                }
+                state::STAKERS.insert(
+                    deps.storage,
+                    public_key.into(),
+                    &Staker {
+                        memo:                      self.memo.clone(),
+                        tokens_staked:             amount,
+                        tokens_pending_withdrawal: Uint128::zero(),
+                    },
+                )
             }
             // already existing executor
             Some(mut executor) => {
@@ -46,10 +50,9 @@ impl ExecuteHandler for execute::stake::Execute {
                 }
                 executor.tokens_staked += amount;
 
-                executor
+                state::STAKERS.update(deps.storage, public_key.into(), &executor)
             }
-        };
-        state::STAKERS.save(deps.storage, &public_key, &executor)?;
+        }?;
 
         Ok(Response::new().add_attribute("action", "stake").add_event(
             Event::new("seda-register-and-stake").add_attributes([

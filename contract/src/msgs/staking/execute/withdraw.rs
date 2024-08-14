@@ -8,7 +8,7 @@ impl ExecuteHandler for execute::withdraw::Execute {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
         self.verify(
-            &public_key,
+            public_key.as_ref(),
             &chain_id,
             env.contract.address.as_str(),
             inc_get_seq(deps.storage, &public_key)?,
@@ -18,7 +18,7 @@ impl ExecuteHandler for execute::withdraw::Execute {
         let token = TOKEN.load(deps.storage)?;
 
         // error if amount is greater than pending tokens
-        let mut executor = state::STAKERS.load(deps.storage, &public_key)?;
+        let mut executor = state::STAKERS.get_staker(deps.storage, &public_key)?;
         if self.amount > executor.tokens_pending_withdrawal {
             return Err(ContractError::InsufficientFunds(
                 executor.tokens_pending_withdrawal,
@@ -29,9 +29,9 @@ impl ExecuteHandler for execute::withdraw::Execute {
         // update the executor (remove if balances are zero)
         executor.tokens_pending_withdrawal -= self.amount;
         if executor.tokens_pending_withdrawal.is_zero() && executor.tokens_staked.is_zero() {
-            state::STAKERS.remove(deps.storage, &public_key);
+            state::STAKERS.remove(deps.storage, public_key.into())?;
         } else {
-            state::STAKERS.save(deps.storage, &public_key, &executor)?;
+            state::STAKERS.update(deps.storage, public_key.into(), &executor)?;
         }
 
         // send the tokens back to the executor
