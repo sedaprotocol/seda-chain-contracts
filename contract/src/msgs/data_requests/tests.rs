@@ -898,10 +898,6 @@ fn post_data_request_replication_factor_too_high() {
 
     let sender = test_info.new_executor("sender", Some(2));
 
-    // data request with id 0x69... does not yet exist
-    let value = test_info.get_data_request("69a6e26b4d65f5b3010254a0aae2bf1bc8dccb4ddd27399c580eb771446e719f");
-    assert_eq!(None, value);
-
     // post a data request with rf=1
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let res = test_info.post_data_request(&sender, dr.clone(), vec![], vec![1, 2, 3], 1);
@@ -912,4 +908,17 @@ fn post_data_request_replication_factor_too_high() {
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
     let res = test_info.post_data_request(&sender, dr.clone(), vec![], vec![1, 2, 3], 1);
     assert!(res.is_err_and(|x| x == ContractError::DataRequestReplicationFactorTooHigh(1)));
+}
+
+#[test]
+#[should_panic(expected = "DataRequestReplicationFactorZero")]
+fn post_data_request_replication_factor_zero() {
+    let mut test_info = TestInfo::init();
+    let sender = test_info.new_executor("sender", Some(2));
+
+    // post a data request with rf=0
+    let dr = test_helpers::calculate_dr_id_and_args(1, 0);
+    test_info
+        .post_data_request(&sender, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .unwrap();
 }

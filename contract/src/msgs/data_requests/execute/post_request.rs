@@ -5,12 +5,9 @@ use super::*;
 impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
-        // hash the inputs to get the data request id
-        let dr_id = self.posted_dr.try_hash()?;
-
-        // require the data request id to be unique
-        if state::data_request_or_result_exists(deps.as_ref(), dr_id) {
-            return Err(ContractError::DataRequestAlreadyExists);
+        // require the replication to be non-zero
+        if self.posted_dr.replication_factor == 0 {
+            return Err(ContractError::DataRequestReplicationFactorZero);
         }
 
         // TODO: this operation is O(n) and can be improved
@@ -20,6 +17,14 @@ impl ExecuteHandler for execute::post_request::Execute {
             .count();
         if usize::from(self.posted_dr.replication_factor) > stakers_length {
             return Err(ContractError::DataRequestReplicationFactorTooHigh(stakers_length));
+        }
+
+        // hash the inputs to get the data request id
+        let dr_id = self.posted_dr.try_hash()?;
+
+        // require the data request id to be unique
+        if state::data_request_or_result_exists(deps.as_ref(), dr_id) {
+            return Err(ContractError::DataRequestAlreadyExists);
         }
 
         // TODO: verify the payback non seda address...

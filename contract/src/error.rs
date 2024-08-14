@@ -42,6 +42,8 @@ pub enum ContractError {
     DataRequestDoesNotExist(String),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
+    #[error("DataRequestReplicationFactorZero: Data request replication factor cannot be zero")]
+    DataRequestReplicationFactorZero,
     #[error(
         "ReplicationFactorExceedsExecutorCount: The specified replication factor exceeds the available number of executors ({0})"
     )]
