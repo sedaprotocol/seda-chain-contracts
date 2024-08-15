@@ -20,7 +20,7 @@ impl QueryHandler for QueryMsg {
                 let seq: Uint128 = get_seq(deps.storage, &public_key)?.into();
                 to_json_binary(&StakerAndSeq { staker, seq })?
             }
-            QueryMsg::IsExecutorEligible { public_key: executor } => {
+            QueryMsg::IsExecutorEligible { proof: executor, .. } => {
                 to_json_binary(&utils::is_executor_eligible(deps, PublicKey::from_hex_str(&executor)?)?)?
             }
             QueryMsg::GetStakingConfig {} => to_json_binary(&state::CONFIG.load(deps.storage)?)?,

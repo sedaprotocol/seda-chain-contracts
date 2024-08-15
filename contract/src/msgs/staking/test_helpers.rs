@@ -120,7 +120,8 @@ impl TestInfo {
     #[track_caller]
     pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
         self.query(query::QueryMsg::IsExecutorEligible {
-            public_key: executor.to_hex(),
+            proof: executor.to_hex(),
+            dr_id: "".to_string(),
         })
         .unwrap()
     }

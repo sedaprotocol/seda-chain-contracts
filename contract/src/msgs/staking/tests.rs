@@ -41,6 +41,10 @@ fn deposit_stake_withdraw() {
     // can't register without depositing tokens
     let mut anyone = test_info.new_executor("anyone", Some(3));
 
+    test_info
+        .add_to_allowlist(&test_info.creator(), anyone.pub_key())
+        .unwrap();
+
     // register a data request executor
     test_info.stake(&mut anyone, Some("address".to_string()), 1).unwrap();
     let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
