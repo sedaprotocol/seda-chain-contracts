@@ -14,11 +14,13 @@ pub fn get_staker(deps: Deps, executor: &PublicKey) -> StdResult<Option<Staker>>
 
 /// Returns whether an executor is eligible to participate in the committee.
 pub fn is_executor_eligible(deps: Deps, executor: PublicKey) -> StdResult<bool> {
-    let allowed = ALLOWLIST.may_load(deps.storage, &executor)?;
-    // If the executor is not in the allowlist, they are not eligible.
-    // If the executor is in the allowlist, but the value is false, they are not eligible.
-    if allowed.is_none() || !allowed.unwrap() {
-        return Ok(false);
+    if CONFIG.load(deps.storage)?.allowlist_enabled {
+        let allowed = ALLOWLIST.may_load(deps.storage, &executor)?;
+        // If the executor is not in the allowlist, they are not eligible.
+        // If the executor is in the allowlist, but the value is false, they are not eligible.
+        if allowed.is_none() || !allowed.unwrap() {
+            return Ok(false);
+        }
     }
 
     let executor = STAKERS.may_load(deps.storage, &executor)?;

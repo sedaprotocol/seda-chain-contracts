@@ -41,6 +41,15 @@ fn deposit_stake_withdraw() {
     // can't register without depositing tokens
     let mut anyone = test_info.new_executor("anyone", Some(3));
 
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               1u8.into(),
+        minimum_stake_for_committee_eligibility: 1u8.into(),
+        allowlist_enabled:                       true,
+    };
+
+    // owner sets staking config
+    test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
+
     test_info
         .add_to_allowlist(&test_info.creator(), anyone.pub_key())
         .unwrap();
