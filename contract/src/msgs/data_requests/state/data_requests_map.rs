@@ -181,3 +181,16 @@ impl DataRequestsMap<'_> {
         Ok(requests)
     }
 }
+
+macro_rules! new_enumerable_status_map {
+    ($namespace:literal) => {
+        DataRequestsMap {
+            reqs:       Map::new(concat!($namespace, "_reqs")),
+            committing: $crate::enumerable_set!(concat!($namespace, "_committing")),
+            revealing:  $crate::enumerable_set!(concat!($namespace, "_revealing")),
+            tallying:   $crate::enumerable_set!(concat!($namespace, "_tallying")),
+        }
+    };
+}
+
+pub(super) use new_enumerable_status_map;

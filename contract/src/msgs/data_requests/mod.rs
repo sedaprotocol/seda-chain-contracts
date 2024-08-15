@@ -6,7 +6,6 @@ pub mod execute;
 pub mod query;
 pub mod state;
 pub mod sudo;
-pub mod types;
 
 #[path = ""]
 #[cfg(test)]

@@ -1,11 +1,16 @@
 use std::rc::Rc;
 
-use types::*;
+use cosmwasm_std::Storage;
+use cw_storage_plus::Bound;
 
 use super::*;
-use crate::enumerable_status_map;
+mod data_requests_map;
+use data_requests_map::{new_enumerable_status_map, DataRequestsMap};
 
-const DATA_REQUESTS: DataRequestsMap = enumerable_status_map!("data_request_pool");
+#[cfg(test)]
+mod data_requests_map_tests;
+
+const DATA_REQUESTS: DataRequestsMap = new_enumerable_status_map!("data_request_pool");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 pub fn init_data_requests(store: &mut dyn Storage) -> Result<(), ContractError> {

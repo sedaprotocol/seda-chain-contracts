@@ -1,11 +1,4 @@
-use std::rc::Rc;
-
-use seda_common::msgs::staking::{Staker, StakingConfig};
-
 use super::*;
-
-/// Governance-controlled configuration parameters.
-pub const CONFIG: Item<StakingConfig> = Item::new("config");
 
 pub struct StakersMap<'a> {
     pub stakers:     Map<'a, &'a PublicKey, Staker>,
@@ -44,13 +37,20 @@ impl StakersMap<'_> {
     }
 
     pub fn is_executor_eligible(&self, store: &dyn Storage, executor: &PublicKey) -> StdResult<bool> {
+        if CONFIG.load(store)?.allowlist_enabled {
+            let allowed = ALLOWLIST.may_load(store, executor)?;
+            // If the executor is not in the allowlist, they are not eligible.
+            // If the executor is in the allowlist, but the value is false, they are not eligible.
+            if allowed.is_none() || !allowed.unwrap() {
+                return Ok(false);
+            }
+        }
+
         let executor = self.may_get_staker(store, executor)?;
-        let value = match executor {
+        Ok(match executor {
             Some(staker) => staker.tokens_staked >= CONFIG.load(store)?.minimum_stake_for_committee_eligibility,
             None => false,
-        };
-
-        Ok(value)
+        })
     }
 
     pub fn len(&self, store: &dyn Storage) -> StdResult<u32> {
@@ -58,7 +58,7 @@ impl StakersMap<'_> {
     }
 }
 
-macro_rules! stakers_map {
+macro_rules! new_stakers_map {
     ($namespace:literal) => {
         StakersMap {
             stakers:     Map::new(concat!($namespace, "_stakers")),
@@ -67,5 +67,5 @@ macro_rules! stakers_map {
     };
 }
 
-/// A map of stakers (of address to info).
-pub const STAKERS: StakersMap = stakers_map!("data_request_executors");
+pub(crate) use new_stakers_map;
+use owner::state::ALLOWLIST;

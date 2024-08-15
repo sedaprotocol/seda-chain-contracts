@@ -4,7 +4,6 @@ use test::test_helpers::{calculate_dr_id_and_args, construct_dr};
 use testing::MockStorage;
 
 use super::*;
-use crate::enumerable_status_map;
 
 struct TestInfo<'a> {
     pub store: MockStorage,
@@ -14,7 +13,7 @@ struct TestInfo<'a> {
 impl TestInfo<'_> {
     fn init() -> Self {
         let mut store = MockStorage::new();
-        let map: DataRequestsMap = enumerable_status_map!("test");
+        let map: DataRequestsMap = new_enumerable_status_map!("test");
         map.initialize(&mut store).unwrap();
         Self { store, map }
     }
