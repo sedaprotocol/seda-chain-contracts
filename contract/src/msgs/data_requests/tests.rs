@@ -117,9 +117,7 @@ fn cannot_commit_if_not_staked() {
     let dr_id = test_info.post_data_request(&bob, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info
-        .commit_result(&bob, &dr_id, "0xcommitment".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&bob, &dr_id, "0xcommitment".hash()).unwrap();
 }
 
 #[test]
@@ -143,9 +141,7 @@ fn cannont_commit_if_not_enough_staked() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info
-        .commit_result(&anyone, &dr_id, "0xcommitment".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 }
 
 #[test]
@@ -163,9 +159,7 @@ fn commit_result() {
     let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info
-        .commit_result(&alice, &dr_id, "0xcommitment".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&alice, &dr_id, "0xcommitment".hash()).unwrap();
 
     // check if the data request is in the committing state before meeting the replication factor
     let commiting = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
@@ -183,9 +177,7 @@ fn commits_meet_replication_factor() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info
-        .commit_result(&anyone, &dr_id, "0xcommitment".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 
     // check if the data request is in the revealing state after meeting the replication factor
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
@@ -207,14 +199,10 @@ fn cannot_double_commit() {
     let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info
-        .commit_result(&alice, &dr_id, "0xcommitment1".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&alice, &dr_id, "0xcommitment1".hash()).unwrap();
 
     // try to commit again as the same user
-    test_info
-        .commit_result(&alice, &dr_id, "0xcommitment2".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&alice, &dr_id, "0xcommitment2".hash()).unwrap();
 }
 
 #[test]
@@ -229,16 +217,12 @@ fn cannot_commit_after_replication_factor_reached() {
     let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
 
     // commit a data result
-    test_info
-        .commit_result(&anyone, &dr_id, "0xcommitment".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 
     // commit again as a different user
     let mut new = test_info.new_executor("new", Some(2));
     new.stake(&mut test_info, 1).unwrap();
-    test_info
-        .commit_result(&new, &dr_id, "0xcommitment".hash(), vec![])
-        .unwrap();
+    test_info.commit_result(&new, &dr_id, "0xcommitment".hash()).unwrap();
 }
 
 #[test]
@@ -279,7 +263,7 @@ fn reveal_result() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -293,7 +277,7 @@ fn reveal_result() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
@@ -326,10 +310,10 @@ fn reveal_result_with_proxies() {
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
         exit_code:         0,
-        proxy_public_keys: proxies.clone(),
+        proxy_public_keys: proxies,
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), proxies.clone())
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
@@ -342,7 +326,7 @@ fn reveal_result_with_proxies() {
 
 #[test]
 #[should_panic(expected = "InvalidHexCharacter")]
-fn commit_result_with_proxies_not_valid_public_keys() {
+fn reveal_result_with_proxies_not_valid_public_keys() {
     let mut test_info = TestInfo::init();
     let mut alice = test_info.new_executor("alice", Some(2));
     alice.stake(&mut test_info, 1).unwrap();
@@ -350,7 +334,7 @@ fn commit_result_with_proxies_not_valid_public_keys() {
     bob.stake(&mut test_info, 1).unwrap();
 
     // post a data request
-    let dr = test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
     let proxy1 = "proxy1".to_string();
@@ -366,12 +350,15 @@ fn commit_result_with_proxies_not_valid_public_keys() {
         proxy_public_keys: proxies.clone(),
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), proxies)
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
+
+    // alice reveals
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "RevealMismatch")]
 fn reveal_result_reveal_body_missing_proxies() {
     let mut test_info = TestInfo::init();
     let mut alice = test_info.new_executor("alice", Some(2));
@@ -386,38 +373,7 @@ fn reveal_result_reveal_body_missing_proxies() {
     let proxies = vec![proxy1.to_hex(), proxy2.to_hex()];
 
     // alice commits a data result
-    let alice_reveal = RevealBody {
-        salt:              alice.salt(),
-        reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
-        exit_code:         0,
-        proxy_public_keys: vec![],
-    };
-    test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), proxies.clone())
-        .unwrap();
-
-    // alice reveals
-    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
-}
-
-#[test]
-#[should_panic]
-fn reveal_result_reveal_commit_proxies() {
-    let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(2));
-    alice.stake(&mut test_info, 1).unwrap();
-
-    // post a data request
-    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
-
-    let (_, proxy1) = new_public_key();
-    let (_, proxy2) = new_public_key();
-    let proxies = vec![proxy1.to_hex(), proxy2.to_hex()];
-
-    // alice commits a data result
-    let alice_reveal = RevealBody {
+    let mut alice_reveal = RevealBody {
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -425,10 +381,11 @@ fn reveal_result_reveal_commit_proxies() {
         proxy_public_keys: proxies,
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
+    alice_reveal.proxy_public_keys = vec![];
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 }
 
@@ -454,7 +411,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
@@ -481,7 +438,7 @@ fn cannot_reveal_if_user_did_not_commit() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -525,7 +482,7 @@ fn cannot_double_reveal() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -539,7 +496,7 @@ fn cannot_double_reveal() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
@@ -583,7 +540,6 @@ fn reveal_must_match_commitment() {
             }
             .try_hash()
             .unwrap(),
-            vec![],
         )
         .unwrap();
 
@@ -597,7 +553,7 @@ fn reveal_must_match_commitment() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
@@ -627,7 +583,7 @@ fn post_data_result() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
@@ -659,7 +615,7 @@ fn post_data_results() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id1, alice_reveal1.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id1, alice_reveal1.try_hash().unwrap())
         .unwrap();
     test_info.reveal_result(&alice, &dr_id1, alice_reveal1.clone()).unwrap();
 
@@ -676,7 +632,7 @@ fn post_data_results() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id2, alice_reveal2.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id2, alice_reveal2.try_hash().unwrap())
         .unwrap();
     test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
 
@@ -716,7 +672,7 @@ fn cant_post_if_replication_factor_not_met() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
     // bob also commits
@@ -728,7 +684,7 @@ fn cant_post_if_replication_factor_not_met() {
         proxy_public_keys: vec![],
     };
     test_info
-        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
     // alice reveals
@@ -827,10 +783,10 @@ fn post_data_result_with_more_drs_in_the_pool() {
     );
     // Commit 2 drs
     test_info
-        .commit_result(&alice, &dr_id1, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id1, alice_reveal.try_hash().unwrap())
         .unwrap();
     test_info
-        .commit_result(&alice, &dr_id2, alice_reveal.try_hash().unwrap(), vec![])
+        .commit_result(&alice, &dr_id2, alice_reveal.try_hash().unwrap())
         .unwrap();
     assert_eq!(
         0,
@@ -910,7 +866,7 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
 
         if i < 15 {
             test_info
-                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
                 .unwrap();
         }
 
@@ -961,7 +917,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
 
         if i % 2 == 0 {
             test_info
-                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
                 .unwrap();
 
             // test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);

@@ -38,10 +38,15 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         // error if the commitment hash does not match the reveal
         // it's cheaper to hex -> byte array than hash -> hex
-        dbg!(committed_dr_result, &reveal_body_hash);
         if &reveal_body_hash != committed_dr_result {
             return Err(ContractError::RevealMismatch);
         }
+
+        // check if the proxy_public_keys are valid
+        self.reveal_body.proxy_public_keys.iter().try_for_each(|proxy| {
+            PublicKey::from_hex_str(proxy)?;
+            Ok::<_, ContractError>(())
+        })?;
 
         let response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
