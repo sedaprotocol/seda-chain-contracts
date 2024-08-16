@@ -123,7 +123,13 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
+    pub fn commit_result(
+        &mut self,
+        sender: &TestExecutor,
+        dr_id: &str,
+        commitment: Hash,
+        proxy_public_keys: Vec<String>,
+    ) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
 
@@ -131,6 +137,7 @@ impl TestInfo {
             dr_id.to_string(),
             commitment,
             sender.pub_key_hex(),
+            proxy_public_keys,
             self.chain_id(),
             self.contract_addr(),
             dr.height,
@@ -155,6 +162,7 @@ impl TestInfo {
             dr_id.to_string(),
             commitment,
             sender.pub_key_hex(),
+            vec![],
             self.chain_id(),
             self.contract_addr(),
             dr.height.saturating_sub(3),

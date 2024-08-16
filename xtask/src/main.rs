@@ -124,10 +124,11 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
             let reveals = (0..replication_factor)
                 .map(|_| {
                     let reveal = RevealBody {
-                        salt:      salt.to_hex(),
-                        exit_code: 0,
-                        gas_used:  10u128.into(),
-                        reveal:    rand::thread_rng().gen_range(1..=100u8).to_be_bytes().into(),
+                        salt:              salt.to_hex(),
+                        exit_code:         0,
+                        gas_used:          10u128.into(),
+                        reveal:            rand::thread_rng().gen_range(1..=100u8).to_be_bytes().into(),
+                        proxy_public_keys: vec![],
                     };
 
                     (
