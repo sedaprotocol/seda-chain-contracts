@@ -6,7 +6,6 @@ use seda_common::msgs::staking::{Staker, StakingConfig};
 use stakers_map::{new_stakers_map, StakersMap};
 
 use super::*;
-// use crate::stakers_map;
 
 /// Governance-controlled configuration parameters.
 pub const CONFIG: Item<StakingConfig> = Item::new("config");
