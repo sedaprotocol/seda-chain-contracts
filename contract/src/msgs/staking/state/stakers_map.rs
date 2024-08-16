@@ -37,7 +37,8 @@ impl StakersMap<'_> {
     }
 
     pub fn is_executor_eligible(&self, store: &dyn Storage, executor: &PublicKey) -> StdResult<bool> {
-        if CONFIG.load(store)?.allowlist_enabled {
+        let config = CONFIG.load(store)?;
+        if config.allowlist_enabled {
             let allowed = ALLOWLIST.may_load(store, executor)?;
             // If the executor is not in the allowlist, they are not eligible.
             // If the executor is in the allowlist, but the value is false, they are not eligible.
@@ -48,7 +49,7 @@ impl StakersMap<'_> {
 
         let executor = self.may_get_staker(store, executor)?;
         Ok(match executor {
-            Some(staker) => staker.tokens_staked >= CONFIG.load(store)?.minimum_stake_for_committee_eligibility,
+            Some(staker) => staker.tokens_staked >= config.minimum_stake_for_committee_eligibility,
             None => false,
         })
     }
