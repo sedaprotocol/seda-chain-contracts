@@ -1,5 +1,5 @@
 use super::*;
-use crate::TestInfo;
+use crate::{new_public_key, TestInfo};
 
 #[test]
 fn query_drs_by_status_has_none() {
@@ -302,6 +302,134 @@ fn reveal_result() {
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
     assert_eq!(1, revealing.len());
     assert!(revealing.iter().any(|r| r.id == dr_id));
+}
+
+#[test]
+fn reveal_result_with_proxies() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+    let mut bob = test_info.new_executor("bob", Some(2));
+    bob.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    let (_, proxy1) = new_public_key();
+    let (_, proxy2) = new_public_key();
+    let proxies = vec![proxy1.to_hex(), proxy2.to_hex()];
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: proxies.clone(),
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), proxies.clone())
+        .unwrap();
+
+    // alice reveals
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
+
+    let tallying = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10);
+    assert_eq!(1, tallying.len());
+    assert!(tallying.iter().any(|r| r.id == dr_id));
+}
+
+#[test]
+#[should_panic(expected = "InvalidHexCharacter")]
+fn commit_result_with_proxies_not_valid_public_keys() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+    let mut bob = test_info.new_executor("bob", Some(2));
+    bob.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    let proxy1 = "proxy1".to_string();
+    let proxy2 = "proxy2".to_string();
+    let proxies = vec![proxy1, proxy2];
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: proxies.clone(),
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), proxies)
+        .unwrap();
+}
+
+#[test]
+#[should_panic]
+fn reveal_result_reveal_body_missing_proxies() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    let (_, proxy1) = new_public_key();
+    let (_, proxy2) = new_public_key();
+    let proxies = vec![proxy1.to_hex(), proxy2.to_hex()];
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), proxies.clone())
+        .unwrap();
+
+    // alice reveals
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn reveal_result_reveal_commit_proxies() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    let (_, proxy1) = new_public_key();
+    let (_, proxy2) = new_public_key();
+    let proxies = vec![proxy1.to_hex(), proxy2.to_hex()];
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: proxies,
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap(), vec![])
+        .unwrap();
+
+    // alice reveals
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 }
 
 #[test]

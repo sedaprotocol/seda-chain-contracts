@@ -34,6 +34,12 @@ impl ExecuteHandler for execute::commit_result::Execute {
         let chain_id = CHAIN_ID.load(deps.storage)?;
         self.verify(&public_key, &chain_id, env.contract.address.as_str(), dr.height)?;
 
+        // check if the proxy_public_keys are valid
+        self.proxy_public_keys.iter().try_for_each(|proxy| {
+            PublicKey::from_hex_str(proxy)?;
+            Ok::<_, ContractError>(())
+        })?;
+
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;
         dr.commits.insert(self.public_key.clone(), commitment);

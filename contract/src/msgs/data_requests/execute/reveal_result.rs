@@ -38,6 +38,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         // error if the commitment hash does not match the reveal
         // it's cheaper to hex -> byte array than hash -> hex
+        dbg!(committed_dr_result, &reveal_body_hash);
         if &reveal_body_hash != committed_dr_result {
             return Err(ContractError::RevealMismatch);
         }

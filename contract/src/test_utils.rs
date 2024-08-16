@@ -24,6 +24,14 @@ use vrf_rs::Secp256k1Sha256;
 
 use crate::{common_types::Hash, contract::*, error::ContractError, types::PublicKey};
 
+pub fn new_public_key() -> (SigningKey, PublicKey) {
+    let signing_key = SigningKey::random(&mut OsRng);
+    let verifying_key = VerifyingKey::from(&signing_key);
+    let public_key = verifying_key.to_encoded_point(true).as_bytes().try_into().unwrap();
+
+    (signing_key, public_key)
+}
+
 pub struct TestInfo {
     app:           App,
     contract_addr: Addr,
@@ -77,8 +85,12 @@ impl TestInfo {
         info
     }
 
+    pub fn new_address(&mut self, name: &'static str) -> Addr {
+        self.app.api().addr_make(name)
+    }
+
     pub fn new_executor(&mut self, name: &'static str, amount: Option<u128>) -> TestExecutor {
-        let addr = self.app.api().addr_make(name);
+        let addr = self.new_address(name);
         let executor = TestExecutor::new(name, addr, amount);
         if let Some(amount) = amount {
             self.app
@@ -219,9 +231,7 @@ pub struct TestExecutor {
 
 impl TestExecutor {
     fn new(name: &'static str, addr: Addr, amount: Option<u128>) -> Self {
-        let signing_key = SigningKey::random(&mut OsRng);
-        let verifying_key = VerifyingKey::from(&signing_key);
-        let public_key = verifying_key.to_encoded_point(true).as_bytes().try_into().unwrap();
+        let (signing_key, public_key) = new_public_key();
         let coins = if let Some(amount) = amount {
             coins(amount, "aseda")
         } else {
