@@ -701,7 +701,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.0.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/proxy-pub-keys#8d29931fedbcfdecdd741e0b2f7f7e8270814713"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/proxy-pub-keys#f3571a0180659aaa1ef00cd1d5faffd5cccca88e"
 dependencies = [
  "base64 0.22.1",
  "cosmwasm-schema",
