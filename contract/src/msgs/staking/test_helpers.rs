@@ -21,15 +21,10 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let factory = execute::stake::Execute::factory(
-            sender.pub_key_hex(),
-            memo,
-            self.chain_id(),
-            self.contract_addr(),
-            seq.into(),
-        );
+        let factory =
+            execute::stake::Execute::factory(sender.pub_key_hex(), memo, self.chain_id(), self.contract_addr(), seq);
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute_with_funds(sender, &msg, amount)
     }
@@ -46,15 +41,10 @@ impl TestInfo {
     pub fn increase_stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let factory = execute::stake::Execute::factory(
-            sender.pub_key_hex(),
-            None,
-            self.chain_id(),
-            self.contract_addr(),
-            seq.into(),
-        );
+        let factory =
+            execute::stake::Execute::factory(sender.pub_key_hex(), None, self.chain_id(), self.contract_addr(), seq);
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute_with_funds(sender, &msg, amount)
     }
@@ -68,15 +58,10 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let factory = execute::stake::Execute::factory(
-            sender.pub_key_hex(),
-            memo,
-            self.chain_id(),
-            self.contract_addr(),
-            seq.into(),
-        );
+        let factory =
+            execute::stake::Execute::factory(sender.pub_key_hex(), memo, self.chain_id(), self.contract_addr(), seq);
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute(sender, &msg)
     }
@@ -87,13 +72,13 @@ impl TestInfo {
 
         let factory = execute::unstake::Execute::factory(
             sender.pub_key_hex(),
-            amount.into(),
+            amount,
             self.chain_id(),
             self.contract_addr(),
-            seq.into(),
+            seq,
         );
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute(sender, &msg)
     }
@@ -104,13 +89,13 @@ impl TestInfo {
 
         let factory = execute::withdraw::Execute::factory(
             sender.pub_key_hex(),
-            amount.into(),
+            amount,
             self.chain_id(),
             self.contract_addr(),
-            seq.into(),
+            seq,
         );
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         let res = self.execute(sender, &msg);
         sender.add_seda(10);

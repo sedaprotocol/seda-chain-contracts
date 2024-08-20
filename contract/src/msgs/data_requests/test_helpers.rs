@@ -136,7 +136,7 @@ impl TestInfo {
             dr.height,
         );
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute(sender, &msg)
     }
@@ -160,7 +160,7 @@ impl TestInfo {
             dr.height.saturating_sub(3),
         );
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute(sender, &msg)
     }
@@ -187,7 +187,7 @@ impl TestInfo {
             reveal_body_hash,
         );
         let proof = sender.prove(factory.get_hash());
-        let msg = factory.create_message(proof).into();
+        let msg = factory.create_message(proof);
 
         self.execute(sender, &msg)
     }
