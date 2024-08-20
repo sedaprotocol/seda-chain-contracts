@@ -20,8 +20,6 @@ pub enum ContractError {
     // staking contract errors
     #[error("NoFunds: No funds provided")]
     NoFunds,
-    #[error("ExecutorHasTokens: Executor has staked tokens or tokens pending withdrawal")]
-    ExecutorHasTokens,
     #[error("NotOwner: Only owner can transfer ownership")]
     NotOwner,
     #[error("NotPendingOwner: Only pending owner can accept ownership")]
@@ -30,16 +28,10 @@ pub enum ContractError {
     NoPendingOwnerFound,
     #[error("NotOnAllowlist: Address is not on the allowlist")]
     NotOnAllowlist,
-    #[error("InvalidSignature: Invalid signature")]
-    InvalidSignature,
-    #[error("InvalidSignatureRecoveryId: Invalid signature recovery ID")]
-    InvalidSignatureRecoveryId,
 
     // DR contract errors
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(Uint128, Uint128),
-    #[error("DataRequestDoesNotExist {0}: Data request does not exist")]
-    DataRequestDoesNotExist(String),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
     #[error("DataRequestReplicationFactorZero: Data request replication factor cannot be zero")]
@@ -48,10 +40,6 @@ pub enum ContractError {
         "ReplicationFactorExceedsExecutorCount: The specified replication factor exceeds the available number of executors ({0})"
     )]
     DataRequestReplicationFactorTooHigh(usize),
-    #[error("Invalid payback address")]
-    InvalidPaybackAddr,
-    #[error("IneligibleExecutor: Caller is not an eligible data request executor")]
-    IneligibleExecutor,
     #[error("AlreadyCommitted: Caller has already committed on this data request")]
     AlreadyCommitted,
     #[error("RevealNotStarted: Reveal stage has not started yet")]
@@ -66,10 +54,6 @@ pub enum ContractError {
     RevealMismatch,
     #[error("NotEnoughReveals: Not enough reveals to post the data result")]
     NotEnoughReveals,
-    #[error("NotProxy: Only proxy can pass a sender")]
-    NotProxy,
-    #[error("EmptyArg: Arg cannot be empty: {0}")]
-    EmptyArg(String),
 
     #[error("FromHex: Invalid hexadecimal input: {0}")]
     FromHex(#[from] FromHexError),
