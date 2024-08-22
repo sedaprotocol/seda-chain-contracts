@@ -23,7 +23,7 @@ impl ExecuteHandler for execute::unstake::Execute {
         // update the executor
         executor.tokens_staked -= self.amount;
         executor.tokens_pending_withdrawal += self.amount;
-        state::STAKERS.update(deps.storage, public_key.into(), &executor)?;
+        state::STAKERS.update(deps.storage, public_key, &executor)?;
 
         // TODO: emit when pending tokens can be withdrawn
 

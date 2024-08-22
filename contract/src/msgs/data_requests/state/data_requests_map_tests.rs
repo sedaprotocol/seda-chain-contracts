@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use test::test_helpers::{calculate_dr_id_and_args, construct_dr};
 use testing::MockStorage;
 
@@ -30,16 +28,13 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn assert_status_key_to_index(&self, status: &DataRequestStatus, key: Rc<Hash>, index: Option<u32>) {
+    fn assert_status_key_to_index(&self, status: &DataRequestStatus, key: Hash, index: Option<u32>) {
         let status_map = match status {
             DataRequestStatus::Committing => &self.map.committing,
             DataRequestStatus::Revealing => &self.map.revealing,
             DataRequestStatus::Tallying => &self.map.tallying,
         };
-        assert_eq!(
-            index,
-            status_map.key_to_index.may_load(&self.store, key.into()).unwrap()
-        );
+        assert_eq!(index, status_map.key_to_index.may_load(&self.store, key).unwrap());
     }
 
     #[track_caller]
@@ -56,26 +51,26 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn insert(&mut self, key: Rc<Hash>, value: DataRequest) {
+    fn insert(&mut self, key: Hash, value: DataRequest) {
         self.map
             .insert(&mut self.store, key, value, &DataRequestStatus::Committing)
             .unwrap();
     }
 
     #[track_caller]
-    fn insert_removable(&mut self, key: Rc<Hash>, value: DataRequest) {
+    fn insert_removable(&mut self, key: Hash, value: DataRequest) {
         self.map
             .insert(&mut self.store, key, value, &DataRequestStatus::Tallying)
             .unwrap();
     }
 
     #[track_caller]
-    fn update(&mut self, key: Rc<Hash>, dr: DataRequest, status: Option<DataRequestStatus>) {
+    fn update(&mut self, key: Hash, dr: DataRequest, status: Option<DataRequestStatus>) {
         self.map.update(&mut self.store, key, dr, status).unwrap();
     }
 
     #[track_caller]
-    fn remove(&mut self, key: Rc<Hash>) {
+    fn remove(&mut self, key: Hash) {
         self.map.remove(&mut self.store, key).unwrap();
     }
 
@@ -97,12 +92,12 @@ impl TestInfo<'_> {
     }
 }
 
-fn create_test_dr(nonce: u128) -> (Rc<Hash>, DataRequest) {
+fn create_test_dr(nonce: u128) -> (Hash, DataRequest) {
     let args = calculate_dr_id_and_args(nonce, 2);
     let id = nonce.to_string().hash();
     let dr = construct_dr(args, vec![], nonce as u64);
 
-    (Rc::new(id), dr)
+    (id, dr)
 }
 
 #[test]
@@ -119,10 +114,10 @@ fn enum_map_insert() {
     const TEST_STATUS: &DataRequestStatus = &DataRequestStatus::Committing;
 
     let (key, val) = create_test_dr(1);
-    test_info.insert(key.clone(), val);
+    test_info.insert(key, val);
     test_info.assert_status_len(1, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, key.clone(), Some(0));
-    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(*key));
+    test_info.assert_status_key_to_index(TEST_STATUS, key, Some(0));
+    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key));
 }
 
 #[test]
@@ -130,7 +125,7 @@ fn enum_map_get() {
     let mut test_info = TestInfo::init();
 
     let (key, req) = create_test_dr(1);
-    test_info.insert(key.clone(), req.clone());
+    test_info.insert(key, req.clone());
     test_info.assert_request(&key, Some(req))
 }
 
@@ -141,7 +136,7 @@ fn enum_map_get_non_existing() {
 
     test_info.assert_request(&"1".hash(), None);
     test_info.assert_status_len(0, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, Rc::new("1".hash()), None);
+    test_info.assert_status_key_to_index(TEST_STATUS, "1".hash(), None);
     test_info.assert_status_index_to_key(TEST_STATUS, 0, None);
 }
 
@@ -150,7 +145,7 @@ fn enum_map_get_non_existing() {
 fn enum_map_insert_duplicate() {
     let mut test_info = TestInfo::init();
     let (key, req) = create_test_dr(1);
-    test_info.insert(key.clone(), req.clone());
+    test_info.insert(key, req.clone());
     test_info.insert(key, req);
 }
 
@@ -162,15 +157,15 @@ fn enum_map_update() {
     let (key1, dr1) = create_test_dr(1);
     let (_, dr2) = create_test_dr(2);
 
-    test_info.insert(key1.clone(), dr1.clone());
+    test_info.insert(key1, dr1.clone());
     test_info.assert_status_len(1, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, key1.clone(), Some(0));
-    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(*key1));
+    test_info.assert_status_key_to_index(TEST_STATUS, key1, Some(0));
+    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
 
-    test_info.update(key1.clone(), dr2.clone(), None);
+    test_info.update(key1, dr2.clone(), None);
     test_info.assert_status_len(1, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, key1.clone(), Some(0));
-    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(*key1));
+    test_info.assert_status_key_to_index(TEST_STATUS, key1, Some(0));
+    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
 }
 
 #[test]
@@ -190,14 +185,14 @@ fn enum_map_remove_first() {
     let (key2, req2) = create_test_dr(2);
     let (key3, req3) = create_test_dr(3);
 
-    test_info.insert_removable(key1.clone(), req1.clone()); // 0
-    test_info.insert_removable(key2.clone(), req2.clone()); // 1
-    test_info.insert_removable(key3.clone(), req3.clone()); // 2
+    test_info.insert_removable(key1, req1.clone()); // 0
+    test_info.insert_removable(key2, req2.clone()); // 1
+    test_info.insert_removable(key3, req3.clone()); // 2
 
-    test_info.remove(key1.clone());
+    test_info.remove(key1);
     test_info.assert_status_len(2, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, key3.clone(), Some(0));
-    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(*key3));
+    test_info.assert_status_key_to_index(TEST_STATUS, key3, Some(0));
+    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key3));
 
     // test that we can still get the other keys
     test_info.assert_request(&key2, Some(req2.clone()));
@@ -217,12 +212,12 @@ fn enum_map_remove_last() {
     let (key2, req2) = create_test_dr(2);
     let (key3, req3) = create_test_dr(3);
 
-    test_info.insert_removable(key1.clone(), req1.clone()); // 0
-    test_info.insert_removable(key2.clone(), req2.clone()); // 1
-    test_info.insert_removable(key3.clone(), req3.clone()); // 2
+    test_info.insert_removable(key1, req1.clone()); // 0
+    test_info.insert_removable(key2, req2.clone()); // 1
+    test_info.insert_removable(key3, req3.clone()); // 2
     test_info.assert_status_len(3, TEST_STATUS);
 
-    test_info.remove(key3.clone());
+    test_info.remove(key3);
     test_info.assert_status_len(2, TEST_STATUS);
     test_info.assert_status_index_to_key(TEST_STATUS, 2, None);
     test_info.assert_status_key_to_index(TEST_STATUS, key3, None);
@@ -232,8 +227,8 @@ fn enum_map_remove_last() {
     assert_eq!(test_info.get(&key2), Some(req2.clone()));
 
     // test that the status indexes are still there
-    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(*key1));
-    test_info.assert_status_index_to_key(TEST_STATUS, 1, Some(*key2));
+    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
+    test_info.assert_status_index_to_key(TEST_STATUS, 1, Some(key2));
 }
 
 #[test]
@@ -246,13 +241,13 @@ fn enum_map_remove() {
     let (key3, req3) = create_test_dr(3);
     let (key4, req4) = create_test_dr(4);
 
-    test_info.insert_removable(key1.clone(), req1.clone()); // 0
-    test_info.insert_removable(key2.clone(), req2.clone()); // 1
-    test_info.insert_removable(key3.clone(), req3.clone()); // 2
-    test_info.insert_removable(key4.clone(), req4.clone()); // 3
+    test_info.insert_removable(key1, req1.clone()); // 0
+    test_info.insert_removable(key2, req2.clone()); // 1
+    test_info.insert_removable(key3, req3.clone()); // 2
+    test_info.insert_removable(key4, req4.clone()); // 3
     test_info.assert_status_len(4, &DataRequestStatus::Tallying);
 
-    test_info.remove(key2.clone());
+    test_info.remove(key2);
 
     // test that the key is removed
     test_info.assert_status_len(3, &DataRequestStatus::Tallying);
@@ -264,15 +259,15 @@ fn enum_map_remove() {
     test_info.assert_request(&key4, Some(req4));
 
     // check that the status is updated
-    test_info.assert_status_key_to_index(TEST_STATUS, key1.clone(), Some(0));
+    test_info.assert_status_key_to_index(TEST_STATUS, key1, Some(0));
     test_info.assert_status_key_to_index(TEST_STATUS, key2, None);
-    test_info.assert_status_key_to_index(TEST_STATUS, key3.clone(), Some(2));
-    test_info.assert_status_key_to_index(TEST_STATUS, key4.clone(), Some(1));
+    test_info.assert_status_key_to_index(TEST_STATUS, key3, Some(2));
+    test_info.assert_status_key_to_index(TEST_STATUS, key4, Some(1));
 
     // check the status indexes
-    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(*key1));
-    test_info.assert_status_index_to_key(TEST_STATUS, 1, Some(*key4));
-    test_info.assert_status_index_to_key(TEST_STATUS, 2, Some(*key3));
+    test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
+    test_info.assert_status_index_to_key(TEST_STATUS, 1, Some(key4));
+    test_info.assert_status_index_to_key(TEST_STATUS, 2, Some(key3));
     test_info.assert_status_index_to_key(TEST_STATUS, 3, None);
 }
 
@@ -280,7 +275,7 @@ fn enum_map_remove() {
 #[should_panic(expected = "Key does not exist")]
 fn enum_map_remove_non_existing() {
     let mut test_info = TestInfo::init();
-    test_info.remove(Rc::new(2.to_string().hash()));
+    test_info.remove(2.to_string().hash());
 }
 
 #[test]
@@ -291,7 +286,7 @@ fn get_requests_by_status() {
     test_info.insert(key1, req1.clone());
 
     let (key2, req2) = create_test_dr(2);
-    test_info.insert(key2.clone(), req2.clone());
+    test_info.insert(key2, req2.clone());
     test_info.update(key2, req2.clone(), Some(DataRequestStatus::Revealing));
 
     let committing = test_info.get_requests_by_status(DataRequestStatus::Committing, 0, 10);
@@ -336,7 +331,7 @@ fn get_requests_by_status_pagination() {
 #[should_panic(expected = "Key does not exist")]
 fn remove_from_empty() {
     let mut test_info = TestInfo::init();
-    test_info.remove(Rc::new(1.to_string().hash()));
+    test_info.remove(1.to_string().hash());
 }
 
 #[test]
@@ -345,8 +340,8 @@ fn remove_only_item() {
     const TEST_STATUS: &DataRequestStatus = &DataRequestStatus::Tallying;
 
     let (key, req) = create_test_dr(1);
-    test_info.insert_removable(key.clone(), req.clone());
-    test_info.remove(key.clone());
+    test_info.insert_removable(key, req.clone());
+    test_info.remove(key);
 
     test_info.assert_status_len(0, &DataRequestStatus::Tallying);
     test_info.assert_status_index_to_key(TEST_STATUS, 0, None);

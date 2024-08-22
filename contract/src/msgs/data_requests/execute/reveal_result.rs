@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use super::*;
 use crate::state::CHAIN_ID;
 
@@ -8,7 +6,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
     /// This removes the data request from the pool and creates a new entry in the data results.
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
-        let dr_id: Rc<Hash> = Hash::from_hex_str(&self.dr_id)?.into();
+        let dr_id = Hash::from_hex_str(&self.dr_id)?;
         let mut dr = state::load_request(deps.storage, &dr_id)?;
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)

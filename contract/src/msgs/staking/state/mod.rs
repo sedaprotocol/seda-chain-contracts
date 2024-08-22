@@ -1,7 +1,5 @@
 pub mod stakers_map;
 
-use std::rc::Rc;
-
 use seda_common::msgs::staking::{Staker, StakingConfig};
 use stakers_map::{new_stakers_map, StakersMap};
 

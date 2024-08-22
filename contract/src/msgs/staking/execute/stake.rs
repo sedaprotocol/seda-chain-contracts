@@ -34,7 +34,7 @@ impl ExecuteHandler for execute::stake::Execute {
 
                 state::STAKERS.insert(
                     deps.storage,
-                    public_key.into(),
+                    public_key,
                     &Staker {
                         memo:                      self.memo.clone(),
                         tokens_staked:             amount,
@@ -50,7 +50,7 @@ impl ExecuteHandler for execute::stake::Execute {
                 }
                 executor.tokens_staked += amount;
 
-                state::STAKERS.update(deps.storage, public_key.into(), &executor)
+                state::STAKERS.update(deps.storage, public_key, &executor)
             }
         }?;
 

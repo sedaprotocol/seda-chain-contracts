@@ -1,38 +1,11 @@
-use std::rc::Rc;
-
 use cw_storage_plus::PrimaryKey;
 
 use super::*;
 
 pub struct EnumerableSet<'a, Key> {
     pub len:          Item<'a, u32>,
-    pub key_to_index: Map<'a, KeyInner<Key>, u32>,
+    pub key_to_index: Map<'a, Key, u32>,
     pub index_to_key: Map<'a, u32, Key>,
-}
-
-#[derive(Clone)]
-pub struct KeyInner<Key> {
-    inner: Rc<Key>,
-}
-
-impl<Key> From<Rc<Key>> for KeyInner<Key> {
-    fn from(key: Rc<Key>) -> Self {
-        KeyInner { inner: key }
-    }
-}
-
-impl<'a, K> PrimaryKey<'a> for KeyInner<K>
-where
-    K: PrimaryKey<'a>,
-{
-    type Prefix = ();
-    type SubPrefix = ();
-    type Suffix = ();
-    type SuperSuffix = ();
-
-    fn key(&self) -> Vec<cw_storage_plus::Key> {
-        self.inner.key()
-    }
 }
 
 impl<'a, Key> EnumerableSet<'a, Key>
@@ -45,8 +18,8 @@ where
     }
 
     /// Returns true if the key exists in the set in O(1) time.
-    pub fn has(&self, store: &dyn Storage, key: Rc<Key>) -> bool {
-        self.key_to_index.has(store, key.into())
+    pub fn has(&self, store: &dyn Storage, key: Key) -> bool {
+        self.key_to_index.has(store, key)
     }
 
     /// Returns the length of the set in O(1) time.
@@ -60,22 +33,20 @@ where
     // }
 
     /// Adds a key to the set in O(1) time.
-    pub fn add(&self, store: &mut dyn Storage, key: Rc<Key>) -> StdResult<()> {
-        let key: KeyInner<Key> = key.into();
-        if self.has(store, key.clone().inner) {
+    pub fn add(&self, store: &mut dyn Storage, key: Key) -> StdResult<()> {
+        if self.has(store, key.clone()) {
             return Err(StdError::generic_err("Key already exists"));
         }
 
         let index = self.len(store)?;
-        self.key_to_index.save(store, key.clone(), &index)?;
-        self.index_to_key.save(store, index, &key.inner)?;
+        self.index_to_key.save(store, index, &key)?;
+        self.key_to_index.save(store, key, &index)?;
         self.len.save(store, &(index + 1))?;
         Ok(())
     }
 
     /// Removes a key from the set in O(1) time.
-    pub fn remove(&self, store: &mut dyn Storage, key: Rc<Key>) -> StdResult<()> {
-        let key: KeyInner<Key> = key.into();
+    pub fn remove(&self, store: &mut dyn Storage, key: Key) -> StdResult<()> {
         let index = self
             .key_to_index
             .may_load(store, key.clone())?
@@ -102,7 +73,7 @@ where
 
         // Update mapping for the swapped item
         self.index_to_key.save(store, index, &last_key)?;
-        self.key_to_index.save(store, Rc::new(last_key).into(), &index)?;
+        self.key_to_index.save(store, last_key, &index)?;
 
         // Remove original entries for the removed item
         self.index_to_key.remove(store, last_index);

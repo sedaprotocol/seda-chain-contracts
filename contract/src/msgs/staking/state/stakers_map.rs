@@ -11,18 +11,18 @@ impl StakersMap<'_> {
         Ok(())
     }
 
-    pub fn insert(&self, store: &mut dyn Storage, key: Rc<PublicKey>, value: &Staker) -> StdResult<()> {
+    pub fn insert(&self, store: &mut dyn Storage, key: PublicKey, value: &Staker) -> StdResult<()> {
         self.stakers.save(store, &key, value)?;
-        self.public_keys.add(store, key.clone())?;
+        self.public_keys.add(store, key)?;
         Ok(())
     }
 
-    pub fn update(&self, store: &mut dyn Storage, key: Rc<PublicKey>, value: &Staker) -> StdResult<()> {
+    pub fn update(&self, store: &mut dyn Storage, key: PublicKey, value: &Staker) -> StdResult<()> {
         self.stakers.save(store, &key, value)?;
         Ok(())
     }
 
-    pub fn remove(&self, store: &mut dyn Storage, key: Rc<PublicKey>) -> StdResult<()> {
+    pub fn remove(&self, store: &mut dyn Storage, key: PublicKey) -> StdResult<()> {
         self.stakers.remove(store, &key);
         self.public_keys.remove(store, key)?;
         Ok(())

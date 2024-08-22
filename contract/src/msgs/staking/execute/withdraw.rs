@@ -29,9 +29,9 @@ impl ExecuteHandler for execute::withdraw::Execute {
         // update the executor (remove if balances are zero)
         executor.tokens_pending_withdrawal -= self.amount;
         if executor.tokens_pending_withdrawal.is_zero() && executor.tokens_staked.is_zero() {
-            state::STAKERS.remove(deps.storage, public_key.into())?;
+            state::STAKERS.remove(deps.storage, public_key)?;
         } else {
-            state::STAKERS.update(deps.storage, public_key.into(), &executor)?;
+            state::STAKERS.update(deps.storage, public_key, &executor)?;
         }
 
         // send the tokens back to the executor

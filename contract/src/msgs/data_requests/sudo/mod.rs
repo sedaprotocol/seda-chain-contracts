@@ -26,7 +26,7 @@ fn post_result(result: sudo::PostResult, deps: &mut DepsMut, env: &Env) -> Resul
         ("seda_payload", dr.seda_payload.to_base64()),
     ]);
 
-    state::post_result(deps.storage, dr_id.into(), &result.result)?;
+    state::post_result(deps.storage, dr_id, &result.result)?;
 
     let result_id = result.result.try_hash()?;
     Ok(event.add_attribute("result_id", result_id.to_hex()))
