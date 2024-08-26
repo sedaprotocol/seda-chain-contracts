@@ -9,7 +9,7 @@ pub mod sudo;
 
 #[path = ""]
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
     pub mod test_helpers;
     mod tests;

@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use common_types::ToHexStr;
 use cw_storage_plus::PrimaryKey;
 use error::ContractError;
@@ -10,6 +12,14 @@ pub struct PublicKey(pub [u8; 33]);
 
 impl AsRef<[u8]> for PublicKey {
     fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl Deref for PublicKey {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
@@ -36,6 +46,19 @@ impl FromHexStr for PublicKey {
         let array: [u8; 33] = decoded
             .try_into()
             .map_err(|d: Vec<u8>| ContractError::InvalidPublicKeyLength(d.len()))?;
+        Ok(Self(array))
+    }
+}
+
+impl TryFrom<&[u8]> for PublicKey {
+    type Error = ContractError;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        if value.len() != 33 {
+            return Err(ContractError::InvalidPublicKeyLength(value.len()));
+        }
+        let mut array = [0u8; 33];
+        array.copy_from_slice(value);
         Ok(Self(array))
     }
 }

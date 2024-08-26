@@ -103,12 +103,25 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn is_executor_eligible(&self, executor: PublicKey) -> bool {
-        self.query(query::QueryMsg::IsExecutorEligible {
-            proof: executor.to_hex(),
-            dr_id: "".to_string(),
+    pub fn is_executor_committee_eligible(&self, executor: &TestExecutor) -> bool {
+        self.query(query::QueryMsg::IsExecutorCommitteeEligible {
+            public_key: executor.pub_key_hex(),
         })
         .unwrap()
+    }
+
+    #[track_caller]
+    pub fn is_executor_eligible(&self, sender: &TestExecutor, dr_id: String) -> bool {
+        let factory = query::is_executor_eligible::Query::factory(
+            sender.pub_key_hex(),
+            dr_id,
+            self.chain_id(),
+            self.contract_addr(),
+        );
+        let proof = sender.prove(factory.get_hash());
+        let query = factory.create_message(proof);
+
+        self.query(query).unwrap()
     }
 
     #[track_caller]

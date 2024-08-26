@@ -1,3 +1,5 @@
+use data_requests::test::test_helpers::construct_result;
+use msgs::data_requests::RevealBody;
 use seda_common::msgs::staking::{Staker, StakingConfig};
 
 use super::*;
@@ -56,8 +58,8 @@ fn deposit_stake_withdraw() {
 
     // register a data request executor
     test_info.stake(&mut anyone, Some("address".to_string()), 1).unwrap();
-    let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
-    assert!(executor_is_eligible);
+    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    assert!(is_executor_committee_eligible);
 
     // data request executor's stake should be 1
     let value: Option<Staker> = test_info.get_staker(anyone.pub_key());
@@ -65,16 +67,18 @@ fn deposit_stake_withdraw() {
 
     // the data request executor stakes 2 more tokens
     test_info.stake(&mut anyone, Some("address".to_string()), 2).unwrap();
-    let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
-    assert!(executor_is_eligible);
+    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    assert!(is_executor_committee_eligible);
+
     // data request executor's stake should be 3
     let value: Option<Staker> = test_info.get_staker(anyone.pub_key());
     assert_eq!(value.map(|x| x.tokens_staked), Some(3u8.into()),);
 
     // the data request executor unstakes 1
     let _res = test_info.unstake(&anyone, 1);
-    let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
-    assert!(executor_is_eligible);
+    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    assert!(is_executor_committee_eligible);
+
     // data request executor's stake should be 2 and pending 1
     let value: Option<Staker> = test_info.get_staker(anyone.pub_key());
     assert_eq!(
@@ -88,8 +92,8 @@ fn deposit_stake_withdraw() {
 
     // the data request executor withdraws 1
     let _res = test_info.withdraw(&mut anyone, 1);
-    let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
-    assert!(executor_is_eligible);
+    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    assert!(is_executor_committee_eligible);
 
     // data request executor's stake should be 2 and pending 0
     let value: Option<Staker> = test_info.get_staker(anyone.pub_key());
@@ -105,9 +109,9 @@ fn deposit_stake_withdraw() {
     // unstake 2 more
     test_info.unstake(&anyone, 2).unwrap();
 
-    // assert executer is no longer eligible for committe inclusion
-    let executor_is_eligible = test_info.is_executor_eligible(anyone.pub_key());
-    assert!(!executor_is_eligible);
+    // assert executor is no longer eligible for committee inclusion
+    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    assert!(!is_executor_committee_eligible);
 }
 
 #[test]
@@ -200,4 +204,61 @@ fn unregister_data_request_executor() {
     let value: Option<Staker> = test_info.get_staker(anyone.pub_key());
 
     assert_eq!(value, None);
+}
+
+#[test]
+fn executor_eligible() {
+    let mut test_info = TestInfo::init();
+
+    // someone registers a data request executor
+    let mut anyone = test_info.new_executor("anyone", Some(20));
+    test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
+
+    // post a data request
+    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .unwrap();
+
+    // perform the check
+    let is_executor_eligible = test_info.is_executor_eligible(&anyone, dr_id);
+    assert!(is_executor_eligible);
+}
+
+#[test]
+fn executor_not_eligible_if_dr_resolved() {
+    let mut test_info = TestInfo::init();
+
+    // someone registers a data request executor
+    let mut anyone = test_info.new_executor("anyone", Some(20));
+    test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
+
+    // post a data request
+    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .unwrap();
+
+    let reveal = RevealBody {
+        salt:              anyone.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    // commit
+    test_info
+        .commit_result(&anyone, &dr_id, reveal.try_hash().unwrap())
+        .unwrap();
+    // reveal
+    test_info.reveal_result(&anyone, &dr_id, reveal.clone()).unwrap();
+
+    // Owner posts the result
+    let dr = test_info.get_data_request(&dr_id).unwrap();
+    let result = construct_result(dr, reveal, 0);
+    test_info.post_data_result(dr_id.clone(), result, 0).unwrap();
+
+    // perform the check
+    let is_executor_eligible = test_info.is_executor_eligible(&anyone, dr_id);
+    assert!(!is_executor_eligible);
 }
