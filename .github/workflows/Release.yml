@@ -1,8 +1,9 @@
 name: Release
 on:
+  workflow_dispatch:
   push:
     tags:
-      - '*'
+      - "*"
 
 permissions:
   contents: write
@@ -17,26 +18,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v3
-
-      - name: 📥 Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions/checkout@v4
         with:
-          profile: minimal
-          toolchain: 1.72.1
+          fetch-depth: 0
+
+      - name: 📥 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
           target: wasm32-unknown-unknown
-          override: true
+
+      - name: 📥 Install wasm-opt
+        run: cargo install wasm-opt --locked
 
       - name: 🔨 Compile optimized WASM contracts
-        run: |
-          docker run --rm -v $GITHUB_WORKSPACE:/code \
-          --mount type=volume,source=contract_cache,target=/code/target \
-          --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-          cosmwasm/rust-optimizer:0.12.11
+        run: cargo xtask wasm-opt
 
       - name: 🪵 Conventional Changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+        uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ secrets.github_token }}
           output-file: "false"
@@ -49,9 +49,7 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           patterns: |
-            artifacts/data_requests.wasm
-            artifacts/proxy_contract.wasm
-            artifacts/staking.wasm
+            target/seda_contract.wasm
 
       - name: 📦 Create GitHub Release
         uses: ncipollo/release-action@v1
@@ -59,4 +57,4 @@ jobs:
           allowUpdates: true
           generateReleaseNotes: true
           body: ${{ steps.changelog.outputs.clean_changelog }}
-          artifacts: "checksum.txt,artifacts/data_requests.wasm,artifacts/proxy_contract.wasm,artifacts/staking.wasm"
+          artifacts: "checksum.txt,target/seda_contract.wasm"
