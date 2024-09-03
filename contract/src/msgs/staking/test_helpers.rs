@@ -103,8 +103,8 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn is_executor_committee_eligible(&self, executor: &TestExecutor) -> bool {
-        self.query(query::QueryMsg::IsExecutorCommitteeEligible {
+    pub fn is_staker_executor(&self, executor: &TestExecutor) -> bool {
+        self.query(query::QueryMsg::IsStakerExecutor {
             public_key: executor.pub_key_hex(),
         })
         .unwrap()
@@ -119,7 +119,7 @@ impl TestInfo {
             self.contract_addr(),
         );
         let proof = sender.prove(factory.get_hash());
-        let query = factory.create_message(proof);
+        let (query, _) = factory.create_message(proof);
 
         self.query(query).unwrap()
     }

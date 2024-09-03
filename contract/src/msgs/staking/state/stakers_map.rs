@@ -41,7 +41,7 @@ impl StakersMap<'_> {
         self.stakers.load(store, pub_key)
     }
 
-    pub fn is_executor_committee_eligible(&self, store: &dyn Storage, executor: &PublicKey) -> StdResult<bool> {
+    pub fn is_staker_executor(&self, store: &dyn Storage, executor: &PublicKey) -> StdResult<bool> {
         let config = CONFIG.load(store)?;
         if config.allowlist_enabled {
             let allowed = ALLOWLIST.may_load(store, executor)?;
@@ -82,7 +82,7 @@ impl StakersMap<'_> {
             return Ok(false);
         }
 
-        Ok(self.is_executor_committee_eligible(store, &executor)?)
+        Ok(self.is_staker_executor(store, &executor)?)
     }
 
     pub fn len(&self, store: &dyn Storage) -> StdResult<u32> {

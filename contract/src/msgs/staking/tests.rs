@@ -58,7 +58,7 @@ fn deposit_stake_withdraw() {
 
     // register a data request executor
     test_info.stake(&mut anyone, Some("address".to_string()), 1).unwrap();
-    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    let is_executor_committee_eligible = test_info.is_staker_executor(&anyone);
     assert!(is_executor_committee_eligible);
 
     // data request executor's stake should be 1
@@ -67,7 +67,7 @@ fn deposit_stake_withdraw() {
 
     // the data request executor stakes 2 more tokens
     test_info.stake(&mut anyone, Some("address".to_string()), 2).unwrap();
-    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    let is_executor_committee_eligible = test_info.is_staker_executor(&anyone);
     assert!(is_executor_committee_eligible);
 
     // data request executor's stake should be 3
@@ -76,7 +76,7 @@ fn deposit_stake_withdraw() {
 
     // the data request executor unstakes 1
     let _res = test_info.unstake(&anyone, 1);
-    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    let is_executor_committee_eligible = test_info.is_staker_executor(&anyone);
     assert!(is_executor_committee_eligible);
 
     // data request executor's stake should be 2 and pending 1
@@ -92,7 +92,7 @@ fn deposit_stake_withdraw() {
 
     // the data request executor withdraws 1
     let _res = test_info.withdraw(&mut anyone, 1);
-    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    let is_executor_committee_eligible = test_info.is_staker_executor(&anyone);
     assert!(is_executor_committee_eligible);
 
     // data request executor's stake should be 2 and pending 0
@@ -110,7 +110,7 @@ fn deposit_stake_withdraw() {
     test_info.unstake(&anyone, 2).unwrap();
 
     // assert executor is no longer eligible for committee inclusion
-    let is_executor_committee_eligible = test_info.is_executor_committee_eligible(&anyone);
+    let is_executor_committee_eligible = test_info.is_staker_executor(&anyone);
     assert!(!is_executor_committee_eligible);
 }
 

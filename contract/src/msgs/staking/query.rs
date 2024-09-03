@@ -21,9 +21,9 @@ impl QueryHandler for QueryMsg {
                 let seq: Uint128 = get_seq(deps.storage, &public_key)?.into();
                 to_json_binary(&StakerAndSeq { staker, seq })?
             }
-            QueryMsg::IsExecutorCommitteeEligible { public_key } => to_json_binary(
-                &STAKERS.is_executor_committee_eligible(deps.storage, &PublicKey::from_hex_str(&public_key)?)?,
-            )?,
+            QueryMsg::IsStakerExecutor { public_key } => {
+                to_json_binary(&STAKERS.is_staker_executor(deps.storage, &PublicKey::from_hex_str(&public_key)?)?)?
+            }
             QueryMsg::IsExecutorEligible(query) => {
                 to_json_binary(&STAKERS.is_executor_eligible(deps.storage, env, query)?)?
             }
