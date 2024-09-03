@@ -1,9 +1,6 @@
-use data_requests::state::load_request;
-use msgs::staking::query::is_executor_eligible;
 use owner::state::ALLOWLIST;
 
 use super::*;
-use crate::state::CHAIN_ID;
 
 pub struct StakersMap<'a> {
     pub stakers:     Map<'a, &'a PublicKey, Staker>,
@@ -57,32 +54,6 @@ impl StakersMap<'_> {
             Some(staker) => staker.tokens_staked >= config.minimum_stake_for_committee_eligibility,
             None => false,
         })
-    }
-
-    pub fn is_executor_eligible(
-        &self,
-        store: &dyn Storage,
-        env: Env,
-        data: is_executor_eligible::Query,
-    ) -> Result<bool, ContractError> {
-        let (executor, dr_id, _) = data.parts()?;
-        let executor = PublicKey(executor);
-
-        // Validate signature
-        let chain_id = CHAIN_ID.load(store)?;
-        if data
-            .verify(&executor, &chain_id, env.contract.address.as_str())
-            .is_err()
-        {
-            return Ok(false);
-        }
-
-        // Check DR is in data_request_pool
-        if load_request(store, &dr_id).is_err() {
-            return Ok(false);
-        }
-
-        Ok(self.is_staker_executor(store, &executor)?)
     }
 
     pub fn len(&self, store: &dyn Storage) -> StdResult<u32> {
