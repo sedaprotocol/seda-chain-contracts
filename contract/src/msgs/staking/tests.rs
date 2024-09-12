@@ -240,6 +240,7 @@ fn executor_not_eligible_if_dr_resolved() {
         .unwrap();
 
     let reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              anyone.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),

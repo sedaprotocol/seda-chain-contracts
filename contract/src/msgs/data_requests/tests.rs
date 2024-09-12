@@ -256,6 +256,7 @@ fn reveal_result() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -270,6 +271,7 @@ fn reveal_result() {
     let mut bob = test_info.new_executor("bob", Some(2));
     bob.stake(&mut test_info, 1).unwrap();
     let bob_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
         gas_used:          0u128.into(),
@@ -306,6 +308,7 @@ fn reveal_result_with_proxies() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -343,6 +346,7 @@ fn reveal_result_with_proxies_not_valid_public_keys() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -374,6 +378,7 @@ fn reveal_result_reveal_body_missing_proxies() {
 
     // alice commits a data result
     let mut alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -404,6 +409,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -431,6 +437,7 @@ fn cannot_reveal_if_user_did_not_commit() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -445,6 +452,7 @@ fn cannot_reveal_if_user_did_not_commit() {
     let mut bob = test_info.new_executor("bob", Some(2));
     bob.stake(&mut test_info, 1).unwrap();
     let bob_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
         gas_used:          0u128.into(),
@@ -475,6 +483,7 @@ fn cannot_double_reveal() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -489,6 +498,7 @@ fn cannot_double_reveal() {
     let mut bob = test_info.new_executor("bob", Some(2));
     bob.stake(&mut test_info, 1).unwrap();
     let bob_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
         gas_used:          0u128.into(),
@@ -521,6 +531,7 @@ fn reveal_must_match_commitment() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -532,6 +543,7 @@ fn reveal_must_match_commitment() {
             &alice,
             &dr_id,
             RevealBody {
+                id:                dr_id.clone(),
                 salt:              alice.salt(),
                 reveal:            "11".hash().into(),
                 gas_used:          0u128.into(),
@@ -546,6 +558,7 @@ fn reveal_must_match_commitment() {
     // bob also commits
 
     let bob_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
         gas_used:          0u128.into(),
@@ -576,6 +589,7 @@ fn post_data_result() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -608,6 +622,7 @@ fn post_data_results() {
 
     // alice commits data result 1
     let alice_reveal1 = RevealBody {
+        id:                dr_id1.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -625,6 +640,7 @@ fn post_data_results() {
 
     // alice commits data result 2
     let alice_reveal2 = RevealBody {
+        id:                dr_id2.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -665,6 +681,7 @@ fn cant_post_if_replication_factor_not_met() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -677,6 +694,7 @@ fn cant_post_if_replication_factor_not_met() {
 
     // bob also commits
     let bob_reveal = RevealBody {
+        id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
         gas_used:          0u128.into(),
@@ -738,6 +756,7 @@ fn check_data_result_id() {
 
     // reveal sample
     let alice_reveal = RevealBody {
+        id:                expected_result_id.to_owned(),
         salt:              "123".into(),
         reveal:            "10".hash().into(),
         gas_used:          20u128.into(),
@@ -768,6 +787,7 @@ fn post_data_result_with_more_drs_in_the_pool() {
 
     // Same commits & reveals for all drs
     let alice_reveal = RevealBody {
+        id:                dr_id1.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
         gas_used:          0u128.into(),
@@ -852,17 +872,18 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
 
     let mut alice = test_info.new_executor("alice", Some(2));
     alice.stake(&mut test_info, 1).unwrap();
-    let alice_reveal = RevealBody {
-        salt:              alice.salt(),
-        reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
-        exit_code:         0,
-        proxy_public_keys: vec![],
-    };
 
     for i in 0..25 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
         let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+        let alice_reveal = RevealBody {
+            id:                dr_id.clone(),
+            salt:              alice.salt(),
+            reveal:            "10".hash().into(),
+            gas_used:          0u128.into(),
+            exit_code:         0,
+            proxy_public_keys: vec![],
+        };
 
         if i < 15 {
             test_info
@@ -901,19 +922,20 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
 
     let mut alice = test_info.new_executor("alice", Some(2));
     alice.stake(&mut test_info, 1).unwrap();
-    let alice_reveal = RevealBody {
-        salt:              alice.salt(),
-        reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
-        exit_code:         0,
-        proxy_public_keys: vec![],
-    };
 
     for i in 0..100 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
         let dr_id = test_info
             .post_data_request(&alice, dr.clone(), vec![], vec![], 1)
             .unwrap();
+        let alice_reveal = RevealBody {
+            id:                dr_id.clone(),
+            salt:              alice.salt(),
+            reveal:            "10".hash().into(),
+            gas_used:          0u128.into(),
+            exit_code:         0,
+            proxy_public_keys: vec![],
+        };
 
         if i % 2 == 0 {
             test_info
@@ -951,6 +973,15 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         .enumerate()
     {
         if i % 4 == 0 {
+            let alice_reveal = RevealBody {
+                id:                request.id.clone(),
+                salt:              alice.salt(),
+                reveal:            "10".hash().into(),
+                gas_used:          0u128.into(),
+                exit_code:         0,
+                proxy_public_keys: vec![],
+            };
+
             test_info
                 .reveal_result(&alice, &request.id, alice_reveal.clone())
                 .unwrap();
@@ -985,6 +1016,14 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         .enumerate()
     {
         if i % 8 == 0 {
+            let alice_reveal = RevealBody {
+                id:                request.id.clone(),
+                salt:              alice.salt(),
+                reveal:            "10".hash().into(),
+                gas_used:          0u128.into(),
+                exit_code:         0,
+                proxy_public_keys: vec![],
+            };
             let dr_info = test_info.get_data_request(&request.id).unwrap();
             let result = test_helpers::construct_result(dr_info.clone(), alice_reveal.clone(), 0);
             test_info.post_data_result(request.id.to_string(), result, 0).unwrap();

@@ -75,13 +75,13 @@ fn wasm_opt(sh: &Shell) -> Result<()> {
 }
 
 fn create_data_request(
+    id: [u8; 32],
     dr_binary_id: [u8; 32],
     tally_binary_id: [u8; 32],
     replication_factor: u16,
     tally_inputs: Vec<u8>,
     reveals: HashMap<String, RevealBody>,
 ) -> DataRequest {
-    let id: [u8; 32] = rand::random();
     DataRequest {
         version: semver::Version {
             major: 1,
@@ -120,10 +120,13 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
                 .collect();
             let replication_factor = rand::thread_rng().gen_range(1..=3);
 
+            let dr_id: [u8; 32] = rand::random();
+            let hex_dr_id = dr_id.to_hex();
             let salt: [u8; 32] = rand::random();
             let reveals = (0..replication_factor)
                 .map(|_| {
                     let reveal = RevealBody {
+                        id:                hex_dr_id.clone(),
                         salt:              salt.to_hex(),
                         exit_code:         0,
                         gas_used:          10u128.into(),
@@ -141,7 +144,14 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
                 })
                 .collect();
 
-            create_data_request(dr_binary_id, tally_binary_id, replication_factor, inputs, reveals)
+            create_data_request(
+                dr_id,
+                dr_binary_id,
+                tally_binary_id,
+                replication_factor,
+                inputs,
+                reveals,
+            )
         })
         .collect()
 }
