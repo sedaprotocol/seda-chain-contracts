@@ -21,16 +21,13 @@ fn post_result(result: sudo::PostResult, deps: &mut DepsMut, env: &Env) -> Resul
         ("version", CONTRACT_VERSION.to_string()),
         ("dr_id", result.dr_id),
         ("block_height", block_height.to_string()),
-        ("exit_code", result.exit_code.to_string()),
-        ("result", to_json_string(&result.result)?),
         ("payback_address", dr.payback_address.to_base64()),
         ("seda_payload", dr.seda_payload.to_base64()),
     ]);
 
-    state::post_result(deps.storage, dr_id, &result.result)?;
+    state::post_result(deps.storage, dr_id)?;
 
-    let result_id = result.result.try_hash()?;
-    Ok(event.add_attribute("result_id", result_id.to_hex()))
+    Ok(event)
 }
 
 impl SudoHandler for SudoMsg {

@@ -20,7 +20,7 @@ impl ExecuteHandler for execute::post_request::Execute {
         let dr_id = self.posted_dr.try_hash()?;
 
         // require the data request id to be unique
-        if state::data_request_or_result_exists(deps.as_ref(), dr_id) {
+        if state::data_request_exists(deps.as_ref(), dr_id) {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 

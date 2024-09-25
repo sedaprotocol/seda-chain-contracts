@@ -705,12 +705,7 @@ fn post_data_result() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // owner posts a data result
-    let dr = test_info.get_data_request(&dr_id).unwrap();
-    let result = test_helpers::construct_result(dr, alice_reveal, 0);
-    test_info.post_data_result(dr_id.clone(), result, 0).unwrap();
-
-    // check we can get the results
-    let _res1 = test_info.get_data_result(&dr_id);
+    test_info.post_data_result(dr_id).unwrap();
 }
 
 #[test]
@@ -756,17 +751,7 @@ fn post_data_results() {
     test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
 
     // owner posts data results
-    let dr1 = test_info.get_data_request(&dr_id1).unwrap();
-    let result1 = test_helpers::construct_result(dr1, alice_reveal1, 0);
-    let dr2 = test_info.get_data_request(&dr_id2).unwrap();
-    let result2 = test_helpers::construct_result(dr2, alice_reveal2, 0);
-    test_info
-        .post_data_results(vec![(dr_id1.clone(), result1, 0), (dr_id2.clone(), result2, 0)])
-        .unwrap();
-
-    // check we can get the results
-    let _res1 = test_info.get_data_result(&dr_id1);
-    let _res2 = test_info.get_data_result(&dr_id2);
+    test_info.post_data_results(vec![dr_id1, dr_id2]).unwrap();
 }
 
 #[test]
@@ -812,9 +797,8 @@ fn cant_post_if_replication_factor_not_met() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // post a data result
-    let dr = test_info.get_data_request(&dr_id).unwrap();
-    let result = test_helpers::construct_result(dr, alice_reveal, 0);
-    test_info.post_data_result(dr_id, result, 0).unwrap();
+    test_info.get_data_request(&dr_id).unwrap();
+    test_info.post_data_result(dr_id).unwrap();
 }
 
 #[test]
@@ -941,8 +925,7 @@ fn post_data_result_with_more_drs_in_the_pool() {
     // Post only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
     let dr = dr_to_be_tallied[0].clone();
-    let result1 = test_helpers::construct_result(dr.clone(), alice_reveal.clone(), 0);
-    test_info.post_data_result(dr.id, result1, 0).unwrap();
+    test_info.post_data_result(dr.id).unwrap();
     assert_eq!(
         0,
         test_info
@@ -957,8 +940,7 @@ fn post_data_result_with_more_drs_in_the_pool() {
 
     // Post last dr result
     let dr = dr_to_be_tallied[0].clone();
-    let result1 = test_helpers::construct_result(dr.clone(), alice_reveal, 0);
-    test_info.post_data_result(dr.id, result1, 0).unwrap();
+    test_info.post_data_result(dr.id).unwrap();
 
     // Check dr to be tallied is empty
     assert_eq!(
@@ -1119,17 +1101,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         .enumerate()
     {
         if i % 8 == 0 {
-            let alice_reveal = RevealBody {
-                id:                request.id.clone(),
-                salt:              alice.salt(),
-                reveal:            "10".hash().into(),
-                gas_used:          0,
-                exit_code:         0,
-                proxy_public_keys: vec![],
-            };
-            let dr_info = test_info.get_data_request(&request.id).unwrap();
-            let result = test_helpers::construct_result(dr_info.clone(), alice_reveal.clone(), 0);
-            test_info.post_data_result(request.id.to_string(), result, 0).unwrap();
+            test_info.post_data_result(request.id.to_string()).unwrap();
         }
     }
     assert_eq!(

@@ -11,14 +11,13 @@ use timeouts::Timeouts;
 pub const TIMEOUT_CONFIG: Item<TimeoutConfig> = Item::new("timeout_config");
 
 const DATA_REQUESTS: DataRequestsMap = new_enumerable_status_map!("data_request_pool");
-const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
 pub fn init_data_requests(store: &mut dyn Storage) -> Result<(), ContractError> {
     Ok(DATA_REQUESTS.initialize(store)?)
 }
 
-pub fn data_request_or_result_exists(deps: Deps, dr_id: Hash) -> bool {
-    DATA_REQUESTS.has(deps.storage, &dr_id) || DATA_RESULTS.has(deps.storage, &dr_id)
+pub fn data_request_exists(deps: Deps, dr_id: Hash) -> bool {
+    DATA_REQUESTS.has(deps.storage, &dr_id)
 }
 
 pub fn may_load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequest>> {
@@ -78,21 +77,12 @@ pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_hei
     Ok(())
 }
 
-pub fn post_result(store: &mut dyn Storage, dr_id: Hash, dr: &DataResult) -> StdResult<()> {
-    // we have to remove the request from the pool and save it to the results
-    DATA_RESULTS.save(store, &dr_id, dr)?;
+pub fn post_result(store: &mut dyn Storage, dr_id: Hash) -> StdResult<()> {
+    // we have to remove the request from the pool
     DATA_REQUESTS.remove(store, dr_id)?;
     // no need to update status as we remove it from the requests pool
 
     Ok(())
-}
-
-pub fn load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
-    DATA_RESULTS.load(store, dr_id)
-}
-
-pub fn may_load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
-    DATA_RESULTS.may_load(store, dr_id)
 }
 
 pub fn expire_data_requests(store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {

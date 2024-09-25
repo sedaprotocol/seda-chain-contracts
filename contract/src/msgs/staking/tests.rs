@@ -1,4 +1,3 @@
-use data_requests::test::test_helpers::construct_result;
 use msgs::data_requests::RevealBody;
 use seda_common::msgs::staking::{Staker, StakingConfig};
 
@@ -255,9 +254,7 @@ fn executor_not_eligible_if_dr_resolved() {
     test_info.reveal_result(&anyone, &dr_id, reveal.clone()).unwrap();
 
     // Owner posts the result
-    let dr = test_info.get_data_request(&dr_id).unwrap();
-    let result = construct_result(dr, reveal, 0);
-    test_info.post_data_result(dr_id.clone(), result, 0).unwrap();
+    test_info.post_data_result(dr_id.clone()).unwrap();
 
     // perform the check
     let is_executor_eligible = test_info.is_executor_eligible(&anyone, dr_id);

@@ -24,9 +24,6 @@ impl QueryHandler for QueryMsg {
                 let reveals = dr.map(|dr| dr.reveals).unwrap_or_default();
                 to_json_binary(&reveals)?
             }
-            QueryMsg::GetDataResult { dr_id } => {
-                to_json_binary(&state::may_load_result(deps.storage, &Hash::from_hex_str(&dr_id)?)?)?
-            }
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
                 to_json_binary(&state::requests_by_status(deps.storage, &status, offset, limit)?)?
             }
