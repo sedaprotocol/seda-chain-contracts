@@ -3,7 +3,7 @@ use cw_storage_plus::Bound;
 
 use super::*;
 mod data_requests_map;
-use data_requests_map::{DataRequestsMap, new_enumerable_status_map};
+use data_requests_map::{new_enumerable_status_map, DataRequestsMap};
 mod timeouts;
 use timeouts::Timeouts;
 

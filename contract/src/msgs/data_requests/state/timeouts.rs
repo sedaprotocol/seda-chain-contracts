@@ -22,12 +22,14 @@ impl Timeouts<'_> {
         Ok(())
     }
 
-    pub fn remove_by_timeout_height(&self, store: &mut dyn Storage, timeout_height: u64) -> StdResult<()> {
+    // TODO use in sudo method
+    // may also need to return all the DRs?
+    pub fn _remove_by_timeout_height(&self, store: &mut dyn Storage, timeout_height: u64) -> StdResult<()> {
         // Once the new rust borrow checker is released:
         // It would allow us to to not allocate all the dr_ids for the timeout_height at once.
 
         // This call allocates all the dr_ids for the timeout_height at once...
-        self.get_all_by_timeout_height(store, timeout_height)?
+        self._get_all_by_timeout_height(store, timeout_height)?
             .into_iter()
             .for_each(|hash| {
                 self.timeouts.remove(store, (timeout_height, hash));
@@ -42,8 +44,8 @@ impl Timeouts<'_> {
         Ok(timeout_block)
     }
 
-    // Get all hashes by u64 (timeout)
-    pub fn get_all_by_timeout_height(&self, store: &dyn Storage, timeout_height: u64) -> StdResult<Vec<Hash>> {
+    // TODO use in a query method
+    pub fn _get_all_by_timeout_height(&self, store: &dyn Storage, timeout_height: u64) -> StdResult<Vec<Hash>> {
         let res: StdResult<Vec<_>> = self
             .timeouts
             .prefix(timeout_height)
