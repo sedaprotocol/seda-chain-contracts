@@ -7,6 +7,10 @@ use data_requests_map::{DataRequestsMap, new_enumerable_status_map};
 mod timeouts;
 use timeouts::Timeouts;
 
+// TODO replace these with pulling them from the config.
+pub const COMMIT_TIMEOUT: u64 = 25;
+pub const REVEAL_TIMEOUT: u64 = 25;
+
 const DATA_REQUESTS: DataRequestsMap = new_enumerable_status_map!("data_request_pool");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
 
@@ -26,15 +30,29 @@ pub fn load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataRequest>
     DATA_REQUESTS.get(store, dr_id)
 }
 
-pub fn post_request(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest) -> Result<(), ContractError> {
+pub fn get_dr_expiration_height(store: &dyn Storage, dr_id: &Hash) -> StdResult<u64> {
+    DATA_REQUESTS.timeouts.get_timeout_by_dr_id(store, dr_id)
+}
+
+pub fn post_request(
+    store: &mut dyn Storage,
+    current_height: u64,
+    dr_id: Hash,
+    dr: DataRequest,
+) -> Result<(), ContractError> {
     // insert the data request
-    DATA_REQUESTS.insert(store, dr_id, dr, &DataRequestStatus::Committing)?;
+    DATA_REQUESTS.insert(store, current_height, dr_id, dr, &DataRequestStatus::Committing)?;
 
     Ok(())
 }
 
-pub fn commit(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
+pub fn commit(store: &mut dyn Storage, block_height: u64, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
     let status = if dr.reveal_started() {
+        // We change the timeout to the reveal timeout or maybe this should move to the .update function?
+        DATA_REQUESTS.timeouts.remove_by_dr_id(store, &dr_id)?;
+        DATA_REQUESTS
+            .timeouts
+            .insert(store, REVEAL_TIMEOUT + block_height, &dr_id)?;
         Some(DataRequestStatus::Revealing)
     } else {
         None
@@ -53,15 +71,16 @@ pub fn requests_by_status(
     DATA_REQUESTS.get_requests_by_status(store, status, offset, limit)
 }
 
-pub fn reveal(storage: &mut dyn Storage, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
+pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
     let status = if dr.is_tallying() {
+        DATA_REQUESTS.timeouts.remove_by_dr_id(store, &dr_id)?;
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
         Some(DataRequestStatus::Tallying)
     } else {
         None
     };
-    DATA_REQUESTS.update(storage, dr_id, dr, status)?;
+    DATA_REQUESTS.update(store, dr_id, dr, status)?;
 
     Ok(())
 }

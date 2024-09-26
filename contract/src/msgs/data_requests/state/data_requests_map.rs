@@ -5,6 +5,7 @@ pub struct DataRequestsMap<'a> {
     pub committing: EnumerableSet<'a, Hash>,
     pub revealing:  EnumerableSet<'a, Hash>,
     pub tallying:   EnumerableSet<'a, Hash>,
+    pub timeouts:   Timeouts<'a>,
 }
 
 use cosmwasm_std::{StdResult, Storage};
@@ -45,6 +46,7 @@ impl DataRequestsMap<'_> {
     pub fn insert(
         &self,
         store: &mut dyn Storage,
+        current_height: u64,
         key: Hash,
         req: DataRequest,
         status: &DataRequestStatus,
@@ -55,6 +57,7 @@ impl DataRequestsMap<'_> {
 
         self.reqs.save(store, &key, &req)?;
         self.add_to_status(store, key, status)?;
+        self.timeouts.insert(store, current_height + COMMIT_TIMEOUT, &key)?;
 
         Ok(())
     }
@@ -190,6 +193,10 @@ macro_rules! new_enumerable_status_map {
             committing: $crate::enumerable_set!(concat!($namespace, "_committing")),
             revealing:  $crate::enumerable_set!(concat!($namespace, "_revealing")),
             tallying:   $crate::enumerable_set!(concat!($namespace, "_tallying")),
+            timeouts:   Timeouts {
+                timeouts:        Map::new(concat!($namespace, "_timeouts")),
+                hash_to_timeout: Map::new(concat!($namespace, "_hash_to_timeout")),
+            },
         }
     };
 }

@@ -51,16 +51,28 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn insert(&mut self, key: Hash, value: DataRequest) {
+    fn insert(&mut self, current_height: u64, key: Hash, value: DataRequest) {
         self.map
-            .insert(&mut self.store, key, value, &DataRequestStatus::Committing)
+            .insert(
+                &mut self.store,
+                current_height,
+                key,
+                value,
+                &DataRequestStatus::Committing,
+            )
             .unwrap();
     }
 
     #[track_caller]
-    fn insert_removable(&mut self, key: Hash, value: DataRequest) {
+    fn insert_removable(&mut self, current_height: u64, key: Hash, value: DataRequest) {
         self.map
-            .insert(&mut self.store, key, value, &DataRequestStatus::Tallying)
+            .insert(
+                &mut self.store,
+                current_height,
+                key,
+                value,
+                &DataRequestStatus::Tallying,
+            )
             .unwrap();
     }
 
@@ -114,7 +126,7 @@ fn enum_map_insert() {
     const TEST_STATUS: &DataRequestStatus = &DataRequestStatus::Committing;
 
     let (key, val) = create_test_dr(1);
-    test_info.insert(key, val);
+    test_info.insert(1, key, val);
     test_info.assert_status_len(1, TEST_STATUS);
     test_info.assert_status_key_to_index(TEST_STATUS, key, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key));
@@ -125,7 +137,7 @@ fn enum_map_get() {
     let mut test_info = TestInfo::init();
 
     let (key, req) = create_test_dr(1);
-    test_info.insert(key, req.clone());
+    test_info.insert(1, key, req.clone());
     test_info.assert_request(&key, Some(req))
 }
 
@@ -145,8 +157,8 @@ fn enum_map_get_non_existing() {
 fn enum_map_insert_duplicate() {
     let mut test_info = TestInfo::init();
     let (key, req) = create_test_dr(1);
-    test_info.insert(key, req.clone());
-    test_info.insert(key, req);
+    test_info.insert(1, key, req.clone());
+    test_info.insert(1, key, req);
 }
 
 #[test]
@@ -157,7 +169,7 @@ fn enum_map_update() {
     let (key1, dr1) = create_test_dr(1);
     let (_, dr2) = create_test_dr(2);
 
-    test_info.insert(key1, dr1.clone());
+    test_info.insert(1, key1, dr1.clone());
     test_info.assert_status_len(1, TEST_STATUS);
     test_info.assert_status_key_to_index(TEST_STATUS, key1, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
@@ -185,9 +197,9 @@ fn enum_map_remove_first() {
     let (key2, req2) = create_test_dr(2);
     let (key3, req3) = create_test_dr(3);
 
-    test_info.insert_removable(key1, req1.clone()); // 0
-    test_info.insert_removable(key2, req2.clone()); // 1
-    test_info.insert_removable(key3, req3.clone()); // 2
+    test_info.insert_removable(1, key1, req1.clone()); // 0
+    test_info.insert_removable(1, key2, req2.clone()); // 1
+    test_info.insert_removable(1, key3, req3.clone()); // 2
 
     test_info.remove(key1);
     test_info.assert_status_len(2, TEST_STATUS);
@@ -212,9 +224,9 @@ fn enum_map_remove_last() {
     let (key2, req2) = create_test_dr(2);
     let (key3, req3) = create_test_dr(3);
 
-    test_info.insert_removable(key1, req1.clone()); // 0
-    test_info.insert_removable(key2, req2.clone()); // 1
-    test_info.insert_removable(key3, req3.clone()); // 2
+    test_info.insert_removable(1, key1, req1.clone()); // 0
+    test_info.insert_removable(1, key2, req2.clone()); // 1
+    test_info.insert_removable(1, key3, req3.clone()); // 2
     test_info.assert_status_len(3, TEST_STATUS);
 
     test_info.remove(key3);
@@ -241,10 +253,10 @@ fn enum_map_remove() {
     let (key3, req3) = create_test_dr(3);
     let (key4, req4) = create_test_dr(4);
 
-    test_info.insert_removable(key1, req1.clone()); // 0
-    test_info.insert_removable(key2, req2.clone()); // 1
-    test_info.insert_removable(key3, req3.clone()); // 2
-    test_info.insert_removable(key4, req4.clone()); // 3
+    test_info.insert_removable(1, key1, req1.clone()); // 0
+    test_info.insert_removable(1, key2, req2.clone()); // 1
+    test_info.insert_removable(1, key3, req3.clone()); // 2
+    test_info.insert_removable(1, key4, req4.clone()); // 3
     test_info.assert_status_len(4, &DataRequestStatus::Tallying);
 
     test_info.remove(key2);
@@ -283,10 +295,10 @@ fn get_requests_by_status() {
     let mut test_info = TestInfo::init();
 
     let (key1, req1) = create_test_dr(1);
-    test_info.insert(key1, req1.clone());
+    test_info.insert(1, key1, req1.clone());
 
     let (key2, req2) = create_test_dr(2);
-    test_info.insert(key2, req2.clone());
+    test_info.insert(1, key2, req2.clone());
     test_info.update(key2, req2.clone(), Some(DataRequestStatus::Revealing));
 
     let committing = test_info.get_requests_by_status(DataRequestStatus::Committing, 0, 10);
@@ -307,7 +319,7 @@ fn get_requests_by_status_pagination() {
     // indexes 0 - 9
     for i in 0..10 {
         let (key, req) = create_test_dr(i);
-        test_info.insert(key, req.clone());
+        test_info.insert(1, key, req.clone());
         reqs.push(req);
     }
 
@@ -340,7 +352,7 @@ fn remove_only_item() {
     const TEST_STATUS: &DataRequestStatus = &DataRequestStatus::Tallying;
 
     let (key, req) = create_test_dr(1);
-    test_info.insert_removable(key, req.clone());
+    test_info.insert_removable(1, key, req.clone());
     test_info.remove(key);
 
     test_info.assert_status_len(0, &DataRequestStatus::Tallying);

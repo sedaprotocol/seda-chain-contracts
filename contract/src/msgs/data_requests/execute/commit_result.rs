@@ -20,6 +20,11 @@ impl ExecuteHandler for execute::commit_result::Execute {
             return Err(ContractError::RevealStarted);
         }
 
+        // error if the data request has expired
+        if state::get_dr_expiration_height(deps.storage, &dr_id)? < env.block.height {
+            return Err(ContractError::DataRequestExpired(env.block.height, "commit"));
+        }
+
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
 
         // Check if the staker has enough funds staked to commit
@@ -37,7 +42,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;
         dr.commits.insert(self.public_key.clone(), commitment);
-        state::commit(deps.storage, dr_id, dr)?;
+        state::commit(deps.storage, env.block.height, dr_id, dr)?;
 
         Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([

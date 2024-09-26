@@ -14,6 +14,11 @@ impl ExecuteHandler for execute::reveal_result::Execute {
             return Err(ContractError::RevealNotStarted);
         }
 
+        // error if the data request has expired
+        if state::get_dr_expiration_height(deps.storage, &dr_id)? < env.block.height {
+            return Err(ContractError::DataRequestExpired(env.block.height, "reveal"));
+        }
+
         // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
