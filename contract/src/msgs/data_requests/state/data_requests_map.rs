@@ -7,6 +7,9 @@ pub struct DataRequestsMap<'a> {
     pub tallying:   EnumerableSet<'a, Hash>,
 }
 
+use cosmwasm_std::{StdResult, Storage};
+use cw_storage_plus::Map;
+
 impl DataRequestsMap<'_> {
     pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
         self.committing.initialize(store)?;

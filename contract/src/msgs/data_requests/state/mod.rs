@@ -3,10 +3,9 @@ use cw_storage_plus::Bound;
 
 use super::*;
 mod data_requests_map;
-use data_requests_map::{new_enumerable_status_map, DataRequestsMap};
-
-#[cfg(test)]
-mod data_requests_map_tests;
+use data_requests_map::{DataRequestsMap, new_enumerable_status_map};
+mod timeouts;
+use timeouts::Timeouts;
 
 const DATA_REQUESTS: DataRequestsMap = new_enumerable_status_map!("data_request_pool");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
@@ -82,4 +81,12 @@ pub fn load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
 
 pub fn may_load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
     DATA_RESULTS.may_load(store, dr_id)
+}
+
+#[cfg(test)]
+#[path = ""]
+mod tests {
+    use super::*;
+    mod data_requests_map_tests;
+    mod timeouts_tests;
 }
