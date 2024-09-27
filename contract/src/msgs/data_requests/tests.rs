@@ -1180,3 +1180,31 @@ fn timed_out_requests_move_to_tally() {
     assert_eq!(tallying[0], dr_id);
     assert_eq!(tallying[1], dr_id2);
 }
+
+#[test]
+fn owner_can_update_timeout_config() {
+    let mut test_info = TestInfo::init();
+
+    let timeout_config = TimeoutConfig {
+        commit_timeout_in_blocks: 1,
+        reveal_timeout_in_blocks: 1,
+    };
+
+    test_info
+        .set_timeout_config(&test_info.creator(), timeout_config)
+        .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "NotOwner")]
+fn only_owner_can_change_timeout_config() {
+    let mut test_info = TestInfo::init();
+
+    let timeout_config = TimeoutConfig {
+        commit_timeout_in_blocks: 1,
+        reveal_timeout_in_blocks: 1,
+    };
+
+    let alice = test_info.new_executor("alice", Some(2));
+    test_info.set_timeout_config(&alice, timeout_config).unwrap();
+}

@@ -275,4 +275,14 @@ impl TestInfo {
         let msg = sudo::SudoMsg::RemoveTimedOutDataRequests {}.into();
         self.sudo(&msg)
     }
+
+    #[track_caller]
+    pub fn set_timeout_config(
+        &mut self,
+        sender: &TestExecutor,
+        timeout_config: TimeoutConfig,
+    ) -> Result<(), ContractError> {
+        let msg = execute::ExecuteMsg::SetTimeoutConfig(timeout_config).into();
+        self.execute(sender, &msg)
+    }
 }
