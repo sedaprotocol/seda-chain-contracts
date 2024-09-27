@@ -102,8 +102,8 @@ pub fn may_load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<Da
     DATA_RESULTS.may_load(store, dr_id)
 }
 
-pub fn move_timed_out_requests_to_tally(store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {
-    DATA_REQUESTS.move_timed_out_requests_to_tally(store, current_height)
+pub fn expire_data_requests(store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {
+    DATA_REQUESTS.expire_data_requests(store, current_height)
 }
 
 #[cfg(test)]

@@ -271,8 +271,8 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn process_timed_out_drs(&mut self) -> Result<(), ContractError> {
-        let msg = sudo::SudoMsg::RemoveTimedOutDataRequests {}.into();
+    pub fn expire_data_requests(&mut self) -> Result<(), ContractError> {
+        let msg = sudo::SudoMsg::ExpireDataRequests {}.into();
         self.sudo(&msg)
     }
 

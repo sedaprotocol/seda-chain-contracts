@@ -195,11 +195,7 @@ impl DataRequestsMap<'_> {
         Ok(requests)
     }
 
-    pub fn move_timed_out_requests_to_tally(
-        &self,
-        store: &mut dyn Storage,
-        current_height: u64,
-    ) -> StdResult<Vec<String>> {
+    pub fn expire_data_requests(&self, store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {
         // remove them from the timeouts and return the hashes
         let drs_to_update_to_tally = self.timeouts.remove_by_timeout_height(store, current_height)?;
 

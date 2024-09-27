@@ -1145,7 +1145,7 @@ fn timed_out_requests_move_to_tally() {
     test_info.set_block_height(11);
 
     // process the timed out requests at current height
-    test_info.process_timed_out_drs().unwrap();
+    test_info.expire_data_requests().unwrap();
 
     // post another data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
@@ -1168,7 +1168,7 @@ fn timed_out_requests_move_to_tally() {
     test_info.set_block_height(21);
 
     // process the timed out requests at current height
-    test_info.process_timed_out_drs().unwrap();
+    test_info.expire_data_requests().unwrap();
 
     // check that the request is now in the tallying state
     let tallying = test_info
