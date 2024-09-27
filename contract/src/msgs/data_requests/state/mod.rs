@@ -45,19 +45,13 @@ pub fn post_request(
     Ok(())
 }
 
-pub fn commit(store: &mut dyn Storage, block_height: u64, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
+pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
     let status = if dr.reveal_started() {
-        // We change the timeout to the reveal timeout or maybe this should move to the .update function?
-        DATA_REQUESTS.timeouts.remove_by_dr_id(store, &dr_id)?;
-        let timeout_config = TIMEOUT_CONFIG.load(store)?;
-        DATA_REQUESTS
-            .timeouts
-            .insert(store, timeout_config.reveal_timeout_in_blocks + block_height, &dr_id)?;
         Some(DataRequestStatus::Revealing)
     } else {
         None
     };
-    DATA_REQUESTS.update(store, dr_id, dr, status, false)?;
+    DATA_REQUESTS.update(store, dr_id, dr, status, current_height, false)?;
 
     Ok(())
 }
@@ -71,16 +65,15 @@ pub fn requests_by_status(
     DATA_REQUESTS.get_requests_by_status(store, status, offset, limit)
 }
 
-pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
+pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {
     let status = if dr.is_tallying() {
-        DATA_REQUESTS.timeouts.remove_by_dr_id(store, &dr_id)?;
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
         Some(DataRequestStatus::Tallying)
     } else {
         None
     };
-    DATA_REQUESTS.update(store, dr_id, dr, status, false)?;
+    DATA_REQUESTS.update(store, dr_id, dr, status, current_height, false)?;
 
     Ok(())
 }

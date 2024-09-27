@@ -85,8 +85,10 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn update(&mut self, key: Hash, dr: DataRequest, status: Option<DataRequestStatus>) {
-        self.map.update(&mut self.store, key, dr, status, false).unwrap();
+    fn update(&mut self, key: Hash, dr: DataRequest, status: Option<DataRequestStatus>, current_height: u64) {
+        self.map
+            .update(&mut self.store, key, dr, status, current_height, false)
+            .unwrap();
     }
 
     #[track_caller]
@@ -176,13 +178,14 @@ fn enum_map_update() {
 
     let (key1, dr1) = create_test_dr(1);
     let (_, dr2) = create_test_dr(2);
+    let current_height = 1;
 
-    test_info.insert(1, key1, dr1.clone());
+    test_info.insert(current_height, key1, dr1.clone());
     test_info.assert_status_len(1, TEST_STATUS);
     test_info.assert_status_key_to_index(TEST_STATUS, key1, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
 
-    test_info.update(key1, dr2.clone(), None);
+    test_info.update(key1, dr2.clone(), None, current_height);
     test_info.assert_status_len(1, TEST_STATUS);
     test_info.assert_status_key_to_index(TEST_STATUS, key1, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(key1));
@@ -193,7 +196,8 @@ fn enum_map_update() {
 fn enum_map_update_non_existing() {
     let mut test_info = TestInfo::init();
     let (key, req) = create_test_dr(1);
-    test_info.update(key, req, None);
+    let current_height = 1;
+    test_info.update(key, req, None, current_height);
 }
 
 #[test]
@@ -301,13 +305,14 @@ fn enum_map_remove_non_existing() {
 #[test]
 fn get_requests_by_status() {
     let mut test_info = TestInfo::init();
+    let current_height = 1;
 
     let (key1, req1) = create_test_dr(1);
-    test_info.insert(1, key1, req1.clone());
+    test_info.insert(current_height, key1, req1.clone());
 
     let (key2, req2) = create_test_dr(2);
-    test_info.insert(1, key2, req2.clone());
-    test_info.update(key2, req2.clone(), Some(DataRequestStatus::Revealing));
+    test_info.insert(current_height, key2, req2.clone());
+    test_info.update(key2, req2.clone(), Some(DataRequestStatus::Revealing), current_height);
 
     let committing = test_info.get_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(committing.len(), 1);

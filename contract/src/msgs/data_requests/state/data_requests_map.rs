@@ -86,6 +86,7 @@ impl DataRequestsMap<'_> {
         key: Hash,
         dr: DataRequest,
         status: Option<DataRequestStatus>,
+        current_height: u64,
         timeout: bool,
     ) -> StdResult<()> {
         // Check if the key exists
@@ -97,9 +98,10 @@ impl DataRequestsMap<'_> {
         if let Some(status) = status {
             // Grab the current status.
             let current_status = self.find_status(store, key)?;
-            // world view = we should only update from committing -> revealing -> tallying.
+            // world view = we should only update from committing -> revealing -> tallying,
+            // or if it's a timeout, from any status to tallying.
             // Either the concept is fundamentally flawed or the implementation is wrong.
-            match current_status {
+            match &current_status {
                 _ if timeout => {
                     assert_eq!(
                         status,
@@ -112,7 +114,13 @@ impl DataRequestsMap<'_> {
                         status,
                         DataRequestStatus::Revealing,
                         "Cannot update a request status from committing to anything other than revealing"
-                    )
+                    );
+
+                    // We change the timeout to the reveal timeout when commit -> reveal
+                    self.timeouts.remove_by_dr_id(store, &key)?;
+                    let timeout_config = TIMEOUT_CONFIG.load(store)?;
+                    self.timeouts
+                        .insert(store, timeout_config.reveal_timeout_in_blocks + current_height, &key)?;
                 }
                 DataRequestStatus::Revealing => {
                     assert_eq!(
@@ -120,6 +128,9 @@ impl DataRequestsMap<'_> {
                         DataRequestStatus::Tallying,
                         "Cannot update a request status from revealing to anything other than tallying"
                     );
+
+                    // We remove the timeout when reveal -> tally
+                    self.timeouts.remove_by_dr_id(store, &key)?;
                 }
                 DataRequestStatus::Tallying => {
                     assert_ne!(
@@ -205,7 +216,7 @@ impl DataRequestsMap<'_> {
                 // get the dr itself
                 let dr = self.get(store, &hash)?;
                 // update it to tallying
-                self.update(store, hash, dr, Some(DataRequestStatus::Tallying), true)?;
+                self.update(store, hash, dr, Some(DataRequestStatus::Tallying), current_height, true)?;
                 Ok(hash.to_hex())
             })
             .collect::<StdResult<Vec<_>>>()
