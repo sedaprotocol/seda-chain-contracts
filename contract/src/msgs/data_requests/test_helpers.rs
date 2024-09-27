@@ -269,4 +269,10 @@ impl TestInfo {
         self.query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
             .unwrap()
     }
+
+    #[track_caller]
+    pub fn process_timed_out_drs(&mut self) -> Result<(), ContractError> {
+        let msg = sudo::SudoMsg::RemoveTimedOutDataRequests {}.into();
+        self.sudo(&msg)
+    }
 }

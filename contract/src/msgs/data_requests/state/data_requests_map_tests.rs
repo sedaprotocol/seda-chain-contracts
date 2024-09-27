@@ -86,7 +86,7 @@ impl TestInfo<'_> {
 
     #[track_caller]
     fn update(&mut self, key: Hash, dr: DataRequest, status: Option<DataRequestStatus>) {
-        self.map.update(&mut self.store, key, dr, status).unwrap();
+        self.map.update(&mut self.store, key, dr, status, false).unwrap();
     }
 
     #[track_caller]

@@ -121,6 +121,24 @@ fn cannot_commit_if_not_staked() {
 }
 
 #[test]
+#[should_panic(expected = "DataRequestExpired(11, \"commit\")")]
+fn cannot_commit_if_timed_out() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    // set the block height to be later than the timeout
+    test_info.set_block_height(100);
+
+    // commit a data result
+    test_info.commit_result(&alice, &dr_id, "0xcommitment".hash()).unwrap();
+}
+
+#[test]
 #[should_panic(expected = "InsufficientFunds")]
 fn cannont_commit_if_not_enough_staked() {
     let mut test_info = TestInfo::init();
@@ -419,6 +437,37 @@ fn cannot_reveal_if_commit_rf_not_met() {
     test_info
         .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
+
+    // alice reveals
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DataRequestExpired(11, \"reveal\")")]
+fn cannot_reveal_if_timed_out() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
+
+    // set the block height to be later than the timeout
+    test_info.set_block_height(100);
 
     // alice reveals
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
@@ -1080,4 +1129,54 @@ fn post_data_request_replication_factor_zero() {
     test_info
         .post_data_request(&sender, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
+}
+
+#[test]
+fn timed_out_requests_move_to_tally() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    // set the block height to the height it would timeout
+    test_info.set_block_height(11);
+
+    // process the timed out requests at current height
+    test_info.process_timed_out_drs().unwrap();
+
+    // post another data request
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
+    let dr_id2 = test_info.post_data_request(&alice, dr2, vec![], vec![], 11).unwrap();
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        id:                dr_id2.clone(),
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&alice, &dr_id2, alice_reveal.try_hash().unwrap())
+        .unwrap();
+
+    // set the block height to be later than the timeout so it times out during the reveal phase
+    test_info.set_block_height(21);
+
+    // process the timed out requests at current height
+    test_info.process_timed_out_drs().unwrap();
+
+    // check that the request is now in the tallying state
+    let tallying = test_info
+        .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10)
+        .into_iter()
+        .map(|r| r.id)
+        .collect::<Vec<_>>();
+    assert_eq!(2, tallying.len());
+    assert_eq!(tallying[0], dr_id);
+    assert_eq!(tallying[1], dr_id2);
 }

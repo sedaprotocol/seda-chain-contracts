@@ -86,6 +86,7 @@ impl DataRequestsMap<'_> {
         key: Hash,
         dr: DataRequest,
         status: Option<DataRequestStatus>,
+        timeout: bool,
     ) -> StdResult<()> {
         // Check if the key exists
         if !self.has(store, &key) {
@@ -99,6 +100,13 @@ impl DataRequestsMap<'_> {
             // world view = we should only update from committing -> revealing -> tallying.
             // Either the concept is fundamentally flawed or the implementation is wrong.
             match current_status {
+                _ if timeout => {
+                    assert_eq!(
+                        status,
+                        DataRequestStatus::Tallying,
+                        "Cannot update a timed out request status to anything other than tallying"
+                    );
+                }
                 DataRequestStatus::Committing => {
                     assert_eq!(
                         status,
@@ -192,13 +200,16 @@ impl DataRequestsMap<'_> {
         store: &mut dyn Storage,
         current_height: u64,
     ) -> StdResult<Vec<String>> {
+        // remove them from the timeouts and return the hashes
         let drs_to_update_to_tally = self.timeouts.remove_by_timeout_height(store, current_height)?;
 
         drs_to_update_to_tally
             .into_iter()
             .map(|hash| {
+                // get the dr itself
                 let dr = self.get(store, &hash)?;
-                self.update(store, hash, dr, Some(DataRequestStatus::Tallying))?;
+                // update it to tallying
+                self.update(store, hash, dr, Some(DataRequestStatus::Tallying), true)?;
                 Ok(hash.to_hex())
             })
             .collect::<StdResult<Vec<_>>>()

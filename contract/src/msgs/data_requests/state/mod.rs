@@ -57,7 +57,7 @@ pub fn commit(store: &mut dyn Storage, block_height: u64, dr_id: Hash, dr: DataR
     } else {
         None
     };
-    DATA_REQUESTS.update(store, dr_id, dr, status)?;
+    DATA_REQUESTS.update(store, dr_id, dr, status, false)?;
 
     Ok(())
 }
@@ -80,7 +80,7 @@ pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest) -> StdResul
     } else {
         None
     };
-    DATA_REQUESTS.update(store, dr_id, dr, status)?;
+    DATA_REQUESTS.update(store, dr_id, dr, status, false)?;
 
     Ok(())
 }

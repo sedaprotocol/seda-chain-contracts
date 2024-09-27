@@ -15,8 +15,9 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         }
 
         // error if the data request has expired
-        if state::get_dr_expiration_height(deps.storage, &dr_id)? < env.block.height {
-            return Err(ContractError::DataRequestExpired(env.block.height, "reveal"));
+        let expires_at = state::get_dr_expiration_height(deps.storage, &dr_id)?;
+        if expires_at < env.block.height {
+            return Err(ContractError::DataRequestExpired(expires_at, "reveal"));
         }
 
         // verify the proof
