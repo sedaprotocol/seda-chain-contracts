@@ -30,7 +30,7 @@ impl TestInfo<'_> {
     #[track_caller]
     fn remove_by_timeout_height(&mut self, timeout_height: u64) {
         self.timeouts
-            ._remove_by_timeout_height(&mut self.store, timeout_height)
+            .remove_by_timeout_height(&mut self.store, timeout_height)
             .unwrap();
     }
 
@@ -42,7 +42,7 @@ impl TestInfo<'_> {
     #[track_caller]
     fn get_all_by_timeout_height(&self, timeout_height: u64) -> Vec<Hash> {
         self.timeouts
-            ._get_all_by_timeout_height(&self.store, timeout_height)
+            .get_all_by_timeout_height(&self.store, timeout_height)
             .unwrap()
     }
 }

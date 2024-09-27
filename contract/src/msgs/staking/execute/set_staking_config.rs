@@ -1,6 +1,6 @@
 use owner::state::OWNER;
 
-use super::{state::CONFIG, *};
+use super::{state::STAKING_CONFIG, *};
 
 impl ExecuteHandler for StakingConfig {
     /// Set staking config
@@ -8,7 +8,7 @@ impl ExecuteHandler for StakingConfig {
         if info.sender != OWNER.load(deps.storage)? {
             return Err(ContractError::NotOwner);
         }
-        CONFIG.save(deps.storage, &self)?;
+        STAKING_CONFIG.save(deps.storage, &self)?;
 
         Ok(Response::new()
             .add_attribute("action", "set-staking-config")

@@ -4,6 +4,7 @@ use super::{
 };
 pub(in crate::msgs::data_requests) mod post_result;
 pub(in crate::msgs::data_requests) mod post_results;
+pub(in crate::msgs::data_requests) mod remove_timed_out_data_requests;
 
 fn post_result(result: sudo::PostResult, deps: &mut DepsMut, env: &Env) -> Result<Event, ContractError> {
     // find the data request from the committed pool (if it exists, otherwise error)
@@ -37,6 +38,9 @@ impl SudoHandler for SudoMsg {
         match self {
             SudoMsg::PostDataResult(sudo) => sudo.sudo(deps, env),
             SudoMsg::PostDataResults(sudo) => sudo.sudo(deps, env),
+            SudoMsg::RemoveTimedOutDataRequests => {
+                remove_timed_out_data_requests::remove_timed_out_data_requests(deps, env)
+            }
         }
     }
 }

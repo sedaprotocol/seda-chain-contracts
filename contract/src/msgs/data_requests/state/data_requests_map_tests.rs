@@ -2,6 +2,7 @@ use test::test_helpers::{calculate_dr_id_and_args, construct_dr};
 use testing::MockStorage;
 
 use super::*;
+use crate::consts::{INITIAL_COMMIT_TIMEOUT_IN_BLOCKS, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS};
 
 struct TestInfo<'a> {
     pub store: MockStorage,
@@ -13,6 +14,13 @@ impl TestInfo<'_> {
         let mut store = MockStorage::new();
         let map: DataRequestsMap = new_enumerable_status_map!("test");
         map.initialize(&mut store).unwrap();
+
+        let init_timeout_config = TimeoutConfig {
+            commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
+            reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
+        };
+        TIMEOUT_CONFIG.save(&mut store, &init_timeout_config).unwrap();
+
         Self { store, map }
     }
 

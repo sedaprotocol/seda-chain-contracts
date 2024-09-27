@@ -25,7 +25,7 @@ impl QueryHandler for QueryMsg {
                 to_json_binary(&STAKERS.is_staker_executor(deps.storage, &PublicKey::from_hex_str(&public_key)?)?)?
             }
             QueryMsg::IsExecutorEligible(query) => query.query(deps, env)?,
-            QueryMsg::GetStakingConfig {} => to_json_binary(&state::CONFIG.load(deps.storage)?)?,
+            QueryMsg::GetStakingConfig {} => to_json_binary(&state::STAKING_CONFIG.load(deps.storage)?)?,
         };
 
         Ok(binary)

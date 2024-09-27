@@ -1,4 +1,4 @@
-use staking::state::{CONFIG, STAKERS};
+use staking::state::{STAKING_CONFIG, STAKERS};
 
 use super::*;
 use crate::state::CHAIN_ID;
@@ -29,7 +29,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         // Check if the staker has enough funds staked to commit
         let staker = STAKERS.get_staker(deps.storage, &public_key)?;
-        let minimum_stake = CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility;
+        let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake_for_committee_eligibility;
 
         if staker.tokens_staked < minimum_stake {
             return Err(ContractError::InsufficientFunds(minimum_stake, staker.tokens_staked));

@@ -39,7 +39,7 @@ impl StakersMap<'_> {
     }
 
     pub fn is_staker_executor(&self, store: &dyn Storage, executor: &PublicKey) -> StdResult<bool> {
-        let config = CONFIG.load(store)?;
+        let config = STAKING_CONFIG.load(store)?;
         if config.allowlist_enabled {
             let allowed = ALLOWLIST.may_load(store, executor)?;
             // If the executor is not in the allowlist, they are not eligible.

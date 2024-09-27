@@ -57,7 +57,9 @@ impl DataRequestsMap<'_> {
 
         self.reqs.save(store, &key, &req)?;
         self.add_to_status(store, key, status)?;
-        self.timeouts.insert(store, current_height + COMMIT_TIMEOUT, &key)?;
+        let timeout_config = TIMEOUT_CONFIG.load(store)?;
+        self.timeouts
+            .insert(store, current_height + timeout_config.commit_timeout_in_blocks, &key)?;
 
         Ok(())
     }
@@ -183,6 +185,23 @@ impl DataRequestsMap<'_> {
         .collect::<StdResult<Vec<_>>>()?;
 
         Ok(requests)
+    }
+
+    pub fn move_timed_out_requests_to_tally(
+        &self,
+        store: &mut dyn Storage,
+        current_height: u64,
+    ) -> StdResult<Vec<String>> {
+        let drs_to_update_to_tally = self.timeouts.remove_by_timeout_height(store, current_height)?;
+
+        drs_to_update_to_tally
+            .into_iter()
+            .map(|hash| {
+                let dr = self.get(store, &hash)?;
+                self.update(store, hash, dr, Some(DataRequestStatus::Tallying))?;
+                Ok(hash.to_hex())
+            })
+            .collect::<StdResult<Vec<_>>>()
     }
 }
 

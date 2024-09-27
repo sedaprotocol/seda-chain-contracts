@@ -7,9 +7,8 @@ use data_requests_map::{new_enumerable_status_map, DataRequestsMap};
 mod timeouts;
 use timeouts::Timeouts;
 
-// TODO replace these with pulling them from the config.
-pub const COMMIT_TIMEOUT: u64 = 25;
-pub const REVEAL_TIMEOUT: u64 = 25;
+/// Governance-controlled timeout configuration parameters.
+pub const TIMEOUT_CONFIG: Item<TimeoutConfig> = Item::new("timeout_config");
 
 const DATA_REQUESTS: DataRequestsMap = new_enumerable_status_map!("data_request_pool");
 const DATA_RESULTS: Map<&Hash, DataResult> = Map::new("data_results_pool");
@@ -50,9 +49,10 @@ pub fn commit(store: &mut dyn Storage, block_height: u64, dr_id: Hash, dr: DataR
     let status = if dr.reveal_started() {
         // We change the timeout to the reveal timeout or maybe this should move to the .update function?
         DATA_REQUESTS.timeouts.remove_by_dr_id(store, &dr_id)?;
+        let timeout_config = TIMEOUT_CONFIG.load(store)?;
         DATA_REQUESTS
             .timeouts
-            .insert(store, REVEAL_TIMEOUT + block_height, &dr_id)?;
+            .insert(store, timeout_config.reveal_timeout_in_blocks + block_height, &dr_id)?;
         Some(DataRequestStatus::Revealing)
     } else {
         None
@@ -100,6 +100,10 @@ pub fn load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataResult> {
 
 pub fn may_load_result(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataResult>> {
     DATA_RESULTS.may_load(store, dr_id)
+}
+
+pub fn move_timed_out_requests_to_tally(store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {
+    DATA_REQUESTS.move_timed_out_requests_to_tally(store, current_height)
 }
 
 #[cfg(test)]
