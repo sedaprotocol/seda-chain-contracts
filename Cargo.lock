@@ -701,7 +701,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.1.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/commit-reveal-timeouts#3afe6b513db1e2027f6da22d448d2906ad6760b1"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/commit-reveal-timeouts#8becdd73903d0fa9214408924e7a2a1e61727ae0"
 dependencies = [
  "base64 0.22.1",
  "cosmwasm-schema",

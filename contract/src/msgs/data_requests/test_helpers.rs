@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use msgs::data_requests::sudo::expire_data_requests;
 use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
@@ -272,7 +273,7 @@ impl TestInfo {
 
     #[track_caller]
     pub fn expire_data_requests(&mut self) -> Result<(), ContractError> {
-        let msg = sudo::SudoMsg::ExpireDataRequests {}.into();
+        let msg = expire_data_requests::Sudo {}.into();
         self.sudo(&msg)
     }
 

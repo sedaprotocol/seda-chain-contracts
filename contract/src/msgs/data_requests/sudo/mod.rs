@@ -38,7 +38,7 @@ impl SudoHandler for SudoMsg {
         match self {
             SudoMsg::PostDataResult(sudo) => sudo.sudo(deps, env),
             SudoMsg::PostDataResults(sudo) => sudo.sudo(deps, env),
-            SudoMsg::ExpireDataRequests => expire_data_requests::expire_data_requests(deps, env),
+            SudoMsg::ExpireDataRequests(sudo) => sudo.sudo(deps, env),
         }
     }
 }
