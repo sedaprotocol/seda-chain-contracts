@@ -76,8 +76,8 @@ fn wasm_opt(sh: &Shell) -> Result<()> {
 
 fn create_data_request(
     id: [u8; 32],
-    dr_binary_id: [u8; 32],
-    tally_binary_id: [u8; 32],
+    exec_program_id: [u8; 32],
+    tally_program_id: [u8; 32],
     replication_factor: u16,
     tally_inputs: Vec<u8>,
     reveals: HashMap<String, RevealBody>,
@@ -91,8 +91,8 @@ fn create_data_request(
             build: semver::BuildMetadata::EMPTY,
         },
         id: id.to_hex(),
-        dr_binary_id: dr_binary_id.to_hex(),
-        tally_binary_id: tally_binary_id.to_hex(),
+        exec_program_id: exec_program_id.to_hex(),
+        tally_program_id: tally_program_id.to_hex(),
         dr_inputs: Default::default(),
         tally_inputs: tally_inputs.into(),
         memo: Default::default(),
@@ -109,8 +109,8 @@ fn create_data_request(
 }
 
 fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
-    let dr_binary_id: [u8; 32] = rand::random();
-    let tally_binary_id: [u8; 32] = rand::random();
+    let exec_program_id: [u8; 32] = rand::random();
+    let tally_program_id: [u8; 32] = rand::random();
 
     (0..n)
         .map(|_| {
@@ -146,8 +146,8 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
 
             create_data_request(
                 dr_id,
-                dr_binary_id,
-                tally_binary_id,
+                exec_program_id,
+                tally_program_id,
                 replication_factor,
                 inputs,
                 reveals,

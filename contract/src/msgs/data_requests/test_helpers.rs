@@ -11,8 +11,8 @@ use super::{
 use crate::{TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
-    let dr_binary_id = nonce.to_string().hash().to_hex();
-    let tally_binary_id = "tally_binary_id".hash().to_hex();
+    let exec_program_id = nonce.to_string().hash().to_hex();
+    let tally_program_id = "tally_program_id".hash().to_hex();
     let dr_inputs = "dr_inputs".as_bytes().into();
     let tally_inputs = "tally_inputs".as_bytes().into();
 
@@ -39,8 +39,8 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
 
     PostDataRequestArgs {
         version,
-        dr_binary_id,
-        tally_binary_id,
+        exec_program_id,
+        tally_program_id,
         dr_inputs,
         tally_inputs,
         memo: memo.as_slice().into(),
@@ -65,8 +65,8 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
     DataRequest {
         version,
         id: dr_id.to_hex(),
-        dr_binary_id: dr_args.dr_binary_id,
-        tally_binary_id: dr_args.tally_binary_id,
+        exec_program_id: dr_args.exec_program_id,
+        tally_program_id: dr_args.tally_program_id,
         dr_inputs: dr_args.dr_inputs,
         tally_inputs: dr_args.tally_inputs,
         memo: dr_args.memo,

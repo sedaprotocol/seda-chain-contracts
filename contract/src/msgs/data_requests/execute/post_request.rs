@@ -32,9 +32,9 @@ impl ExecuteHandler for execute::post_request::Execute {
             .set_data(to_json_binary(&hex_dr_id)?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("dr_id", hex_dr_id.clone()),
-                ("dr_binary_id", self.posted_dr.dr_binary_id.clone()),
+                ("exec_program_id", self.posted_dr.exec_program_id.clone()),
                 ("dr_inputs", self.posted_dr.dr_inputs.to_base64()),
-                ("tally_binary_id", self.posted_dr.tally_binary_id.clone()),
+                ("tally_program_id", self.posted_dr.tally_program_id.clone()),
                 ("tally_inputs", self.posted_dr.tally_inputs.to_base64()),
                 ("replication_factor", self.posted_dr.replication_factor.to_string()),
                 ("consensus_filter", self.posted_dr.consensus_filter.to_base64()),
@@ -50,9 +50,9 @@ impl ExecuteHandler for execute::post_request::Execute {
         let dr = DataRequest {
             id:                 hex_dr_id,
             version:            self.posted_dr.version,
-            dr_binary_id:       self.posted_dr.dr_binary_id,
+            exec_program_id:    self.posted_dr.exec_program_id,
             dr_inputs:          self.posted_dr.dr_inputs,
-            tally_binary_id:    self.posted_dr.tally_binary_id,
+            tally_program_id:   self.posted_dr.tally_program_id,
             tally_inputs:       self.posted_dr.tally_inputs,
             replication_factor: self.posted_dr.replication_factor,
             consensus_filter:   self.posted_dr.consensus_filter,
