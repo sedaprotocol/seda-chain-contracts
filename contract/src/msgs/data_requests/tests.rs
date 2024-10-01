@@ -131,16 +131,36 @@ fn cannot_commit_if_timed_out() {
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
 
-    // set the block height to be later than the timeout
-    test_info.set_block_height(100);
+    // set the block height to be equal to the timeout height
+    test_info.set_block_height(11);
 
     // commit a data result
     test_info.commit_result(&alice, &dr_id, "0xcommitment".hash()).unwrap();
 }
 
 #[test]
+#[should_panic(expected = "not found")]
+fn cannot_commit_on_expired_dr() {
+    let mut test_info = TestInfo::init();
+
+    // post a data request
+    let mut anyone = test_info.new_executor("anyone", Some(2));
+    anyone.stake(&mut test_info, 1).unwrap();
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&anyone, dr, vec![], vec![], 1).unwrap();
+
+    // set the block height to be later than the timeout
+    test_info.set_block_height(11);
+    // expire the data request
+    test_info.expire_data_requests().unwrap();
+
+    // commit a data result
+    test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
+}
+
+#[test]
 #[should_panic(expected = "InsufficientFunds")]
-fn cannont_commit_if_not_enough_staked() {
+fn cannot_commit_if_not_enough_staked() {
     let mut test_info = TestInfo::init();
 
     let new_config = StakingConfig {
@@ -467,7 +487,41 @@ fn cannot_reveal_if_timed_out() {
         .unwrap();
 
     // set the block height to be later than the timeout
-    test_info.set_block_height(100);
+    test_info.set_block_height(11);
+
+    // alice reveals
+    test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "not found")]
+fn cannot_reveal_on_expired_dr() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(2));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0u128.into(),
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
+
+    // set the block height to be later than the timeout
+    test_info.set_block_height(11);
+
+    // expire the data request
+    test_info.expire_data_requests().unwrap();
 
     // alice reveals
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
