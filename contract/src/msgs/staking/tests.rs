@@ -243,7 +243,7 @@ fn executor_not_eligible_if_dr_resolved() {
         id:                dr_id.clone(),
         salt:              anyone.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };

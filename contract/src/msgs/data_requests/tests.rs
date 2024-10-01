@@ -297,7 +297,7 @@ fn reveal_result() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -312,7 +312,7 @@ fn reveal_result() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -349,7 +349,7 @@ fn reveal_result_with_proxies() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: proxies,
     };
@@ -387,7 +387,7 @@ fn reveal_result_with_proxies_not_valid_public_keys() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: proxies.clone(),
     };
@@ -419,7 +419,7 @@ fn reveal_result_reveal_body_missing_proxies() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: proxies,
     };
@@ -450,7 +450,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -478,7 +478,7 @@ fn cannot_reveal_if_timed_out() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -509,7 +509,7 @@ fn cannot_reveal_on_expired_dr() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -543,7 +543,7 @@ fn cannot_reveal_if_user_did_not_commit() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -558,7 +558,7 @@ fn cannot_reveal_if_user_did_not_commit() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -589,7 +589,7 @@ fn cannot_double_reveal() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -604,7 +604,7 @@ fn cannot_double_reveal() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -637,7 +637,7 @@ fn reveal_must_match_commitment() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -649,7 +649,7 @@ fn reveal_must_match_commitment() {
                 id:                dr_id.clone(),
                 salt:              alice.salt(),
                 reveal:            "11".hash().into(),
-                gas_used:          0u128.into(),
+                gas_used:          0,
                 exit_code:         0,
                 proxy_public_keys: vec![],
             }
@@ -664,7 +664,7 @@ fn reveal_must_match_commitment() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -695,7 +695,7 @@ fn post_data_result() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -728,7 +728,7 @@ fn post_data_results() {
         id:                dr_id1.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -746,7 +746,7 @@ fn post_data_results() {
         id:                dr_id2.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -787,7 +787,7 @@ fn cant_post_if_replication_factor_not_met() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -800,7 +800,7 @@ fn cant_post_if_replication_factor_not_met() {
         id:                dr_id.clone(),
         salt:              alice.salt(),
         reveal:            "20".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -828,11 +828,11 @@ fn check_data_request_id() {
     //     "tally_inputs": "dGFsbHlfaW5wdXRz",
     //     "replication_factor": 1,
     //     "consensus_filter": "AA==",
-    //     "gas_price": "10",
-    //     "gas_limit": "10",
+    //     "gas_price": 10,
+    //     "gas_limit": 10,
     //     "memo": "XTtTqpLgvyGr54/+ov83JyG852lp7VqzBrC10UpsIjg="
     //   }
-    let expected_dr_id = "264b76bd166a8997c141a4b4b673b2cb5c90bfe313258a4083aaac1dd04e39c1";
+    let expected_dr_id = "ac63c09c88c23eeffce331f6ee993d172eaeffe88169edc04698092b86bd9f0d";
 
     // compute and check if dr id matches expected value
     let dr = test_helpers::calculate_dr_id_and_args(0, 1);
@@ -850,11 +850,11 @@ fn check_data_result_id() {
     //     "exit_code": 0,
     //     "result": "Ghkvq84TmIuEmU1ClubNxBjVXi8df5QhiNQEC5T8V6w=",
     //     "block_height": 12345,
-    //     "gas_used": "20",
+    //     "gas_used": 20,
     //     "payback_address": "",
     //     "seda_payload": ""
     //   }
-    let expected_result_id = "c07800e3f74a3c4b1bf9e70d338b511c2f44b016528b63095efe4012cb1170ff";
+    let expected_result_id = "6b0ba1d7e6b1dbddb85c8dfc66ce2f4973b7ca94d5fd3d24f3122526853ab8db";
     let dr_args = test_helpers::calculate_dr_id_and_args(0, 1);
 
     // reveal sample
@@ -862,7 +862,7 @@ fn check_data_result_id() {
         id:                expected_result_id.to_owned(),
         salt:              "123".into(),
         reveal:            "10".hash().into(),
-        gas_used:          20u128.into(),
+        gas_used:          20,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -893,7 +893,7 @@ fn post_data_result_with_more_drs_in_the_pool() {
         id:                dr_id1.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
@@ -983,7 +983,7 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
             id:                dr_id.clone(),
             salt:              alice.salt(),
             reveal:            "10".hash().into(),
-            gas_used:          0u128.into(),
+            gas_used:          0,
             exit_code:         0,
             proxy_public_keys: vec![],
         };
@@ -1035,7 +1035,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
             id:                dr_id.clone(),
             salt:              alice.salt(),
             reveal:            "10".hash().into(),
-            gas_used:          0u128.into(),
+            gas_used:          0,
             exit_code:         0,
             proxy_public_keys: vec![],
         };
@@ -1080,7 +1080,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
                 id:                request.id.clone(),
                 salt:              alice.salt(),
                 reveal:            "10".hash().into(),
-                gas_used:          0u128.into(),
+                gas_used:          0,
                 exit_code:         0,
                 proxy_public_keys: vec![],
             };
@@ -1123,7 +1123,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
                 id:                request.id.clone(),
                 salt:              alice.salt(),
                 reveal:            "10".hash().into(),
-                gas_used:          0u128.into(),
+                gas_used:          0,
                 exit_code:         0,
                 proxy_public_keys: vec![],
             };
@@ -1210,7 +1210,7 @@ fn timed_out_requests_move_to_tally() {
         id:                dr_id2.clone(),
         salt:              alice.salt(),
         reveal:            "10".hash().into(),
-        gas_used:          0u128.into(),
+        gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
