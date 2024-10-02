@@ -823,7 +823,7 @@ fn check_data_request_id() {
     // {
     //     "version": "0.0.1",
     //     "exec_program_id": "044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d",
-    //     "dr_inputs": "ZHJfaW5wdXRz",
+    //     "exec_inputs": "ZHJfaW5wdXRz",
     //     "tally_program_id": "3a1561a3d854e446801b339c137f87dbd2238f481449c00d3470cfcc2a4e24a1",
     //     "tally_inputs": "dGFsbHlfaW5wdXRz",
     //     "replication_factor": 1,
@@ -832,7 +832,7 @@ fn check_data_request_id() {
     //     "gas_limit": 10,
     //     "memo": "XTtTqpLgvyGr54/+ov83JyG852lp7VqzBrC10UpsIjg="
     //   }
-    let expected_dr_id = "2399c8b5ea3cea169496647e3ec54edbad9e920c567b650272115afb89d6b6b1";
+    let expected_dr_id = "9394a14f625bb218a3db2714b0f9790691439bda34a35541972fd669c474567f";
 
     // compute and check if dr id matches expected value
     let dr = test_helpers::calculate_dr_id_and_args(0, 1);
@@ -854,7 +854,7 @@ fn check_data_result_id() {
     //     "payback_address": "",
     //     "seda_payload": ""
     //   }
-    let expected_result_id = "74d7e8c9a77b7b4777153a32fcdf2424489f24cd59d3043eb2a30be7bba48306";
+    let expected_result_id = "f6fc1b4ea295b00537bbe3e918793699c43dbc924ee7df650da567a095238150";
     let dr_args = test_helpers::calculate_dr_id_and_args(0, 1);
 
     // reveal sample

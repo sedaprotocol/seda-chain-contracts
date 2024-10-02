@@ -33,7 +33,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("dr_id", hex_dr_id.clone()),
                 ("exec_program_id", self.posted_dr.exec_program_id.clone()),
-                ("dr_inputs", self.posted_dr.dr_inputs.to_base64()),
+                ("exec_inputs", self.posted_dr.exec_inputs.to_base64()),
                 ("tally_program_id", self.posted_dr.tally_program_id.clone()),
                 ("tally_inputs", self.posted_dr.tally_inputs.to_base64()),
                 ("replication_factor", self.posted_dr.replication_factor.to_string()),
@@ -51,7 +51,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             id:                 hex_dr_id,
             version:            self.posted_dr.version,
             exec_program_id:    self.posted_dr.exec_program_id,
-            dr_inputs:          self.posted_dr.dr_inputs,
+            exec_inputs:        self.posted_dr.exec_inputs,
             tally_program_id:   self.posted_dr.tally_program_id,
             tally_inputs:       self.posted_dr.tally_inputs,
             replication_factor: self.posted_dr.replication_factor,

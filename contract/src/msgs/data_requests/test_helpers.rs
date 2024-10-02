@@ -13,11 +13,11 @@ use crate::{TestExecutor, TestInfo};
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let exec_program_id = nonce.to_string().hash().to_hex();
     let tally_program_id = "tally_program_id".hash().to_hex();
-    let dr_inputs = "dr_inputs".as_bytes().into();
+    let exec_inputs = "exec_inputs".as_bytes().into();
     let tally_inputs = "tally_inputs".as_bytes().into();
 
     // set by dr creator
-    let gas_price = 10;
+    let gas_price = 10u128.into();
     let gas_limit = 10;
 
     // memo
@@ -41,7 +41,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
         version,
         exec_program_id,
         tally_program_id,
-        dr_inputs,
+        exec_inputs,
         tally_inputs,
         memo: memo.as_slice().into(),
         replication_factor,
@@ -67,7 +67,7 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
         id: dr_id.to_hex(),
         exec_program_id: dr_args.exec_program_id,
         tally_program_id: dr_args.tally_program_id,
-        dr_inputs: dr_args.dr_inputs,
+        exec_inputs: dr_args.exec_inputs,
         tally_inputs: dr_args.tally_inputs,
         memo: dr_args.memo,
         replication_factor: dr_args.replication_factor,
