@@ -751,7 +751,7 @@ fn post_data_results() {
     test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
 
     // owner posts data results
-    test_info.post_data_results(vec![dr_id1, dr_id2]).unwrap();
+    test_info.remove_data_requests(vec![dr_id1, dr_id2]).unwrap();
 }
 
 #[test]
@@ -822,42 +822,6 @@ fn check_data_request_id() {
     let dr = test_helpers::calculate_dr_id_and_args(0, 1);
     let dr_id = dr.try_hash().unwrap();
     assert_eq!(hex::encode(dr_id), expected_dr_id);
-}
-
-#[test]
-fn check_data_result_id() {
-    // Expected RESULT ID for the following Data Result:
-    // {
-    //     "version": "0.0.1",
-    //     "dr_id": "74d7e8c9a77b7b4777153a32fcdf2424489f24cd59d3043eb2a30be7bba48306",
-    //     "consensus": true,
-    //     "exit_code": 0,
-    //     "result": "Ghkvq84TmIuEmU1ClubNxBjVXi8df5QhiNQEC5T8V6w=",
-    //     "block_height": 12345,
-    //     "gas_used": 20,
-    //     "payback_address": "",
-    //     "seda_payload": ""
-    //   }
-    let expected_result_id = "f6fc1b4ea295b00537bbe3e918793699c43dbc924ee7df650da567a095238150";
-    let dr_args = test_helpers::calculate_dr_id_and_args(0, 1);
-
-    // reveal sample
-    let alice_reveal = RevealBody {
-        id:                expected_result_id.to_owned(),
-        salt:              "123".into(),
-        reveal:            "10".hash().into(),
-        gas_used:          20,
-        exit_code:         0,
-        proxy_public_keys: vec![],
-    };
-
-    // check if data result id matches expected value
-    let dr = test_helpers::construct_dr(dr_args, vec![0x04, 0x05, 0x06], 12345);
-    let result = test_helpers::construct_result(dr, alice_reveal, 0);
-
-    let result_id = result.try_hash().unwrap();
-
-    assert_eq!(hex::encode(result_id), expected_result_id);
 }
 
 #[test]

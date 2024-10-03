@@ -4,9 +4,9 @@ use super::{
 };
 pub(in crate::msgs::data_requests) mod expire_data_requests;
 pub(in crate::msgs::data_requests) mod post_result;
-pub(in crate::msgs::data_requests) mod post_results;
+pub(in crate::msgs::data_requests) mod remove_requests;
 
-fn post_result(result: sudo::PostResult, deps: &mut DepsMut, env: &Env) -> Result<Event, ContractError> {
+fn post_result(result: sudo::RemoveDataRequest, deps: &mut DepsMut, env: &Env) -> Result<Event, ContractError> {
     // find the data request from the committed pool (if it exists, otherwise error)
     let dr_id = Hash::from_hex_str(&result.dr_id)?;
     let dr = state::load_request(deps.storage, &dr_id)?;
@@ -33,8 +33,8 @@ fn post_result(result: sudo::PostResult, deps: &mut DepsMut, env: &Env) -> Resul
 impl SudoHandler for SudoMsg {
     fn sudo(self, deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         match self {
-            SudoMsg::PostDataResult(sudo) => sudo.sudo(deps, env),
-            SudoMsg::PostDataResults(sudo) => sudo.sudo(deps, env),
+            SudoMsg::RemoveDataRequest(sudo) => sudo.sudo(deps, env),
+            SudoMsg::RemoveDataRequests(sudo) => sudo.sudo(deps, env),
             SudoMsg::ExpireDataRequests(sudo) => sudo.sudo(deps, env),
         }
     }

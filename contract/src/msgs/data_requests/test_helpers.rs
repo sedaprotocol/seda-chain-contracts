@@ -83,20 +83,6 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
     }
 }
 
-pub fn construct_result(dr: DataRequest, reveal: RevealBody, exit_code: u8) -> DataResult {
-    DataResult {
-        version: dr.version,
-        dr_id: dr.id,
-        block_height: dr.height,
-        exit_code,
-        gas_used: reveal.gas_used,
-        result: reveal.reveal,
-        payback_address: dr.payback_address,
-        seda_payload: dr.seda_payload,
-        consensus: true,
-    }
-}
-
 impl TestInfo {
     #[track_caller]
     pub fn post_data_request(
@@ -195,14 +181,17 @@ impl TestInfo {
 
     #[track_caller]
     pub fn post_data_result(&mut self, dr_id: String) -> Result<(), ContractError> {
-        let msg = sudo::PostResult { dr_id }.into();
+        let msg = sudo::RemoveDataRequest { dr_id }.into();
         self.sudo(&msg)
     }
 
     #[track_caller]
-    pub fn post_data_results(&mut self, results: Vec<String>) -> Result<(), ContractError> {
-        let msg = sudo::post_results::Sudo {
-            results: results.into_iter().map(|dr_id| sudo::PostResult { dr_id }).collect(),
+    pub fn remove_data_requests(&mut self, results: Vec<String>) -> Result<(), ContractError> {
+        let msg = sudo::remove_requests::Sudo {
+            requests: results
+                .into_iter()
+                .map(|dr_id| sudo::RemoveDataRequest { dr_id })
+                .collect(),
         }
         .into();
         self.sudo(&msg)

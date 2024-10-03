@@ -701,7 +701,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.1.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=hy/sudo-refactor#036b0b9e8b1cc56436edbc132f42564a65192de2"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=hy/sudo-refactor#dc25bbc010fa6ae03c971737ea28370ec2d84ae8"
 dependencies = [
  "base64 0.22.1",
  "cosmwasm-schema",

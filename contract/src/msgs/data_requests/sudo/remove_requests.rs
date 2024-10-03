@@ -1,11 +1,11 @@
 use super::*;
 
-impl SudoHandler for sudo::post_results::Sudo {
+impl SudoHandler for sudo::remove_requests::Sudo {
     /// Posts data results to the contract
     fn sudo(self, mut deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         let mut response = Response::new();
         for event in self
-            .results
+            .requests
             .into_iter()
             .map(|result| post_result(result, &mut deps, &env))
         {
