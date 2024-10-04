@@ -180,7 +180,7 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn post_data_result(&mut self, dr_id: String) -> Result<(), ContractError> {
+    pub fn remove_data_request(&mut self, dr_id: String) -> Result<(), ContractError> {
         let msg = sudo::RemoveDataRequest { dr_id }.into();
         self.sudo(&msg)
     }

@@ -681,7 +681,7 @@ fn reveal_must_match_commitment() {
 }
 
 #[test]
-fn post_data_result() {
+fn remove_data_request() {
     let mut test_info = TestInfo::init();
 
     // post a data request
@@ -705,11 +705,11 @@ fn post_data_result() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // owner posts a data result
-    test_info.post_data_result(dr_id).unwrap();
+    test_info.remove_data_request(dr_id).unwrap();
 }
 
 #[test]
-fn post_data_results() {
+fn remove_data_requests() {
     let mut test_info = TestInfo::init();
 
     // post data request 1
@@ -798,7 +798,7 @@ fn cant_post_if_replication_factor_not_met() {
 
     // post a data result
     test_info.get_data_request(&dr_id).unwrap();
-    test_info.post_data_result(dr_id).unwrap();
+    test_info.remove_data_request(dr_id).unwrap();
 }
 
 #[test]
@@ -825,7 +825,7 @@ fn check_data_request_id() {
 }
 
 #[test]
-fn post_data_result_with_more_drs_in_the_pool() {
+fn remove_data_request_with_more_drs_in_the_pool() {
     let mut test_info = TestInfo::init();
 
     // post 2 drs
@@ -889,7 +889,7 @@ fn post_data_result_with_more_drs_in_the_pool() {
     // Post only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
     let dr = dr_to_be_tallied[0].clone();
-    test_info.post_data_result(dr.id).unwrap();
+    test_info.remove_data_request(dr.id).unwrap();
     assert_eq!(
         0,
         test_info
@@ -904,7 +904,7 @@ fn post_data_result_with_more_drs_in_the_pool() {
 
     // Post last dr result
     let dr = dr_to_be_tallied[0].clone();
-    test_info.post_data_result(dr.id).unwrap();
+    test_info.remove_data_request(dr.id).unwrap();
 
     // Check dr to be tallied is empty
     assert_eq!(
@@ -1065,7 +1065,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         .enumerate()
     {
         if i % 8 == 0 {
-            test_info.post_data_result(request.id.to_string()).unwrap();
+            test_info.remove_data_request(request.id.to_string()).unwrap();
         }
     }
     assert_eq!(
