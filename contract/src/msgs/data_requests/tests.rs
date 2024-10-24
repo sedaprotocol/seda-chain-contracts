@@ -704,7 +704,7 @@ fn remove_data_request() {
         .unwrap();
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
-    // owner posts a data result
+    // owner removes a data result
     test_info.remove_data_request(dr_id).unwrap();
 }
 
@@ -886,7 +886,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     assert_eq!(1, dr_to_be_tallied.len());
     assert_eq!(dr_to_be_tallied[0].id, dr_id1);
 
-    // Post only first dr ready to be tallied (while there is another one in the pool and not ready)
+    // Remove only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
     let dr = dr_to_be_tallied[0].clone();
     test_info.remove_data_request(dr.id).unwrap();
@@ -902,7 +902,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
     assert_eq!(1, dr_to_be_tallied.len());
 
-    // Post last dr result
+    // Remove last dr
     let dr = dr_to_be_tallied[0].clone();
     test_info.remove_data_request(dr.id).unwrap();
 

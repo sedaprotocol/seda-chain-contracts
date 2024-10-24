@@ -253,7 +253,7 @@ fn executor_not_eligible_if_dr_resolved() {
     // reveal
     test_info.reveal_result(&anyone, &dr_id, reveal.clone()).unwrap();
 
-    // Owner posts the result
+    // Owner removes the data request
     test_info.remove_data_request(dr_id.clone()).unwrap();
 
     // perform the check

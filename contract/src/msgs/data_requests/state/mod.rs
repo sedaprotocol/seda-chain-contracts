@@ -77,7 +77,7 @@ pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_hei
     Ok(())
 }
 
-pub fn post_result(store: &mut dyn Storage, dr_id: Hash) -> StdResult<()> {
+pub fn remove_request(store: &mut dyn Storage, dr_id: Hash) -> StdResult<()> {
     // we have to remove the request from the pool
     DATA_REQUESTS.remove(store, dr_id)?;
     // no need to update status as we remove it from the requests pool

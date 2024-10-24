@@ -1,9 +1,9 @@
 use super::*;
 
 impl SudoHandler for sudo::RemoveDataRequest {
-    /// Posts a data result to the contract
+    /// Removes a data request from the contract
     fn sudo(self, mut deps: DepsMut, env: Env) -> Result<Response, ContractError> {
-        let event = post_result(self, &mut deps, &env)?;
+        let event = remove_request(self, &mut deps, &env)?;
 
         Ok(Response::new().add_event(event))
     }
