@@ -9,11 +9,7 @@ pub(in crate::msgs::data_requests) mod remove_requests;
 fn remove_request(request: sudo::RemoveDataRequest, deps: &mut DepsMut, env: &Env) -> Result<Event, ContractError> {
     // find the data request from the committed pool (if it exists, otherwise error)
     let dr_id = Hash::from_hex_str(&request.dr_id)?;
-    let dr = state::load_request(deps.storage, &dr_id)?;
-
-    if !dr.is_tallying() {
-        return Err(ContractError::NotEnoughReveals);
-    }
+    state::load_request(deps.storage, &dr_id)?;
 
     let block_height: u64 = env.block.height;
 

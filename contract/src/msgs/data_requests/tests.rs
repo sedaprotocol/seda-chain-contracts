@@ -755,53 +755,6 @@ fn remove_data_requests() {
 }
 
 #[test]
-#[should_panic = "NotEnoughReveals"]
-fn cant_post_if_replication_factor_not_met() {
-    let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(2));
-    alice.stake(&mut test_info, 1).unwrap();
-    let mut bob = test_info.new_executor("bob", Some(2));
-    bob.stake(&mut test_info, 1).unwrap();
-
-    // post a data request
-    let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&alice, dr, vec![], vec![], 1).unwrap();
-
-    // alice commits a data result
-    let alice_reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              alice.salt(),
-        reveal:            "10".hash().into(),
-        gas_used:          0,
-        exit_code:         0,
-        proxy_public_keys: vec![],
-    };
-    test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
-        .unwrap();
-
-    // bob also commits
-    let bob_reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              alice.salt(),
-        reveal:            "20".hash().into(),
-        gas_used:          0,
-        exit_code:         0,
-        proxy_public_keys: vec![],
-    };
-    test_info
-        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
-        .unwrap();
-
-    // alice reveals
-    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
-
-    // post a data result
-    test_info.get_data_request(&dr_id).unwrap();
-    test_info.remove_data_request(dr_id).unwrap();
-}
-
-#[test]
 fn check_data_request_id() {
     // Expected DR ID for following DR:
     // {
