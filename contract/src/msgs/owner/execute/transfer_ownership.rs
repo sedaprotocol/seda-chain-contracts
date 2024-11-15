@@ -10,9 +10,8 @@ impl ExecuteHandler for execute::transfer_ownership::Execute {
 
         Ok(Response::new()
             .add_attribute("action", "transfer_ownership")
-            .add_events([Event::new("seda-transfer-ownership").add_attributes([
+            .add_events([Event::new("seda-ownership-transfer").add_attributes([
                 ("version", CONTRACT_VERSION.to_string()),
-                ("sender", info.sender.into_string()),
                 ("pending_owner", self.new_owner),
             ])]))
     }

@@ -5,6 +5,7 @@ use super::{
 
 pub(in crate::msgs::staking) mod set_staking_config;
 pub(in crate::msgs::staking) mod stake;
+pub(crate) mod staking_events;
 pub(in crate::msgs::staking) mod unstake;
 pub(in crate::msgs::staking) mod withdraw;
 

@@ -1,3 +1,5 @@
+use staking_events::{create_executor_action_event, create_executor_event};
+
 use super::*;
 use crate::state::*;
 
@@ -7,12 +9,8 @@ impl ExecuteHandler for execute::withdraw::Execute {
         // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
-        self.verify(
-            public_key.as_ref(),
-            &chain_id,
-            env.contract.address.as_str(),
-            inc_get_seq(deps.storage, &public_key)?,
-        )?;
+        let seq = inc_get_seq(deps.storage, &public_key)?;
+        self.verify(public_key.as_ref(), &chain_id, env.contract.address.as_str(), seq)?;
 
         // TODO: add delay after calling unstake
         let token = TOKEN.load(deps.storage)?;
@@ -40,28 +38,18 @@ impl ExecuteHandler for execute::withdraw::Execute {
             amount:     coins(self.amount.u128(), token),
         };
 
-        let sender = info.sender.into_string();
-        let event = Event::new("seda-data-request-executor").add_attributes([
-            ("version", CONTRACT_VERSION.to_string()),
-            ("executor", sender.clone()),
-            ("tokens_staked", executor.tokens_staked.to_string()),
-            (
-                "tokens_pending_withdrawal",
-                executor.tokens_pending_withdrawal.to_string(),
-            ),
-            ("memo", executor.memo.map(|m| m.to_base64()).unwrap_or_default()),
-        ]);
-
         Ok(Response::new()
             .add_message(bank_msg)
             .add_attribute("action", "withdraw")
             .add_events([
-                event,
-                Event::new("seda-data-request-executor-withdraw").add_attributes([
-                    ("version", CONTRACT_VERSION.to_string()),
-                    ("executor", sender),
-                    ("amount_withdrawn", self.amount.to_string()),
-                ]),
+                create_executor_action_event(
+                    "seda-executor-action-withdraw",
+                    self.public_key.clone(),
+                    info.sender.to_string(),
+                    self.amount,
+                    seq,
+                ),
+                create_executor_event(executor, self.public_key),
             ]))
     }
 }

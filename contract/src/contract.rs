@@ -1,6 +1,6 @@
-use cosmwasm_std::Uint128;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Event, Uint128};
 use cw2::set_contract_version;
 use data_requests::TimeoutConfig;
 use seda_common::msgs::*;
@@ -17,7 +17,10 @@ use crate::{
     msgs::{
         data_requests::state::TIMEOUT_CONFIG,
         owner::state::{OWNER, PENDING_OWNER},
-        staking::state::{STAKERS, STAKING_CONFIG},
+        staking::{
+            execute::staking_events::create_staking_config_event,
+            state::{STAKERS, STAKING_CONFIG},
+        },
         ExecuteHandler,
         QueryHandler,
         SudoHandler,
@@ -59,9 +62,16 @@ pub fn instantiate(
     STAKERS.initialize(deps.storage)?;
     crate::msgs::data_requests::state::init_data_requests(deps.storage)?;
 
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("git_revision", GIT_REVISION))
+    Ok(Response::new().add_attribute("method", "instantiate").add_events([
+        Event::new("seda-contract-instantiate").add_attributes([
+            ("version", CONTRACT_VERSION.to_string()),
+            ("chain_id", msg.chain_id),
+            ("owner", msg.owner),
+            ("token", msg.token),
+            ("git_revision", GIT_REVISION.to_string()),
+        ]),
+        create_staking_config_event(init_staking_config),
+    ]))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
