@@ -43,7 +43,7 @@ impl ExecuteHandler for execute::withdraw::Execute {
             .add_attribute("action", "withdraw")
             .add_events([
                 create_executor_action_event(
-                    "seda-executor-action-withdraw",
+                    "withdraw",
                     self.public_key.clone(),
                     info.sender.to_string(),
                     self.amount,

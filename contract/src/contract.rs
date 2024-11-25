@@ -63,7 +63,8 @@ pub fn instantiate(
     crate::msgs::data_requests::state::init_data_requests(deps.storage)?;
 
     Ok(Response::new().add_attribute("method", "instantiate").add_events([
-        Event::new("seda-contract-instantiate").add_attributes([
+        Event::new("seda-contract").add_attributes([
+            ("action", "instantiate".to_string()),
             ("version", CONTRACT_VERSION.to_string()),
             ("chain_id", msg.chain_id),
             ("owner", msg.owner),

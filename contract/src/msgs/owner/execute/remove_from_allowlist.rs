@@ -15,9 +15,10 @@ impl ExecuteHandler for execute::remove_from_allowlist::Execute {
 
         Ok(Response::new()
             .add_attribute("action", "remove-from-allowlist")
-            .add_event(
-                Event::new("seda-allowlist-remove")
-                    .add_attributes([("version", CONTRACT_VERSION.to_string()), ("identity", self.public_key)]),
-            ))
+            .add_event(Event::new("seda-contract").add_attributes([
+                ("version", CONTRACT_VERSION.to_string()),
+                ("identity", self.public_key),
+                ("action", "allowlist-remove".to_string()),
+            ])))
     }
 }

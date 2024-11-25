@@ -27,7 +27,7 @@ impl ExecuteHandler for execute::unstake::Execute {
 
         Ok(Response::new().add_attribute("action", "unstake").add_events([
             create_executor_action_event(
-                "seda-executor-action-unstake",
+                "unstake",
                 self.public_key.clone(),
                 info.sender.to_string(),
                 self.amount,

@@ -23,8 +23,9 @@ pub(in crate::msgs::staking::execute) fn create_executor_action_event(
     amount: Uint128,
     seq: Uint128,
 ) -> Event {
-    Event::new(action).add_attributes([
+    Event::new("seda-executor-action").add_attributes([
         ("version", CONTRACT_VERSION.to_string()),
+        ("action", action.to_string()),
         ("identity", public_key),
         ("sender", sender),
         ("amount", amount.to_string()),

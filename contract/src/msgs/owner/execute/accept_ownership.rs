@@ -15,7 +15,10 @@ impl ExecuteHandler for execute::accept_ownership::Execute {
 
         Ok(Response::new()
             .add_attribute("action", "accept-ownership")
-            .add_events([Event::new("seda-ownership-accept")
-                .add_attributes([("version", CONTRACT_VERSION), ("new_owner", info.sender.as_ref())])]))
+            .add_events([Event::new("seda-contract").add_attributes([
+                ("version", CONTRACT_VERSION.to_string()),
+                ("new_owner", info.sender.to_string()),
+                ("action", "accept-ownership".to_string()),
+            ])]))
     }
 }

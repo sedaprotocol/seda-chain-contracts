@@ -51,13 +51,7 @@ impl ExecuteHandler for execute::stake::Execute {
         };
 
         Ok(Response::new().add_attribute("action", "stake").add_events([
-            create_executor_action_event(
-                "seda-executor-action-stake",
-                self.public_key.clone(),
-                info.sender.to_string(),
-                amount,
-                seq,
-            ),
+            create_executor_action_event("stake", self.public_key.clone(), info.sender.to_string(), amount, seq),
             create_executor_event(executor, self.public_key),
         ]))
     }
