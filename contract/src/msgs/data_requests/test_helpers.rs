@@ -18,7 +18,8 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
 
     // set by dr creator
     let gas_price = 10u128.into();
-    let gas_limit = 10;
+    let exec_gas_limit = 10;
+    let tally_gas_limit = 10;
 
     // memo
     let chain_id: u128 = 31337;
@@ -40,14 +41,15 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     PostDataRequestArgs {
         version,
         exec_program_id,
-        tally_program_id,
         exec_inputs,
+        exec_gas_limit,
+        tally_program_id,
         tally_inputs,
+        tally_gas_limit,
         memo: memo.as_slice().into(),
         replication_factor,
         consensus_filter,
         gas_price,
-        gas_limit,
     }
 }
 
@@ -66,14 +68,15 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
         version,
         id: dr_id.to_hex(),
         exec_program_id: dr_args.exec_program_id,
-        tally_program_id: dr_args.tally_program_id,
         exec_inputs: dr_args.exec_inputs,
+        exec_gas_limit: dr_args.exec_gas_limit,
+        tally_program_id: dr_args.tally_program_id,
         tally_inputs: dr_args.tally_inputs,
+        tally_gas_limit: dr_args.tally_gas_limit,
         memo: dr_args.memo,
         replication_factor: dr_args.replication_factor,
         consensus_filter: dr_args.consensus_filter,
         gas_price: dr_args.gas_price,
-        gas_limit: dr_args.gas_limit,
         seda_payload: seda_payload.into(),
         commits: Default::default(),
         reveals: Default::default(),
