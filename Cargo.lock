@@ -701,7 +701,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.1.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/gas-limit-fields#f993e8a1d6ce1f8f22ab900ca1e7931f65d357e3"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=main#f993e8a1d6ce1f8f22ab900ca1e7931f65d357e3"
 dependencies = [
  "base64 0.22.1",
  "cosmwasm-schema",
