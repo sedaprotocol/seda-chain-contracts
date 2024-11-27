@@ -1,10 +1,10 @@
 use super::*;
 
 pub struct DataRequestsMap<'a> {
-    pub reqs:       Map<'a, &'a Hash, DataRequest>,
-    pub committing: EnumerableSet<'a, Hash>,
-    pub revealing:  EnumerableSet<'a, Hash>,
-    pub tallying:   EnumerableSet<'a, Hash>,
+    pub reqs:       Map<&'a Hash, DataRequest>,
+    pub committing: EnumerableSet<Hash>,
+    pub revealing:  EnumerableSet<Hash>,
+    pub tallying:   EnumerableSet<Hash>,
     pub timeouts:   Timeouts<'a>,
 }
 

@@ -7,7 +7,7 @@ fn get_owner() {
     let test_info = TestInfo::init();
 
     let owner_addr = test_info.get_owner();
-    assert_eq!(owner_addr.as_str(), test_info.creator().addr());
+    assert_eq!(owner_addr, test_info.creator().addr());
 }
 
 #[test]

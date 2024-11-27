@@ -2,13 +2,13 @@ use cw_storage_plus::PrimaryKey;
 
 use super::*;
 
-pub struct EnumerableSet<'a, Key> {
-    pub len:          Item<'a, u32>,
-    pub key_to_index: Map<'a, Key, u32>,
-    pub index_to_key: Map<'a, u32, Key>,
+pub struct EnumerableSet<Key> {
+    pub len:          Item<u32>,
+    pub key_to_index: Map<Key, u32>,
+    pub index_to_key: Map<u32, Key>,
 }
 
-impl<'a, Key> EnumerableSet<'a, Key>
+impl<'a, Key> EnumerableSet<Key>
 where
     Key: PrimaryKey<'a> + serde::de::DeserializeOwned + serde::Serialize,
 {

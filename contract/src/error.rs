@@ -78,6 +78,6 @@ impl From<StdError> for ContractError {
 
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {
-        StdError::GenericErr { msg: err.to_string() }
+        StdError::generic_err(err.to_string())
     }
 }

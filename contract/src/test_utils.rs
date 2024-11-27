@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cosmwasm_std::{
     coins,
     from_json,
-    testing::{mock_info, MockApi},
+    testing::{message_info, MockApi},
     to_json_binary,
     Addr,
     MessageInfo,
@@ -239,10 +239,10 @@ impl TestExecutor {
         };
         TestExecutor {
             name,
+            info: message_info(&addr, &coins),
             addr,
             signing_key,
             public_key,
-            info: mock_info(name, &coins),
         }
     }
 
@@ -267,11 +267,11 @@ impl TestExecutor {
     }
 
     pub fn add_seda(&mut self, amount: u128) {
-        self.info = mock_info(self.name, &coins(self.funds().u128() + amount, "aseda"));
+        self.info = message_info(&self.addr(), &coins(self.funds().u128() + amount, "aseda"));
     }
 
     pub fn sub_seda(&mut self, amount: u128) {
-        self.info = mock_info(self.name, &coins(self.funds().u128() - amount, "aseda"));
+        self.info = message_info(&self.addr(), &coins(self.funds().u128() - amount, "aseda"));
     }
 
     pub fn sign_key(&self) -> Vec<u8> {

@@ -23,12 +23,12 @@ overflow-checks = true
 [workspace.dependencies]
 anyhow = "1.0"
 arbitrary = "1.3"
-cosmwasm-schema = "1.5.7"
-cosmwasm-std = { version = "1.5.7" }
-cw-multi-test = "1.2.0"
-cw-storage-plus = "1.2.0"
-cw-utils = "1.0.3"
-cw2 = "1.1.2"
+cosmwasm-schema = "2.1"
+cosmwasm-std = { version = "2.1" }
+cw-multi-test = "2.2"
+cw-storage-plus = "2.0"
+cw-utils = "2.0"
+cw2 = "2.0"
 hex = "0.4.3"
 k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
 libfuzzer-sys = "0.4"
@@ -36,13 +36,13 @@ rand = "0.8"
 schemars = { version = "0.8", features = ["semver"] }
 seda-common = { git = "https://github.com/sedaprotocol/seda-common-rs.git", branch = "main" }
 # leaving this in to make local development easier
-# seda-common = { path = "../seda-common-rs" }
+# seda-common = { path = "../seda-common-rs/crates/common" }
 semver = { version = "1.0", features = ["serde"] }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-big-array = { version = "0.5.1" }
-serde_json = "1.0.117"
+serde_json = "1.0"
 sha3 = "0.10"
-thiserror = { version = "1.0" }
+thiserror = { version = "2.0" }
 vrf-rs = "0.0.0"
 xshell = "0.2"
 

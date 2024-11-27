@@ -3,8 +3,8 @@ use owner::state::ALLOWLIST;
 use super::*;
 
 pub struct StakersMap<'a> {
-    pub stakers:     Map<'a, &'a PublicKey, Staker>,
-    pub public_keys: EnumerableSet<'a, PublicKey>,
+    pub stakers:     Map<&'a PublicKey, Staker>,
+    pub public_keys: EnumerableSet<PublicKey>,
 }
 
 impl StakersMap<'_> {

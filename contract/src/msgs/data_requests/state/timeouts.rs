@@ -3,9 +3,9 @@ use cw_storage_plus::Map;
 use seda_common::types::Hash;
 
 pub struct Timeouts<'a> {
-    pub timeouts:        Map<'a, (u64, &'a Hash), ()>,
+    pub timeouts:        Map<(u64, &'a Hash), ()>,
     // Need this so we can remove the timeout by dr_id
-    pub hash_to_timeout: Map<'a, &'a Hash, u64>,
+    pub hash_to_timeout: Map<&'a Hash, u64>,
 }
 
 impl Timeouts<'_> {
