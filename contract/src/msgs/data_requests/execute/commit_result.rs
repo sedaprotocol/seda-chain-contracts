@@ -45,15 +45,17 @@ impl ExecuteHandler for execute::commit_result::Execute {
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;
         dr.commits.insert(self.public_key.clone(), commitment);
-        state::commit(deps.storage, env.block.height, dr_id, dr)?;
 
-        Ok(Response::new().add_attribute("action", "commit_data_result").add_event(
+        let resp = Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([
                 ("dr_id", self.dr_id),
+                ("posted_dr_height", dr.height.to_string()),
                 ("commitment", self.commitment),
                 ("executor", self.public_key),
                 ("version", CONTRACT_VERSION.to_string()),
             ]),
-        ))
+        );
+        state::commit(deps.storage, env.block.height, dr_id, dr)?;
+        Ok(resp)
     }
 }

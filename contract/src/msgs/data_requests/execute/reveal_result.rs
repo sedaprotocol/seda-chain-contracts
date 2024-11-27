@@ -57,6 +57,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
                 ("dr_id", self.dr_id.clone()),
+                ("posted_dr_height", dr.height.to_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
                 ("stdout", to_json_string(&self.stdout)?),
                 ("stderr", to_json_string(&self.stderr)?),
