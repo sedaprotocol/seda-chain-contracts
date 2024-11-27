@@ -1,7 +1,13 @@
-use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use seda_common::msgs::data_requests::TimeoutConfig;
 
-use super::{owner::state::OWNER, state::TIMEOUT_CONFIG, ContractError, ExecuteHandler, CONTRACT_VERSION};
+use super::{
+    dr_events::create_timeout_config_event,
+    owner::state::OWNER,
+    state::TIMEOUT_CONFIG,
+    ContractError,
+    ExecuteHandler,
+};
 
 impl ExecuteHandler for TimeoutConfig {
     /// Set staking config
@@ -13,10 +19,6 @@ impl ExecuteHandler for TimeoutConfig {
 
         Ok(Response::new()
             .add_attribute("action", "set-timeout-config")
-            .add_events([Event::new("set-timeout-config").add_attributes([
-                ("version", CONTRACT_VERSION.to_string()),
-                ("commit_timeout_in_blocks", self.commit_timeout_in_blocks.to_string()),
-                ("reveal_timeout_in_blocks", self.reveal_timeout_in_blocks.to_string()),
-            ])]))
+            .add_event(create_timeout_config_event(self)))
     }
 }

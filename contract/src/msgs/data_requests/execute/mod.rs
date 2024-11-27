@@ -4,6 +4,7 @@ use super::{
 };
 
 pub(in crate::msgs::data_requests) mod commit_result;
+pub(crate) mod dr_events;
 pub(in crate::msgs::data_requests) mod post_request;
 pub(in crate::msgs::data_requests) mod reveal_result;
 pub(in crate::msgs::data_requests) mod set_timeout_config;

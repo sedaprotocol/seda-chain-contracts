@@ -15,7 +15,7 @@ use crate::{
     },
     error::ContractError,
     msgs::{
-        data_requests::state::TIMEOUT_CONFIG,
+        data_requests::{execute::dr_events::create_timeout_config_event, state::TIMEOUT_CONFIG},
         owner::state::{OWNER, PENDING_OWNER},
         staking::{
             execute::staking_events::create_staking_config_event,
@@ -72,6 +72,7 @@ pub fn instantiate(
             ("git_revision", GIT_REVISION.to_string()),
         ]),
         create_staking_config_event(init_staking_config),
+        create_timeout_config_event(init_timeout_config),
     ]))
 }
 
