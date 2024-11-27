@@ -933,7 +933,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.1.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=main#eaea0a9bffd5ae192ead0dd9da2f91c21783b123"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=chore/instantiate-qol#b1fe4f8dd5b602af713062f50a19c11e689aee0d"
 dependencies = [
  "base64",
  "cosmwasm-schema",

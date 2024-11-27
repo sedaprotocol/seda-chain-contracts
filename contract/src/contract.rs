@@ -1,6 +1,6 @@
+use cosmwasm_std::Event;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
-use cosmwasm_std::{Event, Uint128};
 use cw2::set_contract_version;
 use data_requests::TimeoutConfig;
 use seda_common::msgs::*;
@@ -46,17 +46,17 @@ pub fn instantiate(
     CHAIN_ID.save(deps.storage, &msg.chain_id)?;
     PENDING_OWNER.save(deps.storage, &None)?;
 
-    let init_staking_config = StakingConfig {
-        minimum_stake_to_register:               Uint128::new(INITIAL_MINIMUM_STAKE_TO_REGISTER),
-        minimum_stake_for_committee_eligibility: Uint128::new(INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY),
+    let init_staking_config = msg.staking_config.unwrap_or(StakingConfig {
+        minimum_stake_to_register:               INITIAL_MINIMUM_STAKE_TO_REGISTER,
+        minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
         allowlist_enabled:                       false,
-    };
+    });
     STAKING_CONFIG.save(deps.storage, &init_staking_config)?;
 
-    let init_timeout_config = TimeoutConfig {
+    let init_timeout_config = msg.timeout_config.unwrap_or(TimeoutConfig {
         commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
         reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
-    };
+    });
     TIMEOUT_CONFIG.save(deps.storage, &init_timeout_config)?;
 
     STAKERS.initialize(deps.storage)?;
