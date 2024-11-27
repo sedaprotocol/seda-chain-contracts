@@ -53,9 +53,11 @@ impl TestInfo {
 
         let code_id = app.store_code_with_creator(creator.addr(), contract);
         let init_msg = to_json_binary(&InstantiateMsg {
-            token:    "aseda".to_string(),
-            owner:    creator.addr().into_string(),
-            chain_id: chain_id.clone(),
+            token:          "aseda".to_string(),
+            owner:          creator.addr().into_string(),
+            chain_id:       chain_id.clone(),
+            staking_config: None,
+            timeout_config: None,
         })
         .unwrap();
 
