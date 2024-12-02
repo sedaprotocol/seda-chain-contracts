@@ -63,7 +63,7 @@ impl TryFrom<&[u8]> for PublicKey {
     }
 }
 
-impl<'a> PrimaryKey<'a> for PublicKey {
+impl PrimaryKey<'_> for PublicKey {
     type Prefix = ();
     type SubPrefix = ();
     type Suffix = ();

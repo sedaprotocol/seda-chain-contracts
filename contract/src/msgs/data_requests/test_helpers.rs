@@ -8,7 +8,7 @@ use super::{
     msgs::data_requests::{execute, query, sudo},
     *,
 };
-use crate::{TestExecutor, TestInfo};
+use crate::{msgs::data_requests::execute::post_request::ResponsePayload, TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let exec_program_id = nonce.to_string().hash().to_hex();
@@ -109,7 +109,12 @@ impl TestInfo {
         // set the chain height... will effect the height in the dr for us to sign.
         self.set_block_height(env_height);
         // someone posts a data request
-        self.execute(sender, &msg)
+        let res: ResponsePayload = self.execute(sender, &msg)?;
+        assert_eq!(
+            env_height, res.height,
+            "chain height does not match data request height"
+        );
+        Ok(res.dr_id)
     }
 
     #[track_caller]
