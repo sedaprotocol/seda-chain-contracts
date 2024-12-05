@@ -1,6 +1,6 @@
 pub use seda_common::msgs::staking::query::{is_executor_eligible, QueryMsg};
 use seda_common::msgs::staking::StakerAndSeq;
-use state::STAKERS;
+use state::{is_eligible_for_dr::is_eligible_for_dr, STAKERS};
 
 use super::*;
 use crate::state::get_seq;
@@ -51,6 +51,10 @@ impl QueryHandler for is_executor_eligible::Query {
             return Ok(to_json_binary(&false)?);
         }
 
-        Ok(to_json_binary(&STAKERS.is_staker_executor(deps.storage, &executor)?)?)
+        if !STAKERS.is_staker_executor(deps.storage, &executor)? {
+            return Ok(to_json_binary(&false)?);
+        }
+
+        Ok(to_json_binary(&is_eligible_for_dr(deps, dr_id, executor)?)?)
     }
 }

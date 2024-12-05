@@ -40,3 +40,4 @@ cw-multi-test.workspace = true
 k256.workspace = true
 seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }
 serde_json.workspace = true
+lazy_static.workspace = true

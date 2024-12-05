@@ -1,3 +1,4 @@
+pub mod is_eligible_for_dr;
 pub mod stakers_map;
 
 use seda_common::msgs::staking::{Staker, StakingConfig};

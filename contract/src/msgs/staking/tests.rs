@@ -225,6 +225,103 @@ fn executor_eligible() {
 }
 
 #[test]
+fn multiple_executor_eligible() {
+    let mut test_info = TestInfo::init();
+
+    // someone registers a data request executor
+    let mut val1 = test_info.new_executor("val1", Some(20));
+    test_info.stake(&mut val1, Some("memo".to_string()), 2).unwrap();
+
+    let mut val2 = test_info.new_executor("val2", Some(20));
+    test_info.stake(&mut val2, Some("memo".to_string()), 2).unwrap();
+
+    // post a data request
+    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&val1, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .unwrap();
+
+    // perform the check
+    let is_val1_executor_eligible = test_info.is_executor_eligible(&val1, dr_id.to_string());
+    let is_val2_executor_eligible = test_info.is_executor_eligible(&val2, dr_id);
+
+    if is_val1_executor_eligible && is_val2_executor_eligible {
+        panic!("Both validators cannot be chosen at the same time");
+    }
+
+    assert!(is_val1_executor_eligible || is_val2_executor_eligible);
+}
+
+#[test]
+fn multiple_executor_eligible_exact_replication_factor() {
+    let mut test_info = TestInfo::init();
+
+    // someone registers a data request executor
+    let mut val1 = test_info.new_executor("val1", Some(20));
+    test_info.stake(&mut val1, Some("memo".to_string()), 2).unwrap();
+
+    let mut val2 = test_info.new_executor("val2", Some(20));
+    test_info.stake(&mut val2, Some("memo".to_string()), 2).unwrap();
+
+    // post a data request
+    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr_id = test_info
+        .post_data_request(&val1, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .unwrap();
+
+    // perform the check
+    let is_val1_executor_eligible = test_info.is_executor_eligible(&val1, dr_id.to_string());
+    let is_val2_executor_eligible = test_info.is_executor_eligible(&val2, dr_id);
+
+    assert!(is_val1_executor_eligible && is_val2_executor_eligible);
+}
+
+const VALIDATORS_AMOUNT: usize = 50;
+
+lazy_static::lazy_static! {
+    static ref LARGE_SET_VALIDATOR_NAMES: Vec<String> = {
+        let mut names = Vec::new();
+        for i in 0..VALIDATORS_AMOUNT {
+            names.push(format!("validator_{}", i));
+        }
+        names
+    };
+}
+
+#[test]
+fn large_set_executor_eligible() {
+    let mut test_info = TestInfo::init();
+    let mut validators = Vec::with_capacity(VALIDATORS_AMOUNT);
+    for validator_name in LARGE_SET_VALIDATOR_NAMES.iter() {
+        let mut validator = test_info.new_executor(&validator_name, Some(20));
+        test_info.stake(&mut validator, Some("memo".to_string()), 2).unwrap();
+        validators.push(validator);
+    }
+
+    // someone registers a data request executor
+    let anyone = test_info.new_executor("anyone", Some(20));
+    let replication_factor = 8;
+
+    // post a data request
+    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, replication_factor);
+    let dr_id = test_info
+        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .unwrap();
+
+    let mut amount_eligible = 0;
+
+    for validator in validators {
+        let is_eligible = test_info.is_executor_eligible(&validator, dr_id.to_string());
+
+        if is_eligible {
+            amount_eligible += 1;
+        }
+    }
+
+    assert_eq!(amount_eligible, replication_factor);
+}
+
+#[test]
 fn executor_not_eligible_if_dr_resolved() {
     let mut test_info = TestInfo::init();
 

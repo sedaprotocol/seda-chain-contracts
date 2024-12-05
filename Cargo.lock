@@ -961,6 +961,7 @@ dependencies = [
  "cw2",
  "hex",
  "k256",
+ "lazy_static",
  "schemars",
  "seda-common",
  "semver",
