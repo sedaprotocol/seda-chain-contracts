@@ -16,7 +16,8 @@
   rustup target add wasm32-unknown-unknown
   ```
 
-- Install [wasm-opt][2] (only if you need to produce an optimized version of the wasm): `cargo install wasm-opt --locked`
+- Install [wasm-opt][2]: `cargo install wasm-opt --locked`, this produces a optimized version of the contract small enough to be uploaded to the chain.
+
 
 - Install [sedad][3]
 

@@ -16,7 +16,7 @@ fn main() {
     }
 }
 
-const TASKS: &[&str] = &["help", "wasm", "wasm-opt", "tally-data-req-fixture"];
+const TASKS: &[&str] = &["help", "wasm-opt", "tally-data-req-fixture"];
 
 fn try_main() -> Result<()> {
     // Ensure our working directory is the toplevel
@@ -36,7 +36,6 @@ fn try_main() -> Result<()> {
     let sh = Shell::new()?;
     match task.as_deref() {
         Some("help") => print_help()?,
-        Some("wasm") => wasm(&sh)?,
         Some("wasm-opt") => wasm_opt(&sh)?,
         Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
         _ => print_help()?,

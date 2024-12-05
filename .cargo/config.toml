@@ -1,6 +1,5 @@
 [alias]
 schema = "run --bin schema"
-wasm = "run --package xtask -- wasm"
 wasm-opt = "run --package xtask -- wasm-opt"
 xtask = "run --package xtask --"
 tally-data-req-fixture = "run --package xtask -- tally-data-req-fixture"

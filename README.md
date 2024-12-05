@@ -44,6 +44,9 @@ rustup target list --installed
 rustup target add wasm32-unknown-unknown
 ```
 
+Install [wasm-opt][https://github.com/WebAssembly/binaryen]: `cargo install wasm-opt --locked`, this produces a optimized version of the contract small enough to be uploaded to the chain.
+
+
 ## License
 
 Contents of this repository are open source under [MIT License](LICENSE).
