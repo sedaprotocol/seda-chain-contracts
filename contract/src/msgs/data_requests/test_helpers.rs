@@ -90,7 +90,7 @@ impl TestInfo {
     #[track_caller]
     pub fn post_data_request(
         &mut self,
-        sender: &TestExecutor,
+        sender: &mut TestExecutor,
         posted_dr: PostDataRequestArgs,
         seda_payload: Vec<u8>,
         payback_address: Vec<u8>,
@@ -106,10 +106,12 @@ impl TestInfo {
         if env_height < self.block_height() {
             panic!("Invalid Test: Cannot post a data request in the past");
         }
+
         // set the chain height... will effect the height in the dr for us to sign.
         self.set_block_height(env_height);
+
         // someone posts a data request
-        let res: ResponsePayload = self.execute(sender, &msg)?;
+        let res: ResponsePayload = self.execute_with_funds(sender, &msg, 20)?;
         assert_eq!(
             env_height, res.height,
             "chain height does not match data request height"
@@ -127,7 +129,7 @@ impl TestInfo {
             commitment,
             sender.pub_key_hex(),
             self.chain_id(),
-            self.contract_addr(),
+            self.contract_addr_str(),
             dr.height,
         );
         let proof = sender.prove(factory.get_hash());
@@ -151,7 +153,7 @@ impl TestInfo {
             commitment,
             sender.pub_key_hex(),
             self.chain_id(),
-            self.contract_addr(),
+            self.contract_addr_str(),
             dr.height.saturating_sub(3),
         );
         let proof = sender.prove(factory.get_hash());
@@ -177,7 +179,7 @@ impl TestInfo {
             vec![],
             vec![],
             self.chain_id(),
-            self.contract_addr(),
+            self.contract_addr_str(),
             dr.height,
             reveal_body_hash,
         );

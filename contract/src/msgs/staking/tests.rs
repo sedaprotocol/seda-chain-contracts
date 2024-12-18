@@ -210,13 +210,13 @@ fn executor_eligible() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut anyone = test_info.new_executor("anyone", Some(20));
+    let mut anyone = test_info.new_executor("anyone", Some(40));
     test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
 
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
 
     // perform the check
@@ -229,7 +229,7 @@ fn multiple_executor_eligible() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut val1 = test_info.new_executor("val1", Some(20));
+    let mut val1 = test_info.new_executor("val1", Some(40));
     test_info.stake(&mut val1, Some("memo".to_string()), 2).unwrap();
 
     let mut val2 = test_info.new_executor("val2", Some(20));
@@ -238,7 +238,7 @@ fn multiple_executor_eligible() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&val1, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
 
     // perform the check
@@ -257,7 +257,7 @@ fn multiple_executor_eligible_exact_replication_factor() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut val1 = test_info.new_executor("val1", Some(20));
+    let mut val1 = test_info.new_executor("val1", Some(40));
     test_info.stake(&mut val1, Some("memo".to_string()), 2).unwrap();
 
     let mut val2 = test_info.new_executor("val2", Some(20));
@@ -266,7 +266,7 @@ fn multiple_executor_eligible_exact_replication_factor() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 2);
     let dr_id = test_info
-        .post_data_request(&val1, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
 
     // perform the check
@@ -299,13 +299,13 @@ fn large_set_executor_eligible() {
     }
 
     // someone registers a data request executor
-    let anyone = test_info.new_executor("anyone", Some(20));
+    let mut anyone = test_info.new_executor("anyone", Some(40));
     let replication_factor = 8;
 
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, replication_factor);
     let dr_id = test_info
-        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
 
     let mut amount_eligible = 0;
@@ -326,13 +326,13 @@ fn executor_not_eligible_if_dr_resolved() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut anyone = test_info.new_executor("anyone", Some(20));
+    let mut anyone = test_info.new_executor("anyone", Some(40));
     test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
 
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
         .unwrap();
 
     let reveal = RevealBody {

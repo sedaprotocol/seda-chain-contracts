@@ -3,7 +3,6 @@ use hex::FromHexError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
-#[cfg_attr(test, derive(Clone))]
 pub enum ContractError {
     #[cfg(not(test))]
     #[error(transparent)]
@@ -59,6 +58,9 @@ pub enum ContractError {
 
     #[error("FromHex: Invalid hexadecimal input: {0}")]
     FromHex(#[from] FromHexError),
+
+    #[error(transparent)]
+    Payment(#[from] cw_utils::PaymentError),
 
     #[error(transparent)]
     Common(#[from] seda_common::error::Error),
