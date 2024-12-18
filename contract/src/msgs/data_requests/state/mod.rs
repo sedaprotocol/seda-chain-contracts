@@ -1,3 +1,4 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Storage;
 use cw_storage_plus::Bound;
 
@@ -9,6 +10,17 @@ use timeouts::Timeouts;
 
 /// Governance-controlled timeout configuration parameters.
 pub const TIMEOUT_CONFIG: Item<TimeoutConfig> = Item::new("timeout_config");
+
+/// Stores the amount staked, and the staker address.
+#[cw_serde]
+pub struct StakedFunds {
+    pub staked: Uint128,
+    // Safe to use Addr here as we aren't taking the the type from a user input.
+    pub staker: Addr,
+}
+
+/// Maps a data request ID to the staked funds.
+pub const DR_STAKED_FUNDS: Map<&Hash, StakedFunds> = Map::new("dr_staked_funds");
 
 const DATA_REQUESTS: DataRequestsMap = new_enumerable_status_map!("data_request_pool");
 

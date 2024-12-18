@@ -293,7 +293,7 @@ fn large_set_executor_eligible() {
     let mut test_info = TestInfo::init();
     let mut validators = Vec::with_capacity(VALIDATORS_AMOUNT);
     for validator_name in LARGE_SET_VALIDATOR_NAMES.iter() {
-        let mut validator = test_info.new_executor(&validator_name, Some(20));
+        let mut validator = test_info.new_executor(validator_name, Some(20));
         test_info.stake(&mut validator, Some("memo".to_string()), 2).unwrap();
         validators.push(validator);
     }
