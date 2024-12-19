@@ -112,9 +112,7 @@ impl TestInfo {
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
-        let res = self.execute(sender, &msg);
-        sender.add_seda(10);
-        res
+        self.execute(sender, &msg)
     }
 
     #[track_caller]

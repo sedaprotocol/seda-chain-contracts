@@ -65,6 +65,9 @@ pub enum ContractError {
     #[error(transparent)]
     Common(#[from] seda_common::error::Error),
 
+    #[error(transparent)]
+    Overflow(#[from] cosmwasm_std::OverflowError),
+
     #[error("Invalid hash length `{0}` expected 32 bytes")]
     InvalidHashLength(usize),
     #[error("Invalid public key length `{0}` expected 33 bytes")]

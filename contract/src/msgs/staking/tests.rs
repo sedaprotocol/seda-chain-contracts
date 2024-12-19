@@ -1,4 +1,7 @@
-use msgs::data_requests::RevealBody;
+use msgs::data_requests::{
+    sudo::{DistributionKind, DistributionMessage, DistributionMessages, DistributionSend, DistributionType},
+    RevealBody,
+};
 use seda_common::msgs::staking::{Staker, StakingConfig};
 
 use super::*;
@@ -351,7 +354,21 @@ fn executor_not_eligible_if_dr_resolved() {
     test_info.reveal_result(&anyone, &dr_id, reveal.clone()).unwrap();
 
     // Owner removes the data request
-    test_info.remove_data_request(dr_id.clone()).unwrap();
+    test_info
+        .remove_data_request(
+            dr_id.clone(),
+            DistributionMessages {
+                messages:    vec![DistributionMessage {
+                    kind:  DistributionKind::Send(DistributionSend {
+                        to:     Binary::new(anyone.addr().as_bytes().to_vec()),
+                        amount: 10u128.into(),
+                    }),
+                    type_: DistributionType::ExecutorReward,
+                }],
+                refund_type: DistributionType::RemainderRefund,
+            },
+        )
+        .unwrap();
 
     // perform the check
     let is_executor_eligible = test_info.is_executor_eligible(&anyone, dr_id);

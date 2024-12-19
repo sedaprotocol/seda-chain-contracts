@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use msgs::data_requests::sudo::expire_data_requests;
+use msgs::data_requests::sudo::{expire_data_requests, DistributionMessages};
 use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
@@ -190,20 +190,19 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn remove_data_request(&mut self, dr_id: String) -> Result<(), ContractError> {
-        let msg = sudo::RemoveDataRequest { dr_id }.into();
+    pub fn remove_data_request(&mut self, dr_id: String, msgs: DistributionMessages) -> Result<(), ContractError> {
+        let mut requests = HashMap::new();
+        requests.insert(dr_id, msgs);
+        let msg = sudo::remove_requests::Sudo { requests }.into();
         self.sudo(&msg)
     }
 
     #[track_caller]
-    pub fn remove_data_requests(&mut self, results: Vec<String>) -> Result<(), ContractError> {
-        let msg = sudo::remove_requests::Sudo {
-            requests: results
-                .into_iter()
-                .map(|dr_id| sudo::RemoveDataRequest { dr_id })
-                .collect(),
-        }
-        .into();
+    pub fn remove_data_requests(
+        &mut self,
+        requests: HashMap<String, DistributionMessages>,
+    ) -> Result<(), ContractError> {
+        let msg = sudo::remove_requests::Sudo { requests }.into();
         self.sudo(&msg)
     }
 

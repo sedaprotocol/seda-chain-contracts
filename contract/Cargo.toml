@@ -31,6 +31,7 @@ seda-common = { workspace = true, features = ["cosmwasm"] }
 semver.workspace = true
 serde.workspace = true
 serde-big-array.workspace = true
+serde_json.workspace = true
 sha3.workspace = true
 thiserror.workspace = true
 vrf-rs.workspace = true
@@ -39,5 +40,4 @@ vrf-rs.workspace = true
 cw-multi-test.workspace = true
 k256.workspace = true
 seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }
-serde_json.workspace = true
 lazy_static.workspace = true
