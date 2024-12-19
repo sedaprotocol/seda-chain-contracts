@@ -8,7 +8,11 @@ use serde_json::json;
 
 use super::{ContractError, SudoHandler};
 use crate::{
-    msgs::data_requests::state::{self, DR_ESCROW},
+    msgs::{
+        data_requests::state::{self, DR_ESCROW},
+        staking::state::{STAKERS, STAKING_CONFIG},
+        PublicKey,
+    },
     state::TOKEN,
     types::FromHexStr,
 };
@@ -34,7 +38,7 @@ fn remove_request(
     let block_height: u64 = env.block.height;
 
     let mut event =
-        Event::new("remove-dr").add_attributes([("dr_id", dr_id_str), ("block_height", block_height.to_string())]);
+        Event::new("seda-remove-dr").add_attributes([("dr_id", dr_id_str), ("block_height", block_height.to_string())]);
 
     let mut dr_escrow = DR_ESCROW.load(deps.storage, &dr_id)?;
 
@@ -51,6 +55,37 @@ fn remove_request(
                     "burn",
                     to_json_string(&json!({
                         "amount": distribution_burn.amount,
+                        "type": to_json_string(&message.type_)?,
+                        "kind": to_json_string(&message.kind)?,
+                    }))?,
+                );
+            }
+            DistributionKind::ExecutorReward(distribution_executor_reward) => {
+                let public_key = PublicKey::from_hex_str(&distribution_executor_reward.identity)?;
+                let mut staker = STAKERS.get_staker(deps.storage, &public_key)?;
+
+                let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake_to_register;
+                let remaining_reward = if staker.tokens_staked < minimum_stake {
+                    // top the staker up to minimum stake from the amount in the reward & escrow
+                    let top_up = minimum_stake.checked_sub(staker.tokens_staked)?;
+                    let top_up = top_up.min(distribution_executor_reward.amount);
+                    staker.tokens_staked += top_up;
+                    dr_escrow.amount = dr_escrow.amount.checked_sub(top_up)?;
+                    distribution_executor_reward.amount.checked_sub(top_up)?
+                } else {
+                    distribution_executor_reward.amount
+                };
+
+                // send remaining reward to the staker pending withdrawal
+                staker.tokens_pending_withdrawal += remaining_reward;
+                dr_escrow.amount = dr_escrow.amount.checked_sub(remaining_reward)?;
+                STAKERS.update(deps.storage, public_key, &staker)?;
+
+                event = event.add_attribute(
+                    "executor_reward",
+                    to_json_string(&json!({
+                        "amount": distribution_executor_reward.amount,
+                        "identity": distribution_executor_reward.identity,
                         "type": to_json_string(&message.type_)?,
                         "kind": to_json_string(&message.kind)?,
                     }))?,
