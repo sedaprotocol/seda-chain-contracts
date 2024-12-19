@@ -18,8 +18,8 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
 
     // set by dr creator
     let gas_price = 10u128.into();
-    let exec_gas_limit = 10;
-    let tally_gas_limit = 10;
+    let exec_gas_limit = 1;
+    let tally_gas_limit = 1;
 
     // memo
     let chain_id: u128 = 31337;

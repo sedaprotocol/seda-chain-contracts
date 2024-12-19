@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use staking::state::STAKERS;
-use state::{StakedFunds, DR_STAKED_FUNDS};
+use state::{Escrow, DR_ESCROW};
 
 use super::*;
 use crate::{state::TOKEN, utils::get_attached_funds};
@@ -36,7 +36,8 @@ impl ExecuteHandler for execute::post_request::Execute {
         // Take the funds from the user
         let token = TOKEN.load(deps.storage)?;
         let funds = cw_utils::must_pay(&info, &token)?;
-        let required = (self.posted_dr.exec_gas_limit + self.posted_dr.tally_gas_limit).into();
+        let required =
+            Uint128::from(self.posted_dr.exec_gas_limit + self.posted_dr.tally_gas_limit) * self.posted_dr.gas_price;
         if funds < required {
             return Err(ContractError::InsufficientFunds(
                 required,
@@ -44,11 +45,12 @@ impl ExecuteHandler for execute::post_request::Execute {
             ));
         };
 
-        DR_STAKED_FUNDS.save(
+        let dr_poster = info.sender.to_string();
+        DR_ESCROW.save(
             deps.storage,
             &dr_id,
-            &StakedFunds {
-                staked: funds,
+            &Escrow {
+                amount: funds,
                 staker: info.sender,
             },
         )?;
@@ -63,6 +65,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             })?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("dr_id", hex_dr_id.clone()),
+                ("dr_poster", dr_poster),
                 ("exec_program_id", self.posted_dr.exec_program_id.clone()),
                 ("exec_inputs", self.posted_dr.exec_inputs.to_base64()),
                 ("exec_gas_limit", self.posted_dr.exec_gas_limit.to_string()),
