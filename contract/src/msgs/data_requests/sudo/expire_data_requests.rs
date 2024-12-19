@@ -1,7 +1,8 @@
 use cosmwasm_std::{to_json_string, DepsMut, Env, Response};
 use seda_common::msgs::data_requests::sudo::expire_data_requests;
 
-use super::{state, ContractError, SudoHandler};
+use super::{ContractError, SudoHandler};
+use crate::msgs::data_requests::state;
 
 impl SudoHandler for expire_data_requests::Sudo {
     /// Expires all data requests that have timed out
