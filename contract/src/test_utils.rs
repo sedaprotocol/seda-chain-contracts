@@ -1,16 +1,7 @@
 use std::collections::HashMap;
 
-use cosmwasm_std::{
-    coins,
-    from_json,
-    testing::{message_info, MockApi},
-    to_json_binary,
-    Addr,
-    MessageInfo,
-    StdError,
-    Uint128,
-};
-use cw_multi_test::{no_init, App, AppBuilder, BankSudo, ContractWrapper, Executor};
+use cosmwasm_std::{coins, from_json, testing::MockApi, to_json_binary, Addr, StdError};
+use cw_multi_test::{App, AppBuilder, ContractWrapper, Executor};
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
@@ -39,15 +30,21 @@ pub struct TestInfo {
 
 impl TestInfo {
     pub fn init() -> Self {
+        let mut executors = HashMap::new();
         let mut app = AppBuilder::default()
             .with_api(MockApi::default().with_prefix("seda"))
-            .build(no_init);
+            .build(|router, api, storage| {
+                let creator_addr = api.addr_make("creator");
+                let creator = TestExecutor::new("creator", creator_addr.clone());
+                router
+                    .bank
+                    .init_balance(storage, &creator_addr, coins(1_000_000, "aseda"))
+                    .unwrap();
+                executors.insert("creator", creator);
+            });
         let contract = Box::new(ContractWrapper::new(execute, instantiate, query).with_sudo(sudo));
-
-        let creator_addr = app.api().addr_make("creator");
-        let creator = TestExecutor::new("creator", creator_addr.clone(), Some(1_000_000));
-
         let chain_id = "seda_test".to_string();
+        let creator = executors.get("creator").unwrap();
 
         let code_id = app.store_code_with_creator(creator.addr(), contract);
         let init_msg = &InstantiateMsg {
@@ -58,11 +55,8 @@ impl TestInfo {
             timeout_config: None,
         };
 
-        let mut executors = HashMap::new();
-        executors.insert("creator", creator.clone());
-
         let contract_addr = app
-            .instantiate_contract(code_id, creator.addr, &init_msg, &[], "core", None)
+            .instantiate_contract(code_id, creator.addr(), &init_msg, &[], "core", None)
             .unwrap();
 
         let mut info = Self {
@@ -83,26 +77,35 @@ impl TestInfo {
 
     pub fn new_executor(&mut self, name: &'static str, amount: Option<u128>) -> TestExecutor {
         let addr = self.new_address(name);
-        let executor = TestExecutor::new(name, addr, amount);
-        if let Some(amount) = amount {
-            self.app
-                .sudo(
-                    BankSudo::Mint {
-                        to_address: executor.addr().into_string(),
-                        amount:     coins(amount, "aseda"),
-                    }
-                    .into(),
-                )
-                .unwrap();
-        }
-
+        let executor = TestExecutor::new(name, addr);
         self.executors.insert(name, executor);
-        self.executor(name).clone()
+        let executor = self.executor(name).clone();
+
+        if let Some(amount) = amount {
+            self.app.init_modules(|router, _api, storage| {
+                router
+                    .bank
+                    .init_balance(storage, &executor.addr, coins(amount, "aseda"))
+                    .unwrap();
+            });
+        }
+        executor
     }
 
     #[track_caller]
     pub fn executor(&self, name: &'static str) -> &TestExecutor {
         self.executors.get(name).unwrap()
+    }
+
+    #[track_caller]
+    pub fn executor_balance(&self, name: &'static str) -> u128 {
+        let executor = self.executors.get(name).unwrap();
+        self.app()
+            .wrap()
+            .query_balance(executor.addr(), "aseda")
+            .unwrap()
+            .amount
+            .u128()
     }
 
     pub fn app(&self) -> &App {
@@ -211,10 +214,7 @@ impl TestInfo {
             });
 
         Ok(match res?.data {
-            Some(data) => {
-                sender.sub_seda(amount);
-                from_json(data).unwrap()
-            }
+            Some(data) => from_json(data).unwrap(),
             None => from_json(to_json_binary(&serde_json::Value::Null).unwrap()).unwrap(),
         })
     }
@@ -226,20 +226,14 @@ pub struct TestExecutor {
     addr:        Addr,
     signing_key: SigningKey,
     public_key:  PublicKey,
-    info:        MessageInfo,
 }
 
 impl TestExecutor {
-    fn new(name: &'static str, addr: Addr, amount: Option<u128>) -> Self {
+    fn new(name: &'static str, addr: Addr) -> Self {
         let (signing_key, public_key) = new_public_key();
-        let coins = if let Some(amount) = amount {
-            coins(amount, "aseda")
-        } else {
-            vec![]
-        };
+
         TestExecutor {
             name,
-            info: message_info(&addr, &coins),
             addr,
             signing_key,
             public_key,
@@ -256,22 +250,6 @@ impl TestExecutor {
 
     pub fn pub_key_hex(&self) -> String {
         self.public_key.to_hex()
-    }
-
-    pub fn info(&self) -> MessageInfo {
-        self.info.clone()
-    }
-
-    fn funds(&self) -> Uint128 {
-        self.info.funds.iter().find(|c| c.denom == "aseda").unwrap().amount
-    }
-
-    pub fn add_seda(&mut self, amount: u128) {
-        self.info = message_info(&self.addr(), &coins(self.funds().u128() + amount, "aseda"));
-    }
-
-    pub fn sub_seda(&mut self, amount: u128) {
-        self.info = message_info(&self.addr(), &coins(self.funds().u128() - amount, "aseda"));
     }
 
     pub fn sign_key(&self) -> Vec<u8> {

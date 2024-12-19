@@ -1,3 +1,14 @@
+use std::collections::HashMap;
+
+use msgs::data_requests::sudo::{
+    DistributionBurn,
+    DistributionExecutorReward,
+    DistributionKind,
+    DistributionMessage,
+    DistributionMessages,
+    DistributionSend,
+    DistributionType,
+};
 use state::DR_ESCROW;
 
 use super::*;
@@ -721,6 +732,8 @@ fn remove_data_request() {
     alice.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let mut executor = test_info.new_executor("exec", Some(51));
+    executor.stake(&mut test_info, 1).unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -737,7 +750,42 @@ fn remove_data_request() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
 
     // owner removes a data result
-    test_info.remove_data_request(dr_id).unwrap();
+    // reward goes to executor
+    // remainder refunds to alice
+    test_info
+        .remove_data_request(
+            dr_id,
+            DistributionMessages {
+                messages:    vec![
+                    DistributionMessage {
+                        kind:  DistributionKind::Send(DistributionSend {
+                            to:     Binary::new(executor.addr().to_string().as_bytes().to_vec()),
+                            amount: 5u128.into(),
+                        }),
+                        type_: DistributionType::ExecutorReward,
+                    },
+                    DistributionMessage {
+                        kind:  DistributionKind::ExecutorReward(DistributionExecutorReward {
+                            identity: executor.pub_key_hex(),
+                            amount:   5u128.into(),
+                        }),
+                        type_: DistributionType::ExecutorReward,
+                    },
+                    DistributionMessage {
+                        kind:  DistributionKind::Burn(DistributionBurn { amount: 1u128.into() }),
+                        type_: DistributionType::ExecutorReward,
+                    },
+                ],
+                refund_type: DistributionType::RemainderRefund,
+            },
+        )
+        .unwrap();
+    assert_eq!(55, test_info.executor_balance("exec"));
+    assert_eq!(10, test_info.executor_balance("alice"));
+
+    // get the staker info for the executor
+    let staker = test_info.get_staker(executor.pub_key()).unwrap();
+    assert_eq!(5, staker.tokens_pending_withdrawal.u128());
 }
 
 #[test]
@@ -783,7 +831,34 @@ fn remove_data_requests() {
     test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
 
     // owner posts data results
-    test_info.remove_data_requests(vec![dr_id1, dr_id2]).unwrap();
+    let mut to_remove = HashMap::new();
+    to_remove.insert(
+        dr_id1.clone(),
+        DistributionMessages {
+            messages:    vec![DistributionMessage {
+                kind:  DistributionKind::Send(DistributionSend {
+                    to:     Binary::new(alice.addr().as_bytes().to_vec()),
+                    amount: 10u128.into(),
+                }),
+                type_: DistributionType::ExecutorReward,
+            }],
+            refund_type: DistributionType::RemainderRefund,
+        },
+    );
+    to_remove.insert(
+        dr_id2.clone(),
+        DistributionMessages {
+            messages:    vec![DistributionMessage {
+                kind:  DistributionKind::Send(DistributionSend {
+                    to:     Binary::new(alice.addr().as_bytes().to_vec()),
+                    amount: 10u128.into(),
+                }),
+                type_: DistributionType::ExecutorReward,
+            }],
+            refund_type: DistributionType::RemainderRefund,
+        },
+    );
+    test_info.remove_data_requests(to_remove).unwrap();
 }
 
 #[test]
@@ -875,7 +950,21 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     // Remove only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
     let dr = dr_to_be_tallied[0].clone();
-    test_info.remove_data_request(dr.id).unwrap();
+    test_info
+        .remove_data_request(
+            dr.id,
+            DistributionMessages {
+                messages:    vec![DistributionMessage {
+                    kind:  DistributionKind::Send(DistributionSend {
+                        to:     Binary::new(alice.addr().as_bytes().to_vec()),
+                        amount: 10u128.into(),
+                    }),
+                    type_: DistributionType::ExecutorReward,
+                }],
+                refund_type: DistributionType::RemainderRefund,
+            },
+        )
+        .unwrap();
     assert_eq!(
         0,
         test_info
@@ -890,7 +979,21 @@ fn remove_data_request_with_more_drs_in_the_pool() {
 
     // Remove last dr
     let dr = dr_to_be_tallied[0].clone();
-    test_info.remove_data_request(dr.id).unwrap();
+    test_info
+        .remove_data_request(
+            dr.id,
+            DistributionMessages {
+                messages:    vec![DistributionMessage {
+                    kind:  DistributionKind::Send(DistributionSend {
+                        to:     Binary::new(alice.addr().as_bytes().to_vec()),
+                        amount: 10u128.into(),
+                    }),
+                    type_: DistributionType::ExecutorReward,
+                }],
+                refund_type: DistributionType::RemainderRefund,
+            },
+        )
+        .unwrap();
 
     // Check dr to be tallied is empty
     assert_eq!(
@@ -1052,7 +1155,21 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         .enumerate()
     {
         if i % 8 == 0 {
-            test_info.remove_data_request(request.id.to_string()).unwrap();
+            test_info
+                .remove_data_request(
+                    request.id.to_string(),
+                    DistributionMessages {
+                        messages:    vec![DistributionMessage {
+                            kind:  DistributionKind::Send(DistributionSend {
+                                to:     Binary::new(alice.addr().as_bytes().to_vec()),
+                                amount: 10u128.into(),
+                            }),
+                            type_: DistributionType::ExecutorReward,
+                        }],
+                        refund_type: DistributionType::RemainderRefund,
+                    },
+                )
+                .unwrap();
         }
     }
     assert_eq!(
