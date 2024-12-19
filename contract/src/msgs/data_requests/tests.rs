@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use msgs::data_requests::sudo::{
     DistributionBurn,
+    DistributionExecutorReward,
     DistributionKind,
     DistributionMessage,
     DistributionMessages,
@@ -731,7 +732,8 @@ fn remove_data_request() {
     alice.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
-    let executor = test_info.new_executor("exec", Some(50));
+    let mut executor = test_info.new_executor("exec", Some(51));
+    executor.stake(&mut test_info, 1).unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -758,7 +760,14 @@ fn remove_data_request() {
                     DistributionMessage {
                         kind:  DistributionKind::Send(DistributionSend {
                             to:     Binary::new(executor.addr().to_string().as_bytes().to_vec()),
-                            amount: 10u128.into(),
+                            amount: 5u128.into(),
+                        }),
+                        type_: DistributionType::ExecutorReward,
+                    },
+                    DistributionMessage {
+                        kind:  DistributionKind::ExecutorReward(DistributionExecutorReward {
+                            identity: executor.pub_key_hex(),
+                            amount:   5u128.into(),
                         }),
                         type_: DistributionType::ExecutorReward,
                     },
@@ -771,8 +780,12 @@ fn remove_data_request() {
             },
         )
         .unwrap();
-    assert_eq!(60, test_info.executor_balance("exec"));
+    assert_eq!(55, test_info.executor_balance("exec"));
     assert_eq!(10, test_info.executor_balance("alice"));
+
+    // get the staker info for the executor
+    let staker = test_info.get_staker(executor.pub_key()).unwrap();
+    assert_eq!(5, staker.tokens_pending_withdrawal.u128());
 }
 
 #[test]
