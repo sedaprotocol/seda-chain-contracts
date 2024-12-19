@@ -9,10 +9,8 @@ use cosmwasm_std::{
     MessageInfo,
     StdError,
     Uint128,
-    WasmMsg,
 };
 use cw_multi_test::{no_init, App, AppBuilder, BankSudo, ContractWrapper, Executor};
-use cw_utils::parse_instantiate_response_data;
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
@@ -52,32 +50,24 @@ impl TestInfo {
         let chain_id = "seda_test".to_string();
 
         let code_id = app.store_code_with_creator(creator.addr(), contract);
-        let init_msg = to_json_binary(&InstantiateMsg {
+        let init_msg = &InstantiateMsg {
             token:          "aseda".to_string(),
             owner:          creator.addr().into_string(),
             chain_id:       chain_id.clone(),
             staking_config: None,
             timeout_config: None,
-        })
-        .unwrap();
+        };
 
         let mut executors = HashMap::new();
         executors.insert("creator", creator.clone());
 
-        let msg = WasmMsg::Instantiate {
-            admin: None,
-            code_id,
-            msg: init_msg,
-            funds: vec![],
-            label: "label".into(),
-        };
-        let res = app.execute(creator.addr, msg.into()).unwrap();
-        let parsed = parse_instantiate_response_data(res.data.unwrap().as_slice()).unwrap();
-        assert!(parsed.data.is_none());
+        let contract_addr = app
+            .instantiate_contract(code_id, creator.addr, &init_msg, &[], "core", None)
+            .unwrap();
 
         let mut info = Self {
             app,
-            contract_addr: Addr::unchecked(parsed.contract_address),
+            contract_addr,
             executors,
             chain_id,
         };
@@ -119,6 +109,10 @@ impl TestInfo {
         &self.app
     }
 
+    pub fn app_mut(&mut self) -> &mut App {
+        &mut self.app
+    }
+
     pub fn chain_id(&self) -> &str {
         self.chain_id.as_str()
     }
@@ -137,7 +131,11 @@ impl TestInfo {
         self.executor("creator").clone()
     }
 
-    pub fn contract_addr(&self) -> &str {
+    pub fn contract_addr(&self) -> Addr {
+        self.contract_addr.clone()
+    }
+
+    pub fn contract_addr_str(&self) -> &str {
         self.contract_addr.as_str()
     }
 
@@ -146,14 +144,14 @@ impl TestInfo {
     }
 
     pub fn query<M: Serialize, R: DeserializeOwned>(&self, msg: M) -> Result<R, cosmwasm_std::StdError> {
-        self.app.wrap().query_wasm_smart(self.contract_addr(), &msg)
+        self.app.wrap().query_wasm_smart(self.contract_addr_str(), &msg)
     }
 
     #[track_caller]
     pub fn sudo<R: DeserializeOwned>(&mut self, msg: &SudoMsg) -> Result<R, ContractError> {
         let res = self.app.wasm_sudo(self.contract_addr.clone(), msg).map_err(|e| {
-            if let Some(c_err) = e.downcast_ref::<ContractError>() {
-                c_err.clone()
+            if e.downcast_ref::<ContractError>().is_some() {
+                e.downcast().unwrap()
             } else if let Some(s_err) = e.downcast_ref::<StdError>() {
                 return ContractError::Std(s_err.to_string());
             } else {
@@ -177,8 +175,8 @@ impl TestInfo {
             .app
             .execute_contract(sender.addr(), self.contract_addr.clone(), msg, &[])
             .map_err(|e| {
-                if let Some(c_err) = e.downcast_ref::<ContractError>() {
-                    c_err.clone()
+                if e.downcast_ref::<ContractError>().is_some() {
+                    e.downcast().unwrap()
                 } else if let Some(s_err) = e.downcast_ref::<StdError>() {
                     return ContractError::Std(s_err.to_string());
                 } else {
@@ -203,8 +201,8 @@ impl TestInfo {
             .app
             .execute_contract(sender.addr(), self.contract_addr.clone(), msg, &coins(amount, "aseda"))
             .map_err(|e| {
-                if let Some(c_err) = e.downcast_ref::<ContractError>() {
-                    c_err.clone()
+                if e.downcast_ref::<ContractError>().is_some() {
+                    e.downcast().unwrap()
                 } else if let Some(s_err) = e.downcast_ref::<StdError>() {
                     return ContractError::Std(s_err.to_string());
                 } else {

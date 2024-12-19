@@ -13,7 +13,6 @@ impl ExecuteHandler for ExecuteMsg {
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         match self {
             ExecuteMsg::Stake(msg) => ExecuteHandler::execute(msg, deps, env, info),
-            // ExecuteMsg::IncreaseStake(msg) => ExecuteHandler::execute(msg, deps, env, info),
             ExecuteMsg::Unstake(msg) => ExecuteHandler::execute(msg, deps, env, info),
             ExecuteMsg::Withdraw(msg) => ExecuteHandler::execute(msg, deps, env, info),
             ExecuteMsg::SetStakingConfig(msg) => ExecuteHandler::execute(msg, deps, env, info),

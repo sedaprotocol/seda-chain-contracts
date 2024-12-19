@@ -21,8 +21,13 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let factory =
-            execute::stake::Execute::factory(sender.pub_key_hex(), memo, self.chain_id(), self.contract_addr(), seq);
+        let factory = execute::stake::Execute::factory(
+            sender.pub_key_hex(),
+            memo,
+            self.chain_id(),
+            self.contract_addr_str(),
+            seq,
+        );
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
@@ -41,8 +46,13 @@ impl TestInfo {
     pub fn increase_stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let factory =
-            execute::stake::Execute::factory(sender.pub_key_hex(), None, self.chain_id(), self.contract_addr(), seq);
+        let factory = execute::stake::Execute::factory(
+            sender.pub_key_hex(),
+            None,
+            self.chain_id(),
+            self.contract_addr_str(),
+            seq,
+        );
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
@@ -58,8 +68,13 @@ impl TestInfo {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
-        let factory =
-            execute::stake::Execute::factory(sender.pub_key_hex(), memo, self.chain_id(), self.contract_addr(), seq);
+        let factory = execute::stake::Execute::factory(
+            sender.pub_key_hex(),
+            memo,
+            self.chain_id(),
+            self.contract_addr_str(),
+            seq,
+        );
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
@@ -74,7 +89,7 @@ impl TestInfo {
             sender.pub_key_hex(),
             amount,
             self.chain_id(),
-            self.contract_addr(),
+            self.contract_addr_str(),
             seq,
         );
         let proof = sender.prove(factory.get_hash());
@@ -91,7 +106,7 @@ impl TestInfo {
             sender.pub_key_hex(),
             amount,
             self.chain_id(),
-            self.contract_addr(),
+            self.contract_addr_str(),
             seq,
         );
         let proof = sender.prove(factory.get_hash());
@@ -116,7 +131,7 @@ impl TestInfo {
             sender.pub_key_hex(),
             dr_id,
             self.chain_id(),
-            self.contract_addr(),
+            self.contract_addr_str(),
         );
         let proof = sender.prove(factory.get_hash());
         let (query, _) = factory.create_message(proof);

@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use staking::state::STAKERS;
+use state::{Escrow, DR_ESCROW};
 
 use super::*;
+use crate::{state::TOKEN, utils::get_attached_funds};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct ResponsePayload {
@@ -11,7 +13,7 @@ pub(crate) struct ResponsePayload {
 
 impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
-    fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
+    fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         // require the replication to be non-zero
         if self.posted_dr.replication_factor == 0 {
             return Err(ContractError::DataRequestReplicationFactorZero);
@@ -31,8 +33,29 @@ impl ExecuteHandler for execute::post_request::Execute {
             return Err(ContractError::DataRequestAlreadyExists);
         }
 
+        // Take the funds from the user
+        let token = TOKEN.load(deps.storage)?;
+        let funds = cw_utils::must_pay(&info, &token)?;
+        let required =
+            Uint128::from(self.posted_dr.exec_gas_limit + self.posted_dr.tally_gas_limit) * self.posted_dr.gas_price;
+        if funds < required {
+            return Err(ContractError::InsufficientFunds(
+                required,
+                get_attached_funds(&info.funds, &token)?,
+            ));
+        };
+
+        let dr_poster = info.sender.to_string();
+        DR_ESCROW.save(
+            deps.storage,
+            &dr_id,
+            &Escrow {
+                amount: funds,
+                staker: info.sender,
+            },
+        )?;
+
         // TODO: verify the payback non seda address...
-        // TODO: review this event
         let hex_dr_id = dr_id.to_hex();
         let res = Response::new()
             .add_attribute("action", "post_data_request")
@@ -42,6 +65,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             })?)
             .add_event(Event::new("seda-data-request").add_attributes([
                 ("dr_id", hex_dr_id.clone()),
+                ("dr_poster", dr_poster),
                 ("exec_program_id", self.posted_dr.exec_program_id.clone()),
                 ("exec_inputs", self.posted_dr.exec_inputs.to_base64()),
                 ("exec_gas_limit", self.posted_dr.exec_gas_limit.to_string()),
