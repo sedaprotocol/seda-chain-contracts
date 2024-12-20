@@ -21,15 +21,15 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: 🔑 Setup PAT
-        run: sed -i 's|ssh://git@github.com/sedaprotocol/vrf-rs.git|https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/sedaprotocol/vrf-rs.git|' Cargo.toml
+      - name: ☁️ Install Nextest
+        uses: taiki-e/install-action@nextest
 
       - name: 📋 Run cargo clippy
         run: cargo clippy -- -D warnings
 
       - name: 🧪 Run unit tests
         if: always()
-        run: cargo test --locked
+        run: cargo test-ci
         env:
           RUST_BACKTRACE: 1
 
@@ -43,6 +43,12 @@ jobs:
 
       - name: 🦾 Compile WASM contract
         run: cargo build -p seda-contract --release --lib --target wasm32-unknown-unknown --locked
+
+      - name: ☁️ Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: 📊 Test Coverage
+        run: cargo cov
 
   fmt:
     name: fmt

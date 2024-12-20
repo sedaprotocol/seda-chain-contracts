@@ -1,0 +1,11 @@
+[profile.ci]
+test-threads = "num-cpus"
+failure-output = "immediate"
+success-output = "never"
+fail-fast = false
+
+[profile.default]
+test-threads = "num-cpus"
+failure-output = "immediate"
+success-output = "immediate"
+fail-fast = true

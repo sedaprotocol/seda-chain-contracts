@@ -16,7 +16,14 @@ fn main() {
     }
 }
 
-const TASKS: &[&str] = &["help", "wasm-opt", "tally-data-req-fixture"];
+const TASKS: &[&str] = &[
+    "cov",
+    "help",
+    "test-ci",
+    "test-dev",
+    "tally-data-req-fixture",
+    "wasm-opt",
+];
 
 fn try_main() -> Result<()> {
     // Ensure our working directory is the toplevel
@@ -38,6 +45,9 @@ fn try_main() -> Result<()> {
         Some("help") => print_help()?,
         Some("wasm-opt") => wasm_opt(&sh)?,
         Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
+        Some("test-dev") => test_dev(&sh)?,
+        Some("test-ci") => test_ci(&sh)?,
+        Some("cov") => cov(&sh)?,
         _ => print_help()?,
     }
 
@@ -185,4 +195,19 @@ fn get_git_version() -> Result<String> {
 
     let version = String::from_utf8(git_version.stdout)?;
     Ok(version)
+}
+
+fn test_dev(sh: &Shell) -> Result<()> {
+    cmd!(sh, "cargo nextest run --locked -p seda-contract").run()?;
+    Ok(())
+}
+
+fn test_ci(sh: &Shell) -> Result<()> {
+    cmd!(sh, "cargo nextest run --locked -p seda-contract -P ci").run()?;
+    Ok(())
+}
+
+fn cov(sh: &Shell) -> Result<()> {
+    cmd!(sh, "cargo llvm-cov -p seda-contract --locked nextest -P ci").run()?;
+    Ok(())
 }
