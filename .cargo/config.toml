@@ -1,5 +1,6 @@
 [alias]
 cov = "run --package xtask -- cov"
+cov-ci = "run --package xtask -- cov-ci"
 schema = "run --bin schema"
 tally-data-req-fixture = "run --package xtask -- tally-data-req-fixture"
 test-dev = "run --package xtask -- test-dev"

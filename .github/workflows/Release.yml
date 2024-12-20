@@ -1,4 +1,4 @@
-name: Release
+name: 🚀 Release
 on:
   push:
     tags:
@@ -21,21 +21,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 📥 Install Rust
+      - name: ☁️ Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
 
-      - name: 📥 Install wasm-opt
+      - name: ☁️ Install wasm-opt
         run: cargo install wasm-opt --locked
 
       - name: 🔨 Compile optimized WASM contracts
-        run: cargo xtask wasm-opt
+        run: cargo wasm-opt
 
-      - name: 🪵 Conventional Changelog
+      - name: 📝 Conventional Changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v5
+        uses: TriPSs/conventional-changelog-action@v6
         with:
           github-token: ${{ secrets.github_token }}
           output-file: "false"
@@ -44,16 +44,19 @@ jobs:
           skip-git-pull: true
           git-push: false
 
-      - name: 🧾 Generate Checksum
+      - name: 🔢 Generate Checksum
         uses: jmgilman/actions-generate-checksum@v1
         with:
           patterns: |
             target/seda_contract.wasm
 
-      - name: 📦 Create GitHub Release
+      - name: 🎉 Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           generateReleaseNotes: true
           body: ${{ steps.changelog.outputs.clean_changelog }}
-          artifacts: "checksum.txt,target/seda_contract.wasm"
+          artifacts: |
+            checksum.txt
+            target/seda_contract.wasm
+          token: ${{ secrets.GITHUB_TOKEN }}

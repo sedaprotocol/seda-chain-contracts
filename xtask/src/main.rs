@@ -18,10 +18,11 @@ fn main() {
 
 const TASKS: &[&str] = &[
     "cov",
+    "cov-ci",
     "help",
+    "tally-data-req-fixture",
     "test-ci",
     "test-dev",
-    "tally-data-req-fixture",
     "wasm-opt",
 ];
 
@@ -42,12 +43,13 @@ fn try_main() -> Result<()> {
     let task = env::args().nth(1);
     let sh = Shell::new()?;
     match task.as_deref() {
-        Some("help") => print_help()?,
-        Some("wasm-opt") => wasm_opt(&sh)?,
-        Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
-        Some("test-dev") => test_dev(&sh)?,
-        Some("test-ci") => test_ci(&sh)?,
         Some("cov") => cov(&sh)?,
+        Some("cov-ci") => cov_ci(&sh)?,
+        Some("help") => print_help()?,
+        Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
+        Some("test-ci") => test_ci(&sh)?,
+        Some("test-dev") => test_dev(&sh)?,
+        Some("wasm-opt") => wasm_opt(&sh)?,
         _ => print_help()?,
     }
 
@@ -209,5 +211,14 @@ fn test_ci(sh: &Shell) -> Result<()> {
 
 fn cov(sh: &Shell) -> Result<()> {
     cmd!(sh, "cargo llvm-cov -p seda-contract --locked nextest -P ci").run()?;
+    Ok(())
+}
+
+fn cov_ci(sh: &Shell) -> Result<()> {
+    cmd!(
+        sh,
+        "cargo llvm-cov -p seda-contract --cobertura --output-path cobertura.xml --locked nextest -P ci"
+    )
+    .run()?;
     Ok(())
 }
