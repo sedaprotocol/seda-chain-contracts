@@ -15,7 +15,7 @@ pub const TIMEOUT_CONFIG: Item<TimeoutConfig> = Item::new("timeout_config");
 #[cw_serde]
 pub struct Escrow {
     pub amount: Uint128,
-    // Safe to use Addr here as we aren't taking the the type from a user input.
+    // Safe to use Addr here as we aren't taking the type from a user input.
     pub staker: Addr,
 }
 
