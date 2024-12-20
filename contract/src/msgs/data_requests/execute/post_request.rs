@@ -51,7 +51,7 @@ impl ExecuteHandler for execute::post_request::Execute {
             &dr_id,
             &Escrow {
                 amount: funds,
-                staker: info.sender,
+                poster: info.sender,
             },
         )?;
 

@@ -117,7 +117,7 @@ fn post_data_request() {
         )
         .unwrap();
     assert_eq!(20, staked.amount.u128());
-    assert_eq!(anyone.addr(), staked.staker);
+    assert_eq!(anyone.addr(), staked.poster);
 
     // expect an error when trying to post it again
     let res = test_info.post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1);

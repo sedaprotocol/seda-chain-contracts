@@ -112,7 +112,7 @@ fn remove_request(
 
     if !dr_escrow.amount.is_zero() {
         bank_messages.push(BankMsg::Send {
-            to_address: dr_escrow.staker.to_string(),
+            to_address: dr_escrow.poster.to_string(),
             amount:     vec![amount_to_tokens(dr_escrow.amount, token)],
         });
         event = event.add_attribute(

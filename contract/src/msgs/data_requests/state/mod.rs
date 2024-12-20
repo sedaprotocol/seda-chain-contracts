@@ -11,12 +11,12 @@ use timeouts::Timeouts;
 /// Governance-controlled timeout configuration parameters.
 pub const TIMEOUT_CONFIG: Item<TimeoutConfig> = Item::new("timeout_config");
 
-/// Stores the amount, and the staker address.
+/// Stores the amount, and the poster address.
 #[cw_serde]
 pub struct Escrow {
     pub amount: Uint128,
     // Safe to use Addr here as we aren't taking the type from a user input.
-    pub staker: Addr,
+    pub poster: Addr,
 }
 
 /// Maps a data request ID to the staked funds.
