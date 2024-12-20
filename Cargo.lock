@@ -957,7 +957,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.4.0"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=feat/funds-distribution#45544908ecaf86fc0be1b7ad21f18da8e758084f"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=main#ad0a6d6c78265bff9e01d71ca540f76088399ac4"
 dependencies = [
  "base64",
  "cosmwasm-schema",
