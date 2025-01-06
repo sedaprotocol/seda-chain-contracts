@@ -1,15 +1,8 @@
-use serde::{Deserialize, Serialize};
 use staking::state::STAKERS;
 use state::{Escrow, DR_ESCROW};
 
 use super::*;
 use crate::{state::TOKEN, utils::get_attached_funds};
-
-#[derive(Serialize, Deserialize)]
-pub(crate) struct ResponsePayload {
-    pub dr_id:  String,
-    pub height: u64,
-}
 
 impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
@@ -59,7 +52,7 @@ impl ExecuteHandler for execute::post_request::Execute {
         let hex_dr_id = dr_id.to_hex();
         let res = Response::new()
             .add_attribute("action", "post_data_request")
-            .set_data(to_json_binary(&ResponsePayload {
+            .set_data(to_json_binary(&PostRequestResponsePayload {
                 dr_id:  hex_dr_id.clone(),
                 height: env.block.height,
             })?)

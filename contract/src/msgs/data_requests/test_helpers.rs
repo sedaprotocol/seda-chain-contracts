@@ -8,7 +8,7 @@ use super::{
     msgs::data_requests::{execute, query, sudo},
     *,
 };
-use crate::{msgs::data_requests::execute::post_request::ResponsePayload, TestExecutor, TestInfo};
+use crate::{TestExecutor, TestInfo};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let exec_program_id = nonce.to_string().hash().to_hex();
@@ -111,7 +111,7 @@ impl TestInfo {
         self.set_block_height(env_height);
 
         // someone posts a data request
-        let res: ResponsePayload = self.execute_with_funds(sender, &msg, 20)?;
+        let res: PostRequestResponsePayload = self.execute_with_funds(sender, &msg, 20)?;
         assert_eq!(
             env_height, res.height,
             "chain height does not match data request height"
