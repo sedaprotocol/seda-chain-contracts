@@ -32,6 +32,11 @@ where
     //     self.index_to_key.may_load(store, index)
     // }
 
+    /// Returns the index of the key in the set in O(1) time.
+    pub fn get_index(&self, store: &dyn Storage, key: Key) -> StdResult<u32> {
+        self.key_to_index.load(store, key)
+    }
+
     /// Adds a key to the set in O(1) time.
     pub fn add(&self, store: &mut dyn Storage, key: Key) -> StdResult<()> {
         if self.has(store, key.clone()) {
