@@ -1,8 +1,36 @@
-use super::{msgs::data_requests::query::QueryMsg, *};
+use execute::commit_result::verify_commit;
+
+use super::{
+    msgs::data_requests::{execute::commit_result, query::QueryMsg},
+    *,
+};
 
 impl QueryHandler for QueryMsg {
-    fn query(self, deps: Deps, _env: Env) -> Result<Binary, ContractError> {
+    fn query(self, deps: Deps, env: Env) -> Result<Binary, ContractError> {
         let binary = match self {
+            QueryMsg::CanExecutorCommit {
+                dr_id,
+                public_key,
+                commitment,
+                proof,
+            } => {
+                let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
+                let valid = dr.map_or(false, |dr| {
+                    let commit_msg = commit_result::Execute {
+                        dr_id,
+                        commitment,
+                        public_key,
+                        proof,
+                    };
+                    verify_commit(deps, &env, &commit_msg, &dr).is_ok()
+                });
+                to_json_binary(&valid)?
+            }
+            QueryMsg::CanExecutorReveal { dr_id, public_key } => {
+                let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
+                let can_reveal = dr.map(|dr| dr.reveal_started() && dr.get_commitment(&public_key).is_some());
+                to_json_binary(&can_reveal.unwrap_or(false))?
+            }
             QueryMsg::GetDataRequest { dr_id } => {
                 to_json_binary(&state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?)?
             }

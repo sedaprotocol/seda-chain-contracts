@@ -240,6 +240,10 @@ fn commit_result() {
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
     let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
 
+    // check if executor can commit
+    let query_result = test_info.can_executor_commit(&alice, &dr_id, "0xcommitment".hash());
+    assert!(query_result, "executor should be able to commit");
+
     // commit a data result
     test_info.commit_result(&alice, &dr_id, "0xcommitment".hash()).unwrap();
 
@@ -282,6 +286,10 @@ fn cannot_double_commit() {
 
     // commit a data result
     test_info.commit_result(&alice, &dr_id, "0xcommitment1".hash()).unwrap();
+
+    // check if executor can commit, should be false
+    let query_result = test_info.can_executor_commit(&alice, &dr_id, "0xcommitment2".hash());
+    assert!(!query_result, "executor should not be able to commit");
 
     // try to commit again as the same user
     test_info.commit_result(&alice, &dr_id, "0xcommitment2".hash()).unwrap();
@@ -349,6 +357,12 @@ fn reveal_result() {
         .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
 
+    let query_result = test_info.can_executor_reveal(&dr_id, &bob.pub_key_hex());
+    assert!(
+        !query_result,
+        "executor should not be able to reveal before DR is in the revealing state"
+    );
+
     // bob also commits
     bob.stake(&mut test_info, 1).unwrap();
     let bob_reveal = RevealBody {
@@ -363,6 +377,8 @@ fn reveal_result() {
         .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
         .unwrap();
 
+    let query_result = test_info.can_executor_reveal(&dr_id, &alice.pub_key_hex());
+    assert!(query_result, "executor should be able to reveal");
     // alice reveals
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 
@@ -500,6 +516,12 @@ fn cannot_reveal_if_commit_rf_not_met() {
     test_info
         .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
         .unwrap();
+
+    let query_result = test_info.can_executor_reveal(&dr_id, &bob.pub_key_hex());
+    assert!(
+        !query_result,
+        "executor should not be able to reveal if they did not commit"
+    );
 
     // alice reveals
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();

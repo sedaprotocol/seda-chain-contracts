@@ -120,6 +120,30 @@ impl TestInfo {
     }
 
     #[track_caller]
+    pub fn can_executor_commit(&self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> bool {
+        let dr = self.get_data_request(dr_id).unwrap();
+        let commitment = commitment.to_hex();
+
+        let factory = execute::commit_result::Execute::factory(
+            dr_id.to_string(),
+            commitment.clone(),
+            sender.pub_key_hex(),
+            self.chain_id(),
+            self.contract_addr_str(),
+            dr.height,
+        );
+        let proof = sender.prove(factory.get_hash());
+
+        self.query(query::QueryMsg::CanExecutorCommit {
+            dr_id:      dr_id.to_string(),
+            public_key: sender.pub_key_hex(),
+            commitment: commitment.to_string(),
+            proof:      proof.to_hex(),
+        })
+        .unwrap()
+    }
+
+    #[track_caller]
     pub fn commit_result(&mut self, sender: &TestExecutor, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
         let commitment = commitment.to_hex();
@@ -160,6 +184,15 @@ impl TestInfo {
         let msg = factory.create_message(proof);
 
         self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn can_executor_reveal(&self, dr_id: &str, public_key: &str) -> bool {
+        self.query(query::QueryMsg::CanExecutorReveal {
+            dr_id:      dr_id.to_string(),
+            public_key: public_key.to_string(),
+        })
+        .unwrap()
     }
 
     #[track_caller]
