@@ -15,7 +15,7 @@ impl QueryHandler for QueryMsg {
                 proof,
             } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
-                let valid = dr.map_or(false, |dr| {
+                let valid = dr.is_some_and(|dr| {
                     let commit_msg = commit_result::Execute {
                         dr_id,
                         commitment,

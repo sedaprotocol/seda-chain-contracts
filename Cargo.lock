@@ -957,7 +957,7 @@ dependencies = [
 [[package]]
 name = "seda-common"
 version = "0.4.2"
-source = "git+https://github.com/sedaprotocol/seda-common-rs.git?branch=refactor/distrubtion-payouts#55ccaea9814a2fe59703e244482f40da22dd92ce"
+source = "git+https://github.com/sedaprotocol/seda-common-rs.git?tag=v0.4.2#1925355dbb029fdf796f7bf6cebdc95fefbf3b9c"
 dependencies = [
  "base64",
  "cosmwasm-schema",
