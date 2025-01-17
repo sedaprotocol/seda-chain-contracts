@@ -24,7 +24,7 @@ fn amount_to_tokens(amount: Uint128, token: &str) -> Coin {
     }
 }
 
-fn remove_request(
+fn remove_request_and_process_distributions(
     dr_id_str: String,
     messages: &[DistributionMessage],
     deps: &mut DepsMut,
@@ -45,10 +45,11 @@ fn remove_request(
     // add 1 so we can account for the refund message that may be sent
     let mut bank_messages = Vec::new();
 
-    // We need to send messages in the order given, which should be: burn -> data_proxy_reward -> executor_reward
+    // We need to send messages in the order given.
     for message in messages {
         // No reason to keep processing if the escrowed amount is zero
         if dr_escrow.amount.is_zero() {
+            event = event.add_attribute("escrow-emptied-early", "true");
             break;
         }
 
@@ -139,11 +140,9 @@ impl SudoHandler for remove_requests::Sudo {
     fn sudo(self, mut deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
         let mut response = Response::new();
-        for removal in self
-            .requests
-            .into_iter()
-            .map(|(dr_id, messages)| remove_request(dr_id, &messages, &mut deps, &env, &token))
-        {
+        for removal in self.requests.into_iter().map(|(dr_id, messages)| {
+            remove_request_and_process_distributions(dr_id, &messages, &mut deps, &env, &token)
+        }) {
             let (event, bank_messages) = removal?;
             response = response.add_event(event).add_messages(bank_messages);
         }
