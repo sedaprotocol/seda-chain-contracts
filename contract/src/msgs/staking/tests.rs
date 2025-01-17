@@ -1,5 +1,5 @@
 use msgs::data_requests::{
-    sudo::{DistributionKind, DistributionMessage, DistributionMessages, DistributionSend, DistributionType},
+    sudo::{DistributionDataProxyReward, DistributionMessage},
     RevealBody,
 };
 use seda_common::msgs::staking::{Staker, StakingConfig};
@@ -357,16 +357,10 @@ fn executor_not_eligible_if_dr_resolved() {
     test_info
         .remove_data_request(
             dr_id.clone(),
-            DistributionMessages {
-                messages:    vec![DistributionMessage {
-                    kind:  DistributionKind::Send(DistributionSend {
-                        to:     Binary::new(anyone.addr().as_bytes().to_vec()),
-                        amount: 10u128.into(),
-                    }),
-                    type_: DistributionType::ExecutorReward,
-                }],
-                refund_type: DistributionType::RemainderRefund,
-            },
+            vec![DistributionMessage::DataProxyReward(DistributionDataProxyReward {
+                to:     Binary::new(anyone.addr().as_bytes().to_vec()),
+                amount: 10u128.into(),
+            })],
         )
         .unwrap();
 
