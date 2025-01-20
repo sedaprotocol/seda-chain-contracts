@@ -219,7 +219,7 @@ fn executor_eligible() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
     // perform the check
@@ -241,7 +241,7 @@ fn multiple_executor_eligible() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
     // perform the check
@@ -269,7 +269,7 @@ fn multiple_executor_eligible_exact_replication_factor() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 2);
     let dr_id = test_info
-        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
     // perform the check
@@ -308,7 +308,7 @@ fn large_set_executor_eligible() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, replication_factor);
     let dr_id = test_info
-        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
     let mut amount_eligible = 0;
@@ -335,7 +335,7 @@ fn executor_not_eligible_if_dr_resolved() {
     // post a data request
     let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
     let reveal = RevealBody {

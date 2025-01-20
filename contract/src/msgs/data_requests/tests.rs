@@ -27,7 +27,9 @@ fn query_drs_by_status_has_one() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut anyone, dr, vec![], vec![], 2).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 2, None)
+        .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert_eq!(1, drs.len());
@@ -46,15 +48,21 @@ fn query_drs_by_status_limit_works() {
 
     // post a data request
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
-    test_info.post_data_request(&mut alice, dr1, vec![], vec![], 1).unwrap();
+    test_info
+        .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
+        .unwrap();
 
     // post a second data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 3);
-    test_info.post_data_request(&mut alice, dr2, vec![], vec![], 2).unwrap();
+    test_info
+        .post_data_request(&mut alice, dr2, vec![], vec![], 2, None)
+        .unwrap();
 
     // post a third data request
     let dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
-    test_info.post_data_request(&mut alice, dr3, vec![], vec![], 3).unwrap();
+    test_info
+        .post_data_request(&mut alice, dr3, vec![], vec![], 3, None)
+        .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 2);
     assert_eq!(2, drs.len());
@@ -69,19 +77,19 @@ fn query_drs_by_status_offset_works() {
     // post a data request
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     test_info
-        .post_data_request(&mut anyone, dr1, vec![], vec![], 1)
+        .post_data_request(&mut anyone, dr1, vec![], vec![], 1, None)
         .unwrap();
 
     // post a scond data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
     test_info
-        .post_data_request(&mut anyone, dr2, vec![], vec![], 2)
+        .post_data_request(&mut anyone, dr2, vec![], vec![], 2, None)
         .unwrap();
 
     // post a third data request
     let dr3 = test_helpers::calculate_dr_id_and_args(3, 1);
     test_info
-        .post_data_request(&mut anyone, dr3, vec![], vec![], 3)
+        .post_data_request(&mut anyone, dr3, vec![], vec![], 3, None)
         .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 1, 2);
@@ -103,7 +111,7 @@ fn post_data_request() {
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
-        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
     // Expect the dr staked to exist and be correct
@@ -117,7 +125,7 @@ fn post_data_request() {
     assert_eq!(anyone.addr(), staked.poster);
 
     // expect an error when trying to post it again
-    let res = test_info.post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1);
+    let res = test_info.post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None);
     assert!(res.is_err_and(|x| x == ContractError::DataRequestAlreadyExists));
 
     // should be able to fetch data request with id 0x69...
@@ -142,7 +150,33 @@ fn post_dr_with_not_enough_funds_fails() {
     // post a data request
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
     dr.exec_gas_limit = 1000;
-    test_info.post_data_request(&mut anyone, dr, vec![], vec![], 2).unwrap();
+    test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 2, None)
+        .unwrap();
+}
+
+#[test]
+fn post_dr_with_max_gas_limits() {
+    let mut test_info = TestInfo::init();
+    let mut anyone = test_info.new_executor("anyone", Some(u128::MAX));
+    anyone.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    // set gas price to 1 to make the gas limit calculation easier
+    dr.gas_price = Uint128::from(1u128);
+    dr.exec_gas_limit = u64::MAX;
+    dr.tally_gas_limit = u64::MAX;
+    test_info
+        .post_data_request(
+            &mut anyone,
+            dr,
+            vec![],
+            vec![],
+            2,
+            Some(u128::from(u64::MAX) + u128::from(u64::MAX)),
+        )
+        .unwrap();
 }
 
 #[test]
@@ -155,7 +189,9 @@ fn cannot_commit_if_not_staked() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut bob, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut bob, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // commit a data result
     test_info.commit_result(&bob, &dr_id, "0xcommitment".hash()).unwrap();
@@ -170,7 +206,9 @@ fn cannot_commit_if_timed_out() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // set the block height to be equal to the timeout height
     test_info.set_block_height(11);
@@ -188,7 +226,9 @@ fn cannot_commit_on_expired_dr() {
     let mut anyone = test_info.new_executor("anyone", Some(22));
     anyone.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut anyone, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // set the block height to be later than the timeout
     test_info.set_block_height(11);
@@ -217,7 +257,9 @@ fn cannot_commit_if_not_enough_staked() {
     let mut anyone = test_info.new_executor("anyone", Some(22));
     anyone.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
-    let dr_id = test_info.post_data_request(&mut anyone, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // commit a data result
     test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
@@ -235,7 +277,9 @@ fn commit_result() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // check if executor can commit
     let query_result = test_info.can_executor_commit(&alice, &dr_id, "0xcommitment".hash());
@@ -257,7 +301,9 @@ fn commits_meet_replication_factor() {
     let mut anyone = test_info.new_executor("anyone", Some(22));
     anyone.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut anyone, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // commit a data result
     test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
@@ -279,7 +325,9 @@ fn cannot_double_commit() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // commit a data result
     test_info.commit_result(&alice, &dr_id, "0xcommitment1".hash()).unwrap();
@@ -301,7 +349,9 @@ fn cannot_commit_after_replication_factor_reached() {
     let mut anyone = test_info.new_executor("anyone", Some(22));
     anyone.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut anyone, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // commit a data result
     test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
@@ -321,7 +371,9 @@ fn commits_wrong_signature_fails() {
     let mut anyone = test_info.new_executor("anyone", Some(22));
     anyone.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut anyone, dr, vec![], vec![], 9).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 9, None)
+        .unwrap();
 
     // commit a data result
     test_info
@@ -339,7 +391,9 @@ fn reveal_result() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -394,7 +448,9 @@ fn reveal_result_with_proxies() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     let (_, proxy1) = new_public_key();
     let (_, proxy2) = new_public_key();
@@ -432,7 +488,9 @@ fn reveal_result_with_proxies_not_valid_public_keys() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     let proxy1 = "proxy1".to_string();
     let proxy2 = "proxy2".to_string();
@@ -464,7 +522,9 @@ fn reveal_result_reveal_body_missing_proxies() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     let (_, proxy1) = new_public_key();
     let (_, proxy2) = new_public_key();
@@ -499,7 +559,9 @@ fn cannot_reveal_if_commit_rf_not_met() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -533,7 +595,9 @@ fn cannot_reveal_if_timed_out() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -564,7 +628,9 @@ fn cannot_reveal_on_expired_dr() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -598,7 +664,9 @@ fn cannot_reveal_if_user_did_not_commit() {
     let mut alice = test_info.new_executor("alice", Some(22));
     alice.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -644,7 +712,9 @@ fn cannot_double_reveal() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -692,7 +762,9 @@ fn reveal_must_match_commitment() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -750,7 +822,9 @@ fn remove_data_request() {
     let mut alice = test_info.new_executor("alice", Some(22));
     alice.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
     let mut executor = test_info.new_executor("exec", Some(51));
     executor.stake(&mut test_info, 1).unwrap();
 
@@ -803,7 +877,9 @@ fn remove_data_request_retains_order() {
     let mut alice = test_info.new_executor("alice", Some(22));
     alice.stake(&mut test_info, 1).unwrap();
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
     let mut executor = test_info.new_executor("exec", Some(51));
     executor.stake(&mut test_info, 1).unwrap();
 
@@ -851,7 +927,9 @@ fn remove_data_requests() {
     let mut alice = test_info.new_executor("alice", Some(42));
     alice.stake(&mut test_info, 1).unwrap();
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id1 = test_info.post_data_request(&mut alice, dr1, vec![], vec![], 1).unwrap();
+    let dr_id1 = test_info
+        .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
+        .unwrap();
 
     // alice commits data result 1
     let alice_reveal1 = RevealBody {
@@ -869,7 +947,9 @@ fn remove_data_requests() {
 
     // post data request 2
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
-    let dr_id2 = test_info.post_data_request(&mut alice, dr2, vec![], vec![], 2).unwrap();
+    let dr_id2 = test_info
+        .post_data_request(&mut alice, dr2, vec![], vec![], 2, None)
+        .unwrap();
 
     // alice commits data result 2
     let alice_reveal2 = RevealBody {
@@ -937,8 +1017,12 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     alice.stake(&mut test_info, 1).unwrap();
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
-    let dr_id1 = test_info.post_data_request(&mut alice, dr1, vec![], vec![], 1).unwrap();
-    let dr_id2 = test_info.post_data_request(&mut alice, dr2, vec![], vec![], 1).unwrap();
+    let dr_id1 = test_info
+        .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
+        .unwrap();
+    let dr_id2 = test_info
+        .post_data_request(&mut alice, dr2, vec![], vec![], 1, None)
+        .unwrap();
 
     // Same commits & reveals for all drs
     let alice_reveal = RevealBody {
@@ -1044,7 +1128,9 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
 
     for i in 0..25 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
-        let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+        let dr_id = test_info
+            .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+            .unwrap();
         let alice_reveal = RevealBody {
             id:                dr_id.clone(),
             salt:              alice.salt(),
@@ -1096,7 +1182,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
     for i in 0..100 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
         let dr_id = test_info
-            .post_data_request(&mut alice, dr.clone(), vec![], vec![], 1)
+            .post_data_request(&mut alice, dr.clone(), vec![], vec![], 1, None)
             .unwrap();
         let alice_reveal = RevealBody {
             id:                dr_id.clone(),
@@ -1115,7 +1201,9 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
             // test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
 
             let dr = test_helpers::calculate_dr_id_and_args(i + 20000, 1);
-            test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+            test_info
+                .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+                .unwrap();
         }
     }
     assert_eq!(
@@ -1157,7 +1245,9 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
                 .unwrap();
 
             let dr = test_helpers::calculate_dr_id_and_args(i as u128 + 10000, 1);
-            test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+            test_info
+                .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+                .unwrap();
         }
     }
 
@@ -1227,13 +1317,13 @@ fn post_data_request_replication_factor_too_high() {
 
     // post a data request with rf=1
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let res = test_info.post_data_request(&mut sender, dr.clone(), vec![], vec![1, 2, 3], 1);
+    let res = test_info.post_data_request(&mut sender, dr.clone(), vec![], vec![1, 2, 3], 1, None);
     assert!(res.is_ok());
 
     // post a data request with rf=2
     // expect an error when trying to post it again
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
-    let res = test_info.post_data_request(&mut sender, dr.clone(), vec![], vec![1, 2, 3], 1);
+    let res = test_info.post_data_request(&mut sender, dr.clone(), vec![], vec![1, 2, 3], 1, None);
     assert!(res.is_err_and(|x| x == ContractError::DataRequestReplicationFactorTooHigh(1)));
 }
 
@@ -1246,7 +1336,7 @@ fn post_data_request_replication_factor_zero() {
     // post a data request with rf=0
     let dr = test_helpers::calculate_dr_id_and_args(1, 0);
     test_info
-        .post_data_request(&mut sender, dr.clone(), vec![], vec![1, 2, 3], 1)
+        .post_data_request(&mut sender, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 }
 
@@ -1258,7 +1348,9 @@ fn timed_out_requests_move_to_tally() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info.post_data_request(&mut alice, dr, vec![], vec![], 1).unwrap();
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
 
     // set the block height to the height it would timeout
     test_info.set_block_height(11);
@@ -1269,7 +1361,7 @@ fn timed_out_requests_move_to_tally() {
     // post another data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
     let dr_id2 = test_info
-        .post_data_request(&mut alice, dr2, vec![], vec![], 11)
+        .post_data_request(&mut alice, dr2, vec![], vec![], 11, None)
         .unwrap();
 
     // alice commits a data result

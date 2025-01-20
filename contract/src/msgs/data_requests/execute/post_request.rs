@@ -29,8 +29,8 @@ impl ExecuteHandler for execute::post_request::Execute {
         // Take the funds from the user
         let token = TOKEN.load(deps.storage)?;
         let funds = cw_utils::must_pay(&info, &token)?;
-        let required =
-            Uint128::from(self.posted_dr.exec_gas_limit + self.posted_dr.tally_gas_limit) * self.posted_dr.gas_price;
+        let required = (Uint128::from(self.posted_dr.exec_gas_limit) + Uint128::from(self.posted_dr.tally_gas_limit))
+            .checked_mul(self.posted_dr.gas_price)?;
         if funds < required {
             return Err(ContractError::InsufficientFunds(
                 required,

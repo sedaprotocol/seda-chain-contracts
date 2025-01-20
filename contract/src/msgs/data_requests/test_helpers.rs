@@ -95,6 +95,7 @@ impl TestInfo {
         seda_payload: Vec<u8>,
         payback_address: Vec<u8>,
         env_height: u64,
+        funds: Option<u128>,
     ) -> Result<String, ContractError> {
         let msg = execute::post_request::Execute {
             posted_dr,
@@ -111,7 +112,7 @@ impl TestInfo {
         self.set_block_height(env_height);
 
         // someone posts a data request
-        let res: PostRequestResponsePayload = self.execute_with_funds(sender, &msg, 20)?;
+        let res: PostRequestResponsePayload = self.execute_with_funds(sender, &msg, funds.unwrap_or(20))?;
         assert_eq!(
             env_height, res.height,
             "chain height does not match data request height"
