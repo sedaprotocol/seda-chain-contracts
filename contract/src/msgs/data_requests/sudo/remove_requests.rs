@@ -28,17 +28,14 @@ fn remove_request_and_process_distributions(
     dr_id_str: String,
     messages: &[DistributionMessage],
     deps: &mut DepsMut,
-    env: &Env,
     token: &str,
 ) -> Result<(Event, Vec<BankMsg>), ContractError> {
     // find the data request from the committed pool (if it exists, otherwise error)
     let dr_id = Hash::from_hex_str(&dr_id_str)?;
-    state::load_request(deps.storage, &dr_id)?;
+    let dr = state::load_request(deps.storage, &dr_id)?;
 
-    let block_height: u64 = env.block.height;
-
-    let mut event =
-        Event::new("seda-remove-dr").add_attributes([("dr_id", dr_id_str), ("block_height", block_height.to_string())]);
+    let mut event = Event::new("seda-remove-dr")
+        .add_attributes([("dr_id", dr_id_str), ("posted_dr_height", dr.height.to_string())]);
 
     let mut dr_escrow = DR_ESCROW.load(deps.storage, &dr_id)?;
 
@@ -137,12 +134,14 @@ fn remove_request_and_process_distributions(
 }
 
 impl SudoHandler for remove_requests::Sudo {
-    fn sudo(self, mut deps: DepsMut, env: Env) -> Result<Response, ContractError> {
+    fn sudo(self, mut deps: DepsMut, _: Env) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
         let mut response = Response::new();
-        for removal in self.requests.into_iter().map(|(dr_id, messages)| {
-            remove_request_and_process_distributions(dr_id, &messages, &mut deps, &env, &token)
-        }) {
+        for removal in self
+            .requests
+            .into_iter()
+            .map(|(dr_id, messages)| remove_request_and_process_distributions(dr_id, &messages, &mut deps, &token))
+        {
             let (event, bank_messages) = removal?;
             response = response.add_event(event).add_messages(bank_messages);
         }
