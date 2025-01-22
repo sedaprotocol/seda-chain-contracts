@@ -27,12 +27,6 @@ jobs:
       - name: 📋 Run cargo clippy
         run: cargo clippy -- -D warnings
 
-      - name: 🧪 Run unit tests
-        if: always()
-        run: cargo test-ci
-        env:
-          RUST_BACKTRACE: 1
-
       - name: 📝 Generate Schema
         if: always()
         run: cargo schema --locked
@@ -47,8 +41,11 @@ jobs:
       - name: ☁️ Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: 🧪 Test Coverage
+      - name: 🧪 Test & Coverage
+        if: always()
         run: cargo cov-ci
+        env:
+          RUST_BACKTRACE: 1
 
       - name: 📊 Generate Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0

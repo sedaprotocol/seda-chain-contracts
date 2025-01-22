@@ -210,14 +210,18 @@ fn test_ci(sh: &Shell) -> Result<()> {
 }
 
 fn cov(sh: &Shell) -> Result<()> {
-    cmd!(sh, "cargo llvm-cov -p seda-contract --locked nextest -P ci").run()?;
+    cmd!(
+        sh,
+        "cargo llvm-cov -p seda-contract --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
+    )
+    .run()?;
     Ok(())
 }
 
 fn cov_ci(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo llvm-cov -p seda-contract --cobertura --output-path cobertura.xml --locked nextest -P ci"
+        "cargo llvm-cov -p seda-contract --cobertura --output-path cobertura.xml --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
     )
     .run()?;
     Ok(())
