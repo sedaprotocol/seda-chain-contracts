@@ -279,6 +279,39 @@ fn multiple_executor_eligible_exact_replication_factor() {
     assert!(is_val1_executor_eligible && is_val2_executor_eligible);
 }
 
+#[test]
+fn only_allow_active_stakers_to_be_eligible() {
+    let mut test_info = TestInfo::init();
+
+    let msg = msgs::ExecuteMsg::Staking(msgs::staking::execute::ExecuteMsg::SetStakingConfig(StakingConfig {
+        minimum_stake_to_register:               Uint128::from(10u32),
+        minimum_stake_for_committee_eligibility: Uint128::from(20u32),
+        allowlist_enabled:                       false,
+    }));
+
+    test_info.execute::<()>(&test_info.creator(), &msg).unwrap();
+
+    // someone registers a data request executor
+    let mut val1 = test_info.new_executor("val1", Some(80));
+    test_info.stake(&mut val1, Some("memo".to_string()), 21).unwrap();
+
+    let mut val2 = test_info.new_executor("val2", Some(20));
+    test_info.stake(&mut val2, Some("memo".to_string()), 10).unwrap();
+
+    // post a data request
+    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr_id = test_info
+        .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 2, None)
+        .unwrap();
+
+    // perform the check
+    let is_val1_executor_eligible = test_info.is_executor_eligible(&val1, dr_id.to_string());
+    let is_val2_executor_eligible = test_info.is_executor_eligible(&val2, dr_id);
+
+    assert!(is_val1_executor_eligible);
+    assert!(!is_val2_executor_eligible);
+}
+
 const VALIDATORS_AMOUNT: usize = 50;
 
 lazy_static::lazy_static! {
