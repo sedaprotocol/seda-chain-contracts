@@ -27,7 +27,7 @@ impl TestInfo {
             self.chain_id(),
             self.contract_addr_str(),
             seq,
-        );
+        )?;
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
@@ -52,7 +52,7 @@ impl TestInfo {
             self.chain_id(),
             self.contract_addr_str(),
             seq,
-        );
+        )?;
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
@@ -74,7 +74,7 @@ impl TestInfo {
             self.chain_id(),
             self.contract_addr_str(),
             seq,
-        );
+        )?;
         let proof = sender.prove(factory.get_hash());
         let msg = factory.create_message(proof);
 
