@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+
 use cosmwasm_std::{to_json_string, Addr, BankMsg, Coin, DepsMut, Env, Event, Response, Uint128};
 use cw_storage_plus::KeyDeserialize;
 use seda_common::{
     msgs::data_requests::sudo::{remove_requests, DistributionMessage},
-    types::Hash,
+    types::{Hash, ToHexStr},
 };
 use serde_json::json;
 
@@ -10,7 +12,10 @@ use super::{ContractError, SudoHandler};
 use crate::{
     msgs::{
         data_requests::state::{self, DR_ESCROW},
-        staking::state::{STAKERS, STAKING_CONFIG},
+        staking::{
+            execute::staking_events::create_executor_event,
+            state::{STAKERS, STAKING_CONFIG},
+        },
         PublicKey,
     },
     state::TOKEN,
@@ -29,7 +34,7 @@ fn remove_request_and_process_distributions(
     messages: &[DistributionMessage],
     deps: &mut DepsMut,
     token: &str,
-) -> Result<(Event, Vec<BankMsg>), ContractError> {
+) -> Result<(Event, Vec<BankMsg>, HashSet<PublicKey>), ContractError> {
     // find the data request from the committed pool (if it exists, otherwise error)
     let dr_id = Hash::from_hex_str(&dr_id_str)?;
     let dr = state::load_request(deps.storage, &dr_id)?;
@@ -41,6 +46,7 @@ fn remove_request_and_process_distributions(
 
     // add 1 so we can account for the refund message that may be sent
     let mut bank_messages = Vec::new();
+    let mut stakers_effected = HashSet::new();
 
     // We need to send messages in the order given.
     for message in messages {
@@ -105,7 +111,8 @@ fn remove_request_and_process_distributions(
                 // send remaining reward to the staker pending withdrawal
                 staker.tokens_pending_withdrawal += remaining_reward;
                 dr_escrow.amount = dr_escrow.amount.saturating_sub(remaining_reward);
-                STAKERS.update(deps.storage, public_key, &staker)?;
+                STAKERS.update(deps.storage, public_key.clone(), &staker)?;
+                stakers_effected.insert(public_key);
 
                 event = event.add_attribute(
                     "executor_reward",
@@ -130,21 +137,32 @@ fn remove_request_and_process_distributions(
     state::remove_request(deps.storage, dr_id)?;
     DR_ESCROW.remove(deps.storage, &dr_id);
 
-    Ok((event, bank_messages))
+    Ok((event, bank_messages, stakers_effected))
 }
 
 impl SudoHandler for remove_requests::Sudo {
     fn sudo(self, mut deps: DepsMut, _: Env) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
         let mut response = Response::new();
+
+        let mut all_stakers_effected = HashSet::new();
         for removal in self
             .requests
             .into_iter()
             .map(|(dr_id, messages)| remove_request_and_process_distributions(dr_id, &messages, &mut deps, &token))
         {
-            let (event, bank_messages) = removal?;
+            let (event, bank_messages, stakers_effected) = removal?;
+            all_stakers_effected.extend(stakers_effected);
             response = response.add_event(event).add_messages(bank_messages);
         }
+
+        for staker in all_stakers_effected {
+            response = response.add_event(create_executor_event(
+                STAKERS.get_staker(deps.storage, &staker)?,
+                staker.to_hex(),
+            ));
+        }
+
         Ok(response)
     }
 }

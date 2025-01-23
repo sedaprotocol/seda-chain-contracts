@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PublicKey(pub [u8; 33]);
 
 impl AsRef<[u8]> for PublicKey {

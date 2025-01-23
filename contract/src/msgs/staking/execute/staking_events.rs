@@ -3,7 +3,7 @@ use seda_common::msgs::staking::{Staker, StakingConfig};
 
 use super::CONTRACT_VERSION;
 
-pub(in crate::msgs::staking::execute) fn create_executor_event(staker: Staker, public_key: String) -> Event {
+pub fn create_executor_event(staker: Staker, public_key: String) -> Event {
     Event::new("seda-executor").add_attributes([
         ("version", CONTRACT_VERSION.to_string()),
         ("identity", public_key),
