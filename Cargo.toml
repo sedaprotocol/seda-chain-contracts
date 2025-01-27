@@ -36,7 +36,7 @@ lazy_static = "1.4"
 libfuzzer-sys = "0.4"
 rand = "0.8"
 schemars = { version = "0.8", features = ["semver"] }
-seda-common = { git = "https://github.com/sedaprotocol/seda-common-rs.git", tag = "v0.5.0" }
+seda-common = { git = "https://github.com/sedaprotocol/seda-common-rs.git", tag = "v0.5.1" }
 # leaving this in to make local development easier
 # seda-common = { path = "../seda-common-rs/crates/common" }
 semver = { version = "1.0", features = ["serde"] }

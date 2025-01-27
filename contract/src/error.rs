@@ -72,6 +72,10 @@ pub enum ContractError {
     InvalidHashLength(usize),
     #[error("Invalid public key length `{0}` expected 33 bytes")]
     InvalidPublicKeyLength(usize),
+    #[error("Contract paused: cannot perform operation `{0}`")]
+    ContractPaused(String),
+    #[error("Contract not paused: cannot unpause")]
+    ContractNotPaused,
 }
 
 #[cfg(test)]

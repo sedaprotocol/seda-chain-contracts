@@ -3,6 +3,9 @@ use cw_storage_plus::{Item, Map};
 
 use crate::types::PublicKey;
 
+/// Flag to indicate if the contract is paused.
+pub const PAUSED: Item<bool> = Item::new("paused");
+
 /// Token denom used for staking (e.g., `aseda`).
 pub const TOKEN: Item<String> = Item::new("token");
 

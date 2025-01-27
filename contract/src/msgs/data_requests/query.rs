@@ -4,9 +4,12 @@ use super::{
     msgs::data_requests::{execute::commit_result, query::QueryMsg},
     *,
 };
+use crate::state::PAUSED;
 
 impl QueryHandler for QueryMsg {
     fn query(self, deps: Deps, env: Env) -> Result<Binary, ContractError> {
+        let contract_paused = PAUSED.load(deps.storage)?;
+
         let binary = match self {
             QueryMsg::CanExecutorCommit {
                 dr_id,
@@ -51,6 +54,9 @@ impl QueryHandler for QueryMsg {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
                 let reveals = dr.map(|dr| dr.reveals).unwrap_or_default();
                 to_json_binary(&reveals)?
+            }
+            QueryMsg::GetDataRequestsByStatus { .. } if contract_paused => {
+                to_json_binary::<Vec<DataRequest>>(&Vec::with_capacity(0))?
             }
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
                 to_json_binary(&state::requests_by_status(deps.storage, &status, offset, limit)?)?

@@ -25,7 +25,7 @@ use crate::{
         QueryHandler,
         SudoHandler,
     },
-    state::{CHAIN_ID, TOKEN},
+    state::{CHAIN_ID, PAUSED, TOKEN},
 };
 
 // version info for migration info
@@ -45,6 +45,7 @@ pub fn instantiate(
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     CHAIN_ID.save(deps.storage, &msg.chain_id)?;
     PENDING_OWNER.save(deps.storage, &None)?;
+    PAUSED.save(deps.storage, &false)?;
 
     let init_staking_config = msg.staking_config.unwrap_or(StakingConfig {
         minimum_stake_to_register:               INITIAL_MINIMUM_STAKE_TO_REGISTER,
@@ -83,6 +84,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> Result<Response, ContractError> {
+    if PAUSED.load(deps.storage)? {
+        return Err(ContractError::ContractPaused("sudo messages".to_string()));
+    }
+
     sudo.sudo(deps, env)
 }
 
