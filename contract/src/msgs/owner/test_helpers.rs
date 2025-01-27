@@ -49,4 +49,21 @@ impl TestInfo {
 
         self.execute(sender, &msg)
     }
+
+    #[track_caller]
+    pub fn pause(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
+        let msg = execute::pause::Execute {}.into();
+        self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn unpause(&mut self, sender: &TestExecutor) -> Result<(), ContractError> {
+        let msg = execute::unpause::Execute {}.into();
+        self.execute(sender, &msg)
+    }
+
+    #[track_caller]
+    pub fn is_paused(&self) -> bool {
+        self.query(query::QueryMsg::IsPaused {}).unwrap()
+    }
 }
