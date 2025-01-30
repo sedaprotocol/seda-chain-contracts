@@ -435,3 +435,40 @@ fn execute_messages_get_paused() {
     };
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 }
+
+#[test]
+fn staker_not_in_allowlist_withdrawing() {
+    let mut test_info = TestInfo::init();
+
+    // update the config with allowlist enabled
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               10u8.into(),
+        minimum_stake_for_committee_eligibility: 10u8.into(),
+        allowlist_enabled:                       true,
+    };
+    test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
+    let mut alice = test_info.new_executor("alice", Some(100));
+
+    // add alice to the allowlist
+    test_info
+        .add_to_allowlist(&test_info.creator(), alice.pub_key())
+        .unwrap();
+
+    // now alice can register a data request executor
+    test_info.stake(&mut alice, None, 10).unwrap();
+
+    // remove alice from the allowlist
+    test_info
+        .remove_from_allowlist(&test_info.creator(), alice.pub_key())
+        .unwrap();
+
+    // alice withdraws most her funds but should still be in stakers map
+    test_info.withdraw(&mut alice, 9).unwrap();
+    let stake_info = test_info.get_staker(alice.pub_key()).unwrap();
+    assert_eq!(stake_info.tokens_pending_withdrawal, Uint128::new(1));
+
+    // alice withdraws the rest of her funds and should be removed from stakers map
+    test_info.withdraw(&mut alice, 1).unwrap();
+    let stake_info = test_info.get_staker(alice.pub_key());
+    assert_eq!(stake_info, None);
+}

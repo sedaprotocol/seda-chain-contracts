@@ -1,3 +1,4 @@
+use cosmwasm_std::Uint128;
 use seda_common::msgs::staking::StakingConfig;
 
 use crate::{error::ContractError, TestInfo};
@@ -79,7 +80,7 @@ fn non_transferee_cannont_accept_ownership() {
 }
 
 #[test]
-pub fn allowlist_works() {
+fn allowlist_works() {
     let mut test_info = TestInfo::init();
 
     // update the config with allowlist enabled
@@ -130,7 +131,7 @@ pub fn allowlist_works() {
 }
 
 #[test]
-pub fn pause_works() {
+fn pause_works() {
     let mut test_info = TestInfo::init();
 
     // check that the contract is not paused
@@ -156,4 +157,36 @@ pub fn pause_works() {
     // double unpause leaves errors
     let err = test_info.unpause(&test_info.creator()).unwrap_err();
     assert!(err.to_string().contains("Contract not paused"));
+}
+
+#[test]
+fn removing_from_allowlist_unstakes() {
+    let mut test_info = TestInfo::init();
+
+    // update the config with allowlist enabled
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               10u8.into(),
+        minimum_stake_for_committee_eligibility: 10u8.into(),
+        allowlist_enabled:                       true,
+    };
+    test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
+    let mut alice = test_info.new_executor("alice", Some(100));
+
+    // add alice to the allowlist
+    test_info
+        .add_to_allowlist(&test_info.creator(), alice.pub_key())
+        .unwrap();
+
+    // now alice can register a data request executor
+    test_info.stake(&mut alice, None, 10).unwrap();
+
+    // remove alice from the allowlist
+    test_info
+        .remove_from_allowlist(&test_info.creator(), alice.pub_key())
+        .unwrap();
+
+    // alice should no longer have any stake bu only tokens to withdraw
+    let staker = test_info.get_staker(alice.pub_key()).unwrap();
+    assert_eq!(staker.tokens_staked, Uint128::new(0));
+    assert_eq!(staker.tokens_pending_withdrawal, Uint128::new(10));
 }
