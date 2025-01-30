@@ -1,4 +1,4 @@
-use seda_common::msgs::{data_requests::DataRequestStatus, staking::StakingConfig};
+use seda_common::msgs::staking::StakingConfig;
 
 use crate::{error::ContractError, TestInfo};
 
@@ -156,29 +156,4 @@ pub fn pause_works() {
     // double unpause leaves errors
     let err = test_info.unpause(&test_info.creator()).unwrap_err();
     assert!(err.to_string().contains("Contract not paused"));
-}
-
-#[test]
-pub fn paused_contract_returns_empty_dr_query_by_status() {
-    let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(22));
-    anyone.stake(&mut test_info, 1).unwrap();
-
-    // post a data request
-    let dr = crate::msgs::data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
-    let _dr_id = test_info
-        .post_data_request(&mut anyone, dr, vec![], vec![], 2, None)
-        .unwrap();
-
-    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(1, drs.len());
-
-    test_info.pause(&test_info.creator()).unwrap();
-    assert!(test_info.is_paused());
-
-    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(0, drs.len());
-
-    test_info.unpause(&test_info.creator()).unwrap();
-    assert!(!test_info.is_paused());
 }

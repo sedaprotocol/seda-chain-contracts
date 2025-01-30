@@ -401,3 +401,37 @@ fn executor_not_eligible_if_dr_resolved() {
     let is_executor_eligible = test_info.is_executor_eligible(&anyone, dr_id);
     assert!(!is_executor_eligible);
 }
+
+#[test]
+fn execute_messages_get_paused() {
+    let mut test_info = TestInfo::init();
+
+    // register a data request executor that can try to unstake after pausing
+    let mut alice = test_info.new_executor("alice", Some(100));
+    test_info.stake(&mut alice, None, 10).unwrap();
+
+    // pause the contract
+    test_info.pause(&test_info.creator()).unwrap();
+    assert!(test_info.is_paused());
+
+    // try to have a new staker register
+    let mut bob = test_info.new_executor("bob", Some(100));
+    let res = test_info.stake(&mut bob, None, 10);
+    assert!(res.is_err_and(|x| x.to_string().contains("pause")));
+
+    // try to have an existing staker unstake
+    let res = test_info.unstake(&alice, 10);
+    assert!(res.is_err_and(|x| x.to_string().contains("pause")));
+
+    // try to have an existing staker withdraw rewards
+    let res = test_info.withdraw(&mut alice, 10);
+    assert!(res.is_err_and(|x| x.to_string().contains("pause")));
+
+    // can still change the staking config
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               10u8.into(),
+        minimum_stake_for_committee_eligibility: 20u8.into(),
+        allowlist_enabled:                       false,
+    };
+    test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
+}
