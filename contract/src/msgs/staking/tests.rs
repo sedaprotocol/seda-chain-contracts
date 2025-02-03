@@ -472,3 +472,31 @@ fn staker_not_in_allowlist_withdrawing() {
     let stake_info = test_info.get_staker(alice.pub_key());
     assert_eq!(stake_info, None);
 }
+
+#[test]
+fn minimum_stake_cannot_be_zero() {
+    let mut test_info = TestInfo::init();
+
+    // update the config with allowlist enabled
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               0u8.into(),
+        minimum_stake_for_committee_eligibility: 10u8.into(),
+        allowlist_enabled:                       true,
+    };
+    let res = test_info.set_staking_config(&test_info.creator(), new_config);
+    assert!(res.is_err_and(|x| x == ContractError::ZeroMinimumStakeToRegister));
+}
+
+#[test]
+fn minimum_stake_for_committee_eligibility_cannot_be_zero() {
+    let mut test_info = TestInfo::init();
+
+    // update the config with allowlist enabled
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               10u8.into(),
+        minimum_stake_for_committee_eligibility: 0u8.into(),
+        allowlist_enabled:                       true,
+    };
+    let res = test_info.set_staking_config(&test_info.creator(), new_config);
+    assert!(res.is_err_and(|x| x == ContractError::ZeroMinimumStakeForCommitteeEligibility));
+}

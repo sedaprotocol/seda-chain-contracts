@@ -52,6 +52,15 @@ pub fn instantiate(
         minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
         allowlist_enabled:                       false,
     });
+
+    if init_staking_config.minimum_stake_to_register.is_zero() {
+        return Err(ContractError::ZeroMinimumStakeToRegister);
+    }
+
+    if init_staking_config.minimum_stake_for_committee_eligibility.is_zero() {
+        return Err(ContractError::ZeroMinimumStakeForCommitteeEligibility);
+    }
+
     STAKING_CONFIG.save(deps.storage, &init_staking_config)?;
 
     let init_timeout_config = msg.timeout_config.unwrap_or(TimeoutConfig {

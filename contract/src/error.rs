@@ -76,6 +76,10 @@ pub enum ContractError {
     ContractPaused(String),
     #[error("Contract not paused: cannot unpause")]
     ContractNotPaused,
+    #[error("ZeroMinimumStakeToRegister: Minimum stake to register cannot be zero")]
+    ZeroMinimumStakeToRegister,
+    #[error("ZeroMinimumStakeForCommitteeEligibility: Minimum stake for committee eligibility cannot be zero")]
+    ZeroMinimumStakeForCommitteeEligibility,
 }
 
 #[cfg(test)]
