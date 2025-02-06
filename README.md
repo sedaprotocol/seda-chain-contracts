@@ -25,10 +25,16 @@
 [twitter-badge]: https://img.shields.io/twitter/url/https/twitter.com/SedaProtocol.svg?style=social&label=Follow%20%40SedaProtocol
 [twitter-url]: https://twitter.com/SedaProtocol
 
-SEDA chain contracts written in CosmWasm.
+SEDA chain core contract written in CosmWasm.
 
 To learn how to build a local version, please read [developing](DEVELOPING.md).
 To learn how to contribute, please read [contributing](CONTRIBUTING.md).
+
+The core contract enables some of the core features of the SEDA protocol. It allows:
+- Users to post data requests.
+- Users can also stake to become executors allowing them to commit & reveal on data requests.
+- The chain, via sudo functions, to timeout & remove data requests, while rewarding/burning funds for the later.
+- Owner to transfer ownership, change configurations, and management of the allowlist.
 
 ## Dependencies
 
