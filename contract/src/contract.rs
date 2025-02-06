@@ -93,10 +93,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> R
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> Result<Response, ContractError> {
-    if PAUSED.load(deps.storage)? {
-        return Err(ContractError::ContractPaused("sudo messages".to_string()));
-    }
-
     sudo.sudo(deps, env)
 }
 
