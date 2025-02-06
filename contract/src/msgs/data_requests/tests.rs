@@ -1457,7 +1457,7 @@ fn only_owner_can_change_timeout_config() {
 }
 
 #[test]
-pub fn paused_contract_returns_empty_dr_query_by_status() {
+pub fn paused_contract_returns_pause_property_dr_query_by_status() {
     let mut test_info = TestInfo::init();
     let mut anyone = test_info.new_executor("anyone", Some(22));
     anyone.stake(&mut test_info, 1).unwrap();
@@ -1477,7 +1477,7 @@ pub fn paused_contract_returns_empty_dr_query_by_status() {
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
     assert!(drs.is_paused);
-    assert_eq!(0, drs.data_requests.len());
+    assert_eq!(1, drs.data_requests.len());
 
     test_info.unpause(&test_info.creator()).unwrap();
     assert!(!test_info.is_paused());

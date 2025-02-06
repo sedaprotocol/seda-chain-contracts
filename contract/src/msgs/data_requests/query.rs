@@ -55,13 +55,6 @@ impl QueryHandler for QueryMsg {
                 let reveals = dr.map(|dr| dr.reveals).unwrap_or_default();
                 to_json_binary(&reveals)?
             }
-            QueryMsg::GetDataRequestsByStatus { .. } if contract_paused => {
-                let response = GetDataRequestsByStatusResponse {
-                    is_paused:     contract_paused,
-                    data_requests: Vec::with_capacity(0),
-                };
-                to_json_binary(&response)?
-            }
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
                 let response = GetDataRequestsByStatusResponse {
                     is_paused:     contract_paused,
