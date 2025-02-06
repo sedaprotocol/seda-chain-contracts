@@ -16,7 +16,8 @@ fn query_drs_by_status_has_none() {
     let test_info = TestInfo::init();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(0, drs.len());
+    assert!(!drs.is_paused);
+    assert_eq!(0, drs.data_requests.len());
 }
 
 #[test]
@@ -32,8 +33,9 @@ fn query_drs_by_status_has_one() {
         .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(1, drs.len());
-    assert!(drs.iter().any(|r| r.id == dr_id));
+    assert!(!drs.is_paused);
+    assert_eq!(1, drs.data_requests.len());
+    assert!(drs.data_requests.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -65,7 +67,8 @@ fn query_drs_by_status_limit_works() {
         .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 2);
-    assert_eq!(2, drs.len());
+    assert!(!drs.is_paused);
+    assert_eq!(2, drs.data_requests.len());
 }
 
 #[test]
@@ -93,7 +96,8 @@ fn query_drs_by_status_offset_works() {
         .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 1, 2);
-    assert_eq!(2, drs.len());
+    assert!(!drs.is_paused);
+    assert_eq!(2, drs.data_requests.len());
 }
 
 #[test]
@@ -132,8 +136,9 @@ fn post_data_request() {
     let received_value = test_info.get_data_request(&dr_id);
     assert_eq!(Some(test_helpers::construct_dr(dr, vec![], 1)), received_value);
     let await_commits = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(1, await_commits.len());
-    assert!(await_commits.iter().any(|r| r.id == dr_id));
+    assert!(!await_commits.is_paused);
+    assert_eq!(1, await_commits.data_requests.len());
+    assert!(await_commits.data_requests.iter().any(|r| r.id == dr_id));
 
     // nonexistent data request does not yet exist
     let value = test_info.get_data_request("00f0f00f0f00f0f0000000f0fff0ff0ff0ffff0fff00000f000ff000000f000f");
@@ -290,8 +295,9 @@ fn commit_result() {
 
     // check if the data request is in the committing state before meeting the replication factor
     let commiting = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(1, commiting.len());
-    assert!(commiting.iter().any(|r| r.id == dr_id));
+    assert!(!commiting.is_paused);
+    assert_eq!(1, commiting.data_requests.len());
+    assert!(commiting.data_requests.iter().any(|r| r.id == dr_id));
 }
 #[test]
 fn commits_meet_replication_factor() {
@@ -310,8 +316,9 @@ fn commits_meet_replication_factor() {
 
     // check if the data request is in the revealing state after meeting the replication factor
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id));
+    assert!(!revealing.is_paused);
+    assert_eq!(1, revealing.data_requests.len());
+    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -434,8 +441,9 @@ fn reveal_result() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id));
+    assert!(!revealing.is_paused);
+    assert_eq!(1, revealing.data_requests.len());
+    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -473,8 +481,9 @@ fn reveal_result_with_proxies() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 
     let tallying = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10);
-    assert_eq!(1, tallying.len());
-    assert!(tallying.iter().any(|r| r.id == dr_id));
+    assert!(!tallying.is_paused);
+    assert_eq!(1, tallying.data_requests.len());
+    assert!(tallying.data_requests.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -697,8 +706,9 @@ fn cannot_reveal_if_user_did_not_commit() {
     test_info.reveal_result(&bob, &dr_id, bob_reveal).unwrap();
 
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id));
+    assert!(!revealing.is_paused);
+    assert_eq!(1, revealing.data_requests.len());
+    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -810,8 +820,9 @@ fn reveal_must_match_commitment() {
     test_info.reveal_result(&alice, &dr_id, alice_reveal).unwrap();
 
     let revealing = test_info.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
-    assert_eq!(1, revealing.len());
-    assert!(revealing.iter().any(|r| r.id == dr_id));
+    assert!(!revealing.is_paused);
+    assert_eq!(1, revealing.data_requests.len());
+    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
 }
 
 #[test]
@@ -1038,6 +1049,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
         2,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
+            .data_requests
             .len()
     );
     // Commit 2 drs
@@ -1051,12 +1063,14 @@ fn remove_data_request_with_more_drs_in_the_pool() {
         0,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
+            .data_requests
             .len()
     );
     assert_eq!(
         2,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
+            .data_requests
             .len()
     );
 
@@ -1066,17 +1080,19 @@ fn remove_data_request_with_more_drs_in_the_pool() {
         1,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
+            .data_requests
             .len()
     );
 
     // Check drs to be tallied
     let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-    assert_eq!(1, dr_to_be_tallied.len());
-    assert_eq!(dr_to_be_tallied[0].id, dr_id1);
+    assert!(!dr_to_be_tallied.is_paused);
+    assert_eq!(1, dr_to_be_tallied.data_requests.len());
+    assert_eq!(dr_to_be_tallied.data_requests[0].id, dr_id1);
 
     // Remove only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
-    let dr = dr_to_be_tallied[0].clone();
+    let dr = dr_to_be_tallied.data_requests[0].clone();
     test_info
         .remove_data_request(
             dr.id,
@@ -1090,16 +1106,18 @@ fn remove_data_request_with_more_drs_in_the_pool() {
         0,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
+            .data_requests
             .len()
     );
 
     // Reveal the other dr
     test_info.reveal_result(&alice, &dr_id2, alice_reveal.clone()).unwrap();
     let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
-    assert_eq!(1, dr_to_be_tallied.len());
+    assert!(!dr_to_be_tallied.is_paused);
+    assert_eq!(1, dr_to_be_tallied.data_requests.len());
 
     // Remove last dr
-    let dr = dr_to_be_tallied[0].clone();
+    let dr = dr_to_be_tallied.data_requests[0].clone();
     test_info
         .remove_data_request(
             dr.id,
@@ -1115,6 +1133,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
         0,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
+            .data_requests
             .len()
     );
 }
@@ -1155,18 +1174,21 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
         10,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 10)
+            .data_requests
             .len()
     );
     assert_eq!(
         12,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 15)
+            .data_requests
             .len()
     );
     assert_eq!(
         3,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 15)
+            .data_requests
             .len()
     );
 }
@@ -1210,23 +1232,27 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         100,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .data_requests
             .len()
     );
     assert_eq!(
         50,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .data_requests
             .len()
     );
     assert_eq!(
         0,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .data_requests
             .len()
     );
 
     for (i, request) in test_info
         .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+        .data_requests
         .into_iter()
         .enumerate()
     {
@@ -1255,23 +1281,27 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         113,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .data_requests
             .len()
     );
     assert_eq!(
         37,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .data_requests
             .len()
     );
     assert_eq!(
         13,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .data_requests
             .len()
     );
 
     for (i, request) in test_info
         .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+        .data_requests
         .into_iter()
         .enumerate()
     {
@@ -1291,18 +1321,21 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         113,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .data_requests
             .len()
     );
     assert_eq!(
         37,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .data_requests
             .len()
     );
     assert_eq!(
         11,
         test_info
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .data_requests
             .len()
     );
 }
@@ -1386,6 +1419,7 @@ fn timed_out_requests_move_to_tally() {
     // check that the request is now in the tallying state
     let tallying = test_info
         .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10)
+        .data_requests
         .into_iter()
         .map(|r| r.id)
         .collect::<Vec<_>>();
@@ -1435,13 +1469,15 @@ pub fn paused_contract_returns_empty_dr_query_by_status() {
         .unwrap();
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(1, drs.len());
+    assert!(!drs.is_paused);
+    assert_eq!(1, drs.data_requests.len());
 
     test_info.pause(&test_info.creator()).unwrap();
     assert!(test_info.is_paused());
 
     let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
-    assert_eq!(0, drs.len());
+    assert!(drs.is_paused);
+    assert_eq!(0, drs.data_requests.len());
 
     test_info.unpause(&test_info.creator()).unwrap();
     assert!(!test_info.is_paused());

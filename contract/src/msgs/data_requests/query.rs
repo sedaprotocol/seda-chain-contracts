@@ -56,10 +56,18 @@ impl QueryHandler for QueryMsg {
                 to_json_binary(&reveals)?
             }
             QueryMsg::GetDataRequestsByStatus { .. } if contract_paused => {
-                to_json_binary::<Vec<DataRequest>>(&Vec::with_capacity(0))?
+                let response = GetDataRequestsByStatusResponse {
+                    is_paused:     contract_paused,
+                    data_requests: Vec::with_capacity(0),
+                };
+                to_json_binary(&response)?
             }
             QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
-                to_json_binary(&state::requests_by_status(deps.storage, &status, offset, limit)?)?
+                let response = GetDataRequestsByStatusResponse {
+                    is_paused:     contract_paused,
+                    data_requests: state::requests_by_status(deps.storage, &status, offset, limit)?,
+                };
+                to_json_binary(&response)?
             }
         };
 
