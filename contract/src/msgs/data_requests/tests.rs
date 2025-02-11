@@ -1008,7 +1008,32 @@ fn remove_data_requests() {
             identity: alice.pub_key_hex(),
         })],
     );
-    test_info.remove_data_requests(to_remove).unwrap();
+    let removed = test_info.remove_data_requests(to_remove).unwrap();
+    removed.iter().for_each(|r| assert_eq!(0, r.1));
+}
+
+#[test]
+fn remove_data_request_invalid_status_codes() {
+    let mut test_info = TestInfo::init();
+
+    // remove a dr with an invalid dr_id and dr that does not exist
+    let mut to_remove = HashMap::new();
+    to_remove.insert("does_not_exist".to_string(), vec![]);
+    to_remove.insert(
+        "2404059f879876ad51abe32ad9099d5fe4085c473d54571f109d637a25d62885".to_string(),
+        vec![],
+    );
+    let removed = test_info.remove_data_requests(to_remove).unwrap();
+    // test this way since tests are not in wasm so hashmap order is non deterministic
+    assert_eq!(1, removed.iter().find(|r| r.0 == "does_not_exist").unwrap().1);
+    assert_eq!(
+        2,
+        removed
+            .iter()
+            .find(|r| r.0 == "2404059f879876ad51abe32ad9099d5fe4085c473d54571f109d637a25d62885")
+            .unwrap()
+            .1
+    );
 }
 
 #[test]

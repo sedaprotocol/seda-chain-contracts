@@ -51,33 +51,26 @@ fn remove_request_and_process_distributions(
     deps: &mut DepsMut,
     token: &str,
     minimum_stake: &Uint128,
-) -> (Event, Vec<BankMsg>, HashSet<PublicKey>, u8) {
+) -> Result<(Event, Vec<BankMsg>, HashSet<PublicKey>, u8), ContractError> {
     let mut event = Event::new("seda-remove-dr");
 
     let Ok(dr_id) = Hash::from_hex_str(&dr_id_str) else {
-        return (
+        return Ok((
             event.add_attribute("invalid_dr_id", dr_id_str),
             vec![],
             HashSet::new(),
             1,
-        );
+        ));
     };
     let Ok(dr) = state::load_request(deps.storage, &dr_id) else {
-        return (
+        return Ok((
             event.add_attribute("dr_not_found", dr_id_str),
             vec![],
             HashSet::new(),
             2,
-        );
+        ));
     };
-    let Ok(mut dr_escrow) = DR_ESCROW.load(deps.storage, &dr_id) else {
-        return (
-            event.add_attribute("dr_escrow_not_found", dr_id_str),
-            vec![],
-            HashSet::new(),
-            3,
-        );
-    };
+    let mut dr_escrow = DR_ESCROW.load(deps.storage, &dr_id)?;
 
     event = event.add_attributes([
         ("dr_id", dr_id_str.clone()),
@@ -208,7 +201,7 @@ fn remove_request_and_process_distributions(
     };
     DR_ESCROW.remove(deps.storage, &dr_id);
 
-    (event, bank_messages, stakers_effected, 0)
+    Ok((event, bank_messages, stakers_effected, 0))
 }
 
 impl SudoHandler for remove_requests::Sudo {
@@ -219,14 +212,13 @@ impl SudoHandler for remove_requests::Sudo {
 
         let mut all_stakers_effected = HashSet::new();
         let mut dr_ids_with_status_codes = Vec::new();
-        for (dr_id, (event, bank_messages, stakers_effected, status_code)) in
-            self.requests.into_iter().map(|(dr_id, messages)| {
-                (
-                    dr_id.clone(),
-                    remove_request_and_process_distributions(dr_id, &messages, &mut deps, &token, &minimum_stake),
-                )
-            })
-        {
+        for (dr_id, removal_details) in self.requests.into_iter().map(|(dr_id, messages)| {
+            (
+                dr_id.clone(),
+                remove_request_and_process_distributions(dr_id, &messages, &mut deps, &token, &minimum_stake),
+            )
+        }) {
+            let (event, bank_messages, stakers_effected, status_code) = removal_details?;
             all_stakers_effected.extend(stakers_effected);
             response = response.add_event(event).add_messages(bank_messages);
             dr_ids_with_status_codes.push((dr_id, status_code));

@@ -224,7 +224,11 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn remove_data_request(&mut self, dr_id: String, msgs: Vec<DistributionMessage>) -> Result<(), ContractError> {
+    pub fn remove_data_request(
+        &mut self,
+        dr_id: String,
+        msgs: Vec<DistributionMessage>,
+    ) -> Result<Vec<(String, u8)>, ContractError> {
         let mut requests = HashMap::new();
         requests.insert(dr_id, msgs);
         let msg = sudo::remove_requests::Sudo { requests }.into();
@@ -235,7 +239,7 @@ impl TestInfo {
     pub fn remove_data_requests(
         &mut self,
         requests: HashMap<String, Vec<DistributionMessage>>,
-    ) -> Result<(), ContractError> {
+    ) -> Result<Vec<(String, u8)>, ContractError> {
         let msg = sudo::remove_requests::Sudo { requests }.into();
         self.sudo(&msg)
     }

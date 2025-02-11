@@ -145,10 +145,14 @@ fn pause_works() {
     let err = test_info.pause(&test_info.creator()).unwrap_err();
     assert!(err.to_string().contains("Contract paused"));
 
-    // check that sudo messages are paused
+    // check that sudo messages are not paused
     assert!(test_info
         .remove_data_request("Doesn't matter".to_string(), vec![])
-        .is_err());
+        .is_ok());
+
+    // execute messages are paused
+    let mut alice = test_info.new_executor("alice", Some(100));
+    assert!(test_info.stake(&mut alice, None, 10).is_err());
 
     // unpause the contract
     test_info.unpause(&test_info.creator()).unwrap();
