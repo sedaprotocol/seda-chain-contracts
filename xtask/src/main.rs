@@ -126,11 +126,11 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
 
     (0..n)
         .map(|_| {
-            let inputs = [rand::thread_rng().gen_range::<u8, _>(1..=10); 5]
+            let inputs = [rand::rng().random_range::<u8, _>(1..=10); 5]
                 .into_iter()
                 .flat_map(|i| i.to_be_bytes())
                 .collect();
-            let replication_factor = rand::thread_rng().gen_range(1..=3);
+            let replication_factor = rand::rng().random_range(1..=3);
 
             let dr_id: [u8; 32] = rand::random();
             let hex_dr_id = dr_id.to_hex();
@@ -142,7 +142,7 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
                         salt:              salt.to_hex(),
                         exit_code:         0,
                         gas_used:          10,
-                        reveal:            rand::thread_rng().gen_range(1..=100u8).to_be_bytes().into(),
+                        reveal:            rand::rng().random_range(1..=100u8).to_be_bytes().into(),
                         proxy_public_keys: vec![],
                     };
 
