@@ -855,25 +855,41 @@ fn remove_data_request() {
 
     // owner removes a data result
     // reward goes to executor
+    // invalid identities and address are burned
+    // non staked executor is not rewarded
     // remainder refunds to alice
+    let bob = test_info.new_executor("bob", Some(2));
     test_info
         .remove_data_request(
             dr_id,
             vec![
                 DistributionMessage::Burn(DistributionBurn { amount: 1u128.into() }),
                 DistributionMessage::DataProxyReward(DistributionDataProxyReward {
-                    to:     Binary::new(executor.addr().to_string().as_bytes().to_vec()),
-                    amount: 5u128.into(),
+                    payout_address: executor.addr().to_string(),
+                    amount:         5u128.into(),
                 }),
                 DistributionMessage::ExecutorReward(DistributionExecutorReward {
                     identity: executor.pub_key_hex(),
                     amount:   5u128.into(),
                 }),
+                DistributionMessage::DataProxyReward(DistributionDataProxyReward {
+                    amount:         2u128.into(),
+                    payout_address: "invalid".to_string(),
+                }),
+                DistributionMessage::ExecutorReward(DistributionExecutorReward {
+                    identity: "invalid".to_string(),
+                    amount:   2u128.into(),
+                }),
+                DistributionMessage::ExecutorReward(DistributionExecutorReward {
+                    identity: bob.pub_key_hex(),
+                    amount:   2u128.into(),
+                }),
             ],
         )
         .unwrap();
     assert_eq!(55, test_info.executor_balance("exec"));
-    assert_eq!(10, test_info.executor_balance("alice"));
+    assert_eq!(4, test_info.executor_balance("alice"));
+    assert_eq!(2, test_info.executor_balance("bob"));
 
     // get the staker info for the executor
     let staker = test_info.get_staker(executor.pub_key()).unwrap();
@@ -918,8 +934,8 @@ fn remove_data_request_retains_order() {
                 DistributionMessage::Burn(DistributionBurn { amount: 10u128.into() }),
                 DistributionMessage::Burn(DistributionBurn { amount: 8u128.into() }),
                 DistributionMessage::DataProxyReward(DistributionDataProxyReward {
-                    to:     Binary::new(executor.addr().to_string().as_bytes().to_vec()),
-                    amount: 3u128.into(),
+                    payout_address: executor.addr().to_string(),
+                    amount:         3u128.into(),
                 }),
             ],
         )

@@ -391,8 +391,8 @@ fn executor_not_eligible_if_dr_resolved() {
         .remove_data_request(
             dr_id.clone(),
             vec![DistributionMessage::DataProxyReward(DistributionDataProxyReward {
-                to:     Binary::new(anyone.addr().as_bytes().to_vec()),
-                amount: 10u128.into(),
+                payout_address: anyone.addr().to_string(),
+                amount:         10u128.into(),
             })],
         )
         .unwrap();

@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
-use cosmwasm_std::{to_json_string, Addr, BankMsg, Coin, DepsMut, Env, Event, Response, Uint128};
-use cw_storage_plus::KeyDeserialize;
+use cosmwasm_std::{to_json_string, BankMsg, Coin, DepsMut, Env, Event, Response, Uint128};
 use seda_common::{
     msgs::data_requests::sudo::{remove_requests, DistributionMessage},
     types::{Hash, ToHexStr},
@@ -11,7 +10,7 @@ use serde_json::json;
 use super::{ContractError, SudoHandler};
 use crate::{
     msgs::{
-        data_requests::state::{self, DR_ESCROW},
+        data_requests::state::{self, Escrow, DR_ESCROW},
         staking::{
             execute::staking_events::create_executor_event,
             state::{STAKERS, STAKING_CONFIG},
@@ -26,6 +25,14 @@ fn amount_to_tokens(amount: Uint128, token: &str) -> Coin {
     Coin {
         denom: token.to_string(),
         amount,
+    }
+}
+
+fn burn(amount: Uint128, token: &str, escrow: &mut Escrow) -> BankMsg {
+    escrow.amount = escrow.amount.saturating_sub(amount);
+
+    BankMsg::Burn {
+        amount: vec![amount_to_tokens(amount, token)],
     }
 }
 
@@ -49,7 +56,7 @@ fn remove_request_and_process_distributions(
     let mut stakers_effected = HashSet::new();
 
     // We need to send messages in the order given.
-    for message in messages {
+    'process_message: for message in messages {
         // No reason to keep processing if the escrowed amount is zero
         if dr_escrow.amount.is_zero() {
             event = event.add_attribute("escrow-emptied-early", "true");
@@ -61,11 +68,7 @@ fn remove_request_and_process_distributions(
         match &message {
             DistributionMessage::Burn(distribution_burn) => {
                 let amount_to_burn = distribution_burn.amount.min(dr_escrow.amount);
-                dr_escrow.amount = dr_escrow.amount.saturating_sub(amount_to_burn);
-
-                bank_messages.push(BankMsg::Burn {
-                    amount: vec![amount_to_tokens(amount_to_burn, token)],
-                });
+                bank_messages.push(burn(amount_to_burn, token, &mut dr_escrow));
                 event = event.add_attribute(
                     "burn",
                     to_json_string(&json!({
@@ -75,24 +78,58 @@ fn remove_request_and_process_distributions(
             }
             DistributionMessage::DataProxyReward(distribution_send) => {
                 let amount_to_reward = distribution_send.amount.min(dr_escrow.amount);
-                dr_escrow.amount = dr_escrow.amount.saturating_sub(amount_to_reward);
-                bank_messages.push(BankMsg::Send {
-                    to_address: Addr::from_vec(distribution_send.to.to_vec())?.to_string(),
-                    amount:     vec![amount_to_tokens(amount_to_reward, token)],
-                });
-                event = event.add_attribute(
-                    "data_proxy_reward",
-                    to_json_string(&json!({
-                        "amount": amount_to_reward,
-                        "to": distribution_send.to,
-                    }))?,
-                );
+
+                if let Ok(addr) = deps.api.addr_validate(&distribution_send.payout_address) {
+                    bank_messages.push(BankMsg::Send {
+                        to_address: addr.to_string(),
+                        amount:     vec![amount_to_tokens(amount_to_reward, token)],
+                    });
+                    dr_escrow.amount = dr_escrow.amount.saturating_sub(amount_to_reward);
+
+                    event = event.add_attribute(
+                        "data_proxy_reward",
+                        to_json_string(&json!({
+                            "amount": amount_to_reward,
+                            "payout_address": distribution_send.payout_address,
+                        }))?,
+                    );
+                } else {
+                    bank_messages.push(burn(amount_to_reward, token, &mut dr_escrow));
+                    event = event.add_attribute(
+                        "data_proxy_reward_invalid_address",
+                        to_json_string(&json!({
+                            "payout_address": distribution_send.payout_address,
+                            "burn_amount": amount_to_reward,
+                        }))?,
+                    );
+                }
             }
             DistributionMessage::ExecutorReward(distribution_executor_reward) => {
-                let public_key = PublicKey::from_hex_str(&distribution_executor_reward.identity)?;
-                let mut staker = STAKERS.get_staker(deps.storage, &public_key)?;
-
                 let amount_to_reward = distribution_executor_reward.amount.min(dr_escrow.amount);
+
+                let Ok(public_key) = PublicKey::from_hex_str(&distribution_executor_reward.identity) else {
+                    bank_messages.push(burn(amount_to_reward, token, &mut dr_escrow));
+                    event = event.add_attribute(
+                        "executor_reward_invalid_identity",
+                        to_json_string(&json!({
+                            "identity": distribution_executor_reward.identity,
+                            "burn_amount": amount_to_reward,
+                        }))?,
+                    );
+                    continue 'process_message;
+                };
+
+                let Ok(mut staker) = STAKERS.get_staker(deps.storage, &public_key) else {
+                    bank_messages.push(burn(amount_to_reward, token, &mut dr_escrow));
+                    event = event.add_attribute(
+                        "executor_reward_invalid_identity",
+                        to_json_string(&json!({
+                            "identity": distribution_executor_reward.identity,
+                            "burn_amount": amount_to_reward,
+                        }))?,
+                    );
+                    continue 'process_message;
+                };
 
                 let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake_to_register;
                 let (remaining_reward, topped_up) = if staker.tokens_staked < minimum_stake {
