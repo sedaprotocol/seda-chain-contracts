@@ -276,6 +276,11 @@ impl TestExecutor {
         test_info.stake(self, None, amount)?;
         Ok(())
     }
+
+    pub fn unstake(&mut self, test_info: &mut TestInfo, amount: u128) -> Result<(), ContractError> {
+        test_info.unstake(self, amount)?;
+        Ok(())
+    }
 }
 
 #[test]

@@ -1037,6 +1037,49 @@ fn remove_data_request_invalid_status_codes() {
 }
 
 #[test]
+fn remove_data_request_runs_out_of_funds() {
+    let mut test_info = TestInfo::init();
+
+    // post a data request
+    let mut alice = test_info.new_executor("alice", Some(22));
+    alice.stake(&mut test_info, 1).unwrap();
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
+    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+
+    test_info
+        .remove_data_request(
+            dr_id,
+            vec![
+                // burn all the funds
+                DistributionMessage::Burn(DistributionBurn { amount: 20u128.into() }),
+                // then try to reward the executor
+                DistributionMessage::ExecutorReward(DistributionExecutorReward {
+                    amount:   10u128.into(),
+                    identity: alice.pub_key_hex(),
+                }),
+            ],
+        )
+        .unwrap();
+    assert_eq!(1, test_info.executor_balance("alice"));
+}
+
+#[test]
 fn check_data_request_id() {
     // Expected DR ID for following DR:
     // {
@@ -1581,4 +1624,93 @@ pub fn execute_messages_get_paused() {
     test_info
         .set_timeout_config(&test_info.creator(), timeout_config)
         .unwrap();
+}
+
+#[test]
+fn unstake_before_dr_removal_rewards_staker() {
+    let mut test_info = TestInfo::init();
+
+    // post a data request
+    let mut alice = test_info.new_executor("alice", Some(22));
+
+    let mut bob = test_info.new_executor("bob", Some(22));
+    bob.stake(&mut test_info, 1).unwrap();
+
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
+
+    // bob commits a data result
+    let bob_reveal = RevealBody {
+        id:                dr_id.clone(),
+        salt:              bob.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
+        .unwrap();
+    test_info.reveal_result(&bob, &dr_id, bob_reveal.clone()).unwrap();
+
+    // bob unstakes before the data request is removed
+    bob.unstake(&mut test_info, 1).unwrap();
+
+    test_info
+        .remove_data_request(
+            dr_id,
+            vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
+                identity: bob.pub_key_hex(),
+                amount:   5u128.into(),
+            })],
+        )
+        .unwrap();
+
+    // bob should still get the reward
+    // get the staker info for the executor
+    let staker = test_info.get_staker(bob.pub_key()).unwrap();
+    assert_eq!(5, staker.tokens_pending_withdrawal.u128());
+
+    // bob can withdraw the reward
+    test_info.withdraw(&mut bob, 5).unwrap();
+}
+
+#[test]
+fn can_reveal_after_unstaking() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(22));
+    alice.stake(&mut test_info, 1).unwrap();
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+        .unwrap();
+
+    // alice commits a data result
+    let alice_reveal = RevealBody {
+        id:                dr_id.clone(),
+        salt:              alice.salt(),
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    test_info
+        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+        .unwrap();
+
+    // alice unstakes after committing
+    alice.unstake(&mut test_info, 1).unwrap();
+
+    // alice should still be able to reveal
+    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+
+    // verify the request moved to tallying state
+    let tallying = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10);
+    assert!(!tallying.is_paused);
+    assert_eq!(1, tallying.data_requests.len());
+    assert!(tallying.data_requests.iter().any(|r| r.id == dr_id));
 }
