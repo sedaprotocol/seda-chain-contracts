@@ -6,7 +6,7 @@ use seda_common::{
 use crate::{msgs::data_requests::test_helpers, new_public_key, TestInfo};
 
 #[test]
-fn reveal_result() {
+fn works() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
     let bob = test_info.new_executor("bob", 2, 1);
@@ -55,7 +55,7 @@ fn reveal_result() {
 }
 
 #[test]
-fn reveal_result_with_proxies() {
+fn works_with_proxies() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 
@@ -89,7 +89,7 @@ fn reveal_result_with_proxies() {
 
 #[test]
 #[should_panic(expected = "InvalidHexCharacter")]
-fn reveal_result_with_proxies_not_valid_public_keys() {
+fn fails_with_invalid_proxies_public_keys() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 
@@ -118,7 +118,7 @@ fn reveal_result_with_proxies_not_valid_public_keys() {
 
 #[test]
 #[should_panic(expected = "RevealMismatch")]
-fn reveal_result_reveal_body_missing_proxies() {
+fn fails_when_body_is_missing_proxies() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 
@@ -148,7 +148,7 @@ fn reveal_result_reveal_body_missing_proxies() {
 
 #[test]
 #[should_panic(expected = "RevealNotStarted")]
-fn cannot_reveal_if_commit_rf_not_met() {
+fn fails_if_not_in_reveal_status() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
     let bob = test_info.new_executor("bob", 2, 1);
@@ -180,7 +180,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
 
 #[test]
 #[should_panic(expected = "DataRequestExpired(11, \"reveal\")")]
-fn cannot_reveal_if_timed_out() {
+fn fails_if_timed_out() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 
@@ -208,7 +208,7 @@ fn cannot_reveal_if_timed_out() {
 
 #[test]
 #[should_panic(expected = "not found")]
-fn cannot_reveal_on_expired_dr() {
+fn fails_on_expired_dr() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 
@@ -239,7 +239,7 @@ fn cannot_reveal_on_expired_dr() {
 
 #[test]
 #[should_panic(expected = "NotCommitted")]
-fn cannot_reveal_if_user_did_not_commit() {
+fn fails_if_user_did_not_commit() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -280,7 +280,7 @@ fn cannot_reveal_if_user_did_not_commit() {
 
 #[test]
 #[should_panic(expected = "AlreadyRevealed")]
-fn cannot_double_reveal() {
+fn fails_on_double_reveal() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
     let bob = test_info.new_executor("bob", 2, 1);
@@ -320,7 +320,7 @@ fn cannot_double_reveal() {
 
 #[test]
 #[should_panic(expected = "RevealMismatch")]
-fn reveal_must_match_commitment() {
+fn fails_if_does_not_match_commitment() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
     let bob = test_info.new_executor("bob", 2, 1);
@@ -376,7 +376,7 @@ fn reveal_must_match_commitment() {
 }
 
 #[test]
-fn can_reveal_after_unstaking() {
+fn works_after_unstaking() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 

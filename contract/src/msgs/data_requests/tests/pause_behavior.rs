@@ -6,7 +6,7 @@ use seda_common::{
 use crate::TestInfo;
 
 #[test]
-pub fn paused_contract_returns_pause_property_dr_query_by_status() {
+pub fn returns_pause_property_dr_query_by_status() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", 22, 1);
 

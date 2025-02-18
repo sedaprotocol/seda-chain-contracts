@@ -12,7 +12,7 @@ use seda_common::{
 use crate::{msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
-fn remove_data_request() {
+fn basic_workflow_works() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -78,7 +78,7 @@ fn remove_data_request() {
 }
 
 #[test]
-fn remove_data_request_retains_order() {
+fn retains_order() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -122,7 +122,7 @@ fn remove_data_request_retains_order() {
 }
 
 #[test]
-fn remove_data_requests() {
+fn status_codes_work() {
     let test_info = TestInfo::init();
 
     // post data request 1
@@ -179,7 +179,7 @@ fn remove_data_requests() {
 }
 
 #[test]
-fn remove_data_request_invalid_status_codes() {
+fn invalid_status_codes_work() {
     let test_info = TestInfo::init();
 
     // remove a dr with an invalid dr_id and dr that does not exist
@@ -203,7 +203,7 @@ fn remove_data_request_invalid_status_codes() {
 }
 
 #[test]
-fn remove_data_request_runs_out_of_funds() {
+fn works_when_runs_out_of_funds() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -242,7 +242,7 @@ fn remove_data_request_runs_out_of_funds() {
 }
 
 #[test]
-fn remove_data_request_with_more_drs_in_the_pool() {
+fn works_with_more_drs_in_the_pool() {
     let test_info = TestInfo::init();
 
     // post 2 drs
@@ -352,7 +352,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
 }
 
 #[test]
-fn unstake_before_dr_removal_rewards_staker() {
+fn unstake_before_dr_removal_still_rewards_staker() {
     let test_info = TestInfo::init();
 
     // post a data request

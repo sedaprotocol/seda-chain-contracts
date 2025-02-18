@@ -200,7 +200,11 @@ fn get_git_version() -> Result<String> {
 }
 
 fn test_dev(sh: &Shell) -> Result<()> {
-    cmd!(sh, "cargo nextest run --locked -p seda-contract").run()?;
+    cmd!(
+        sh,
+        "cargo nextest run --locked -p seda-contract --failure-output final --success-output final"
+    )
+    .run()?;
     Ok(())
 }
 

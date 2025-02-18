@@ -10,7 +10,7 @@ use seda_common::{
 use crate::{msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
-fn query_drs_by_status_has_none() {
+fn empty_works() {
     let test_info = TestInfo::init();
     let someone = test_info.new_executor("someone", 22, 1);
 
@@ -20,7 +20,7 @@ fn query_drs_by_status_has_none() {
 }
 
 #[test]
-fn query_drs_by_status_has_one() {
+fn one_works() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", 22, 1);
 
@@ -35,7 +35,7 @@ fn query_drs_by_status_has_one() {
 }
 
 #[test]
-fn query_drs_by_status_limit_works() {
+fn limit_works() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 62, 1);
     test_info.new_executor("bob", 2, 1);
@@ -59,7 +59,7 @@ fn query_drs_by_status_limit_works() {
 }
 
 #[test]
-fn query_drs_by_status_offset_works() {
+fn offset_works() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", 62, 1);
 
@@ -81,7 +81,7 @@ fn query_drs_by_status_offset_works() {
 }
 
 #[test]
-fn get_data_requests_by_status_with_more_drs_in_pool() {
+fn works_with_more_drs_in_pool() {
     let test_info = TestInfo::init();
 
     let alice = test_info.new_executor("alice", 2 + 25 * 20, 1);
@@ -131,7 +131,7 @@ fn get_data_requests_by_status_with_more_drs_in_pool() {
 }
 
 #[test]
-fn get_data_requests_by_status_with_many_more_drs_in_pool() {
+fn works_with_many_more_drs_in_pool() {
     let test_info = TestInfo::init();
 
     // This test posts 163 data requests
@@ -152,7 +152,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
         if i % 2 == 0 {
             alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
 
-            // test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
+            alice.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
 
             let dr = test_helpers::calculate_dr_id_and_args(i + 20000, 1);
             alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();

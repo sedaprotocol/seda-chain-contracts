@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[test]
-fn post_data_request() {
+fn works() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", 52, 1);
 
@@ -52,7 +52,7 @@ fn post_data_request() {
 
 #[test]
 #[should_panic(expected = "InsufficientFunds")]
-fn post_dr_with_not_enough_funds_fails() {
+fn fails_with_not_enough_funds_fails() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", 22, 1);
 
@@ -63,7 +63,7 @@ fn post_dr_with_not_enough_funds_fails() {
 }
 
 #[test]
-fn post_dr_with_max_gas_limits() {
+fn with_max_gas_limits() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", u128::MAX, 1);
 
@@ -79,7 +79,7 @@ fn post_dr_with_max_gas_limits() {
 }
 
 #[test]
-fn post_data_request_replication_factor_too_high() {
+fn fails_if_request_replication_factor_too_high() {
     let test_info = TestInfo::init();
     let sender = test_info.new_account("sender", 42);
     test_info.new_executor("alice", 2, 1);
@@ -98,7 +98,7 @@ fn post_data_request_replication_factor_too_high() {
 
 #[test]
 #[should_panic(expected = "DataRequestReplicationFactorZero")]
-fn post_data_request_replication_factor_zero() {
+fn fails_if_request_replication_factor_zero() {
     let test_info = TestInfo::init();
     let sender = test_info.new_account("sender", 22);
 

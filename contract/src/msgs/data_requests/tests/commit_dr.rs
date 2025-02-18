@@ -7,7 +7,7 @@ use crate::{msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
 #[should_panic(expected = "not found")]
-fn cannot_commit_if_not_staked() {
+fn fails_if_not_staked() {
     let test_info = TestInfo::init();
     let bob = test_info.new_account("bob", 22);
 
@@ -24,7 +24,7 @@ fn cannot_commit_if_not_staked() {
 
 #[test]
 #[should_panic(expected = "DataRequestExpired(11, \"commit\")")]
-fn cannot_commit_if_timed_out() {
+fn fails_if_timed_out() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
 
@@ -41,7 +41,7 @@ fn cannot_commit_if_timed_out() {
 
 #[test]
 #[should_panic(expected = "not found")]
-fn cannot_commit_on_expired_dr() {
+fn fails_on_expired_dr() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -60,7 +60,7 @@ fn cannot_commit_on_expired_dr() {
 
 #[test]
 #[should_panic(expected = "InsufficientFunds")]
-fn cannot_commit_if_not_enough_staked() {
+fn fails_if_not_enough_staked() {
     let test_info = TestInfo::init();
 
     let new_config = StakingConfig {
@@ -82,7 +82,7 @@ fn cannot_commit_if_not_enough_staked() {
 }
 
 #[test]
-fn commit_result() {
+fn works() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
     test_info.new_executor("bob", 2, 1);
@@ -106,7 +106,7 @@ fn commit_result() {
     assert!(commiting.data_requests.iter().any(|r| r.id == dr_id));
 }
 #[test]
-fn commits_meet_replication_factor() {
+fn must_meet_replication_factor() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -126,7 +126,7 @@ fn commits_meet_replication_factor() {
 
 #[test]
 #[should_panic(expected = "AlreadyCommitted")]
-fn cannot_double_commit() {
+fn fails_double_commit() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
     test_info.new_executor("bob", 2, 1);
@@ -148,7 +148,7 @@ fn cannot_double_commit() {
 
 #[test]
 #[should_panic(expected = "RevealStarted")]
-fn cannot_commit_after_replication_factor_reached() {
+fn fails_after_reveal_started() {
     let test_info = TestInfo::init();
 
     // post a data request
@@ -166,7 +166,7 @@ fn cannot_commit_after_replication_factor_reached() {
 
 #[test]
 #[should_panic(expected = "verify: invalid proof")]
-fn commits_wrong_signature_fails() {
+fn wrong_signature_fails() {
     let test_info = TestInfo::init();
 
     // post a data request

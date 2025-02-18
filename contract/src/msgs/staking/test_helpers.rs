@@ -2,7 +2,7 @@ use super::{
     msgs::staking::{execute, query},
     *,
 };
-use crate::{types::PublicKey, TestAccount};
+use crate::TestAccount;
 
 impl TestAccount {
     #[track_caller]
@@ -14,7 +14,7 @@ impl TestAccount {
     #[track_caller]
     pub fn stake(&self, amount: u128) -> Result<(), ContractError> {
         let memo = None;
-        let seq = self.get_account_sequence(self.pub_key());
+        let seq = self.get_account_sequence();
 
         let factory = execute::stake::Execute::factory(
             self.pub_key_hex(),
@@ -32,7 +32,7 @@ impl TestAccount {
     #[track_caller]
     pub fn stake_with_memo(&self, amount: u128, memo: &'static str) -> Result<(), ContractError> {
         let memo = Some(Binary::from(memo.as_bytes()));
-        let seq = self.get_account_sequence(self.pub_key());
+        let seq = self.get_account_sequence();
 
         let factory = execute::stake::Execute::factory(
             self.pub_key_hex(),
@@ -58,7 +58,7 @@ impl TestAccount {
 
     #[track_caller]
     pub fn increase_stake(&self, amount: u128) -> Result<(), ContractError> {
-        let seq = self.get_account_sequence(self.pub_key());
+        let seq = self.get_account_sequence();
 
         let factory = execute::stake::Execute::factory(
             self.pub_key_hex(),
@@ -76,7 +76,7 @@ impl TestAccount {
     #[track_caller]
     pub fn stake_with_no_funds(&self, memo: Option<String>) -> Result<(), ContractError> {
         let memo = memo.map(|s| Binary::from(s.as_bytes()));
-        let seq = self.get_account_sequence(self.pub_key());
+        let seq = self.get_account_sequence();
 
         let factory = execute::stake::Execute::factory(
             self.pub_key_hex(),
@@ -93,7 +93,7 @@ impl TestAccount {
 
     #[track_caller]
     pub fn unstake(&self, amount: u128) -> Result<(), ContractError> {
-        let seq = self.get_account_sequence(self.pub_key());
+        let seq = self.get_account_sequence();
 
         let factory = execute::unstake::Execute::factory(
             self.pub_key_hex(),
@@ -110,7 +110,7 @@ impl TestAccount {
 
     #[track_caller]
     pub fn withdraw(&self, amount: u128) -> Result<(), ContractError> {
-        let seq = self.get_account_sequence(self.pub_key());
+        let seq = self.get_account_sequence();
 
         let factory = execute::withdraw::Execute::factory(
             self.pub_key_hex(),
@@ -149,10 +149,10 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn get_account_sequence(&self, public_key: PublicKey) -> Uint128 {
+    pub fn get_account_sequence(&self) -> Uint128 {
         self.test_info
             .query(query::QueryMsg::GetAccountSeq {
-                public_key: public_key.to_hex(),
+                public_key: self.pub_key_hex(),
             })
             .unwrap()
     }
