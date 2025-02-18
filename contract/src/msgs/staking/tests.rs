@@ -33,7 +33,7 @@ fn non_owner_cannot_set_staking_config() {
     };
 
     // non-owner sets staking config
-    let non_owner = test_info.new_executor("non-owner", Some(2));
+    let non_owner = test_info.new_executor("non-owner", Some(2), None);
     let res = test_info.set_staking_config(&non_owner, new_config);
     assert!(res.is_err_and(|x| x == ContractError::NotOwner));
 }
@@ -43,7 +43,7 @@ fn deposit_stake_withdraw() {
     let mut test_info = TestInfo::init();
 
     // can't register without depositing tokens
-    let mut anyone = test_info.new_executor("anyone", Some(3));
+    let mut anyone = test_info.new_executor("anyone", Some(3), None);
 
     let new_config = StakingConfig {
         minimum_stake_to_register:               1u8.into(),
@@ -121,7 +121,7 @@ fn deposit_stake_withdraw() {
 fn no_funds_provided() {
     let mut test_info = TestInfo::init();
 
-    let mut anyone = test_info.new_executor("anyone", None);
+    let mut anyone = test_info.new_executor("anyone", None, None);
     test_info
         .stake_with_no_funds(&mut anyone, Some("address".to_string()))
         .unwrap();
@@ -133,8 +133,7 @@ fn insufficient_funds() {
     let mut test_info = TestInfo::init();
 
     // register a data request executor
-    let mut alice = test_info.new_executor("alice", Some(1000));
-    test_info.stake(&mut alice, None, 1).unwrap();
+    let alice = test_info.new_executor("alice", Some(1000), Some(1));
 
     // try unstaking more than staked
     test_info.unstake(&alice, 2).unwrap();
@@ -145,7 +144,7 @@ fn register_data_request_executor() {
     let mut test_info = TestInfo::init();
 
     // fetching data request executor for an address that doesn't exist should return None
-    let mut anyone = test_info.new_executor("anyone", Some(2));
+    let mut anyone = test_info.new_executor("anyone", Some(2), None);
     let value = test_info.get_staker(anyone.pub_key());
     assert_eq!(value, None);
 
@@ -169,7 +168,7 @@ fn unregister_data_request_executor() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut anyone = test_info.new_executor("anyone", Some(2));
+    let mut anyone = test_info.new_executor("anyone", Some(2), None);
     test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
 
     // should be able to fetch the data request executor
@@ -182,10 +181,6 @@ fn unregister_data_request_executor() {
             tokens_pending_withdrawal: 0u8.into(),
         }),
     );
-
-    // can't unregister the data request executor if it has staked tokens
-    // let res = test_info.unregister(&anyone);
-    // assert!(res.is_err_and(|x| x == ContractError::ExecutorHasTokens));
 
     // unstake and withdraw all tokens
     test_info.unstake(&anyone, 2).unwrap();
@@ -213,11 +208,10 @@ fn executor_eligible() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut anyone = test_info.new_executor("anyone", Some(40));
-    test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
+    let mut anyone = test_info.new_executor("anyone", Some(40), Some(2));
 
     // post a data request
-    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
@@ -232,14 +226,11 @@ fn multiple_executor_eligible() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut val1 = test_info.new_executor("val1", Some(40));
-    test_info.stake(&mut val1, Some("memo".to_string()), 2).unwrap();
-
-    let mut val2 = test_info.new_executor("val2", Some(20));
-    test_info.stake(&mut val2, Some("memo".to_string()), 2).unwrap();
+    let mut val1 = test_info.new_executor("val1", Some(40), Some(2));
+    let val2 = test_info.new_executor("val2", Some(20), Some(2));
 
     // post a data request
-    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
@@ -260,14 +251,11 @@ fn multiple_executor_eligible_exact_replication_factor() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut val1 = test_info.new_executor("val1", Some(40));
-    test_info.stake(&mut val1, Some("memo".to_string()), 2).unwrap();
-
-    let mut val2 = test_info.new_executor("val2", Some(20));
-    test_info.stake(&mut val2, Some("memo".to_string()), 2).unwrap();
+    let mut val1 = test_info.new_executor("val1", Some(40), Some(2));
+    let val2 = test_info.new_executor("val2", Some(20), Some(2));
 
     // post a data request
-    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, 2);
     let dr_id = test_info
         .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
@@ -292,14 +280,11 @@ fn only_allow_active_stakers_to_be_eligible() {
     test_info.execute::<()>(&test_info.creator(), &msg).unwrap();
 
     // someone registers a data request executor
-    let mut val1 = test_info.new_executor("val1", Some(80));
-    test_info.stake(&mut val1, Some("memo".to_string()), 21).unwrap();
-
-    let mut val2 = test_info.new_executor("val2", Some(20));
-    test_info.stake(&mut val2, Some("memo".to_string()), 10).unwrap();
+    let mut val1 = test_info.new_executor("val1", Some(80), Some(21));
+    let val2 = test_info.new_executor("val2", Some(20), Some(10));
 
     // post a data request
-    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, 2);
     let dr_id = test_info
         .post_data_request(&mut val1, dr.clone(), vec![], vec![1, 2, 3], 2, None)
         .unwrap();
@@ -329,17 +314,16 @@ fn large_set_executor_eligible() {
     let mut test_info = TestInfo::init();
     let mut validators = Vec::with_capacity(VALIDATORS_AMOUNT);
     for validator_name in LARGE_SET_VALIDATOR_NAMES.iter() {
-        let mut validator = test_info.new_executor(validator_name, Some(20));
-        test_info.stake(&mut validator, Some("memo".to_string()), 2).unwrap();
+        let validator = test_info.new_executor(validator_name, Some(20), Some(2));
         validators.push(validator);
     }
 
     // someone registers a data request executor
-    let mut anyone = test_info.new_executor("anyone", Some(40));
+    let mut anyone = test_info.new_executor("anyone", Some(40), None);
     let replication_factor = 8;
 
     // post a data request
-    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, replication_factor);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, replication_factor);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
@@ -362,11 +346,12 @@ fn executor_not_eligible_if_dr_resolved() {
     let mut test_info = TestInfo::init();
 
     // someone registers a data request executor
-    let mut anyone = test_info.new_executor("anyone", Some(40));
+    let mut anyone = test_info.new_executor("anyone", Some(40), None);
+    // Stake using TestInfo.stake method so we can set a memo
     test_info.stake(&mut anyone, Some("memo".to_string()), 2).unwrap();
 
     // post a data request
-    let dr = data_requests::test::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
@@ -407,16 +392,15 @@ fn execute_messages_get_paused() {
     let mut test_info = TestInfo::init();
 
     // register a data request executor that can try to unstake after pausing
-    let mut alice = test_info.new_executor("alice", Some(100));
-    test_info.stake(&mut alice, None, 10).unwrap();
+    let mut alice = test_info.new_executor("alice", Some(100), Some(10));
 
     // pause the contract
     test_info.pause(&test_info.creator()).unwrap();
     assert!(test_info.is_paused());
 
     // try to have a new staker register
-    let mut bob = test_info.new_executor("bob", Some(100));
-    let res = test_info.stake(&mut bob, None, 10);
+    let mut bob = test_info.new_executor("bob", Some(100), None);
+    let res = bob.stake(&mut test_info, 10);
     assert!(res.is_err_and(|x| x.to_string().contains("pause")));
 
     // try to have an existing staker unstake
@@ -447,7 +431,7 @@ fn staker_not_in_allowlist_withdrawing() {
         allowlist_enabled:                       true,
     };
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
-    let mut alice = test_info.new_executor("alice", Some(100));
+    let mut alice = test_info.new_executor("alice", Some(100), None);
 
     // add alice to the allowlist
     test_info
@@ -455,7 +439,7 @@ fn staker_not_in_allowlist_withdrawing() {
         .unwrap();
 
     // now alice can register a data request executor
-    test_info.stake(&mut alice, None, 10).unwrap();
+    alice.stake(&mut test_info, 10).unwrap();
 
     // remove alice from the allowlist
     test_info

@@ -24,7 +24,7 @@ fn non_owner_cannot_transfer_ownership() {
     let mut test_info = TestInfo::init();
 
     // non-owner cannot transfer ownership
-    let non_owner = test_info.new_executor("non-owner", Some(2));
+    let non_owner = test_info.new_executor("non-owner", Some(2), None);
     let res = test_info.transfer_ownership(&non_owner, &non_owner);
     assert!(res.is_err_and(|x| x == ContractError::NotOwner));
 }
@@ -34,7 +34,7 @@ fn two_step_transfer_ownership() {
     let mut test_info = TestInfo::init();
 
     // new-owner cannot accept ownership without a transfer
-    let new_owner = test_info.new_executor("new-owner", Some(2));
+    let new_owner = test_info.new_executor("new-owner", Some(2), None);
     let res = test_info.accept_ownership(&new_owner);
     assert!(res.is_err_and(|x| x == ContractError::NoPendingOwnerFound),);
 
@@ -68,13 +68,13 @@ fn non_transferee_cannont_accept_ownership() {
     let mut test_info = TestInfo::init();
 
     // new-owner cannot accept ownership without a transfer
-    let new_owner = test_info.new_executor("new-owner", Some(2));
+    let new_owner = test_info.new_executor("new-owner", Some(2), None);
 
     // owner initiates transfering ownership
     test_info.transfer_ownership(&test_info.creator(), &new_owner).unwrap();
 
     // non-owner accepts ownership
-    let non_owner = test_info.new_executor("non-owner", Some(2));
+    let non_owner = test_info.new_executor("non-owner", Some(2), None);
     let res = test_info.accept_ownership(&non_owner);
     assert!(res.is_err_and(|x| x == ContractError::NotPendingOwner));
 }
@@ -92,7 +92,7 @@ fn allowlist_works() {
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
     // alice tries to register a data request executor, but she's not on the allowlist
-    let mut alice = test_info.new_executor("alice", Some(100));
+    let mut alice = test_info.new_executor("alice", Some(100), None);
     let res = test_info.stake(&mut alice, None, 10);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
@@ -151,7 +151,7 @@ fn pause_works() {
         .is_ok());
 
     // execute messages are paused
-    let mut alice = test_info.new_executor("alice", Some(100));
+    let mut alice = test_info.new_executor("alice", Some(100), None);
     assert!(test_info.stake(&mut alice, None, 10).is_err());
 
     // unpause the contract
@@ -174,7 +174,7 @@ fn removing_from_allowlist_unstakes() {
         allowlist_enabled:                       true,
     };
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
-    let mut alice = test_info.new_executor("alice", Some(100));
+    let mut alice = test_info.new_executor("alice", Some(100), None);
 
     // add alice to the allowlist
     test_info

@@ -1,4 +1,4 @@
-use test::test_helpers::{calculate_dr_id_and_args, construct_dr};
+use test_helpers::{calculate_dr_id_and_args, construct_dr};
 use testing::MockStorage;
 
 use super::*;

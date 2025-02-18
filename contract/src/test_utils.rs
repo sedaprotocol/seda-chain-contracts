@@ -75,19 +75,25 @@ impl TestInfo {
         self.app.api().addr_make(name)
     }
 
-    pub fn new_executor(&mut self, name: &'static str, amount: Option<u128>) -> TestExecutor {
+    #[track_caller]
+    pub fn new_executor(&mut self, name: &'static str, balance: Option<u128>, stake: Option<u128>) -> TestExecutor {
         let addr = self.new_address(name);
         let executor = TestExecutor::new(name, addr);
         self.executors.insert(name, executor);
-        let executor = self.executor(name).clone();
+        let mut executor = self.executor(name).clone();
 
-        if let Some(amount) = amount {
+        if let Some(amount) = balance {
             self.app.init_modules(|router, _api, storage| {
                 router
                     .bank
                     .init_balance(storage, &executor.addr, coins(amount, "aseda"))
                     .unwrap();
             });
+        }
+
+        // stake if provided
+        if let Some(stake) = stake {
+            executor.stake(self, stake).unwrap();
         }
         executor
     }

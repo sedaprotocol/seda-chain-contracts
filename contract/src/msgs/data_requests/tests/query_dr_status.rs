@@ -1,0 +1,294 @@
+use seda_common::{
+    msgs::data_requests::{
+        sudo::{DistributionExecutorReward, DistributionMessage},
+        DataRequestStatus,
+        RevealBody,
+    },
+    types::{HashSelf, TryHashSelf},
+};
+
+use crate::{msgs::data_requests::test_helpers, TestInfo};
+
+#[test]
+fn query_drs_by_status_has_none() {
+    let test_info = TestInfo::init();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    assert!(!drs.is_paused);
+    assert_eq!(0, drs.data_requests.len());
+}
+
+#[test]
+fn query_drs_by_status_has_one() {
+    let mut test_info = TestInfo::init();
+    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = test_info
+        .post_data_request(&mut anyone, dr, vec![], vec![], 2, None)
+        .unwrap();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    assert!(!drs.is_paused);
+    assert_eq!(1, drs.data_requests.len());
+    assert!(drs.data_requests.iter().any(|r| r.id == dr_id));
+}
+
+#[test]
+fn query_drs_by_status_limit_works() {
+    let mut test_info = TestInfo::init();
+    let mut alice = test_info.new_executor("alice", Some(62), Some(1));
+    test_info.new_executor("bob", Some(2), Some(1));
+    test_info.new_executor("claire", Some(2), Some(1));
+
+    // post a data request
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
+    test_info
+        .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
+        .unwrap();
+
+    // post a second data request
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 3);
+    test_info
+        .post_data_request(&mut alice, dr2, vec![], vec![], 2, None)
+        .unwrap();
+
+    // post a third data request
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
+    test_info
+        .post_data_request(&mut alice, dr3, vec![], vec![], 3, None)
+        .unwrap();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 2);
+    assert!(!drs.is_paused);
+    assert_eq!(2, drs.data_requests.len());
+}
+
+#[test]
+fn query_drs_by_status_offset_works() {
+    let mut test_info = TestInfo::init();
+    let mut anyone = test_info.new_executor("anyone", Some(62), Some(1));
+
+    // post a data request
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
+    test_info
+        .post_data_request(&mut anyone, dr1, vec![], vec![], 1, None)
+        .unwrap();
+
+    // post a scond data request
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
+    test_info
+        .post_data_request(&mut anyone, dr2, vec![], vec![], 2, None)
+        .unwrap();
+
+    // post a third data request
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 1);
+    test_info
+        .post_data_request(&mut anyone, dr3, vec![], vec![], 3, None)
+        .unwrap();
+
+    let drs = test_info.get_data_requests_by_status(DataRequestStatus::Committing, 1, 2);
+    assert!(!drs.is_paused);
+    assert_eq!(2, drs.data_requests.len());
+}
+
+#[test]
+fn get_data_requests_by_status_with_more_drs_in_pool() {
+    let mut test_info = TestInfo::init();
+
+    let mut alice = test_info.new_executor("alice", Some(2 + 25 * 20), Some(1));
+
+    for i in 0..25 {
+        let dr = test_helpers::calculate_dr_id_and_args(i, 1);
+        let dr_id = test_info
+            .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+            .unwrap();
+        let alice_reveal = RevealBody {
+            id:                dr_id.clone(),
+            salt:              alice.salt(),
+            reveal:            "10".hash().into(),
+            gas_used:          0,
+            exit_code:         0,
+            proxy_public_keys: vec![],
+        };
+
+        if i < 15 {
+            test_info
+                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+                .unwrap();
+        }
+
+        if i < 3 {
+            test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+        }
+    }
+
+    assert_eq!(
+        10,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 10)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        12,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 15)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        3,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 15)
+            .data_requests
+            .len()
+    );
+}
+
+#[test]
+fn get_data_requests_by_status_with_many_more_drs_in_pool() {
+    let mut test_info = TestInfo::init();
+
+    // This test posts 163 data requests
+    let mut alice = test_info.new_executor("alice", Some(2 + 163 * 20), Some(1));
+
+    for i in 0..100 {
+        let dr = test_helpers::calculate_dr_id_and_args(i, 1);
+        let dr_id = test_info
+            .post_data_request(&mut alice, dr.clone(), vec![], vec![], 1, None)
+            .unwrap();
+        let alice_reveal = RevealBody {
+            id:                dr_id.clone(),
+            salt:              alice.salt(),
+            reveal:            "10".hash().into(),
+            gas_used:          0,
+            exit_code:         0,
+            proxy_public_keys: vec![],
+        };
+
+        if i % 2 == 0 {
+            test_info
+                .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
+                .unwrap();
+
+            // test_info.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
+
+            let dr = test_helpers::calculate_dr_id_and_args(i + 20000, 1);
+            test_info
+                .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+                .unwrap();
+        }
+    }
+    assert_eq!(
+        100,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        50,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        0,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .data_requests
+            .len()
+    );
+
+    for (i, request) in test_info
+        .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+        .data_requests
+        .into_iter()
+        .enumerate()
+    {
+        if i % 4 == 0 {
+            let alice_reveal = RevealBody {
+                id:                request.id.clone(),
+                salt:              alice.salt(),
+                reveal:            "10".hash().into(),
+                gas_used:          0,
+                exit_code:         0,
+                proxy_public_keys: vec![],
+            };
+
+            test_info
+                .reveal_result(&alice, &request.id, alice_reveal.clone())
+                .unwrap();
+
+            let dr = test_helpers::calculate_dr_id_and_args(i as u128 + 10000, 1);
+            test_info
+                .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
+                .unwrap();
+        }
+    }
+
+    assert_eq!(
+        113,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        37,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        13,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .data_requests
+            .len()
+    );
+
+    for (i, request) in test_info
+        .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+        .data_requests
+        .into_iter()
+        .enumerate()
+    {
+        if i % 8 == 0 {
+            test_info
+                .remove_data_request(
+                    request.id.to_string(),
+                    vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
+                        amount:   10u128.into(),
+                        identity: alice.pub_key_hex(),
+                    })],
+                )
+                .unwrap();
+        }
+    }
+    assert_eq!(
+        113,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 1000)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        37,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 1000)
+            .data_requests
+            .len()
+    );
+    assert_eq!(
+        11,
+        test_info
+            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 1000)
+            .data_requests
+            .len()
+    );
+}

@@ -7,10 +7,7 @@ pub mod query;
 pub mod state;
 pub mod sudo;
 
-#[path = ""]
 #[cfg(test)]
-pub mod test {
-    use super::*;
-    pub mod test_helpers;
-    mod tests;
-}
+pub mod test_helpers;
+#[cfg(test)]
+mod tests;
