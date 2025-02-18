@@ -13,14 +13,12 @@ use crate::{msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
 fn remove_data_request() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", 22, 1);
+    let alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info
-        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
-        .unwrap();
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
     let executor = test_info.new_executor("exec", 51, 1);
 
     // alice commits a data result
@@ -32,10 +30,8 @@ fn remove_data_request() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
-        .unwrap();
-    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+    alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+    alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
 
     // owner removes a data result
     // reward goes to executor
@@ -44,6 +40,7 @@ fn remove_data_request() {
     // remainder refunds to alice
     let bob = test_info.new_account("bob", 2);
     test_info
+        .creator()
         .remove_data_request(
             dr_id,
             vec![
@@ -76,20 +73,18 @@ fn remove_data_request() {
     assert_eq!(2, test_info.executor_balance("bob"));
 
     // get the staker info for the executor
-    let staker = test_info.get_staker(executor.pub_key()).unwrap();
+    let staker = executor.get_staker_info().unwrap();
     assert_eq!(5, staker.tokens_pending_withdrawal.u128());
 }
 
 #[test]
 fn remove_data_request_retains_order() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", 22, 1);
+    let alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info
-        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
-        .unwrap();
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
     let executor = test_info.new_executor("exec", 51, 1);
 
     // alice commits a data result
@@ -101,15 +96,13 @@ fn remove_data_request_retains_order() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
-        .unwrap();
-    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+    alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+    alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
 
     // owner removes a data result
     // reward goes to executor
     // remainder refunds to alice
-    test_info
+    alice
         .remove_data_request(
             dr_id,
             vec![
@@ -130,14 +123,12 @@ fn remove_data_request_retains_order() {
 
 #[test]
 fn remove_data_requests() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // post data request 1
-    let mut alice = test_info.new_executor("alice", 42, 1);
+    let alice = test_info.new_executor("alice", 42, 1);
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id1 = test_info
-        .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
-        .unwrap();
+    let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
 
     // alice commits data result 1
     let alice_reveal1 = RevealBody {
@@ -148,16 +139,12 @@ fn remove_data_requests() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    test_info
-        .commit_result(&alice, &dr_id1, alice_reveal1.try_hash().unwrap())
-        .unwrap();
-    test_info.reveal_result(&alice, &dr_id1, alice_reveal1.clone()).unwrap();
+    alice.commit_result(&dr_id1, alice_reveal1.try_hash().unwrap()).unwrap();
+    alice.reveal_result(&dr_id1, alice_reveal1.clone()).unwrap();
 
     // post data request 2
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
-    let dr_id2 = test_info
-        .post_data_request(&mut alice, dr2, vec![], vec![], 2, None)
-        .unwrap();
+    let dr_id2 = alice.post_data_request(dr2, vec![], vec![], 2, None).unwrap();
 
     // alice commits data result 2
     let alice_reveal2 = RevealBody {
@@ -168,10 +155,8 @@ fn remove_data_requests() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    test_info
-        .commit_result(&alice, &dr_id2, alice_reveal2.try_hash().unwrap())
-        .unwrap();
-    test_info.reveal_result(&alice, &dr_id2, alice_reveal2.clone()).unwrap();
+    alice.commit_result(&dr_id2, alice_reveal2.try_hash().unwrap()).unwrap();
+    alice.reveal_result(&dr_id2, alice_reveal2.clone()).unwrap();
 
     // owner posts data results
     let mut to_remove = HashMap::new();
@@ -189,13 +174,13 @@ fn remove_data_requests() {
             identity: alice.pub_key_hex(),
         })],
     );
-    let removed = test_info.remove_data_requests(to_remove).unwrap();
+    let removed = test_info.creator().remove_data_requests(to_remove).unwrap();
     removed.iter().for_each(|r| assert_eq!(0, r.1));
 }
 
 #[test]
 fn remove_data_request_invalid_status_codes() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // remove a dr with an invalid dr_id and dr that does not exist
     let mut to_remove = HashMap::new();
@@ -204,7 +189,7 @@ fn remove_data_request_invalid_status_codes() {
         "2404059f879876ad51abe32ad9099d5fe4085c473d54571f109d637a25d62885".to_string(),
         vec![],
     );
-    let removed = test_info.remove_data_requests(to_remove).unwrap();
+    let removed = test_info.creator().remove_data_requests(to_remove).unwrap();
     // test this way since tests are not in wasm so hashmap order is non deterministic
     assert_eq!(1, removed.iter().find(|r| r.0 == "does_not_exist").unwrap().1);
     assert_eq!(
@@ -219,14 +204,12 @@ fn remove_data_request_invalid_status_codes() {
 
 #[test]
 fn remove_data_request_runs_out_of_funds() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", 22, 1);
+    let alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info
-        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
-        .unwrap();
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -237,12 +220,11 @@ fn remove_data_request_runs_out_of_funds() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    test_info
-        .commit_result(&alice, &dr_id, alice_reveal.try_hash().unwrap())
-        .unwrap();
-    test_info.reveal_result(&alice, &dr_id, alice_reveal.clone()).unwrap();
+    alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+    alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
 
     test_info
+        .creator()
         .remove_data_request(
             dr_id,
             vec![
@@ -261,18 +243,14 @@ fn remove_data_request_runs_out_of_funds() {
 
 #[test]
 fn remove_data_request_with_more_drs_in_the_pool() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // post 2 drs
-    let mut alice = test_info.new_executor("alice", 42, 1);
+    let alice = test_info.new_executor("alice", 42, 1);
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
-    let dr_id1 = test_info
-        .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
-        .unwrap();
-    let dr_id2 = test_info
-        .post_data_request(&mut alice, dr2, vec![], vec![], 1, None)
-        .unwrap();
+    let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
+    let dr_id2 = alice.post_data_request(dr2, vec![], vec![], 1, None).unwrap();
 
     // Same commits & reveals for all drs
     let alice_reveal = RevealBody {
@@ -286,45 +264,41 @@ fn remove_data_request_with_more_drs_in_the_pool() {
 
     assert_eq!(
         2,
-        test_info
+        alice
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
             .data_requests
             .len()
     );
     // Commit 2 drs
-    test_info
-        .commit_result(&alice, &dr_id1, alice_reveal.try_hash().unwrap())
-        .unwrap();
-    test_info
-        .commit_result(&alice, &dr_id2, alice_reveal.try_hash().unwrap())
-        .unwrap();
+    alice.commit_result(&dr_id1, alice_reveal.try_hash().unwrap()).unwrap();
+    alice.commit_result(&dr_id2, alice_reveal.try_hash().unwrap()).unwrap();
     assert_eq!(
         0,
-        test_info
+        alice
             .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
             .data_requests
             .len()
     );
     assert_eq!(
         2,
-        test_info
+        alice
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
             .data_requests
             .len()
     );
 
     // reveal first dr
-    test_info.reveal_result(&alice, &dr_id1, alice_reveal.clone()).unwrap();
+    alice.reveal_result(&dr_id1, alice_reveal.clone()).unwrap();
     assert_eq!(
         1,
-        test_info
+        alice
             .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
             .data_requests
             .len()
     );
 
     // Check drs to be tallied
-    let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
+    let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
     assert!(!dr_to_be_tallied.is_paused);
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
     assert_eq!(dr_to_be_tallied.data_requests[0].id, dr_id1);
@@ -332,7 +306,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     // Remove only first dr ready to be tallied (while there is another one in the pool and not ready)
     // This checks part of the swap_remove logic
     let dr = dr_to_be_tallied.data_requests[0].clone();
-    test_info
+    alice
         .remove_data_request(
             dr.id,
             vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
@@ -343,21 +317,21 @@ fn remove_data_request_with_more_drs_in_the_pool() {
         .unwrap();
     assert_eq!(
         0,
-        test_info
+        alice
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
             .data_requests
             .len()
     );
 
     // Reveal the other dr
-    test_info.reveal_result(&alice, &dr_id2, alice_reveal.clone()).unwrap();
-    let dr_to_be_tallied = test_info.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
+    alice.reveal_result(&dr_id2, alice_reveal.clone()).unwrap();
+    let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
     assert!(!dr_to_be_tallied.is_paused);
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
 
     // Remove last dr
     let dr = dr_to_be_tallied.data_requests[0].clone();
-    test_info
+    alice
         .remove_data_request(
             dr.id,
             vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
@@ -370,7 +344,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     // Check dr to be tallied is empty
     assert_eq!(
         0,
-        test_info
+        alice
             .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
             .data_requests
             .len()
@@ -379,17 +353,15 @@ fn remove_data_request_with_more_drs_in_the_pool() {
 
 #[test]
 fn unstake_before_dr_removal_rewards_staker() {
-    let mut test_info = TestInfo::init();
+    let test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_account("alice", 22);
+    let alice = test_info.new_account("alice", 22);
 
-    let mut bob = test_info.new_executor("bob", 22, 1);
+    let bob = test_info.new_executor("bob", 22, 1);
 
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    let dr_id = test_info
-        .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
-        .unwrap();
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // bob commits a data result
     let bob_reveal = RevealBody {
@@ -400,15 +372,14 @@ fn unstake_before_dr_removal_rewards_staker() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    test_info
-        .commit_result(&bob, &dr_id, bob_reveal.try_hash().unwrap())
-        .unwrap();
-    test_info.reveal_result(&bob, &dr_id, bob_reveal.clone()).unwrap();
+    bob.commit_result(&dr_id, bob_reveal.try_hash().unwrap()).unwrap();
+    bob.reveal_result(&dr_id, bob_reveal.clone()).unwrap();
 
     // bob unstakes before the data request is removed
-    bob.unstake(&mut test_info, 1).unwrap();
+    bob.unstake(1).unwrap();
 
     test_info
+        .creator()
         .remove_data_request(
             dr_id,
             vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
@@ -420,9 +391,9 @@ fn unstake_before_dr_removal_rewards_staker() {
 
     // bob should still get the reward
     // get the staker info for the executor
-    let staker = test_info.get_staker(bob.pub_key()).unwrap();
+    let staker = bob.get_staker_info().unwrap();
     assert_eq!(5, staker.tokens_pending_withdrawal.u128());
 
     // bob can withdraw the reward
-    test_info.withdraw(&mut bob, 5).unwrap();
+    bob.withdraw(5).unwrap();
 }
