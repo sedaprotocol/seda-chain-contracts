@@ -12,13 +12,31 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn stake(
+    pub fn stake(&mut self, sender: &mut TestExecutor, amount: u128) -> Result<(), ContractError> {
+        let memo = None;
+        let seq = self.get_account_sequence(sender.pub_key());
+
+        let factory = execute::stake::Execute::factory(
+            sender.pub_key_hex(),
+            memo,
+            self.chain_id(),
+            self.contract_addr_str(),
+            seq,
+        )?;
+        let proof = sender.prove(factory.get_hash());
+        let msg = factory.create_message(proof);
+
+        self.execute_with_funds(sender, &msg, amount)
+    }
+
+    #[track_caller]
+    pub fn stake_with_memo(
         &mut self,
         sender: &mut TestExecutor,
-        memo: Option<String>,
         amount: u128,
+        memo: &'static str,
     ) -> Result<(), ContractError> {
-        let memo = memo.map(|s| Binary::from(s.as_bytes()));
+        let memo = Some(Binary::from(memo.as_bytes()));
         let seq = self.get_account_sequence(sender.pub_key());
 
         let factory = execute::stake::Execute::factory(

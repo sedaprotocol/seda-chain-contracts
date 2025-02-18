@@ -9,10 +9,10 @@ use crate::{msgs::data_requests::test_helpers, TestInfo};
 #[should_panic(expected = "not found")]
 fn cannot_commit_if_not_staked() {
     let mut test_info = TestInfo::init();
-    let mut bob = test_info.new_executor("bob", Some(22), None);
+    let mut bob = test_info.new_account("bob", 22);
 
     // register an executor
-    test_info.new_executor("anyone", Some(22), Some(1));
+    test_info.new_executor("anyone", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -28,7 +28,7 @@ fn cannot_commit_if_not_staked() {
 #[should_panic(expected = "DataRequestExpired(11, \"commit\")")]
 fn cannot_commit_if_timed_out() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -49,7 +49,7 @@ fn cannot_commit_on_expired_dr() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
@@ -79,7 +79,7 @@ fn cannot_commit_if_not_enough_staked() {
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
     // post a data request
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
@@ -92,9 +92,9 @@ fn cannot_commit_if_not_enough_staked() {
 #[test]
 fn commit_result() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
-    test_info.new_executor("bob", Some(2), Some(1));
-    test_info.new_executor("claire", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
+    test_info.new_executor("bob", 2, 1);
+    test_info.new_executor("claire", 2, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
@@ -120,7 +120,7 @@ fn commits_meet_replication_factor() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
@@ -140,8 +140,8 @@ fn commits_meet_replication_factor() {
 #[should_panic(expected = "AlreadyCommitted")]
 fn cannot_double_commit() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
-    test_info.new_executor("bob", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
+    test_info.new_executor("bob", 2, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
@@ -166,7 +166,7 @@ fn cannot_commit_after_replication_factor_reached() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr, vec![], vec![], 1, None)
@@ -176,7 +176,7 @@ fn cannot_commit_after_replication_factor_reached() {
     test_info.commit_result(&anyone, &dr_id, "0xcommitment".hash()).unwrap();
 
     // commit again as a different user
-    let new = test_info.new_executor("new", Some(2), Some(1));
+    let new = test_info.new_executor("new", 2, 1);
     test_info.commit_result(&new, &dr_id, "0xcommitment".hash()).unwrap();
 }
 
@@ -186,7 +186,7 @@ fn commits_wrong_signature_fails() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut anyone, dr, vec![], vec![], 9, None)

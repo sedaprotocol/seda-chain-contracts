@@ -76,25 +76,63 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn new_executor(&mut self, name: &'static str, balance: Option<u128>, stake: Option<u128>) -> TestExecutor {
+    pub fn new_account(&mut self, name: &'static str, balance: u128) -> TestExecutor {
+        let addr = self.new_address(name);
+        let executor = TestExecutor::new(name, addr);
+        self.executors.insert(name, executor);
+        let executor = self.executor(name).clone();
+
+        self.app.init_modules(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &executor.addr, coins(balance, "aseda"))
+                .unwrap();
+        });
+
+        executor
+    }
+
+    #[track_caller]
+    pub fn new_executor(&mut self, name: &'static str, balance: u128, stake: u128) -> TestExecutor {
         let addr = self.new_address(name);
         let executor = TestExecutor::new(name, addr);
         self.executors.insert(name, executor);
         let mut executor = self.executor(name).clone();
 
-        if let Some(amount) = balance {
-            self.app.init_modules(|router, _api, storage| {
-                router
-                    .bank
-                    .init_balance(storage, &executor.addr, coins(amount, "aseda"))
-                    .unwrap();
-            });
-        }
+        self.app.init_modules(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &executor.addr, coins(balance, "aseda"))
+                .unwrap();
+        });
 
         // stake if provided
-        if let Some(stake) = stake {
-            executor.stake(self, stake).unwrap();
-        }
+        executor.stake(self, stake).unwrap();
+        executor
+    }
+
+    #[track_caller]
+    pub fn new_executor_with_memo(
+        &mut self,
+        name: &'static str,
+        balance: u128,
+        stake: u128,
+        memo: &'static str,
+    ) -> TestExecutor {
+        let addr = self.new_address(name);
+        let executor = TestExecutor::new(name, addr);
+        self.executors.insert(name, executor);
+        let mut executor = self.executor(name).clone();
+
+        self.app.init_modules(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &executor.addr, coins(balance, "aseda"))
+                .unwrap();
+        });
+
+        // stake if provided
+        executor.stake_with_memo(self, stake, memo).unwrap();
         executor
     }
 
@@ -279,7 +317,17 @@ impl TestExecutor {
     }
 
     pub fn stake(&mut self, test_info: &mut TestInfo, amount: u128) -> Result<(), ContractError> {
-        test_info.stake(self, None, amount)?;
+        test_info.stake(self, amount)?;
+        Ok(())
+    }
+
+    pub fn stake_with_memo(
+        &mut self,
+        test_info: &mut TestInfo,
+        amount: u128,
+        memo: &'static str,
+    ) -> Result<(), ContractError> {
+        test_info.stake_with_memo(self, amount, memo)?;
         Ok(())
     }
 

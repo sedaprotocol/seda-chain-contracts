@@ -8,8 +8,8 @@ use crate::{msgs::data_requests::test_helpers, new_public_key, TestInfo};
 #[test]
 fn reveal_result() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
-    let mut bob = test_info.new_executor("bob", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
+    let bob = test_info.new_executor("bob", 2, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
@@ -37,7 +37,6 @@ fn reveal_result() {
     );
 
     // bob also commits
-    bob.stake(&mut test_info, 1).unwrap();
     let bob_reveal = RevealBody {
         id:                dr_id.clone(),
         salt:              alice.salt(),
@@ -64,7 +63,7 @@ fn reveal_result() {
 #[test]
 fn reveal_result_with_proxies() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -102,7 +101,7 @@ fn reveal_result_with_proxies() {
 #[should_panic(expected = "InvalidHexCharacter")]
 fn reveal_result_with_proxies_not_valid_public_keys() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -135,7 +134,7 @@ fn reveal_result_with_proxies_not_valid_public_keys() {
 #[should_panic(expected = "RevealMismatch")]
 fn reveal_result_reveal_body_missing_proxies() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -169,8 +168,8 @@ fn reveal_result_reveal_body_missing_proxies() {
 #[should_panic(expected = "RevealNotStarted")]
 fn cannot_reveal_if_commit_rf_not_met() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
-    let bob = test_info.new_executor("bob", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
+    let bob = test_info.new_executor("bob", 2, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
@@ -205,7 +204,7 @@ fn cannot_reveal_if_commit_rf_not_met() {
 #[should_panic(expected = "DataRequestExpired(11, \"reveal\")")]
 fn cannot_reveal_if_timed_out() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -237,7 +236,7 @@ fn cannot_reveal_if_timed_out() {
 #[should_panic(expected = "not found")]
 fn cannot_reveal_on_expired_dr() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -274,7 +273,7 @@ fn cannot_reveal_if_user_did_not_commit() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
@@ -294,7 +293,7 @@ fn cannot_reveal_if_user_did_not_commit() {
         .unwrap();
 
     // bob also commits
-    let bob = test_info.new_executor("bob", Some(2), Some(1));
+    let bob = test_info.new_executor("bob", 2, 1);
     let bob_reveal = RevealBody {
         id:                dr_id.clone(),
         salt:              alice.salt(),
@@ -317,8 +316,8 @@ fn cannot_reveal_if_user_did_not_commit() {
 #[should_panic(expected = "AlreadyRevealed")]
 fn cannot_double_reveal() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
-    let bob = test_info.new_executor("bob", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
+    let bob = test_info.new_executor("bob", 2, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
@@ -363,8 +362,8 @@ fn cannot_double_reveal() {
 #[should_panic(expected = "RevealMismatch")]
 fn reveal_must_match_commitment() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
-    let bob = test_info.new_executor("bob", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
+    let bob = test_info.new_executor("bob", 2, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 2);
@@ -424,7 +423,7 @@ fn reveal_must_match_commitment() {
 #[test]
 fn can_reveal_after_unstaking() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);

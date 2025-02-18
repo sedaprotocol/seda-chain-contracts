@@ -11,7 +11,7 @@ use crate::{
 #[test]
 fn post_data_request() {
     let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(52), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 52, 1);
 
     // data request... does not yet exist
     let value = test_info.get_data_request("673842e9aaa751cb7430630a8706b6d8e6280f3ab8d06cb45c44d57738988236");
@@ -54,7 +54,7 @@ fn post_data_request() {
 #[should_panic(expected = "InsufficientFunds")]
 fn post_dr_with_not_enough_funds_fails() {
     let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
 
     // post a data request
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -67,7 +67,7 @@ fn post_dr_with_not_enough_funds_fails() {
 #[test]
 fn post_dr_with_max_gas_limits() {
     let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(u128::MAX), Some(1));
+    let mut anyone = test_info.new_executor("anyone", u128::MAX, 1);
 
     // post a data request
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -90,8 +90,8 @@ fn post_dr_with_max_gas_limits() {
 #[test]
 fn post_data_request_replication_factor_too_high() {
     let mut test_info = TestInfo::init();
-    let mut sender = test_info.new_executor("sender", Some(42), None);
-    test_info.new_executor("alice", Some(2), Some(1));
+    let mut sender = test_info.new_account("sender", 42);
+    test_info.new_executor("alice", 2, 1);
 
     // post a data request with rf=1
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -109,7 +109,7 @@ fn post_data_request_replication_factor_too_high() {
 #[should_panic(expected = "DataRequestReplicationFactorZero")]
 fn post_data_request_replication_factor_zero() {
     let mut test_info = TestInfo::init();
-    let mut sender = test_info.new_executor("sender", Some(22), None);
+    let mut sender = test_info.new_account("sender", 22);
 
     // post a data request with rf=0
     let dr = test_helpers::calculate_dr_id_and_args(1, 0);

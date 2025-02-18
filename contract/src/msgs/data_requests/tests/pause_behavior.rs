@@ -8,7 +8,7 @@ use crate::TestInfo;
 #[test]
 pub fn paused_contract_returns_pause_property_dr_query_by_status() {
     let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
 
     // post a data request
     let dr = crate::msgs::data_requests::test_helpers::calculate_dr_id_and_args(1, 1);
@@ -34,7 +34,7 @@ pub fn paused_contract_returns_pause_property_dr_query_by_status() {
 #[test]
 pub fn execute_messages_get_paused() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(1000), Some(1));
+    let mut alice = test_info.new_executor("alice", 1000, 1);
 
     // post a data request we can commit on
     let dr = crate::msgs::data_requests::test_helpers::calculate_dr_id_and_args(1, 1);

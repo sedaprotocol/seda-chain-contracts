@@ -16,12 +16,12 @@ fn remove_data_request() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
         .unwrap();
-    let executor = test_info.new_executor("exec", Some(51), Some(1));
+    let executor = test_info.new_executor("exec", 51, 1);
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -42,7 +42,7 @@ fn remove_data_request() {
     // invalid identities and address are burned
     // non staked executor is not rewarded
     // remainder refunds to alice
-    let bob = test_info.new_executor("bob", Some(2), None);
+    let bob = test_info.new_account("bob", 2);
     test_info
         .remove_data_request(
             dr_id,
@@ -85,12 +85,12 @@ fn remove_data_request_retains_order() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
         .unwrap();
-    let executor = test_info.new_executor("exec", Some(51), Some(1));
+    let executor = test_info.new_executor("exec", 51, 1);
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -133,7 +133,7 @@ fn remove_data_requests() {
     let mut test_info = TestInfo::init();
 
     // post data request 1
-    let mut alice = test_info.new_executor("alice", Some(42), Some(1));
+    let mut alice = test_info.new_executor("alice", 42, 1);
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id1 = test_info
         .post_data_request(&mut alice, dr1, vec![], vec![], 1, None)
@@ -222,7 +222,7 @@ fn remove_data_request_runs_out_of_funds() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", Some(22), Some(1));
+    let mut alice = test_info.new_executor("alice", 22, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info
         .post_data_request(&mut alice, dr, vec![], vec![], 1, None)
@@ -264,7 +264,7 @@ fn remove_data_request_with_more_drs_in_the_pool() {
     let mut test_info = TestInfo::init();
 
     // post 2 drs
-    let mut alice = test_info.new_executor("alice", Some(42), Some(1));
+    let mut alice = test_info.new_executor("alice", 42, 1);
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
     let dr_id1 = test_info
@@ -382,9 +382,9 @@ fn unstake_before_dr_removal_rewards_staker() {
     let mut test_info = TestInfo::init();
 
     // post a data request
-    let mut alice = test_info.new_executor("alice", Some(22), None);
+    let mut alice = test_info.new_account("alice", 22);
 
-    let mut bob = test_info.new_executor("bob", Some(22), Some(1));
+    let mut bob = test_info.new_executor("bob", 22, 1);
 
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = test_info

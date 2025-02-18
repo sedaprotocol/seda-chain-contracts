@@ -21,7 +21,7 @@ fn query_drs_by_status_has_none() {
 #[test]
 fn query_drs_by_status_has_one() {
     let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(22), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 22, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -38,9 +38,9 @@ fn query_drs_by_status_has_one() {
 #[test]
 fn query_drs_by_status_limit_works() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(62), Some(1));
-    test_info.new_executor("bob", Some(2), Some(1));
-    test_info.new_executor("claire", Some(2), Some(1));
+    let mut alice = test_info.new_executor("alice", 62, 1);
+    test_info.new_executor("bob", 2, 1);
+    test_info.new_executor("claire", 2, 1);
 
     // post a data request
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
@@ -68,7 +68,7 @@ fn query_drs_by_status_limit_works() {
 #[test]
 fn query_drs_by_status_offset_works() {
     let mut test_info = TestInfo::init();
-    let mut anyone = test_info.new_executor("anyone", Some(62), Some(1));
+    let mut anyone = test_info.new_executor("anyone", 62, 1);
 
     // post a data request
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
@@ -97,7 +97,7 @@ fn query_drs_by_status_offset_works() {
 fn get_data_requests_by_status_with_more_drs_in_pool() {
     let mut test_info = TestInfo::init();
 
-    let mut alice = test_info.new_executor("alice", Some(2 + 25 * 20), Some(1));
+    let mut alice = test_info.new_executor("alice", 2 + 25 * 20, 1);
 
     for i in 0..25 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
@@ -152,7 +152,7 @@ fn get_data_requests_by_status_with_many_more_drs_in_pool() {
     let mut test_info = TestInfo::init();
 
     // This test posts 163 data requests
-    let mut alice = test_info.new_executor("alice", Some(2 + 163 * 20), Some(1));
+    let mut alice = test_info.new_executor("alice", 2 + 163 * 20, 1);
 
     for i in 0..100 {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);

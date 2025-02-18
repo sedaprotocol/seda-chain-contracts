@@ -29,14 +29,14 @@ fn only_owner_can_change_timeout_config() {
         reveal_timeout_in_blocks: 1,
     };
 
-    let alice = test_info.new_executor("alice", Some(2), None);
+    let alice = test_info.new_account("alice", 2);
     test_info.set_timeout_config(&alice, timeout_config).unwrap();
 }
 
 #[test]
 fn timed_out_requests_move_to_tally() {
     let mut test_info = TestInfo::init();
-    let mut alice = test_info.new_executor("alice", Some(42), Some(1));
+    let mut alice = test_info.new_executor("alice", 42, 1);
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);

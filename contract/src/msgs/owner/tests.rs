@@ -24,7 +24,7 @@ fn non_owner_cannot_transfer_ownership() {
     let mut test_info = TestInfo::init();
 
     // non-owner cannot transfer ownership
-    let non_owner = test_info.new_executor("non-owner", Some(2), None);
+    let non_owner = test_info.new_account("non-owner", 2);
     let res = test_info.transfer_ownership(&non_owner, &non_owner);
     assert!(res.is_err_and(|x| x == ContractError::NotOwner));
 }
@@ -34,7 +34,7 @@ fn two_step_transfer_ownership() {
     let mut test_info = TestInfo::init();
 
     // new-owner cannot accept ownership without a transfer
-    let new_owner = test_info.new_executor("new-owner", Some(2), None);
+    let new_owner = test_info.new_account("new-owner", 2);
     let res = test_info.accept_ownership(&new_owner);
     assert!(res.is_err_and(|x| x == ContractError::NoPendingOwnerFound),);
 
@@ -68,13 +68,13 @@ fn non_transferee_cannont_accept_ownership() {
     let mut test_info = TestInfo::init();
 
     // new-owner cannot accept ownership without a transfer
-    let new_owner = test_info.new_executor("new-owner", Some(2), None);
+    let new_owner = test_info.new_account("new-owner", 2);
 
     // owner initiates transfering ownership
     test_info.transfer_ownership(&test_info.creator(), &new_owner).unwrap();
 
     // non-owner accepts ownership
-    let non_owner = test_info.new_executor("non-owner", Some(2), None);
+    let non_owner = test_info.new_account("non-owner", 2);
     let res = test_info.accept_ownership(&non_owner);
     assert!(res.is_err_and(|x| x == ContractError::NotPendingOwner));
 }
@@ -92,8 +92,8 @@ fn allowlist_works() {
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
     // alice tries to register a data request executor, but she's not on the allowlist
-    let mut alice = test_info.new_executor("alice", Some(100), None);
-    let res = test_info.stake(&mut alice, None, 10);
+    let mut alice = test_info.new_account("alice", 100);
+    let res = test_info.stake(&mut alice, 10);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
     // add alice to the allowlist
@@ -102,7 +102,7 @@ fn allowlist_works() {
         .unwrap();
 
     // now alice can register a data request executor
-    test_info.stake(&mut alice, None, 10).unwrap();
+    test_info.stake(&mut alice, 10).unwrap();
 
     // alice unstakes, withdraws, then unregisters herself
     test_info.unstake(&alice, 10).unwrap();
@@ -115,7 +115,7 @@ fn allowlist_works() {
         .unwrap();
 
     // now alice can't register a data request executor
-    let res = test_info.stake(&mut alice, None, 2);
+    let res = test_info.stake(&mut alice, 2);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));
 
     // update the config to disable the allowlist
@@ -127,7 +127,7 @@ fn allowlist_works() {
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
 
     // now alice can register a data request executor
-    test_info.stake(&mut alice, None, 100).unwrap();
+    test_info.stake(&mut alice, 100).unwrap();
 }
 
 #[test]
@@ -151,8 +151,8 @@ fn pause_works() {
         .is_ok());
 
     // execute messages are paused
-    let mut alice = test_info.new_executor("alice", Some(100), None);
-    assert!(test_info.stake(&mut alice, None, 10).is_err());
+    let mut alice = test_info.new_account("alice", 100);
+    assert!(test_info.stake(&mut alice, 10).is_err());
 
     // unpause the contract
     test_info.unpause(&test_info.creator()).unwrap();
@@ -174,7 +174,7 @@ fn removing_from_allowlist_unstakes() {
         allowlist_enabled:                       true,
     };
     test_info.set_staking_config(&test_info.creator(), new_config).unwrap();
-    let mut alice = test_info.new_executor("alice", Some(100), None);
+    let mut alice = test_info.new_account("alice", 100);
 
     // add alice to the allowlist
     test_info
@@ -182,7 +182,7 @@ fn removing_from_allowlist_unstakes() {
         .unwrap();
 
     // now alice can register a data request executor
-    test_info.stake(&mut alice, None, 10).unwrap();
+    test_info.stake(&mut alice, 10).unwrap();
 
     // remove alice from the allowlist
     test_info
