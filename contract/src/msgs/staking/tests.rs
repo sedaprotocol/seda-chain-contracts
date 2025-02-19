@@ -475,3 +475,142 @@ fn minimum_stake_for_committee_eligibility_cannot_be_zero() {
     let res = test_info.creator().set_staking_config(new_config);
     assert!(res.is_err_and(|x| x == ContractError::ZeroMinimumStakeForCommitteeEligibility));
 }
+
+#[test]
+fn query_paginated_executors_works() {
+    let test_info = TestInfo::init();
+    let alice_memo = "foo";
+    let alice_memo_staker_value = Some(alice_memo.as_bytes().into());
+    let alice = test_info.new_executor_with_memo("alice", 10, 1, alice_memo);
+
+    // Alice is the only executor
+    let response = alice.query_executors(0, 10);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 1);
+    assert_eq!(executors[0].memo, alice_memo_staker_value);
+
+    // Add more executors
+    let bob_memo = "bar";
+    let bob_memo_staker_value = Some(bob_memo.as_bytes().into());
+    let charlie_memo = "baz";
+    let charlie_memo_staker_value = Some(charlie_memo.as_bytes().into());
+    test_info.new_executor_with_memo("bob", 10, 1, bob_memo);
+    test_info.new_executor_with_memo("charlie", 10, 1, charlie_memo);
+
+    // Check Alice is still the first executor
+    // check the others in order
+    let response = alice.query_executors(0, 10);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 3);
+    assert_eq!(executors[0].memo, alice_memo_staker_value);
+    assert_eq!(executors[1].memo, bob_memo_staker_value);
+    assert_eq!(executors[2].memo, charlie_memo_staker_value);
+
+    // Check limit works
+    let response = alice.query_executors(0, 1);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 1);
+    assert_eq!(executors[0].memo, alice_memo_staker_value);
+
+    // Check offset works
+    let response = alice.query_executors(1, 10);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 2);
+    assert_eq!(executors[0].memo, bob_memo_staker_value);
+    assert_eq!(executors[1].memo, charlie_memo_staker_value);
+}
+
+#[test]
+fn query_paginated_executors_unstaking_all_funds() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_executor("alice", 10, 1);
+
+    let response = alice.query_executors(0, 10);
+    assert_eq!(response.executors.len(), 1);
+
+    // Unstaking doesn't remove them from the StakersMap
+    alice.unstake(1).unwrap();
+
+    let response = alice.query_executors(0, 10);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 1);
+    assert_eq!(executors[0].tokens_staked, Uint128::new(0));
+}
+
+#[test]
+fn query_paginated_executors_removed_from_allowlist() {
+    let test_info = TestInfo::init();
+
+    // enable allowlist
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               1u8.into(),
+        minimum_stake_for_committee_eligibility: 1u8.into(),
+        allowlist_enabled:                       true,
+    };
+    test_info.creator().set_staking_config(new_config).unwrap();
+
+    let alice = test_info.new_account("alice", 10);
+    test_info.creator().add_to_allowlist(alice.pub_key()).unwrap();
+    alice.stake(1).unwrap();
+
+    // Alice is the only executor
+    let response = alice.query_executors(0, 10);
+    assert_eq!(response.executors.len(), 1);
+
+    // Remove from allowlist
+    // They are still in the StakersMap till they withdraw
+    test_info.creator().remove_from_allowlist(alice.pub_key()).unwrap();
+    let response = alice.query_executors(0, 10);
+    assert_eq!(response.executors.len(), 1);
+
+    // Withdrawing all funds removes them from the StakersMap
+    alice.withdraw(1).unwrap();
+    let response = alice.query_executors(0, 10);
+    assert_eq!(response.executors.len(), 0);
+}
+
+#[test]
+fn query_paginated_executors_swap_removal() {
+    let test_info = TestInfo::init();
+
+    let new_config = StakingConfig {
+        minimum_stake_to_register:               1u8.into(),
+        minimum_stake_for_committee_eligibility: 1u8.into(),
+        allowlist_enabled:                       true,
+    };
+    test_info.creator().set_staking_config(new_config).unwrap();
+
+    let alice = test_info.new_account("alice", 10);
+    test_info.creator().add_to_allowlist(alice.pub_key()).unwrap();
+    let bob = test_info.new_account("bob", 10);
+    test_info.creator().add_to_allowlist(bob.pub_key()).unwrap();
+    let charlie = test_info.new_account("charlie", 10);
+    test_info.creator().add_to_allowlist(charlie.pub_key()).unwrap();
+
+    let alice_memo = "foo";
+    let alice_memo_staker_value = Some(alice_memo.as_bytes().into());
+    let bob_memo = "bar";
+    let bob_memo_staker_value = Some(bob_memo.as_bytes().into());
+    let charlie_memo = "baz";
+    let charlie_memo_staker_value = Some(charlie_memo.as_bytes().into());
+
+    alice.stake_with_memo(1, alice_memo).unwrap();
+    bob.stake_with_memo(1, bob_memo).unwrap();
+    charlie.stake_with_memo(1, charlie_memo).unwrap();
+
+    let response = alice.query_executors(0, 10);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 3);
+    assert_eq!(executors[0].memo, alice_memo_staker_value);
+    assert_eq!(executors[1].memo, bob_memo_staker_value);
+    assert_eq!(executors[2].memo, charlie_memo_staker_value);
+
+    test_info.creator().remove_from_allowlist(alice.pub_key()).unwrap();
+    alice.withdraw(1).unwrap();
+
+    let response = alice.query_executors(0, 10);
+    let executors = response.executors;
+    assert_eq!(executors.len(), 2);
+    assert_eq!(executors[0].memo, charlie_memo_staker_value);
+    assert_eq!(executors[1].memo, bob_memo_staker_value);
+}
