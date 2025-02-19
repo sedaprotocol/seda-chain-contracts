@@ -43,3 +43,12 @@ pub struct StakerAndSeq {
     pub staker: Option<Staker>,
     pub seq:    U128,
 }
+
+#[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
+#[cfg_attr(
+    not(feature = "cosmwasm"),
+    derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
+)]
+pub struct GetExecutorsResponse {
+    pub executors: Vec<Staker>,
+}

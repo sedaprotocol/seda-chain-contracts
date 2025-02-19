@@ -1,3 +1,5 @@
+use seda_common::msgs::staking::GetExecutorsResponse;
+
 use super::{
     msgs::staking::{execute, query},
     *,
@@ -170,6 +172,13 @@ impl TestAccount {
             .query(query::QueryMsg::GetAccountSeq {
                 public_key: self.pub_key_hex(),
             })
+            .unwrap()
+    }
+
+    #[track_caller]
+    pub fn query_executors(&self, offset: u32, limit: u32) -> GetExecutorsResponse {
+        self.test_info
+            .query(query::QueryMsg::GetExecutors { offset, limit })
             .unwrap()
     }
 }

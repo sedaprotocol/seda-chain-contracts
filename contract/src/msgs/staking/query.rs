@@ -1,5 +1,6 @@
+use cw_storage_plus::Bound;
 pub use seda_common::msgs::staking::query::{is_executor_eligible, QueryMsg};
-use seda_common::msgs::staking::StakerAndSeq;
+use seda_common::msgs::staking::{GetExecutorsResponse, StakerAndSeq};
 use state::{is_eligible_for_dr::is_eligible_for_dr, STAKERS};
 
 use super::*;
@@ -26,6 +27,19 @@ impl QueryHandler for QueryMsg {
             }
             QueryMsg::IsExecutorEligible(query) => query.query(deps, env)?,
             QueryMsg::GetStakingConfig {} => to_json_binary(&state::STAKING_CONFIG.load(deps.storage)?)?,
+            QueryMsg::GetExecutors { offset, limit } => {
+                let start = Some(Bound::inclusive(offset));
+                let end = Some(Bound::exclusive(offset + limit));
+                let executors = STAKERS
+                    .public_keys
+                    .index_to_key
+                    .range(deps.storage, start, end, Order::Ascending)
+                    .map(|r| r.map(|(_, pub_key)| STAKERS.get_staker(deps.storage, &pub_key)))
+                    .collect::<StdResult<StdResult<Vec<_>>>>()??;
+
+                let response = GetExecutorsResponse { executors };
+                to_json_binary(&response)?
+            }
         };
 
         Ok(binary)

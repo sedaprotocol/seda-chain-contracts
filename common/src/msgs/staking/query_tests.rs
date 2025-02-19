@@ -152,3 +152,18 @@ fn is_executor_eligible_decode_correctly() {
     assert_eq!(dr_id, decoded_dr_id_hash);
     assert_eq!(proof, decoded_proof);
 }
+
+#[test]
+fn json_query_executors() {
+    let expected_json = json!({
+      "get_executors": {
+        "offset": 1,
+        "limit": 2
+      }
+    });
+    let msg: msgs::QueryMsg = StakingQueryMsg::GetExecutors { offset: 1, limit: 2 }.into();
+    #[cfg(not(feature = "cosmwasm"))]
+    assert_json_ser(msg, expected_json);
+    #[cfg(feature = "cosmwasm")]
+    assert_json_deser(msg, expected_json);
+}
