@@ -32,9 +32,13 @@ impl ExecuteHandler for execute::withdraw::Execute {
             state::STAKERS.update(deps.storage, public_key, &executor)?;
         }
 
-        // send the tokens back to the executor
+        // send the tokens back to the specified address
+        let addr = deps
+            .api
+            .addr_validate(&self.withdraw_address)
+            .map_err(|_| ContractError::InvalidAddress(self.withdraw_address))?;
         let bank_msg = BankMsg::Send {
-            to_address: info.sender.to_string(),
+            to_address: addr.to_string(),
             amount:     coins(self.amount.u128(), token),
         };
 

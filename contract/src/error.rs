@@ -29,6 +29,8 @@ pub enum ContractError {
     NotOnAllowlist,
 
     // DR contract errors
+    #[error("InvalidAddress: Invalid address: {0}")]
+    InvalidAddress(String),
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(Uint128, Uint128),
     #[error("DataRequestAlreadyExists: Data request already exists")]

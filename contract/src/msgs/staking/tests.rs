@@ -475,3 +475,58 @@ fn minimum_stake_for_committee_eligibility_cannot_be_zero() {
     let res = test_info.creator().set_staking_config(new_config);
     assert!(res.is_err_and(|x| x == ContractError::ZeroMinimumStakeForCommitteeEligibility));
 }
+
+#[test]
+fn cannot_frontrun_withdraw() {
+    let test_info = TestInfo::init();
+
+    // register a data request executor
+    let alice = test_info.new_executor("alice", 100u128, 10);
+    let fred = test_info.new_executor("fred", 100u128, 1);
+
+    // alice unstakes 5 tokens
+    alice.unstake(5).unwrap();
+
+    // verify alice has 5 tokens pending withdrawal
+    let staker = alice.get_staker_info().unwrap();
+    assert_eq!(staker.tokens_pending_withdrawal.u128(), 5);
+
+    // alice produces the withdraw message
+    let seq = alice.get_account_sequence();
+    let factory = msgs::staking::execute::withdraw::Execute::factory(
+        alice.pub_key_hex(),
+        5,
+        alice.addr().to_string(),
+        test_info.chain_id(),
+        test_info.contract_addr_str(),
+        seq,
+    );
+    let proof = alice.prove(factory.get_hash());
+    let msg = factory.create_message(proof);
+
+    // fred frontruns alice's withdraw
+    test_info.execute::<()>(&fred, &msg).unwrap();
+
+    // verify alice has 0 tokens pending withdrawal
+    let staker = alice.get_staker_info().unwrap();
+    assert_eq!(staker.tokens_pending_withdrawal.u128(), 0);
+
+    // fred should still have 99 aseda in their balance (100 [original] - 1 [staked])
+    let balance_fred = test_info.executor_balance("fred");
+    assert_eq!(99u128, balance_fred);
+
+    // alice should have 95 aseda in their balance (100 [original] - 10 [staked] + 5 [withdraw])
+    let balance_alice = test_info.executor_balance("alice");
+    assert_eq!(95u128, balance_alice);
+}
+
+#[test]
+#[should_panic(expected = "InvalidAddress")]
+fn withdraw_to_invalid_address() {
+    let test_info = TestInfo::init();
+
+    let alice = test_info.new_executor("alice", 100u128, 10);
+    alice.unstake(10).unwrap();
+
+    alice.withdraw_to(10, "not-an-address".to_string()).unwrap();
+}

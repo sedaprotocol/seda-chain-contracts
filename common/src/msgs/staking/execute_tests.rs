@@ -81,12 +81,14 @@ fn json_withdraw() {
         "proof": "proof",
         "public_key": "public",
         "amount": amount.to_string(),
+        "withdraw_address": "withdraw_address",
       }
     });
     let msg: msgs::ExecuteMsg = withdraw::Execute {
         public_key: "public".to_string(),
         proof: "proof".to_string(),
         amount,
+        withdraw_address: "withdraw_address".to_string(),
     }
     .into();
     #[cfg(not(feature = "cosmwasm"))]

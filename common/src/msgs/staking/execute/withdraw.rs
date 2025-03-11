@@ -4,16 +4,24 @@ use crate::{crypto::hash, error::Result, types::*};
 #[cfg_attr(not(feature = "cosmwasm"), derive(serde::Serialize, PartialEq, Debug))]
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct Execute {
-    pub public_key: String,
-    pub proof:      String,
-    pub amount:     U128,
+    pub public_key:       String,
+    pub proof:            String,
+    pub amount:           U128,
+    pub withdraw_address: String,
 }
 
 impl Execute {
-    fn generate_hash(amount: U128, chain_id: &str, contract_addr: &str, sequence: U128) -> Hash {
+    fn generate_hash(
+        amount: U128,
+        withdraw_address: &str,
+        chain_id: &str,
+        contract_addr: &str,
+        sequence: U128,
+    ) -> Hash {
         hash([
             "withdraw".as_bytes(),
             &amount.to_be_bytes(),
+            withdraw_address.as_bytes(),
             chain_id.as_bytes(),
             contract_addr.as_bytes(),
             &sequence.to_be_bytes(),
@@ -32,6 +40,7 @@ impl VerifySelf for Execute {
         Ok(hash([
             "withdraw".as_bytes(),
             &self.amount.to_be_bytes(),
+            self.withdraw_address.as_bytes(),
             chain_id.as_bytes(),
             contract_addr.as_bytes(),
             &sequence.to_be_bytes(),
@@ -40,9 +49,10 @@ impl VerifySelf for Execute {
 }
 
 pub struct ExecuteFactory {
-    public_key: String,
-    amount:     U128,
-    hash:       Hash,
+    public_key:       String,
+    amount:           U128,
+    hash:             Hash,
+    withdraw_address: String,
 }
 
 impl ExecuteFactory {
@@ -52,9 +62,10 @@ impl ExecuteFactory {
 
     pub fn create_message(self, proof: Vec<u8>) -> crate::msgs::ExecuteMsg {
         Execute {
-            public_key: self.public_key,
-            proof:      proof.to_hex(),
-            amount:     self.amount,
+            public_key:       self.public_key,
+            proof:            proof.to_hex(),
+            amount:           self.amount,
+            withdraw_address: self.withdraw_address,
         }
         .into()
     }
@@ -64,16 +75,18 @@ impl Execute {
     pub fn factory(
         public_key: String,
         amount: u128,
+        withdraw_address: String,
         chain_id: &str,
         contract_addr: &str,
         sequence: U128,
     ) -> ExecuteFactory {
         let amount = amount.into();
-        let hash = Self::generate_hash(amount, chain_id, contract_addr, sequence);
+        let hash = Self::generate_hash(amount, &withdraw_address, chain_id, contract_addr, sequence);
         ExecuteFactory {
             public_key,
             amount,
             hash,
+            withdraw_address,
         }
     }
 
