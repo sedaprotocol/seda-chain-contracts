@@ -53,6 +53,53 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     }
 }
 
+pub fn calculate_dr_id_and_args_with_prices(
+    nonce: u128,
+    replication_factor: u16,
+    gas_price: u128,
+    exec_gas_limit: u64,
+    tally_gas_limit: u64,
+) -> PostDataRequestArgs {
+    let exec_program_id = nonce.to_string().hash().to_hex();
+    let tally_program_id = "tally_program_id".hash().to_hex();
+    let exec_inputs = "exec_inputs".as_bytes().into();
+    let tally_inputs = "tally_inputs".as_bytes().into();
+
+    // set by dr creator
+    let gas_price = gas_price.into();
+
+    // memo
+    let chain_id: u128 = 31337;
+    let mut hasher = Keccak256::new();
+    hasher.update(chain_id.to_be_bytes());
+    hasher.update(nonce.to_be_bytes());
+    let memo = hasher.finalize();
+
+    let version = Version {
+        major: 0,
+        minor: 0,
+        patch: 1,
+        pre:   Prerelease::EMPTY,
+        build: BuildMetadata::EMPTY,
+    };
+
+    let consensus_filter = vec![0u8].into();
+
+    PostDataRequestArgs {
+        version,
+        exec_program_id,
+        exec_inputs,
+        exec_gas_limit,
+        tally_program_id,
+        tally_inputs,
+        tally_gas_limit,
+        memo: memo.as_slice().into(),
+        replication_factor,
+        consensus_filter,
+        gas_price,
+    }
+}
+
 pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height: u64) -> DataRequest {
     let version = Version {
         major: 0,

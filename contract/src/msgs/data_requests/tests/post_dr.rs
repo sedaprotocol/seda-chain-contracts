@@ -108,3 +108,45 @@ fn fails_if_request_replication_factor_zero() {
         .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 }
+
+#[test]
+fn can_spam_post_cheap_drs() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_account("alice", 10_002);
+    // register an executor so drs can be posted
+    test_info.new_executor("executor", 100, 1);
+
+    // can post a dr with 0 gas price, 0 exec gas limit, 0 tally gas limit
+    // total cost = 0, but you have to attach at least 1 token(aseda)
+    let dr = test_helpers::calculate_dr_id_and_args_with_prices(0, 1, 0, 0, 0);
+    let res = alice.post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, Some(0));
+    assert!(res.is_err());
+    // We have to check this way since weirdness from Dbg error variant.
+    // TODO: We should improve how we handle these errors, so we can check for the more specific error.
+    assert!(res.unwrap_err().to_string().contains("Error executing WasmMsg"));
+    assert_eq!(test_info.executor_balance("alice"), 10_002);
+
+    // post a data request with gas price 1, exec gas limit 1, tally gas limit 1
+    // total cost = 2
+    let dr = test_helpers::calculate_dr_id_and_args_with_prices(1, 1, 1, 1, 1);
+    alice
+        .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, Some(2))
+        .unwrap();
+    assert_eq!(test_info.executor_balance("alice"), 10_000);
+
+    // can post a dr with 0 gas price, 0 exec gas limit, 0 tally gas limit
+    // total cost = 0, but you have to attach at least 1 token(aseda)
+    let dr = test_helpers::calculate_dr_id_and_args_with_prices(0, 1, 0, 0, 0);
+    alice
+        .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, Some(1))
+        .unwrap();
+    assert_eq!(test_info.executor_balance("alice"), 9_999);
+
+    for i in 1..1000 {
+        let dr = test_helpers::calculate_dr_id_and_args_with_prices(i, 1, 0, 0, 0);
+        alice
+            .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, Some(1))
+            .unwrap();
+    }
+    assert_eq!(test_info.executor_balance("alice"), 9_000);
+}
