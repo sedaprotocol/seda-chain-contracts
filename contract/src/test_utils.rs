@@ -12,10 +12,9 @@ use k256::{
 };
 use seda_common::{msgs::*, types::ToHexStr};
 use serde::{de::DeserializeOwned, Serialize};
-use sha3::{Digest, Keccak256};
 use vrf_rs::Secp256k1Sha256;
 
-use crate::{common_types::Hash, contract::*, error::ContractError, types::PublicKey};
+use crate::{contract::*, error::ContractError, types::PublicKey};
 
 pub fn new_public_key() -> (SigningKey, PublicKey) {
     let signing_key = SigningKey::random(&mut OsRng);
@@ -323,13 +322,6 @@ impl TestAccount {
 
     pub fn prove_hex(&self, hash: &[u8]) -> String {
         self.prove(hash).to_hex()
-    }
-
-    pub fn salt(&self) -> String {
-        let mut hasher = Keccak256::new();
-        hasher.update(self.name);
-        let hash: Hash = hasher.finalize().into();
-        hash.to_hex()
     }
 }
 

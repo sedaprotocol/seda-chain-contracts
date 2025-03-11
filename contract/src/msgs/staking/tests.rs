@@ -353,17 +353,18 @@ fn executor_not_eligible_if_dr_resolved() {
         .unwrap();
 
     let reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              anyone.salt(),
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
+    let anyone_reveal_message = anyone.create_reveal_message(reveal);
     // commit
-    anyone.commit_result(&dr_id, reveal.try_hash().unwrap()).unwrap();
+    anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
     // reveal
-    anyone.reveal_result(&dr_id, reveal.clone()).unwrap();
+    anyone.reveal_result(anyone_reveal_message).unwrap();
 
     // Owner removes the data request
     test_info

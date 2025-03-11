@@ -1,5 +1,8 @@
 use seda_common::{
-    msgs::{data_requests::DataRequestStatus, staking::StakingConfig},
+    msgs::{
+        data_requests::{DataRequestStatus, RevealBody},
+        staking::StakingConfig,
+    },
     types::HashSelf,
 };
 
@@ -19,7 +22,16 @@ fn fails_if_not_staked() {
     let dr_id = bob.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // commit a data result
-    bob.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let bob_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let bob_reveal_message = bob.create_reveal_message(bob_reveal);
+    bob.commit_result(&dr_id, &bob_reveal_message).unwrap();
 }
 
 #[test]
@@ -36,7 +48,16 @@ fn fails_if_timed_out() {
     test_info.set_block_height(11);
 
     // commit a data result
-    alice.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 }
 
 #[test]
@@ -55,7 +76,16 @@ fn fails_on_expired_dr() {
     test_info.creator().expire_data_requests().unwrap();
 
     // commit a data result
-    anyone.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let anyone_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let anyone_reveal_message = anyone.create_reveal_message(anyone_reveal);
+    anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
 }
 
 #[test]
@@ -78,7 +108,16 @@ fn fails_if_not_enough_staked() {
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // commit a data result
-    anyone.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let anyone_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let anyone_reveal_message = anyone.create_reveal_message(anyone_reveal);
+    anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
 }
 
 #[test]
@@ -92,12 +131,22 @@ fn works() {
     let dr = test_helpers::calculate_dr_id_and_args(1, 3);
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+
     // check if executor can commit
-    let query_result = alice.can_executor_commit(&dr_id, "0xcommitment".hash());
+    let query_result = alice.can_executor_commit(&dr_id, &alice_reveal_message);
     assert!(query_result, "executor should be able to commit");
 
     // commit a data result
-    alice.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
     // check if the data request is in the committing state before meeting the replication factor
     let commiting = alice.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
@@ -115,7 +164,16 @@ fn must_meet_replication_factor() {
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // commit a data result
-    anyone.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let anyone_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let anyone_reveal_message = anyone.create_reveal_message(anyone_reveal);
+    anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
 
     // check if the data request is in the revealing state after meeting the replication factor
     let revealing = anyone.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
@@ -136,14 +194,23 @@ fn fails_double_commit() {
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // commit a data result
-    alice.commit_result(&dr_id, "0xcommitment1".hash()).unwrap();
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
     // check if executor can commit, should be false
-    let query_result = alice.can_executor_commit(&dr_id, "0xcommitment2".hash());
+    let query_result = alice.can_executor_commit(&dr_id, &alice_reveal_message);
     assert!(!query_result, "executor should not be able to commit");
 
     // try to commit again as the same user
-    alice.commit_result(&dr_id, "0xcommitment2".hash()).unwrap();
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 }
 
 #[test]
@@ -157,11 +224,29 @@ fn fails_after_reveal_started() {
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // commit a data result
-    anyone.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let anyone_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let anyone_reveal_message = anyone.create_reveal_message(anyone_reveal);
+    anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
 
     // commit again as a different user
     let new = test_info.new_executor("new", 2, 1);
-    new.commit_result(&dr_id, "0xcommitment".hash()).unwrap();
+    let new_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let new_reveal_message = new.create_reveal_message(new_reveal);
+    new.commit_result(&dr_id, &new_reveal_message).unwrap();
 }
 
 #[test]
@@ -175,7 +260,16 @@ fn wrong_signature_fails() {
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 9, None).unwrap();
 
     // commit a data result
+    let anyone_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let anyone_reveal_message = anyone.create_reveal_message(anyone_reveal);
     anyone
-        .commit_result_wrong_height(&dr_id, "0xcommitment".hash())
+        .commit_result_wrong_height(&dr_id, anyone_reveal_message)
         .unwrap();
 }

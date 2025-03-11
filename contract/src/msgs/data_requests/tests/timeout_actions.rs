@@ -1,6 +1,6 @@
 use seda_common::{
     msgs::data_requests::{DataRequestStatus, RevealBody, TimeoutConfig},
-    types::{HashSelf, TryHashSelf},
+    types::HashSelf,
 };
 
 use crate::{msgs::data_requests::test_helpers, TestInfo};
@@ -52,14 +52,15 @@ fn timed_out_requests_move_to_tally() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        id:                dr_id2.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id2.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice.commit_result(&dr_id2, alice_reveal.try_hash().unwrap()).unwrap();
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id2, &alice_reveal_message).unwrap();
 
     // set the block height to be later than the timeout so it times out during the reveal phase
     test_info.set_block_height(21);

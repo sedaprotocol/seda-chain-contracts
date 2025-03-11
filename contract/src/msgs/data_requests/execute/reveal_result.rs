@@ -6,7 +6,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
     /// This removes the data request from the pool and creates a new entry in the data results.
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
-        let dr_id = Hash::from_hex_str(&self.dr_id)?;
+        let dr_id = Hash::from_hex_str(&self.reveal_body.dr_id)?;
         let mut dr = state::load_request(deps.storage, &dr_id)?;
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)
@@ -20,17 +20,8 @@ impl ExecuteHandler for execute::reveal_result::Execute {
             return Err(ContractError::DataRequestExpired(expires_at, "reveal"));
         }
 
-        // verify the proof
         let chain_id = CHAIN_ID.load(deps.storage)?;
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
-        let reveal_body_hash = self.reveal_body.try_hash()?;
-        self.verify(
-            public_key.as_ref(),
-            &chain_id,
-            env.contract.address.as_str(),
-            dr.height,
-            reveal_body_hash,
-        )?;
 
         // error if data request executor has not submitted a commitment
         let Some(committed_dr_result) = dr.get_commitment(&self.public_key) else {
@@ -43,20 +34,28 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         }
 
         // error if the commitment hash does not match the reveal
-        // it's cheaper to hex -> byte array than hash -> hex
-        if &reveal_body_hash != committed_dr_result {
+        let expected_commitment = self.try_hash()?;
+        if &expected_commitment != committed_dr_result {
             return Err(ContractError::RevealMismatch);
         }
 
         // check if the proxy_public_keys are valid
-        self.reveal_body.proxy_public_keys.iter().try_for_each(|proxy| {
+        for proxy in self.reveal_body.proxy_public_keys.iter() {
             PublicKey::from_hex_str(proxy)?;
-            Ok::<_, ContractError>(())
-        })?;
+        }
+
+        // verify the proof
+        let reveal_body_hash = self.reveal_body.try_hash()?;
+        self.verify(
+            public_key.as_ref(),
+            &chain_id,
+            env.contract.address.as_str(),
+            reveal_body_hash,
+        )?;
 
         let response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
-                ("dr_id", self.dr_id.clone()),
+                ("dr_id", self.reveal_body.dr_id.clone()),
                 ("posted_dr_height", dr.height.to_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
                 ("stdout", to_json_string(&self.stdout)?),

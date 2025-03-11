@@ -121,8 +121,8 @@ fn json_reveal_result() {
     let reveal: Bytes = "reveal".as_bytes().into();
 
     let reveal_body = RevealBody {
-        id: "dr_id".to_string(),
-        salt: "salt".to_string(),
+        dr_id: "dr_id".to_string(),
+        dr_block_height: 1,
         exit_code: 0,
         gas_used,
         reveal: reveal.clone(),
@@ -130,10 +130,9 @@ fn json_reveal_result() {
     };
     let expected_json = json!({
       "reveal_data_result": {
-        "dr_id": "dr_id",
         "reveal_body": {
-          "id": "dr_id",
-          "salt": "salt",
+          "dr_id": "dr_id",
+          "dr_block_height": 1,
           "exit_code": 0,
           "gas_used": gas_used,
           "reveal": reveal,
@@ -146,7 +145,6 @@ fn json_reveal_result() {
       }
     });
     let msg: msgs::ExecuteMsg = reveal_result::Execute {
-        dr_id: "dr_id".to_string(),
         reveal_body,
         public_key: "public_key".to_string(),
         proof: "proof".to_string(),

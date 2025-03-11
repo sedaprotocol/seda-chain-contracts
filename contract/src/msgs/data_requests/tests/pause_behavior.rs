@@ -1,6 +1,6 @@
 use seda_common::{
     msgs::data_requests::{DataRequestStatus, RevealBody, TimeoutConfig},
-    types::{HashSelf, TryHashSelf},
+    types::HashSelf,
 };
 
 use crate::TestInfo;
@@ -43,16 +43,15 @@ pub fn execute_messages_get_paused() {
     let dr_id_revealable = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
     // commit on it
     let alice_reveal = RevealBody {
-        id:                dr_id_revealable.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id_revealable.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice
-        .commit_result(&dr_id_revealable, alice_reveal.try_hash().unwrap())
-        .unwrap();
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id_revealable, &alice_reveal_message).unwrap();
 
     // pause the contract
     test_info.creator().pause().unwrap();
@@ -64,11 +63,11 @@ pub fn execute_messages_get_paused() {
     assert!(res.is_err_and(|e| e.to_string().contains("pause")));
 
     // try to commit a data result
-    let res = alice.commit_result(&dr_id_committable, alice_reveal.try_hash().unwrap());
+    let res = alice.commit_result(&dr_id_committable, &alice_reveal_message);
     assert!(res.is_err_and(|e| e.to_string().contains("pause")));
 
     // try to reveal a data result
-    let res = alice.reveal_result(&dr_id_revealable, alice_reveal.clone());
+    let res = alice.reveal_result(alice_reveal_message);
     assert!(res.is_err_and(|e| e.to_string().contains("pause")));
 
     // can still change the timeout config

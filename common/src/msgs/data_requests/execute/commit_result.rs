@@ -6,6 +6,7 @@ use crate::{error::Result, types::*};
 pub struct Execute {
     pub dr_id:      String,
     pub commitment: String,
+    /// A hash of the reveal message, not just the reveal body
     pub public_key: String,
     pub proof:      String,
 }

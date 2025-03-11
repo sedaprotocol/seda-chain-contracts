@@ -110,8 +110,8 @@ fn json_data_request() {
 
 #[test]
 fn json_reveal_body() {
-    let id = "id".to_string();
-    let salt = "salt".to_string();
+    let dr_id = "id".to_string();
+    let dr_block_height = 1;
     let exit_code = 0;
     let gas_used = 1;
     #[cfg(not(feature = "cosmwasm"))]
@@ -121,8 +121,8 @@ fn json_reveal_body() {
     let proxy_public_keys = vec!["key1".to_string(), "key2".to_string()];
 
     let expected_json = json!({
-      "id": id,
-      "salt": salt,
+      "dr_id": dr_id,
+      "dr_block_height": dr_block_height,
       "exit_code": exit_code,
       "gas_used": gas_used,
       "reveal": reveal,
@@ -130,8 +130,8 @@ fn json_reveal_body() {
     });
 
     let msg = RevealBody {
-        id,
-        salt,
+        dr_id,
+        dr_block_height,
         exit_code,
         gas_used,
         reveal,

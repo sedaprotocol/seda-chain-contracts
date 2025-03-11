@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use msgs::data_requests::sudo::{expire_data_requests, DistributionMessage};
+use seda_common::msgs::data_requests::execute::reveal_result::Execute as RevealMessage;
 use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
@@ -120,9 +121,9 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn can_executor_commit(&self, dr_id: &str, commitment: Hash) -> bool {
+    pub fn can_executor_commit(&self, dr_id: &str, reveal_message: &RevealMessage) -> bool {
         let dr = self.get_data_request(dr_id).unwrap();
-        let commitment = commitment.to_hex();
+        let commitment = reveal_message.try_hash().unwrap().to_hex();
 
         let factory = execute::commit_result::Execute::factory(
             dr_id.to_string(),
@@ -145,9 +146,9 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn commit_result(&self, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
+    pub fn commit_result(&self, dr_id: &str, reveal_message: &RevealMessage) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
-        let commitment = commitment.to_hex();
+        let commitment = reveal_message.try_hash().unwrap().to_hex();
 
         let factory = execute::commit_result::Execute::factory(
             dr_id.to_string(),
@@ -164,9 +165,9 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn commit_result_wrong_height(&self, dr_id: &str, commitment: Hash) -> Result<(), ContractError> {
+    pub fn commit_result_wrong_height(&self, dr_id: &str, reveal_message: RevealMessage) -> Result<(), ContractError> {
         let dr = self.get_data_request(dr_id).unwrap();
-        let commitment = commitment.to_hex();
+        let commitment = reveal_message.try_hash().unwrap().to_hex();
 
         let factory = execute::commit_result::Execute::factory(
             dr_id.to_string(),
@@ -193,25 +194,25 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn reveal_result(&self, dr_id: &str, reveal_body: RevealBody) -> Result<(), ContractError> {
-        let dr = self.get_data_request(dr_id).unwrap();
-        let reveal_body_hash = reveal_body.try_hash()?;
+    pub fn create_reveal_message(&self, reveal_body: RevealBody) -> RevealMessage {
+        let reveal_body_hash = reveal_body.try_hash().unwrap();
 
         let factory = execute::reveal_result::Execute::factory(
-            dr_id.to_string(),
             reveal_body,
             self.pub_key_hex(),
             vec![],
             vec![],
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),
-            dr.height,
             reveal_body_hash,
         );
         let proof = self.prove(factory.get_hash());
-        let msg = factory.create_message(proof);
+        factory.create_message(proof)
+    }
 
-        self.test_info.execute(self, &msg)
+    #[track_caller]
+    pub fn reveal_result(&self, reveal_message: RevealMessage) -> Result<(), ContractError> {
+        self.test_info.execute(self, &reveal_message.into())
     }
 
     #[track_caller]

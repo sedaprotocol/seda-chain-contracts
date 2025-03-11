@@ -6,7 +6,7 @@ use seda_common::{
         DataRequestStatus,
         RevealBody,
     },
-    types::{HashSelf, TryHashSelf},
+    types::HashSelf,
 };
 
 use crate::{msgs::data_requests::test_helpers, TestInfo};
@@ -23,15 +23,16 @@ fn basic_workflow_works() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
-    alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
+    alice.reveal_result(alice_reveal_message).unwrap();
 
     // owner removes a data result
     // reward goes to executor
@@ -89,15 +90,16 @@ fn retains_order() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
-    alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
+    alice.reveal_result(alice_reveal_message).unwrap();
 
     // owner removes a data result
     // reward goes to executor
@@ -132,15 +134,16 @@ fn status_codes_work() {
 
     // alice commits data result 1
     let alice_reveal1 = RevealBody {
-        id:                dr_id1.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id1.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice.commit_result(&dr_id1, alice_reveal1.try_hash().unwrap()).unwrap();
-    alice.reveal_result(&dr_id1, alice_reveal1.clone()).unwrap();
+    let alice_reveal1_message = alice.create_reveal_message(alice_reveal1);
+    alice.commit_result(&dr_id1, &alice_reveal1_message).unwrap();
+    alice.reveal_result(alice_reveal1_message).unwrap();
 
     // post data request 2
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
@@ -148,15 +151,16 @@ fn status_codes_work() {
 
     // alice commits data result 2
     let alice_reveal2 = RevealBody {
-        id:                dr_id2.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id2.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice.commit_result(&dr_id2, alice_reveal2.try_hash().unwrap()).unwrap();
-    alice.reveal_result(&dr_id2, alice_reveal2.clone()).unwrap();
+    let alice_reveal2_message = alice.create_reveal_message(alice_reveal2);
+    alice.commit_result(&dr_id2, &alice_reveal2_message).unwrap();
+    alice.reveal_result(alice_reveal2_message).unwrap();
 
     // owner posts data results
     let mut to_remove = HashMap::new();
@@ -213,15 +217,16 @@ fn works_when_runs_out_of_funds() {
 
     // alice commits a data result
     let alice_reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              alice.salt(),
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
-    alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
+    alice.reveal_result(alice_reveal_message).unwrap();
 
     test_info
         .creator()
@@ -252,16 +257,24 @@ fn works_with_more_drs_in_the_pool() {
     let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
     let dr_id2 = alice.post_data_request(dr2, vec![], vec![], 1, None).unwrap();
 
-    // Same commits & reveals for all drs
-    let alice_reveal = RevealBody {
-        id:                dr_id1.clone(),
-        salt:              alice.salt(),
+    let alice_reveal1 = RevealBody {
+        dr_id:             dr_id1.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-
+    let alice_reveal1_message = alice.create_reveal_message(alice_reveal1);
+    let alice_reveal2 = RevealBody {
+        dr_id:             dr_id2.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal2_message = alice.create_reveal_message(alice_reveal2);
     assert_eq!(
         2,
         alice
@@ -270,8 +283,8 @@ fn works_with_more_drs_in_the_pool() {
             .len()
     );
     // Commit 2 drs
-    alice.commit_result(&dr_id1, alice_reveal.try_hash().unwrap()).unwrap();
-    alice.commit_result(&dr_id2, alice_reveal.try_hash().unwrap()).unwrap();
+    alice.commit_result(&dr_id1, &alice_reveal1_message).unwrap();
+    alice.commit_result(&dr_id2, &alice_reveal2_message).unwrap();
     assert_eq!(
         0,
         alice
@@ -288,7 +301,7 @@ fn works_with_more_drs_in_the_pool() {
     );
 
     // reveal first dr
-    alice.reveal_result(&dr_id1, alice_reveal.clone()).unwrap();
+    alice.reveal_result(alice_reveal1_message).unwrap();
     assert_eq!(
         1,
         alice
@@ -324,7 +337,7 @@ fn works_with_more_drs_in_the_pool() {
     );
 
     // Reveal the other dr
-    alice.reveal_result(&dr_id2, alice_reveal.clone()).unwrap();
+    alice.reveal_result(alice_reveal2_message).unwrap();
     let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
     assert!(!dr_to_be_tallied.is_paused);
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
@@ -365,15 +378,16 @@ fn unstake_before_dr_removal_still_rewards_staker() {
 
     // bob commits a data result
     let bob_reveal = RevealBody {
-        id:                dr_id.clone(),
-        salt:              bob.salt(),
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    bob.commit_result(&dr_id, bob_reveal.try_hash().unwrap()).unwrap();
-    bob.reveal_result(&dr_id, bob_reveal.clone()).unwrap();
+    let bob_reveal_message = bob.create_reveal_message(bob_reveal);
+    bob.commit_result(&dr_id, &bob_reveal_message).unwrap();
+    bob.reveal_result(bob_reveal_message).unwrap();
 
     // bob unstakes before the data request is removed
     bob.unstake(1).unwrap();

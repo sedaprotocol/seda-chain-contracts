@@ -4,7 +4,7 @@ use seda_common::{
         DataRequestStatus,
         RevealBody,
     },
-    types::{HashSelf, TryHashSelf},
+    types::HashSelf,
 };
 
 use crate::{msgs::data_requests::test_helpers, TestInfo};
@@ -90,20 +90,21 @@ fn works_with_more_drs_in_pool() {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
         let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
         let alice_reveal = RevealBody {
-            id:                dr_id.clone(),
-            salt:              alice.salt(),
+            dr_id:             dr_id.clone(),
+            dr_block_height:   1,
             reveal:            "10".hash().into(),
             gas_used:          0,
             exit_code:         0,
             proxy_public_keys: vec![],
         };
+        let alice_reveal_message = alice.create_reveal_message(alice_reveal);
 
         if i < 15 {
-            alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+            alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
         }
 
         if i < 3 {
-            alice.reveal_result(&dr_id, alice_reveal.clone()).unwrap();
+            alice.reveal_result(alice_reveal_message).unwrap();
         }
     }
 
@@ -141,16 +142,17 @@ fn works_with_many_more_drs_in_pool() {
         let dr = test_helpers::calculate_dr_id_and_args(i, 1);
         let dr_id = alice.post_data_request(dr.clone(), vec![], vec![], 1, None).unwrap();
         let alice_reveal = RevealBody {
-            id:                dr_id.clone(),
-            salt:              alice.salt(),
+            dr_id:             dr_id.clone(),
+            dr_block_height:   1,
             reveal:            "10".hash().into(),
             gas_used:          0,
             exit_code:         0,
             proxy_public_keys: vec![],
         };
+        let alice_reveal_message = alice.create_reveal_message(alice_reveal);
 
         if i % 2 == 0 {
-            alice.commit_result(&dr_id, alice_reveal.try_hash().unwrap()).unwrap();
+            alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
             alice.get_data_requests_by_status(DataRequestStatus::Committing, 0, 100);
 
@@ -188,15 +190,16 @@ fn works_with_many_more_drs_in_pool() {
     {
         if i % 4 == 0 {
             let alice_reveal = RevealBody {
-                id:                request.id.clone(),
-                salt:              alice.salt(),
+                dr_id:             request.id.clone(),
+                dr_block_height:   1,
                 reveal:            "10".hash().into(),
                 gas_used:          0,
                 exit_code:         0,
                 proxy_public_keys: vec![],
             };
+            let alice_reveal_message = alice.create_reveal_message(alice_reveal);
 
-            alice.reveal_result(&request.id, alice_reveal.clone()).unwrap();
+            alice.reveal_result(alice_reveal_message).unwrap();
 
             let dr = test_helpers::calculate_dr_id_and_args(i as u128 + 10000, 1);
             alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();

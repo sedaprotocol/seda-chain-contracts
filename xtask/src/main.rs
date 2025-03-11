@@ -138,12 +138,11 @@ fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
 
             let dr_id: [u8; 32] = rand::random();
             let hex_dr_id = dr_id.to_hex();
-            let salt: [u8; 32] = rand::random();
             let reveals = (0..replication_factor)
                 .map(|_| {
                     let reveal = RevealBody {
-                        id:                hex_dr_id.clone(),
-                        salt:              salt.to_hex(),
+                        dr_id:             hex_dr_id.clone(),
+                        dr_block_height:   1,
                         exit_code:         0,
                         gas_used:          10,
                         reveal:            rand::rng().random_range(1..=100u8).to_be_bytes().into(),
