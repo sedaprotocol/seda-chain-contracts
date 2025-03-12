@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cosmwasm_std::Uint128;
 use seda_common::{
     msgs::data_requests::{
         sudo::{DistributionBurn, DistributionDataProxyReward, DistributionExecutorReward, DistributionMessage},
@@ -9,20 +10,24 @@ use seda_common::{
     types::HashSelf,
 };
 
-use crate::{msgs::data_requests::test_helpers, TestInfo};
+use crate::{
+    msgs::data_requests::{consts::min_post_dr_cost, test_helpers},
+    seda_to_aseda,
+    TestInfo,
+};
 
 #[test]
 fn basic_workflow_works() {
     let test_info = TestInfo::init();
 
     // post a data request
-    let alice = test_info.new_executor("alice", 22, 1);
+    let alice = test_info.new_account("alice", 22);
+    let executor = test_info.new_executor("exec", 51, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
-    let executor = test_info.new_executor("exec", 51, 1);
 
     // alice commits a data result
-    let alice_reveal = RevealBody {
+    let executor_reveal = RevealBody {
         dr_id:             dr_id.clone(),
         dr_block_height:   1,
         reveal:            "10".hash().into(),
@@ -30,9 +35,9 @@ fn basic_workflow_works() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
-    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
-    alice.reveal_result(alice_reveal_message).unwrap();
+    let executor_reveal_message = executor.create_reveal_message(executor_reveal);
+    executor.commit_result(&dr_id, &executor_reveal_message).unwrap();
+    executor.reveal_result(executor_reveal_message).unwrap();
 
     // owner removes a data result
     // reward goes to executor
@@ -69,11 +74,18 @@ fn basic_workflow_works() {
             ],
         )
         .unwrap();
-    assert_eq!(55, test_info.executor_balance("exec"));
-    assert_eq!(4, test_info.executor_balance("alice"));
-    assert_eq!(2, test_info.executor_balance("bob"));
+    // Alice seda - stake amount minus the rewards
+    let alice_expected_balance = seda_to_aseda(22.into()) - 1 - 5 - 5 - 2 - 2 - 2;
+    assert_eq!(alice_expected_balance, test_info.executor_balance("alice"));
+    // Bob seda - should have had no changes
+    let bob_expected_balance = seda_to_aseda(2.into());
+    assert_eq!(bob_expected_balance, test_info.executor_balance("bob"));
+    // Executor seda - data proxy reward minus stake amount
+    let executor_expected_balance = seda_to_aseda(51.into()) + 5 - 1;
+    assert_eq!(executor_expected_balance, test_info.executor_balance("exec"));
 
     // get the staker info for the executor
+    // should have 5 seda pending withdrawal from executor reward
     let staker = executor.get_staker_info().unwrap();
     assert_eq!(5, staker.tokens_pending_withdrawal.u128());
 }
@@ -83,13 +95,13 @@ fn retains_order() {
     let test_info = TestInfo::init();
 
     // post a data request
-    let alice = test_info.new_executor("alice", 22, 1);
+    let alice = test_info.new_account("alice", 1);
+    let executor = test_info.new_executor("exec", 1, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
-    let executor = test_info.new_executor("exec", 51, 1);
 
-    // alice commits a data result
-    let alice_reveal = RevealBody {
+    // the executor commits a data result
+    let executor_reveal = RevealBody {
         dr_id:             dr_id.clone(),
         dr_block_height:   1,
         reveal:            "10".hash().into(),
@@ -97,14 +109,15 @@ fn retains_order() {
         exit_code:         0,
         proxy_public_keys: vec![],
     };
-    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
-    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
-    alice.reveal_result(alice_reveal_message).unwrap();
+    let executor_reveal_message = executor.create_reveal_message(executor_reveal);
+    executor.commit_result(&dr_id, &executor_reveal_message).unwrap();
+    executor.reveal_result(executor_reveal_message).unwrap();
 
     // owner removes a data result
     // reward goes to executor
     // remainder refunds to alice
-    alice
+    test_info
+        .creator()
         .remove_data_request(
             dr_id,
             vec![
@@ -117,10 +130,12 @@ fn retains_order() {
             ],
         )
         .unwrap();
-    // it's 52 since there should only be enough to reward 2 after the burn messages.
-    // this also tests that the order of the messages is retained
-    assert_eq!(52, test_info.executor_balance("exec"));
-    assert_eq!(1, test_info.executor_balance("alice"));
+    // Alice seda - balance minus the rewards
+    let alice_expected_balance = seda_to_aseda(1.into()) - 10 - 8 - 3;
+    assert_eq!(alice_expected_balance, test_info.executor_balance("alice"));
+    // Executor seda - balance minus the stake amount + the data proxy reward
+    let executor_expected_balance = seda_to_aseda(1.into()) - 1 + 3;
+    assert_eq!(executor_expected_balance, test_info.executor_balance("exec"));
 }
 
 #[test]
@@ -128,7 +143,7 @@ fn status_codes_work() {
     let test_info = TestInfo::init();
 
     // post data request 1
-    let alice = test_info.new_executor("alice", 42, 1);
+    let alice = test_info.new_executor("alice", 1, 1);
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
 
@@ -211,7 +226,7 @@ fn works_when_runs_out_of_funds() {
     let test_info = TestInfo::init();
 
     // post a data request
-    let alice = test_info.new_executor("alice", 22, 1);
+    let alice = test_info.new_executor("alice", 1, 1);
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
@@ -234,7 +249,9 @@ fn works_when_runs_out_of_funds() {
             dr_id,
             vec![
                 // burn all the funds
-                DistributionMessage::Burn(DistributionBurn { amount: 20u128.into() }),
+                DistributionMessage::Burn(DistributionBurn {
+                    amount: Uint128::new(min_post_dr_cost()),
+                }),
                 // then try to reward the executor
                 DistributionMessage::ExecutorReward(DistributionExecutorReward {
                     amount:   10u128.into(),
@@ -243,7 +260,9 @@ fn works_when_runs_out_of_funds() {
             ],
         )
         .unwrap();
-    assert_eq!(1, test_info.executor_balance("alice"));
+    // Alice seda - balance minus the rewards minus the stake amount
+    let alice_expected_balance = seda_to_aseda(1.into()) - min_post_dr_cost() - 1;
+    assert_eq!(alice_expected_balance, test_info.executor_balance("alice"));
 }
 
 #[test]

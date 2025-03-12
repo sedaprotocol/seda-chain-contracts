@@ -10,6 +10,7 @@ use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
 };
+use num_bigfloat::BigFloat;
 use seda_common::{msgs::*, types::ToHexStr};
 use serde::{de::DeserializeOwned, Serialize};
 use vrf_rs::Secp256k1Sha256;
@@ -29,6 +30,18 @@ pub struct TestInfo {
     contract_addr: Addr,
     accounts:      Rc<RefCell<HashMap<&'static str, TestAccount>>>,
     chain_id:      String,
+}
+
+pub fn seda_to_aseda(amount: BigFloat) -> u128 {
+    let denominator: BigFloat = 10_f64.powf(18.0).into();
+
+    (amount * denominator).to_u128().unwrap_or(u128::MAX)
+}
+
+pub fn aseda_to_seda(amount: u128) -> BigFloat {
+    let denominator: BigFloat = 10_f64.powf(18.0).into();
+
+    BigFloat::from_u128(amount) / denominator
 }
 
 impl TestInfo {
@@ -82,11 +95,13 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn new_account(self: &Rc<Self>, name: &'static str, balance: u128) -> TestAccount {
+    pub fn new_account<S: Into<BigFloat>>(self: &Rc<Self>, name: &'static str, seda: S) -> TestAccount {
         let addr = self.new_address(name);
         let executor = TestAccount::new(name, addr, Rc::clone(self));
         self.accounts.borrow_mut().insert(name, executor);
         let executor = self.executor(name);
+
+        let balance = seda_to_aseda(seda.into());
 
         self.app.borrow_mut().init_modules(|router, _api, storage| {
             router
@@ -99,18 +114,8 @@ impl TestInfo {
     }
 
     #[track_caller]
-    pub fn new_executor(self: &Rc<Self>, name: &'static str, balance: u128, stake: u128) -> TestAccount {
-        let addr = self.new_address(name);
-        let executor = TestAccount::new(name, addr, Rc::clone(self));
-        self.accounts.borrow_mut().insert(name, executor);
-        let executor = self.executor(name).clone();
-
-        self.app.borrow_mut().init_modules(|router, _api, storage| {
-            router
-                .bank
-                .init_balance(storage, &executor.addr, coins(balance, "aseda"))
-                .unwrap();
-        });
+    pub fn new_executor<S: Into<BigFloat>>(self: &Rc<Self>, name: &'static str, seda: S, stake: u128) -> TestAccount {
+        let executor = self.new_account(name, seda);
 
         // stake if provided
         executor.stake(stake).unwrap();

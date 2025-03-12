@@ -2,6 +2,7 @@ use msgs::data_requests::*;
 
 use super::*;
 
+pub mod consts;
 pub mod execute;
 pub mod query;
 pub mod state;

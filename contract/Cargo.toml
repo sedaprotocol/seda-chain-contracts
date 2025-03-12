@@ -30,5 +30,6 @@ vrf-rs.workspace = true
 [dev-dependencies]
 cw-multi-test.workspace = true
 k256.workspace = true
-seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }
 lazy_static.workspace = true
+seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }
+num-bigfloat.workspace = true

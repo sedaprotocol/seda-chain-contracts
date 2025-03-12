@@ -38,6 +38,7 @@ hex = "0.4.3"
 k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
 lazy_static = "1.4"
 libfuzzer-sys = "0.4"
+num-bigfloat = { version = "1.7", default-features = false }
 prost = { version = "0.13", default-features = false }
 prost-types = { version = "0.13", default-features = false }
 rand = "0.9"

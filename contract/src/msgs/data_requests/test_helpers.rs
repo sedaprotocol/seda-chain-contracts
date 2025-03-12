@@ -6,10 +6,11 @@ use semver::{BuildMetadata, Prerelease, Version};
 use sha3::{Digest, Keccak256};
 
 use super::{
+    consts::{MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
     msgs::data_requests::{execute, query, sudo},
     *,
 };
-use crate::TestAccount;
+use crate::{msgs::data_requests::consts::min_post_dr_cost, TestAccount};
 
 pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDataRequestArgs {
     let exec_program_id = nonce.to_string().hash().to_hex();
@@ -18,9 +19,9 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     let tally_inputs = "tally_inputs".as_bytes().into();
 
     // set by dr creator
-    let gas_price = 10u128.into();
-    let exec_gas_limit = 1;
-    let tally_gas_limit = 1;
+    let gas_price = MIN_GAS_PRICE;
+    let exec_gas_limit = MIN_EXEC_GAS_LIMIT;
+    let tally_gas_limit = MIN_TALLY_GAS_LIMIT;
 
     // memo
     let chain_id: u128 = 31337;
@@ -112,7 +113,9 @@ impl TestAccount {
         self.test_info.set_block_height(env_height);
 
         // someone posts a data request
-        let res: PostRequestResponsePayload = self.test_info.execute_with_funds(self, &msg, funds.unwrap_or(20))?;
+        let res: PostRequestResponsePayload =
+            self.test_info
+                .execute_with_funds(self, &msg, funds.unwrap_or(min_post_dr_cost()))?;
         assert_eq!(
             env_height, res.height,
             "chain height does not match data request height"

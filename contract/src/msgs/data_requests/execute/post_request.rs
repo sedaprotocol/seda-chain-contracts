@@ -2,7 +2,11 @@ use staking::state::STAKERS;
 use state::{Escrow, DR_ESCROW};
 
 use super::*;
-use crate::{state::TOKEN, utils::get_attached_funds};
+use crate::{
+    msgs::data_requests::consts::{MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
+    state::TOKEN,
+    utils::get_attached_funds,
+};
 
 impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
@@ -10,6 +14,17 @@ impl ExecuteHandler for execute::post_request::Execute {
         // require the replication to be non-zero
         if self.posted_dr.replication_factor == 0 {
             return Err(ContractError::DataRequestReplicationFactorZero);
+        }
+
+        // require the gas price, and gas limits to be above the minimums
+        if self.posted_dr.gas_price < MIN_GAS_PRICE {
+            return Err(ContractError::GasPriceTooLow(self.posted_dr.gas_price));
+        }
+        if self.posted_dr.exec_gas_limit < MIN_EXEC_GAS_LIMIT {
+            return Err(ContractError::ExecGasLimitTooLow(self.posted_dr.exec_gas_limit));
+        }
+        if self.posted_dr.tally_gas_limit < MIN_TALLY_GAS_LIMIT {
+            return Err(ContractError::TallyGasLimitTooLow(self.posted_dr.tally_gas_limit));
         }
 
         // require the data request replication factor to be bigger than amount of stakers

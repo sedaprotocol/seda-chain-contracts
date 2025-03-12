@@ -2,6 +2,8 @@ use cosmwasm_std::{StdError, Uint128};
 use hex::FromHexError;
 use thiserror::Error;
 
+use crate::msgs::data_requests::consts::{MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT};
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[cfg(not(test))]
@@ -82,6 +84,13 @@ pub enum ContractError {
     ZeroMinimumStakeToRegister,
     #[error("ZeroMinimumStakeForCommitteeEligibility: Minimum stake for committee eligibility cannot be zero")]
     ZeroMinimumStakeForCommitteeEligibility,
+
+    #[error("GasPriceTooLow: Gas price {0} is lower than the minimum {MIN_GAS_PRICE}")]
+    GasPriceTooLow(Uint128),
+    #[error("ExecGasLimitTooLow: Exec gas limit {0} is lower than the minimum {MIN_EXEC_GAS_LIMIT}")]
+    ExecGasLimitTooLow(u64),
+    #[error("TallyGasLimitTooLow: Tally gas limit {0} is lower than the minimum {MIN_TALLY_GAS_LIMIT}")]
+    TallyGasLimitTooLow(u64),
 }
 
 #[cfg(test)]

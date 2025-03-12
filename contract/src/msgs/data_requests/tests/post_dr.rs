@@ -3,7 +3,11 @@ use seda_common::{msgs::data_requests::DataRequestStatus, types::Hash};
 
 use crate::{
     error::ContractError,
-    msgs::data_requests::{state::DR_ESCROW, test_helpers},
+    msgs::data_requests::{
+        consts::{min_post_dr_cost, MIN_GAS_PRICE},
+        state::DR_ESCROW,
+        test_helpers,
+    },
     types::FromHexStr,
     TestInfo,
 };
@@ -30,7 +34,7 @@ fn works() {
             &Hash::from_hex_str(&dr_id).unwrap(),
         )
         .unwrap();
-    assert_eq!(20, staked.amount.u128());
+    assert_eq!(min_post_dr_cost(), staked.amount.u128());
     assert_eq!(anyone.addr(), staked.poster);
 
     // expect an error when trying to post it again
@@ -54,27 +58,35 @@ fn works() {
 #[should_panic(expected = "InsufficientFunds")]
 fn fails_with_not_enough_funds_fails() {
     let test_info = TestInfo::init();
-    let anyone = test_info.new_executor("anyone", 22, 1);
+    let anyone = test_info.new_executor("anyone", 1, 1);
 
     // post a data request
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    dr.exec_gas_limit = 1000;
+    dr.gas_price = Uint128::new(10_000);
     anyone.post_data_request(dr, vec![], vec![], 2, None).unwrap();
 }
 
 #[test]
+#[should_panic(expected = "InsufficientFunds")]
 fn with_max_gas_limits() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", u128::MAX, 1);
 
     // post a data request
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    // set gas price to 1 to make the gas limit calculation easier
-    dr.gas_price = Uint128::from(1u128);
+    // we can't modify this to be lower than the min...
+    // dr.gas_price = Uint128::from(1u128);
     dr.exec_gas_limit = u64::MAX;
     dr.tally_gas_limit = u64::MAX;
+    // Can't attach enough funds to pay for this
     anyone
-        .post_data_request(dr, vec![], vec![], 2, Some(u128::from(u64::MAX) + u128::from(u64::MAX)))
+        .post_data_request(
+            dr,
+            vec![],
+            vec![],
+            2,
+            dbg!(Some(u128::from(u64::MAX) + u128::from(u64::MAX) * MIN_GAS_PRICE.u128())),
+        )
         .unwrap();
 }
 
@@ -106,5 +118,54 @@ fn fails_if_request_replication_factor_zero() {
     let dr = test_helpers::calculate_dr_id_and_args(1, 0);
     sender
         .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, None)
+        .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "GasPriceTooLow")]
+fn fails_if_minimum_gas_price_is_not_met() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with gas price = 0
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.gas_price -= Uint128::one();
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "ExecGasLimitTooLow")]
+fn fails_if_minimum_gas_exec_limit_is_not_met() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with exec gas limit = 0
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.exec_gas_limit -= 1;
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "TallyGasLimitTooLow")]
+fn fails_if_minimum_gas_tally_limit_is_not_met() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with exec gas limit = 0
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.tally_gas_limit -= 1;
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "InsufficientFunds")]
+fn fails_if_minimum_aseda_not_attached() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with exec gas limit = 0
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    executor
+        .post_data_request(dr, vec![], vec![1, 2, 3], 1, Some(min_post_dr_cost() - 1))
         .unwrap();
 }
