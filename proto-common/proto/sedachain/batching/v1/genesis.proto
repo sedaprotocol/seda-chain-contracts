@@ -1,0 +1,27 @@
+syntax = "proto3";
+package sedachain.batching.v1;
+
+import "gogoproto/gogo.proto";
+import "sedachain/batching/v1/batching.proto";
+
+option go_package = "github.com/sedaprotocol/seda-chain/x/batching/types";
+
+// GenesisState defines the batching module's genesis state.
+message GenesisState {
+  // current_batch_number is the batch number of the most recently-
+  // created batch.
+  uint64 current_batch_number = 1;
+  repeated Batch batches = 2 [ (gogoproto.nullable) = false ];
+  repeated TreeEntries tree_entries = 3 [ (gogoproto.nullable) = false ];
+  repeated DataResult data_results = 4 [ (gogoproto.nullable) = false ];
+  repeated BatchAssignment batch_assignments = 5
+      [ (gogoproto.nullable) = false ];
+  Params params = 6 [ (gogoproto.nullable) = false ];
+}
+
+// BatchAssignment represents a batch assignment for genesis export
+// and import.
+message BatchAssignment {
+  uint64 batch_number = 1;
+  string data_request_id = 2;
+}

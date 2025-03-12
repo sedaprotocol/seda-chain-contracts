@@ -1,0 +1,15 @@
+version: v1
+plugins:
+  - plugin: buf.build/community/neoeinstein-prost:v0.4.0
+    out: src/gen
+    opt:
+      # Replaces Vec<u8> with bytes::Bytes a cheaper alternative
+      - bytes=.
+      # Uses the `prost_types` crate for well-known types
+      - compile_well_known_types
+      # Gives more clear error and debug messages
+      - enable_type_names
+      # Replaces the `google.protobuf` package with `prost_types`
+      - extern_path=.google.protobuf=::prost_types
+      # Replaces the `cosmos` package with `cosmos_sdk_proto::cosmos`
+      - extern_path=.cosmos=::cosmos_sdk_proto::cosmos

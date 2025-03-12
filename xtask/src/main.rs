@@ -21,8 +21,10 @@ const TASKS: &[&str] = &[
     "cov-ci",
     "help",
     "tally-data-req-fixture",
+    "test-all",
     "test-ci",
-    "test-dev",
+    "test-common",
+    "test-contract",
     "wasm-opt",
 ];
 
@@ -47,8 +49,10 @@ fn try_main() -> Result<()> {
         Some("cov-ci") => cov_ci(&sh)?,
         Some("help") => print_help()?,
         Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
+        Some("test-all") => test_all(&sh)?,
         Some("test-ci") => test_ci(&sh)?,
-        Some("test-dev") => test_dev(&sh)?,
+        Some("test-common") => test_common(&sh)?,
+        Some("test-contract") => test_contract(&sh)?,
         Some("wasm-opt") => wasm_opt(&sh)?,
         _ => print_help()?,
     }
@@ -199,7 +203,21 @@ fn get_git_version() -> Result<String> {
     Ok(version)
 }
 
-fn test_dev(sh: &Shell) -> Result<()> {
+fn test_common(sh: &Shell) -> Result<()> {
+    cmd!(
+        sh,
+        "cargo nextest run --locked -p seda-common --failure-output final --success-output final"
+    )
+    .run()?;
+    cmd!(
+        sh,
+        "cargo nextest run --locked -p seda-common --failure-output final --success-output final --features cosmwasm"
+    )
+    .run()?;
+    Ok(())
+}
+
+fn test_contract(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
         "cargo nextest run --locked -p seda-contract --failure-output final --success-output final"
@@ -208,7 +226,19 @@ fn test_dev(sh: &Shell) -> Result<()> {
     Ok(())
 }
 
+fn test_all(sh: &Shell) -> Result<()> {
+    test_common(sh)?;
+    test_contract(sh)?;
+    Ok(())
+}
+
 fn test_ci(sh: &Shell) -> Result<()> {
+    cmd!(sh, "cargo nextest run --locked -p seda-common -P ci").run()?;
+    cmd!(
+        sh,
+        "cargo nextest run --locked -p seda-common -P ci --features cosmwasm"
+    )
+    .run()?;
     cmd!(sh, "cargo nextest run --locked -p seda-contract -P ci").run()?;
     Ok(())
 }
@@ -216,7 +246,7 @@ fn test_ci(sh: &Shell) -> Result<()> {
 fn cov(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo llvm-cov -p seda-contract --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
+        "cargo llvm-cov -p seda-common -p seda-contract --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
     )
     .run()?;
     Ok(())
@@ -225,7 +255,7 @@ fn cov(sh: &Shell) -> Result<()> {
 fn cov_ci(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo llvm-cov -p seda-contract --cobertura --output-path cobertura.xml --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
+        "cargo llvm-cov -p seda-common -p seda-contract --cobertura --output-path cobertura.xml --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
     )
     .run()?;
     Ok(())

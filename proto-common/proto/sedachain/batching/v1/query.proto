@@ -1,0 +1,114 @@
+syntax = "proto3";
+package sedachain.batching.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "sedachain/batching/v1/batching.proto";
+
+option go_package = "github.com/sedaprotocol/seda-chain/x/batching/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Batch returns a batch given the batch number.
+  rpc Batch(QueryBatchRequest) returns (QueryBatchResponse) {
+    option (google.api.http).get = "/seda-chain/batching/batch/{batch_number}";
+  }
+
+  // BatchForHeight returns a batch created at a given block height.
+  rpc BatchForHeight(QueryBatchForHeightRequest)
+      returns (QueryBatchForHeightResponse) {
+    option (google.api.http).get =
+        "/seda-chain/batching/batch_for_height/{block_height}";
+  }
+
+  // Batch returns all batches in the store.
+  rpc Batches(QueryBatchesRequest) returns (QueryBatchesResponse) {
+    option (google.api.http).get = "/seda-chain/batching/batches";
+  }
+
+  // TreeEntries returns the tree entries from the given batch number.
+  rpc TreeEntries(QueryTreeEntriesRequest) returns (QueryTreeEntriesResponse) {
+    option (google.api.http).get =
+        "/seda-chain/batching/tree_entries/{batch_number}";
+  }
+
+  // BatchSignatures returns the batch signatures for the given batch
+  // and the
+  rpc BatchSignatures(QueryBatchSignaturesRequest)
+      returns (QueryBatchSignaturesResponse) {
+    option (google.api.http).get =
+        "/seda-chain/batching/batch_signatures/{batch_number}";
+  }
+
+  // DataResult returns a data result given its associated data request's
+  // ID.
+  rpc DataResult(QueryDataResultRequest) returns (QueryDataResultResponse) {
+    option (google.api.http).get =
+        "/seda-chain/batching/data_result/{data_request_id}";
+  }
+
+  // BatchAssignment returns the batch number that a given data request
+  // has been assigned to.
+  rpc BatchAssignment(QueryBatchAssignmentRequest)
+      returns (QueryBatchAssignmentResponse) {
+    option (google.api.http).get =
+        "/seda-chain/batching/batch_assignment/{data_request_id}";
+  }
+}
+
+// The request message for QueryBatch RPC.
+message QueryBatchRequest { uint64 batch_number = 1; }
+
+// The response message for QueryBatch RPC.
+message QueryBatchResponse { Batch batch = 1 [ (gogoproto.nullable) = false ]; }
+
+// The request message for BatchForHeight RPC.
+message QueryBatchForHeightRequest { int64 block_height = 1; }
+
+// The response message for BatchForHeight RPC.
+message QueryBatchForHeightResponse {
+  Batch batch = 1 [ (gogoproto.nullable) = false ];
+}
+
+// The request message for QueryBatches RPC.
+message QueryBatchesRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// The response message for QueryBatches RPC.
+message QueryBatchesResponse {
+  repeated Batch batches = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// The request message for QueryTreeEntries RPC.
+message QueryTreeEntriesRequest { uint64 batch_number = 1; }
+
+// The response message for QueryTreeEntries RPC.
+message QueryTreeEntriesResponse {
+  TreeEntries entries = 1 [ (gogoproto.nullable) = false ];
+}
+
+// The request message for QueryBatchSignaturesRequest RPC.
+message QueryBatchSignaturesRequest { uint64 batch_number = 1; }
+
+// The response message for QueryQueryBatchSignatures RPC.
+message QueryBatchSignaturesResponse {
+  repeated BatchSignatures batch_sigs = 1 [ (gogoproto.nullable) = false ];
+}
+
+// The request message for QueryDataResult RPC.
+message QueryDataResultRequest { string data_request_id = 1; }
+
+// The response message for QueryDataResult RPC.
+message QueryDataResultResponse {
+  DataResult data_result = 1 [ (gogoproto.nullable) = true ];
+}
+
+// The request message for QueryBatchAssignment RPC.
+message QueryBatchAssignmentRequest { string data_request_id = 1; }
+
+// The response message for QueryBatchAssignment RPC.
+message QueryBatchAssignmentResponse { uint64 batch_number = 1; }

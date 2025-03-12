@@ -2,8 +2,7 @@
 
 [1]: https://rustup.rs/
 [2]: https://github.com/WebAssembly/binaryen
-[3]: https://github.com/sedaprotocol/seda-chain
-[4]: https://nexte.st/
+[3]: https://nexte.st/
 
 
 ## Environment set up
@@ -11,21 +10,23 @@
 - Install [rustup][1]. Once installed, make sure you have the wasm32 target:
 
   ```bash
-  rustup default stable
-  rustup update stable
   rustup target add wasm32-unknown-unknown
   ```
 
-- Install [wasm-opt][2]: `cargo install wasm-opt --locked`, this produces a optimized version of the contract small enough to be uploaded to the chain.
+- Install [wasm-opt][2]:
+  - `cargo install wasm-opt --locked`
+  - or for `binstall` users `cargo binstall wasm-opt --secure`
 
 
-- Install [sedad][3]
+- Install [nextest][3]:
+  - `cargo install nextest`
+  - or for `binstall` users `cargo binstall nextest --secure`
 
 ## Compiling
 
-You can build a release version, but not optimized with `cargo wasm` which outputs `target/wasm32-unknown-unknown/release/seda_contract.wasm`.
+This requires [wasm-opt][2].
 
-If you want an optimized version of the wasm you can instead run `cargo wasm-opt` which outputs to `target/seda_contract.wasm`. This is the version you would want to upload to the chain.
+Running `cargo wasm-opt` which outputs to `target/seda_contract.wasm` outputs the optimized contract. This is the version you would want to upload to the chain.
 
 ## Building Schema
 
@@ -43,9 +44,13 @@ Nightly can be installed with: `rustup install nightly`.
 
 ### Unit
 
-Unit testing can be done with: `cargo test`.
+This requires [nextest][3].
 
-You could also install [nextest][4], with `cargo install cargo-nextest --locked`, then run `cargo nextest`. Nextest is a faster test runner for Rust.
+Unit testing can be done with:
+- `cargo test-all` to test all modules.
+- `cargo test-common` to test the common crate.
+- `cargo test-contract` to test the contract.
+
 
 ### Fuzzing
 

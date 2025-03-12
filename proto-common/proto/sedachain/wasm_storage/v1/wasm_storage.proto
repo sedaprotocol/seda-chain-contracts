@@ -1,0 +1,36 @@
+syntax = "proto3";
+package sedachain.wasm_storage.v1;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sedaprotocol/seda-chain/x/wasm-storage/types";
+
+// OracleProgram is a wasm used for data request.
+message OracleProgram {
+  bytes hash = 1;
+  bytes bytecode = 2;
+  google.protobuf.Timestamp added_at = 3
+      [ (gogoproto.stdtime) = true, (gogoproto.nullable) = false ];
+  // ExpirationHeight represents the block height at which the oracle
+  // program will be pruned. The value of zero means no expiration.
+  int64 expiration_height = 4;
+}
+
+// ExecutorWasm is a wasm used by some component in the protocol.
+message ExecutorWasm {
+  bytes hash = 1;
+  bytes bytecode = 2;
+  google.protobuf.Timestamp added_at = 3
+      [ (gogoproto.stdtime) = true, (gogoproto.nullable) = false ];
+}
+
+// Params to define the max wasm size allowed.
+message Params {
+  option (gogoproto.equal) = true;
+
+  int64 max_wasm_size = 1;
+  // WasmTTL represents the number of blocks a wasm's life is extended when it's
+  // created or used.
+  int64 wasm_ttl = 2 [ (gogoproto.customname) = "WasmTTL" ];
+}

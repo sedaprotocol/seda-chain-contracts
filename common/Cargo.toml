@@ -1,0 +1,32 @@
+[package]
+name = "seda-common"
+version = "0.5.3"
+edition = "2021"
+
+[features]
+default = ["dep:serde", "dep:base64"]
+cosmwasm = [
+	"dep:cosmwasm-schema",
+	"dep:cosmwasm-std",
+	"dep:cw-storage-plus",
+	"dep:schemars",
+]
+proof-tests = []
+test-utils = []
+
+[dependencies]
+base64 = { workspace = true, optional = true }
+cosmwasm-schema = { workspace = true, optional = true }
+cosmwasm-std = { workspace = true, optional = true }
+cw-storage-plus = { workspace = true, optional = true }
+hex.workspace = true
+schemars = { workspace = true, features = ["semver"], optional = true }
+sha3.workspace = true
+semver = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"], optional = true }
+thiserror.workspace = true
+vrf-rs.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+k256 = { workspace = true, features = ["std"] }
