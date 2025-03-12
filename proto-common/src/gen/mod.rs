@@ -2,7 +2,6 @@
 #[path = "sedachain.batching.v1.rs"]
 #[rustfmt::skip]
 pub mod batching;
-
 #[cfg(feature = "data_proxy")]
 #[path = "sedachain.data_proxy.v1.rs"]
 #[rustfmt::skip]

@@ -13,3 +13,15 @@ plugins:
       - extern_path=.google.protobuf=::prost_types
       # Replaces the `cosmos` package with `cosmos_sdk_proto::cosmos`
       - extern_path=.cosmos=::cosmos_sdk_proto::cosmos
+  - plugin: buf.build/community/neoeinstein-tonic:v0.4.1
+    out: src/gen
+    opt:
+      # Disables the server generation
+      - no_server=true
+      # Uses the `prost_types` crate for well-known types
+      - compile_well_known_types
+      # Replaces the `google.protobuf` package with `prost_types`
+      - extern_path=.google.protobuf=::prost_types
+      # Replaces the `cosmos` package with `cosmos_sdk_proto::cosmos`
+      - extern_path=.cosmos=::cosmos_sdk_proto::cosmos
+      - client_mod_attribute=.=#[cfg(feature = "tonic")]

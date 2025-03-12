@@ -76,4 +76,5 @@ impl ::prost::Name for MsgNewSeedResponse {
 const NAME: &'static str = "MsgNewSeedResponse";
 const PACKAGE: &'static str = "sedachain.randomness.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.randomness.v1.MsgNewSeedResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.randomness.v1.MsgNewSeedResponse".into() }}
+include!("sedachain.randomness.v1.tonic.rs");
 // @@protoc_insertion_point(module)

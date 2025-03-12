@@ -27,62 +27,55 @@ pub struct Batch {
     /// batch_id is the Keccack-256 hash of the batch content.
     #[prost(bytes="bytes", tag="6")]
     pub batch_id: ::prost::bytes::Bytes,
-    /// proving_medatada is a field for additional proving data.
+    /// proving_metadata is a field for additional proving data.
     #[prost(bytes="bytes", tag="7")]
-    pub proving_medatada: ::prost::bytes::Bytes,
+    pub proving_metadata: ::prost::bytes::Bytes,
 }
 impl ::prost::Name for Batch {
 const NAME: &'static str = "Batch";
 const PACKAGE: &'static str = "sedachain.batching.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.Batch".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.Batch".into() }}
-/// TreeEntries are the given batch's data result tree entries and
-/// validator tree entries.
+/// DataResultTreeEntries is a list of data result tree entries for a
+/// given batch.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TreeEntries {
-    /// batch_number is the identifier of the batch the tree entries from.
-    #[prost(uint64, tag="1")]
-    pub batch_number: u64,
-    /// data_result_entries are the entries (unhashed leaf contents) of
-    /// the data result tree.
-    #[prost(bytes="bytes", repeated, tag="2")]
-    pub data_result_entries: ::prost::alloc::vec::Vec<::prost::bytes::Bytes>,
-    /// validator_entries are the entries (unhashed leaf contents) of
-    /// the validator tree.
-    #[prost(bytes="bytes", repeated, tag="3")]
-    pub validator_entries: ::prost::alloc::vec::Vec<::prost::bytes::Bytes>,
+pub struct DataResultTreeEntries {
+    #[prost(bytes="bytes", repeated, tag="1")]
+    pub entries: ::prost::alloc::vec::Vec<::prost::bytes::Bytes>,
 }
-impl ::prost::Name for TreeEntries {
-const NAME: &'static str = "TreeEntries";
+impl ::prost::Name for DataResultTreeEntries {
+const NAME: &'static str = "DataResultTreeEntries";
 const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.TreeEntries".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.TreeEntries".into() }}
+fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.DataResultTreeEntries".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.DataResultTreeEntries".into() }}
+/// ValidatorTreeEntry is an entry in the validator tree.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ValidatorTreeEntry {
+    #[prost(bytes="bytes", tag="1")]
+    pub validator_address: ::prost::bytes::Bytes,
+    #[prost(uint32, tag="2")]
+    pub voting_power_percent: u32,
+    #[prost(bytes="bytes", tag="3")]
+    pub eth_address: ::prost::bytes::Bytes,
+}
+impl ::prost::Name for ValidatorTreeEntry {
+const NAME: &'static str = "ValidatorTreeEntry";
+const PACKAGE: &'static str = "sedachain.batching.v1";
+fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.ValidatorTreeEntry".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.ValidatorTreeEntry".into() }}
 /// BatchSignatures contains basic validator data and its batch signatures
 /// under various cryptographic schemes.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BatchSignatures {
-    #[prost(string, tag="1")]
-    pub validator_addr: ::prost::alloc::string::String,
+    #[prost(bytes="bytes", tag="1")]
+    pub validator_address: ::prost::bytes::Bytes,
     #[prost(bytes="bytes", tag="2")]
-    pub signatures: ::prost::bytes::Bytes,
+    pub secp256k1_signature: ::prost::bytes::Bytes,
 }
 impl ::prost::Name for BatchSignatures {
 const NAME: &'static str = "BatchSignatures";
 const PACKAGE: &'static str = "sedachain.batching.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.BatchSignatures".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.BatchSignatures".into() }}
-/// Params is a list of parameters which can be changed through governance.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct Params {
-    /// validator_set_trim_percent is the percentage of the validator
-    /// set to store in the validator merkle tree in the batch.
-    #[prost(uint32, tag="1")]
-    pub validator_set_trim_percent: u32,
-}
-impl ::prost::Name for Params {
-const NAME: &'static str = "Params";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.Params".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.Params".into() }}
 /// DataResult represents the result of a resolved data request.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -93,37 +86,80 @@ pub struct DataResult {
     /// dr_id is the data request identifier.
     #[prost(string, tag="2")]
     pub dr_id: ::prost::alloc::string::String,
+    /// dr_block_height is the height at which the data request was submitted.
+    #[prost(uint64, tag="3")]
+    pub dr_block_height: u64,
     /// version is a semantic version string.
-    #[prost(string, tag="3")]
+    #[prost(string, tag="4")]
     pub version: ::prost::alloc::string::String,
     /// block_height is the height at which the data request was tallied.
-    #[prost(uint64, tag="4")]
+    #[prost(uint64, tag="5")]
     pub block_height: u64,
+    /// block_timestamp is the unix timestamp in seconds of when the data request
+    /// was tallied.
+    #[prost(uint64, tag="6")]
+    pub block_timestamp: u64,
     /// exit_code is the exit code of the tally wasm binary execution.
-    #[prost(uint32, tag="5")]
+    #[prost(uint32, tag="7")]
     pub exit_code: u32,
     /// gas_used is the gas used by the data request execution.
-    #[prost(uint64, tag="6")]
-    pub gas_used: u64,
+    #[prost(string, tag="8")]
+    pub gas_used: ::prost::alloc::string::String,
     /// result is the result of the tally wasm binary execution.
-    #[prost(bytes="bytes", tag="7")]
+    #[prost(bytes="bytes", tag="9")]
     pub result: ::prost::bytes::Bytes,
     /// payback_address is the payback address set by the relayer.
-    #[prost(string, tag="8")]
+    #[prost(string, tag="10")]
     pub payback_address: ::prost::alloc::string::String,
     /// seda_payload is the payload set by SEDA Protocol (e.g. OEV-enabled
     /// data requests)
-    #[prost(string, tag="9")]
+    #[prost(string, tag="11")]
     pub seda_payload: ::prost::alloc::string::String,
     /// consensus indicates whether consensus was reached in the tally
     /// process.
-    #[prost(bool, tag="10")]
+    #[prost(bool, tag="12")]
     pub consensus: bool,
 }
 impl ::prost::Name for DataResult {
 const NAME: &'static str = "DataResult";
 const PACKAGE: &'static str = "sedachain.batching.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.DataResult".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.DataResult".into() }}
+/// BatchDoubleSign implements the Evidence interface and defines evidence of
+/// double signing a batch for a given proving scheme.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDoubleSign {
+    /// batch_number is the number of the batch that the validator double signed.
+    #[prost(uint64, tag="1")]
+    pub batch_number: u64,
+    /// block_height is the height of the block which includes the batch that the
+    /// validator double signed.
+    #[prost(int64, tag="2")]
+    pub block_height: i64,
+    /// operator_address is the operator address of the validator committing the
+    /// double signing.
+    #[prost(string, tag="3")]
+    pub operator_address: ::prost::alloc::string::String,
+    /// validator_root is the hex-encoded root of the validator merkle tree.
+    #[prost(string, tag="4")]
+    pub validator_root: ::prost::alloc::string::String,
+    /// data_result_root is the hex-encoded root of the data result merkle tree.
+    #[prost(string, tag="5")]
+    pub data_result_root: ::prost::alloc::string::String,
+    /// proving_metadata_hash is the hex-encoded hash of the proving metadata.
+    #[prost(string, tag="6")]
+    pub proving_metadata_hash: ::prost::alloc::string::String,
+    /// signature is the hex-encoded signature of the validator.
+    #[prost(string, tag="7")]
+    pub signature: ::prost::alloc::string::String,
+    /// proving_scheme_index is the SEDA key index of the proving scheme.
+    #[prost(uint32, tag="8")]
+    pub proving_scheme_index: u32,
+}
+impl ::prost::Name for BatchDoubleSign {
+const NAME: &'static str = "BatchDoubleSign";
+const PACKAGE: &'static str = "sedachain.batching.v1";
+fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.BatchDoubleSign".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.BatchDoubleSign".into() }}
 /// GenesisState defines the batching module's genesis state.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -135,13 +171,11 @@ pub struct GenesisState {
     #[prost(message, repeated, tag="2")]
     pub batches: ::prost::alloc::vec::Vec<Batch>,
     #[prost(message, repeated, tag="3")]
-    pub tree_entries: ::prost::alloc::vec::Vec<TreeEntries>,
+    pub batch_data: ::prost::alloc::vec::Vec<BatchData>,
     #[prost(message, repeated, tag="4")]
-    pub data_results: ::prost::alloc::vec::Vec<DataResult>,
+    pub data_results: ::prost::alloc::vec::Vec<GenesisDataResult>,
     #[prost(message, repeated, tag="5")]
     pub batch_assignments: ::prost::alloc::vec::Vec<BatchAssignment>,
-    #[prost(message, optional, tag="6")]
-    pub params: ::core::option::Option<Params>,
 }
 impl ::prost::Name for GenesisState {
 const NAME: &'static str = "GenesisState";
@@ -156,11 +190,43 @@ pub struct BatchAssignment {
     pub batch_number: u64,
     #[prost(string, tag="2")]
     pub data_request_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag="3")]
+    pub data_request_height: u64,
 }
 impl ::prost::Name for BatchAssignment {
 const NAME: &'static str = "BatchAssignment";
 const PACKAGE: &'static str = "sedachain.batching.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.BatchAssignment".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.BatchAssignment".into() }}
+/// BatchData represents a given batch's full data.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchData {
+    #[prost(uint64, tag="1")]
+    pub batch_number: u64,
+    #[prost(message, optional, tag="2")]
+    pub data_result_entries: ::core::option::Option<DataResultTreeEntries>,
+    #[prost(message, repeated, tag="3")]
+    pub validator_entries: ::prost::alloc::vec::Vec<ValidatorTreeEntry>,
+    #[prost(message, repeated, tag="4")]
+    pub batch_signatures: ::prost::alloc::vec::Vec<BatchSignatures>,
+}
+impl ::prost::Name for BatchData {
+const NAME: &'static str = "BatchData";
+const PACKAGE: &'static str = "sedachain.batching.v1";
+fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.BatchData".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.BatchData".into() }}
+/// GenesisDataResult includes a data result and its batching status.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GenesisDataResult {
+    #[prost(bool, tag="1")]
+    pub batched: bool,
+    #[prost(message, optional, tag="2")]
+    pub data_result: ::core::option::Option<DataResult>,
+}
+impl ::prost::Name for GenesisDataResult {
+const NAME: &'static str = "GenesisDataResult";
+const PACKAGE: &'static str = "sedachain.batching.v1";
+fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.GenesisDataResult".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.GenesisDataResult".into() }}
 /// The request message for QueryBatch RPC.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -178,6 +244,12 @@ fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryB
 pub struct QueryBatchResponse {
     #[prost(message, optional, tag="1")]
     pub batch: ::core::option::Option<Batch>,
+    #[prost(message, optional, tag="2")]
+    pub data_result_entries: ::core::option::Option<DataResultTreeEntries>,
+    #[prost(message, repeated, tag="3")]
+    pub validator_entries: ::prost::alloc::vec::Vec<ValidatorTreeEntry>,
+    #[prost(message, repeated, tag="4")]
+    pub batch_signatures: ::prost::alloc::vec::Vec<BatchSignatures>,
 }
 impl ::prost::Name for QueryBatchResponse {
 const NAME: &'static str = "QueryBatchResponse";
@@ -212,6 +284,10 @@ pub struct QueryBatchesRequest {
     /// pagination defines an optional pagination for the request.
     #[prost(message, optional, tag="1")]
     pub pagination: ::core::option::Option<::cosmos_sdk_proto::cosmos::base::query::v1beta1::PageRequest>,
+    /// with_unsigned indicates whether to return batches without
+    /// signatures or not.
+    #[prost(bool, tag="2")]
+    pub with_unsigned: bool,
 }
 impl ::prost::Name for QueryBatchesRequest {
 const NAME: &'static str = "QueryBatchesRequest";
@@ -230,56 +306,14 @@ impl ::prost::Name for QueryBatchesResponse {
 const NAME: &'static str = "QueryBatchesResponse";
 const PACKAGE: &'static str = "sedachain.batching.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryBatchesResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryBatchesResponse".into() }}
-/// The request message for QueryTreeEntries RPC.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct QueryTreeEntriesRequest {
-    #[prost(uint64, tag="1")]
-    pub batch_number: u64,
-}
-impl ::prost::Name for QueryTreeEntriesRequest {
-const NAME: &'static str = "QueryTreeEntriesRequest";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryTreeEntriesRequest".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryTreeEntriesRequest".into() }}
-/// The response message for QueryTreeEntries RPC.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct QueryTreeEntriesResponse {
-    #[prost(message, optional, tag="1")]
-    pub entries: ::core::option::Option<TreeEntries>,
-}
-impl ::prost::Name for QueryTreeEntriesResponse {
-const NAME: &'static str = "QueryTreeEntriesResponse";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryTreeEntriesResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryTreeEntriesResponse".into() }}
-/// The request message for QueryBatchSignaturesRequest RPC.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct QueryBatchSignaturesRequest {
-    #[prost(uint64, tag="1")]
-    pub batch_number: u64,
-}
-impl ::prost::Name for QueryBatchSignaturesRequest {
-const NAME: &'static str = "QueryBatchSignaturesRequest";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryBatchSignaturesRequest".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryBatchSignaturesRequest".into() }}
-/// The response message for QueryQueryBatchSignatures RPC.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct QueryBatchSignaturesResponse {
-    #[prost(message, repeated, tag="1")]
-    pub batch_sigs: ::prost::alloc::vec::Vec<BatchSignatures>,
-}
-impl ::prost::Name for QueryBatchSignaturesResponse {
-const NAME: &'static str = "QueryBatchSignaturesResponse";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryBatchSignaturesResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryBatchSignaturesResponse".into() }}
 /// The request message for QueryDataResult RPC.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryDataResultRequest {
     #[prost(string, tag="1")]
     pub data_request_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag="2")]
+    pub data_request_height: u64,
 }
 impl ::prost::Name for QueryDataResultRequest {
 const NAME: &'static str = "QueryDataResultRequest";
@@ -291,31 +325,12 @@ fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryD
 pub struct QueryDataResultResponse {
     #[prost(message, optional, tag="1")]
     pub data_result: ::core::option::Option<DataResult>,
+    #[prost(message, optional, tag="2")]
+    pub batch_assignment: ::core::option::Option<BatchAssignment>,
 }
 impl ::prost::Name for QueryDataResultResponse {
 const NAME: &'static str = "QueryDataResultResponse";
 const PACKAGE: &'static str = "sedachain.batching.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryDataResultResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryDataResultResponse".into() }}
-/// The request message for QueryBatchAssignment RPC.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct QueryBatchAssignmentRequest {
-    #[prost(string, tag="1")]
-    pub data_request_id: ::prost::alloc::string::String,
-}
-impl ::prost::Name for QueryBatchAssignmentRequest {
-const NAME: &'static str = "QueryBatchAssignmentRequest";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryBatchAssignmentRequest".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryBatchAssignmentRequest".into() }}
-/// The response message for QueryBatchAssignment RPC.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct QueryBatchAssignmentResponse {
-    #[prost(uint64, tag="1")]
-    pub batch_number: u64,
-}
-impl ::prost::Name for QueryBatchAssignmentResponse {
-const NAME: &'static str = "QueryBatchAssignmentResponse";
-const PACKAGE: &'static str = "sedachain.batching.v1";
-fn full_name() -> ::prost::alloc::string::String { "sedachain.batching.v1.QueryBatchAssignmentResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.batching.v1.QueryBatchAssignmentResponse".into() }}
+include!("sedachain.batching.v1.tonic.rs");
 // @@protoc_insertion_point(module)

@@ -3,24 +3,27 @@
 [1]: https://rustup.rs/
 [2]: https://github.com/WebAssembly/binaryen
 [3]: https://nexte.st/
+[4]: https://buf.build/product/cli
 
 
 ## Environment set up
 
-- Install [rustup][1]. Once installed, make sure you have the wasm32 target:
-
-  ```bash
-  rustup target add wasm32-unknown-unknown
-  ```
+- Install [rustup][1]:
+  - Once installed, make sure you have the wasm32 target: `rustup target add wasm32-unknown-unknown`
 
 - Install [wasm-opt][2]:
   - `cargo install wasm-opt --locked`
   - or for `binstall` users `cargo binstall wasm-opt --secure`
 
-
 - Install [nextest][3]:
   - `cargo install nextest`
   - or for `binstall` users `cargo binstall nextest --secure`
+
+- Install [buf][4]:
+  - mac: `brew install bufbuild/buf/buf`
+  - windows: `scoop install buf`
+  - linux: distribution specific
+  - You can also use `bun` or `npm` to install it, but make sure it's executable without doing `bunx/npmx`
 
 ## Compiling
 
@@ -39,6 +42,16 @@ You can build the json schema with `cargo schema`.
 Nightly can be installed with: `rustup install nightly`. 
 
 `clippy` is used as the linting tool: `cargo clippy -- -D warnings`
+
+## Building Protobuf
+
+This requires [buf][4].
+
+You can grab the protobuf from the chain by running: `cargo proto-update git_{rev/tag/branch}`.
+ - This updates the `SEDA_CHAIN_VERSION` variable in  the `lib.rs`.
+ - It also re-builds the rust code automatically.
+
+If you only want to rebuild the proto you can instead run `cargo proto-build`.
 
 ## Testing
 

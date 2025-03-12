@@ -1,34 +1,20 @@
 syntax = "proto3";
-package sedachain.pubkey.v1;
+package sedachain.tally.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/msg/v1/msg.proto";
-import "sedachain/pubkey/v1/pubkey.proto";
+import "sedachain/tally/v1/tally.proto";
 
-option go_package = "github.com/sedaprotocol/seda-chain/x/pubkey/types";
+option go_package = "github.com/sedaprotocol/seda-chain/x/tally/types";
 
-// Msg defines the pubkey Msg service.
+// Msg defines the tally Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // AddKey defines a method for registering a new public key.
-  rpc AddKey(MsgAddKey) returns (MsgAddKeyResponse);
   // The UpdateParams method updates the module's parameters.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
 }
-
-// MsgAddKey defines a message for registering a new public key.
-message MsgAddKey {
-  option (cosmos.msg.v1.signer) = "validator_addr";
-
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  repeated IndexedPubKey indexed_pub_keys = 2 [ (gogoproto.nullable) = false ];
-}
-
-// MsgAddKeyResponse defines the Msg/MsgAddKey response type.
-message MsgAddKeyResponse {}
 
 // The request message for the UpdateParams method.
 message MsgUpdateParams {

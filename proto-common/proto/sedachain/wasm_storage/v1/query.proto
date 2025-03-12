@@ -2,6 +2,7 @@ syntax = "proto3";
 package sedachain.wasm_storage.v1;
 
 import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "sedachain/wasm_storage/v1/wasm_storage.proto";
 
@@ -22,24 +23,16 @@ service Query {
     option (google.api.http).get = "/seda-chain/wasm-storage/oracle_programs";
   }
 
-  // ExecutorWasm returns an executor wasm given its hash.
-  rpc ExecutorWasm(QueryExecutorWasmRequest)
-      returns (QueryExecutorWasmResponse) {
-    option (google.api.http).get =
-        "/seda-chain/wasm-storage/executor_wasm/{hash}";
-  }
-
-  // ExecutorWasms returns all executor wasms.
-  rpc ExecutorWasms(QueryExecutorWasmsRequest)
-      returns (QueryExecutorWasmsResponse) {
-    option (google.api.http).get = "/seda-chain/wasm-storage/executor_wasms";
-  }
-
   // CoreContractRegistry returns the Core Contract Registry address.
   rpc CoreContractRegistry(QueryCoreContractRegistryRequest)
       returns (QueryCoreContractRegistryResponse) {
     option (google.api.http).get =
         "/seda-chain/wasm-storage/core_contract_registry";
+  }
+
+  // Params returns the total set of wasm-storage parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/seda-chain/wasm-storage/params";
   }
 }
 
@@ -61,20 +54,17 @@ message QueryOracleProgramsResponse {
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
-// The request message for QueryExecutorWasm RPC.
-message QueryExecutorWasmRequest { string hash = 1; }
-
-// The response message for QueryExecutorWasm RPC.
-message QueryExecutorWasmResponse { ExecutorWasm wasm = 1; }
-
-// The request message for QueryExecutorWasms RPC.
-message QueryExecutorWasmsRequest {}
-
-// The response message for QueryExecutorWasms RPC.
-message QueryExecutorWasmsResponse { repeated string list = 1; }
-
 // The request message for QueryCoreContractRegistry RPC.
 message QueryCoreContractRegistryRequest {}
 
 // The response message for QueryCoreContractRegistry RPC.
 message QueryCoreContractRegistryResponse { string address = 1; }
+
+// QueryParamsRequest is the request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params defines the parameters of the module.
+  Params params = 1 [ (gogoproto.nullable) = false ];
+}

@@ -76,4 +76,5 @@ impl ::prost::Name for ClawbackContinuousVestingAccount {
 const NAME: &'static str = "ClawbackContinuousVestingAccount";
 const PACKAGE: &'static str = "sedachain.vesting.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.vesting.v1.ClawbackContinuousVestingAccount".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.vesting.v1.ClawbackContinuousVestingAccount".into() }}
+include!("sedachain.vesting.v1.tonic.rs");
 // @@protoc_insertion_point(module)

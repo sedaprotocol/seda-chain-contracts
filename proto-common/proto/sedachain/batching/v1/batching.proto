@@ -1,8 +1,8 @@
 syntax = "proto3";
 package sedachain.batching.v1;
 
-import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "github.com/sedaprotocol/seda-chain/x/batching/types";
 
@@ -25,38 +25,30 @@ message Batch {
   string validator_root = 5;
   // batch_id is the Keccack-256 hash of the batch content.
   bytes batch_id = 6;
-  // proving_medatada is a field for additional proving data.
-  bytes proving_medatada = 7;
+  // proving_metadata is a field for additional proving data.
+  bytes proving_metadata = 7;
 }
 
-// TreeEntries are the given batch's data result tree entries and
-// validator tree entries.
-message TreeEntries {
-  // batch_number is the identifier of the batch the tree entries from.
-  uint64 batch_number = 1;
-  // data_result_entries are the entries (unhashed leaf contents) of
-  // the data result tree.
-  repeated bytes data_result_entries = 2;
-  // validator_entries are the entries (unhashed leaf contents) of
-  // the validator tree.
-  repeated bytes validator_entries = 3;
+// DataResultTreeEntries is a list of data result tree entries for a
+// given batch.
+message DataResultTreeEntries { repeated bytes entries = 1; }
+
+// ValidatorTreeEntry is an entry in the validator tree.
+message ValidatorTreeEntry {
+  bytes validator_address = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  uint32 voting_power_percent = 2;
+  bytes eth_address = 3;
 }
 
 // BatchSignatures contains basic validator data and its batch signatures
 // under various cryptographic schemes.
 message BatchSignatures {
-  string validator_addr = 1
-      [ (cosmos_proto.scalar) = "cosmos.ValidatorAddressString" ];
-  bytes signatures = 2;
-}
-
-// Params is a list of parameters which can be changed through governance.
-message Params {
-  option (gogoproto.equal) = true;
-
-  // validator_set_trim_percent is the percentage of the validator
-  // set to store in the validator merkle tree in the batch.
-  uint32 validator_set_trim_percent = 1;
+  bytes validator_address = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bytes secp256k1_signature = 2;
 }
 
 // DataResult represents the result of a resolved data request.
@@ -65,22 +57,31 @@ message DataResult {
   string id = 1 [ (gogoproto.jsontag) = "id" ];
   // dr_id is the data request identifier.
   string dr_id = 2 [ (gogoproto.jsontag) = "dr_id" ];
+  // dr_block_height is the height at which the data request was submitted.
+  uint64 dr_block_height = 3 [ (gogoproto.jsontag) = "dr_block_height" ];
   // version is a semantic version string.
-  string version = 3 [ (gogoproto.jsontag) = "version" ];
+  string version = 4 [ (gogoproto.jsontag) = "version" ];
   // block_height is the height at which the data request was tallied.
-  uint64 block_height = 4 [ (gogoproto.jsontag) = "block_height" ];
+  uint64 block_height = 5 [ (gogoproto.jsontag) = "block_height" ];
+  // block_timestamp is the unix timestamp in seconds of when the data request
+  // was tallied.
+  uint64 block_timestamp = 6 [ (gogoproto.jsontag) = "block_timestamp" ];
   // exit_code is the exit code of the tally wasm binary execution.
-  uint32 exit_code = 5 [ (gogoproto.jsontag) = "exit_code" ];
+  uint32 exit_code = 7 [ (gogoproto.jsontag) = "exit_code" ];
   // gas_used is the gas used by the data request execution.
-  uint64 gas_used = 6 [ (gogoproto.jsontag) = "gas_used" ];
+  string gas_used = 8 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.jsontag) = "gas_used"
+  ];
   // result is the result of the tally wasm binary execution.
-  bytes result = 7 [ (gogoproto.jsontag) = "result" ];
+  bytes result = 9 [ (gogoproto.jsontag) = "result" ];
   // payback_address is the payback address set by the relayer.
-  string payback_address = 8 [ (gogoproto.jsontag) = "payback_address" ];
+  string payback_address = 10 [ (gogoproto.jsontag) = "payback_address" ];
   // seda_payload is the payload set by SEDA Protocol (e.g. OEV-enabled
   // data requests)
-  string seda_payload = 9 [ (gogoproto.jsontag) = "seda_payload" ];
+  string seda_payload = 11 [ (gogoproto.jsontag) = "seda_payload" ];
   // consensus indicates whether consensus was reached in the tally
   // process.
-  bool consensus = 10 [ (gogoproto.jsontag) = "consensus" ];
+  bool consensus = 12 [ (gogoproto.jsontag) = "consensus" ];
 }

@@ -119,6 +119,27 @@ impl ::prost::Name for QueryDataProxyConfigResponse {
 const NAME: &'static str = "QueryDataProxyConfigResponse";
 const PACKAGE: &'static str = "sedachain.data_proxy.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.data_proxy.v1.QueryDataProxyConfigResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.data_proxy.v1.QueryDataProxyConfigResponse".into() }}
+/// QueryParamsRequest is the request type for the Query/Params RPC method.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct QueryParamsRequest {
+}
+impl ::prost::Name for QueryParamsRequest {
+const NAME: &'static str = "QueryParamsRequest";
+const PACKAGE: &'static str = "sedachain.data_proxy.v1";
+fn full_name() -> ::prost::alloc::string::String { "sedachain.data_proxy.v1.QueryParamsRequest".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.data_proxy.v1.QueryParamsRequest".into() }}
+/// QueryParamsResponse is the response type for the Query/Params RPC method.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct QueryParamsResponse {
+    /// params defines the parameters of the module.
+    #[prost(message, optional, tag="1")]
+    pub params: ::core::option::Option<Params>,
+}
+impl ::prost::Name for QueryParamsResponse {
+const NAME: &'static str = "QueryParamsResponse";
+const PACKAGE: &'static str = "sedachain.data_proxy.v1";
+fn full_name() -> ::prost::alloc::string::String { "sedachain.data_proxy.v1.QueryParamsResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.data_proxy.v1.QueryParamsResponse".into() }}
 /// All data required for a new data proxy.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -244,4 +265,5 @@ impl ::prost::Name for MsgUpdateParamsResponse {
 const NAME: &'static str = "MsgUpdateParamsResponse";
 const PACKAGE: &'static str = "sedachain.data_proxy.v1";
 fn full_name() -> ::prost::alloc::string::String { "sedachain.data_proxy.v1.MsgUpdateParamsResponse".into() }fn type_url() -> ::prost::alloc::string::String { "/sedachain.data_proxy.v1.MsgUpdateParamsResponse".into() }}
+include!("sedachain.data_proxy.v1.tonic.rs");
 // @@protoc_insertion_point(module)

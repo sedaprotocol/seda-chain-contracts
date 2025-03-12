@@ -1,4 +1,10 @@
-use std::{collections::HashMap, env, process::Command};
+use std::{
+    collections::HashMap,
+    env,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use anyhow::{bail, Context, Result};
 use rand::Rng;
@@ -20,6 +26,8 @@ const TASKS: &[&str] = &[
     "cov",
     "cov-ci",
     "help",
+    "proto-build",
+    "proto-update",
     "tally-data-req-fixture",
     "test-all",
     "test-ci",
@@ -29,6 +37,7 @@ const TASKS: &[&str] = &[
 ];
 
 fn try_main() -> Result<()> {
+    let sh = Shell::new()?;
     // Ensure our working directory is the toplevel
     {
         let toplevel_path = Command::new("git")
@@ -38,21 +47,28 @@ fn try_main() -> Result<()> {
         if !toplevel_path.status.success() {
             bail!("Failed to invoke git rev-parse");
         }
-        let path = String::from_utf8(toplevel_path.stdout)?;
-        std::env::set_current_dir(path.trim()).context("Changing to toplevel")?;
+        let path_string = String::from_utf8(toplevel_path.stdout)?;
+        let path = PathBuf::from(path_string.trim());
+        sh.change_dir(path);
     }
 
     let task = env::args().nth(1);
-    let sh = Shell::new()?;
     match task.as_deref() {
         Some("cov") => cov(&sh)?,
         Some("cov-ci") => cov_ci(&sh)?,
         Some("help") => print_help()?,
+        Some("proto-build") => proto_build(&sh)?,
+        Some("proto-update") => {
+            let git = env::args().nth(2).expect("Missing git version");
+
+            proto_update(&sh, &git)?
+        }
         Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
         Some("test-all") => test_all(&sh)?,
         Some("test-ci") => test_ci(&sh)?,
         Some("test-common") => test_common(&sh)?,
         Some("test-contract") => test_contract(&sh)?,
+
         Some("wasm-opt") => wasm_opt(&sh)?,
         _ => print_help()?,
     }
@@ -257,5 +273,88 @@ fn cov_ci(sh: &Shell) -> Result<()> {
         "cargo llvm-cov -p seda-common -p seda-contract --cobertura --output-path cobertura.xml --locked --ignore-filename-regex contract/src/bin/* nextest -P ci"
     )
     .run()?;
+    Ok(())
+}
+
+fn proto_build(sh: &Shell) -> Result<()> {
+    sh.change_dir("proto-common");
+    let proto_folder = sh.current_dir();
+    cmd!(sh, "echo {proto_folder}").run()?;
+    cmd!(sh, "echo Generating Rust proto code").run()?;
+    cmd!(sh, "buf generate --template buf.gen.rust.yaml").run()?;
+    sh.cmd("find")
+        .arg("src/gen")
+        .arg("-type")
+        .arg("f")
+        .arg("-name")
+        .arg("*.rs")
+        .arg("-exec")
+        .arg("sed")
+        .arg("-i")
+        .arg("s/super::super::/super::/g; s/::v1::/::/g")
+        .arg("{}")
+        .arg("+")
+        .run()?;
+
+    Ok(())
+}
+
+fn copy_dir_recursive(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<()> {
+    fs::create_dir_all(&dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let file_type = entry.file_type()?;
+        let src_path = entry.path();
+        let dst_path = dst.as_ref().join(entry.file_name());
+        if file_type.is_dir() {
+            copy_dir_recursive(src_path, dst_path)?;
+        } else {
+            fs::copy(src_path, dst_path)?;
+        }
+    }
+    Ok(())
+}
+
+fn proto_update(sh: &Shell, git: &str) -> Result<()> {
+    let archive_url = format!("https://codeload.github.com/sedaprotocol/seda-chain/tar.gz/{git}");
+
+    let tmp_dir = sh.create_temp_dir()?;
+    let tmp_path = tmp_dir.path();
+    let archive_path = tmp_path.join("seda-chain.tar.gz");
+
+    cmd!(sh, "curl -L {archive_url} -o {archive_path}").run()?;
+    if !archive_path.exists() {
+        bail!("Failed to download archive");
+    }
+    cmd!(sh, "tar -xzf {archive_path} --strip-components=1 -C {tmp_path}").run()?;
+
+    let proto_dir = tmp_path.join("proto");
+    if !proto_dir.exists() {
+        bail!("Failed to extract repo, was git version correct?");
+    }
+
+    let dest_proto = sh.current_dir().join("proto-common").join("proto");
+
+    if dest_proto.exists() {
+        sh.remove_path(&dest_proto)?;
+    }
+    copy_dir_recursive(proto_dir, &dest_proto)?;
+
+    let go_proto_gen_yaml = dest_proto.join("buf.gen.gogo.yaml");
+    if go_proto_gen_yaml.exists() {
+        sh.remove_path(&go_proto_gen_yaml)?;
+    }
+
+    let lib_rs_path = sh.current_dir().join("proto-common").join("src").join("lib.rs");
+    let lib_rs_content = format!(
+        r#"include!("gen/mod.rs");
+
+pub const SEDA_CHAIN_VERSION: &str = "{}";
+"#,
+        git
+    );
+    sh.write_file(lib_rs_path, lib_rs_content)?;
+    proto_build(sh)?;
+
     Ok(())
 }
