@@ -29,6 +29,8 @@ pub struct DistributionDataProxyReward {
     pub payout_address: String,
     /// The amount to send to the address.
     pub amount:         U128,
+    /// The public key of the data proxy as a hex string.
+    pub public_key:     String,
 }
 
 #[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]

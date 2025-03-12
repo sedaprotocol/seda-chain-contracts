@@ -7,11 +7,12 @@ use seda_common::{
         DataRequestStatus,
         RevealBody,
     },
-    types::HashSelf,
+    types::{HashSelf, ToHexStr},
 };
 
 use crate::{
     msgs::data_requests::{consts::min_post_dr_cost, test_helpers},
+    new_public_key,
     seda_to_aseda,
     TestInfo,
 };
@@ -40,10 +41,12 @@ fn basic_workflow_works() {
     executor.reveal_result(executor_reveal_message).unwrap();
 
     // owner removes a data result
-    // reward goes to executor
+    // data proxy reward goes to executors SEDA address
+    // reward goes to executors identity
     // invalid identities and address are burned
     // non staked executor is not rewarded
     // remainder refunds to alice
+    let (_, proxy) = new_public_key();
     let bob = test_info.new_account("bob", 2);
     test_info
         .creator()
@@ -51,22 +54,29 @@ fn basic_workflow_works() {
             dr_id,
             vec![
                 DistributionMessage::Burn(DistributionBurn { amount: 1u128.into() }),
+                // valid data proxy reward
                 DistributionMessage::DataProxyReward(DistributionDataProxyReward {
                     payout_address: executor.addr().to_string(),
                     amount:         5u128.into(),
+                    public_key:     proxy.to_hex(),
                 }),
+                // valid executor reward
                 DistributionMessage::ExecutorReward(DistributionExecutorReward {
                     identity: executor.pub_key_hex(),
                     amount:   5u128.into(),
                 }),
+                // invalid data proxy reward
                 DistributionMessage::DataProxyReward(DistributionDataProxyReward {
                     amount:         2u128.into(),
                     payout_address: "invalid".to_string(),
+                    public_key:     proxy.to_hex(),
                 }),
+                // invalid executor reward
                 DistributionMessage::ExecutorReward(DistributionExecutorReward {
                     identity: "invalid".to_string(),
                     amount:   2u128.into(),
                 }),
+                // valid executor reward
                 DistributionMessage::ExecutorReward(DistributionExecutorReward {
                     identity: bob.pub_key_hex(),
                     amount:   2u128.into(),
@@ -113,6 +123,8 @@ fn retains_order() {
     executor.commit_result(&dr_id, &executor_reveal_message).unwrap();
     executor.reveal_result(executor_reveal_message).unwrap();
 
+    let (_, proxy) = new_public_key();
+
     // owner removes a data result
     // reward goes to executor
     // remainder refunds to alice
@@ -126,6 +138,7 @@ fn retains_order() {
                 DistributionMessage::DataProxyReward(DistributionDataProxyReward {
                     payout_address: executor.addr().to_string(),
                     amount:         3u128.into(),
+                    public_key:     proxy.to_hex(),
                 }),
             ],
         )

@@ -5,7 +5,7 @@ use msgs::data_requests::{
 use seda_common::msgs::staking::{Staker, StakingConfig};
 
 use super::*;
-use crate::{seda_to_aseda, TestInfo};
+use crate::{new_public_key, seda_to_aseda, TestInfo};
 
 #[test]
 fn owner_set_staking_config() {
@@ -352,13 +352,14 @@ fn executor_not_eligible_if_dr_resolved() {
         .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, None)
         .unwrap();
 
+    let (_, proxy) = new_public_key();
     let reveal = RevealBody {
         dr_id:             dr_id.clone(),
         dr_block_height:   1,
         reveal:            "10".hash().into(),
         gas_used:          0,
         exit_code:         0,
-        proxy_public_keys: vec![],
+        proxy_public_keys: vec![proxy.to_hex()],
     };
     let anyone_reveal_message = anyone.create_reveal_message(reveal);
     // commit
@@ -374,6 +375,7 @@ fn executor_not_eligible_if_dr_resolved() {
             vec![DistributionMessage::DataProxyReward(DistributionDataProxyReward {
                 payout_address: anyone.addr().to_string(),
                 amount:         10u128.into(),
+                public_key:     proxy.to_hex(),
             })],
         )
         .unwrap();

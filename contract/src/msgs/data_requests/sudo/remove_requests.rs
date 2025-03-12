@@ -112,6 +112,7 @@ fn remove_request_and_process_distributions(
                         json_str!(
                             "amount": amount_to_reward,
                             "payout_address": distribution_send.payout_address,
+                            "public_key": distribution_send.public_key,
                         ),
                     );
                 } else {
@@ -121,6 +122,7 @@ fn remove_request_and_process_distributions(
                         json_str!(
                             "payout_address": distribution_send.payout_address,
                             "burn_amount": amount_to_reward,
+                            "public_key": distribution_send.public_key,
                         ),
                     );
                 }
