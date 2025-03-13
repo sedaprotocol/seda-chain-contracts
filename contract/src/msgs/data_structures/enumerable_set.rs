@@ -1,42 +1,16 @@
+use cosmwasm_std::StdError;
 use cw_storage_plus::PrimaryKey;
 
 use super::*;
 
-pub struct EnumerableSet<Key> {
-    pub len:          Item<u32>,
-    pub key_to_index: Map<Key, u32>,
-    pub index_to_key: Map<u32, Key>,
-}
+pub struct Enumerable;
 
-impl<'a, Key> EnumerableSet<Key>
+pub type EnumerableSet<Key> = IndexKeyedSet<Key, Key, Enumerable>;
+
+impl<'a, Key> IndexKeyedSet<Key, Key, Enumerable>
 where
     Key: PrimaryKey<'a> + serde::de::DeserializeOwned + serde::Serialize,
 {
-    pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
-        self.len.save(store, &0)?;
-        Ok(())
-    }
-
-    /// Returns true if the key exists in the set in O(1) time.
-    pub fn has(&self, store: &dyn Storage, key: Key) -> bool {
-        self.key_to_index.has(store, key)
-    }
-
-    /// Returns the length of the set in O(1) time.
-    pub fn len(&self, store: &dyn Storage) -> StdResult<u32> {
-        self.len.load(store)
-    }
-
-    // /// Returns the key at the given index in O(1) time.
-    // fn at(&self, store: &dyn Storage, index: u32) -> StdResult<Option<Hash>> {
-    //     self.index_to_key.may_load(store, index)
-    // }
-
-    /// Returns the index of the key in the set in O(1) time.
-    pub fn get_index(&self, store: &dyn Storage, key: Key) -> StdResult<u32> {
-        self.key_to_index.load(store, key)
-    }
-
     /// Adds a key to the set in O(1) time.
     pub fn add(&self, store: &mut dyn Storage, key: Key) -> StdResult<()> {
         if self.has(store, key.clone()) {
@@ -44,7 +18,7 @@ where
         }
 
         let index = self.len(store)?;
-        self.index_to_key.save(store, index, &key)?;
+        self.index_to_value.save(store, index, &key)?;
         self.key_to_index.save(store, key, &index)?;
         self.len.save(store, &(index + 1))?;
         Ok(())
@@ -66,7 +40,7 @@ where
         // Handle case when removing the last or only item
         // means we can just remove the key and return
         if total_items == 1 || index == total_items - 1 {
-            self.index_to_key.remove(store, index);
+            self.index_to_value.remove(store, index);
             self.key_to_index.remove(store, key);
             self.len.save(store, &(total_items - 1))?;
             return Ok(());
@@ -74,14 +48,14 @@ where
 
         // Swap the last item into the position of the removed item
         let last_index = total_items - 1;
-        let last_key = self.index_to_key.load(store, last_index)?;
+        let last_key = self.index_to_value.load(store, last_index)?;
 
         // Update mapping for the swapped item
-        self.index_to_key.save(store, index, &last_key)?;
+        self.index_to_value.save(store, index, &last_key)?;
         self.key_to_index.save(store, last_key, &index)?;
 
         // Remove original entries for the removed item
-        self.index_to_key.remove(store, last_index);
+        self.index_to_value.remove(store, last_index);
         self.key_to_index.remove(store, key);
 
         // Update length
@@ -93,10 +67,11 @@ where
 #[macro_export]
 macro_rules! enumerable_set {
     ($namespace:expr) => {
-        EnumerableSet {
-            len:          Item::new(concat!($namespace, "_len")),
-            key_to_index: Map::new(concat!($namespace, "_key_to_index")),
-            index_to_key: Map::new(concat!($namespace, "_index_to_key")),
+        $crate::msgs::data_structures::IndexKeyedSet {
+            len:            Item::new(concat!($namespace, "_len")),
+            index_to_value: Map::new(concat!($namespace, "_index_to_value")),
+            key_to_index:   Map::new(concat!($namespace, "_key_to_index")),
+            kind:           std::marker::PhantomData::<$crate::msgs::data_structures::Enumerable>,
         }
     };
 }

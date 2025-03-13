@@ -1,6 +1,7 @@
 use owner::state::ALLOWLIST;
 
 use super::*;
+use crate::msgs::data_structures::EnumerableSet;
 
 pub struct StakersMap<'a> {
     pub stakers:     Map<&'a PublicKey, Staker>,

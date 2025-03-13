@@ -54,7 +54,7 @@ impl TestInfo<'_> {
         };
         assert_eq!(
             key,
-            status_map.index_to_key.may_load(&self.store, status_index).unwrap()
+            status_map.index_to_value.may_load(&self.store, status_index).unwrap()
         );
     }
 

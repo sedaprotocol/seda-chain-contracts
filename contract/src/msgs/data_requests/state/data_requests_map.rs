@@ -1,4 +1,5 @@
 use super::*;
+use crate::msgs::data_structures::EnumerableSet;
 
 pub struct DataRequestsMap<'a> {
     pub reqs:       Map<&'a Hash, DataRequest>,
@@ -198,7 +199,7 @@ impl DataRequestsMap<'_> {
             DataRequestStatus::Revealing => &self.revealing,
             DataRequestStatus::Tallying => &self.tallying,
         }
-        .index_to_key
+        .index_to_value
         .range(store, start, end, Order::Ascending)
         .flat_map(|result| result.map(|(_, key)| self.reqs.load(store, &key)))
         .collect::<StdResult<Vec<_>>>()?;
