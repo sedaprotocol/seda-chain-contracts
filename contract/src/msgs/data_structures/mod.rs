@@ -11,13 +11,19 @@ pub use enumerable_set::{Enumerable, EnumerableSet};
 #[cfg(test)]
 mod cost_sorted_index_tests;
 
+/// A base struct for an index keyed set.
+/// This struct is used to create a set where a key fetches the index.
+/// Then the Value is stored at that index.
 pub struct IndexKeyedSet<Value, Key, Kind> {
     pub len:            Item<u32>,
     pub index_to_value: Map<u32, Value>,
     pub key_to_index:   Map<Key, u32>,
+    /// We use this to add compile-time type checking for the variation in methods between
+    /// a zero size type. So it doesn't have any effect at runtime.
     pub kind:           PhantomData<Kind>,
 }
 
+// The common methods for all IndexKeyedSets Variations
 impl<'a, Value, Key, Kind> IndexKeyedSet<Value, Key, Kind>
 where
     Value: serde::de::DeserializeOwned + serde::Serialize,

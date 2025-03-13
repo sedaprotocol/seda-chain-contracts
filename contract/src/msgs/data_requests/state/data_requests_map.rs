@@ -68,16 +68,16 @@ impl DataRequestsMap<'_> {
         req: DataRequest,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
-        if self.has(store, &entry.key) {
+        if self.has(store, &entry.hash) {
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        self.reqs.save(store, &entry.key, &req)?;
+        self.reqs.save(store, &entry.hash, &req)?;
         let timeout_config = TIMEOUT_CONFIG.load(store)?;
         self.timeouts.insert(
             store,
             current_height + timeout_config.commit_timeout_in_blocks,
-            &entry.key,
+            &entry.hash,
         )?;
         self.add_to_status(store, entry, status)?;
 
@@ -221,7 +221,7 @@ impl DataRequestsMap<'_> {
         }
         .index_to_value
         .range(store, start, end, Order::Ascending)
-        .flat_map(|result| result.map(|(_, entry)| self.reqs.load(store, &entry.key)))
+        .flat_map(|result| result.map(|(_, entry)| self.reqs.load(store, &entry.hash)))
         .collect::<StdResult<Vec<_>>>()?;
 
         Ok(requests)

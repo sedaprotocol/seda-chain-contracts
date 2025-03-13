@@ -143,7 +143,7 @@ fn enum_map_insert() {
     let (entry, val) = create_test_dr(1, None);
     test_info.insert(1, entry.clone(), val);
     test_info.assert_status_len(1, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry.key, Some(0));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry.hash, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(entry));
 }
 
@@ -153,7 +153,7 @@ fn enum_map_get() {
 
     let (entry, req) = create_test_dr(1, None);
     test_info.insert(1, entry.clone(), req.clone());
-    test_info.assert_request(&entry.key, Some(req))
+    test_info.assert_request(&entry.hash, Some(req))
 }
 
 #[test]
@@ -187,12 +187,12 @@ fn enum_map_update() {
 
     test_info.insert(current_height, entry1.clone(), dr1.clone());
     test_info.assert_status_len(1, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.key, Some(0));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.hash, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(entry1.clone()));
 
-    test_info.update(&entry1.key, dr2.clone(), None, current_height);
+    test_info.update(&entry1.hash, dr2.clone(), None, current_height);
     test_info.assert_status_len(1, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.key, Some(0));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.hash, Some(0));
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(entry1));
 }
 
@@ -202,7 +202,7 @@ fn enum_map_update_non_existing() {
     let mut test_info = TestInfo::init();
     let (entry1, req) = create_test_dr(1, None);
     let current_height = 1;
-    test_info.update(&entry1.key, req, None, current_height);
+    test_info.update(&entry1.hash, req, None, current_height);
 }
 
 #[test]
@@ -218,18 +218,18 @@ fn enum_map_remove_first() {
     test_info.insert_removable(1, entry2.clone(), req2.clone()); // 1
     test_info.insert_removable(1, entry3.clone(), req3.clone()); // 2
 
-    test_info.remove(&entry1.key);
+    test_info.remove(&entry1.hash);
     test_info.assert_status_len(2, TEST_STATUS);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry3.key, Some(1));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry3.hash, Some(1));
     test_info.assert_status_index_to_key(TEST_STATUS, 1, Some(entry3.clone()));
 
     // test that we can still get the other keys
-    test_info.assert_request(&entry2.key, Some(req2.clone()));
-    test_info.assert_request(&entry3.key, Some(req3.clone()));
+    test_info.assert_request(&entry2.hash, Some(req2.clone()));
+    test_info.assert_request(&entry3.hash, Some(req3.clone()));
 
     // test that the req is removed
-    test_info.assert_request(&entry1.key, None);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.key, None);
+    test_info.assert_request(&entry1.hash, None);
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.hash, None);
 }
 
 #[test]
@@ -246,14 +246,14 @@ fn enum_map_remove_last() {
     test_info.insert_removable(1, entry3.clone(), req3.clone()); // 2
     test_info.assert_status_len(3, TEST_STATUS);
 
-    test_info.remove(&entry3.key);
+    test_info.remove(&entry3.hash);
     test_info.assert_status_len(2, TEST_STATUS);
     test_info.assert_status_index_to_key(TEST_STATUS, 2, None);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry3.key, None);
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry3.hash, None);
 
     // check that the other keys are still there
-    assert_eq!(test_info.get(&entry1.key), Some(req1.clone()));
-    assert_eq!(test_info.get(&entry2.key), Some(req2.clone()));
+    assert_eq!(test_info.get(&entry1.hash), Some(req1.clone()));
+    assert_eq!(test_info.get(&entry2.hash), Some(req2.clone()));
 
     // test that the status indexes are still there
     test_info.assert_status_index_to_key(TEST_STATUS, 0, Some(entry1));
@@ -281,22 +281,22 @@ fn enum_map_remove() {
     // entry4: 2
     test_info.assert_status_len(4, &DataRequestStatus::Tallying);
 
-    test_info.remove(&entry2.key);
+    test_info.remove(&entry2.hash);
 
     // test that the key is removed
     test_info.assert_status_len(3, &DataRequestStatus::Tallying);
-    test_info.assert_request(&entry2.key, None);
+    test_info.assert_request(&entry2.hash, None);
 
     // check that the other keys are still there
-    test_info.assert_request(&entry1.key, Some(req1));
-    test_info.assert_request(&entry3.key, Some(req3));
-    test_info.assert_request(&entry4.key, Some(req4));
+    test_info.assert_request(&entry1.hash, Some(req1));
+    test_info.assert_request(&entry3.hash, Some(req3));
+    test_info.assert_request(&entry4.hash, Some(req4));
 
     // check that the status is updated
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.key, Some(2));
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry2.key, None);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry3.key, Some(0));
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry4.key, Some(1));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry1.hash, Some(2));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry2.hash, None);
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry3.hash, Some(0));
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry4.hash, Some(1));
 
     // check the status indexes
     test_info.assert_status_index_to_key(TEST_STATUS, 2, Some(entry1));
@@ -323,7 +323,7 @@ fn get_requests_by_status() {
     let (entry2, req2) = create_test_dr(2, None);
     test_info.insert(current_height, entry2.clone(), req2.clone());
     test_info.update(
-        &entry2.key,
+        &entry2.hash,
         req2.clone(),
         Some(DataRequestStatus::Revealing),
         current_height,
@@ -381,9 +381,9 @@ fn remove_only_item() {
 
     let (entry, req) = create_test_dr(1, None);
     test_info.insert_removable(1, entry.clone(), req.clone());
-    test_info.remove(&entry.key);
+    test_info.remove(&entry.hash);
 
     test_info.assert_status_len(0, &DataRequestStatus::Tallying);
     test_info.assert_status_index_to_key(TEST_STATUS, 0, None);
-    test_info.assert_status_key_to_index(TEST_STATUS, &entry.key, None);
+    test_info.assert_status_key_to_index(TEST_STATUS, &entry.hash, None);
 }

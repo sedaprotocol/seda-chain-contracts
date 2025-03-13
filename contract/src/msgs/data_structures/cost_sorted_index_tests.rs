@@ -50,7 +50,7 @@ impl TestInfo<'_> {
             .index_to_value
             .load(&self.store, index)
             .unwrap()
-            .key
+            .hash
             .into_owned()
     }
 
@@ -61,7 +61,7 @@ impl TestInfo<'_> {
                 &mut self.store,
                 Entry {
                     cost: cost.into(),
-                    key:  Cow::Borrowed(key),
+                    hash: Cow::Borrowed(key),
                 },
             )
             .unwrap();

@@ -3,8 +3,9 @@ use cw_storage_plus::PrimaryKey;
 
 use super::*;
 
+/// A zero-sized type used to mark the `IndexKeyedSet` as an enumerable set.
 pub struct Enumerable;
-
+/// A type alias for an `IndexKeyedSet` that is an enumerable set.
 pub type EnumerableSet<Key> = IndexKeyedSet<Key, Key, Enumerable>;
 
 impl<'a, Key> IndexKeyedSet<Key, Key, Enumerable>
@@ -24,7 +25,7 @@ where
         Ok(())
     }
 
-    /// Removes a key from the set in O(1) time.
+    /// Removes a key from the set in O(1) time, via swapping with the last item.
     pub fn remove(&self, store: &mut dyn Storage, key: Key) -> StdResult<()> {
         let index = self
             .key_to_index
