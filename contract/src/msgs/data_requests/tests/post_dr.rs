@@ -67,7 +67,6 @@ fn fails_with_not_enough_funds_fails() {
 }
 
 #[test]
-#[should_panic(expected = "InsufficientFunds")]
 fn with_max_gas_limits() {
     let test_info = TestInfo::init();
     let anyone = test_info.new_executor("anyone", u128::MAX, 1);
@@ -85,7 +84,7 @@ fn with_max_gas_limits() {
             vec![],
             vec![],
             2,
-            dbg!(Some(u128::from(u64::MAX) + u128::from(u64::MAX) * MIN_GAS_PRICE.u128())),
+            Some((u128::from(u64::MAX) + u128::from(u64::MAX)) * MIN_GAS_PRICE.u128()),
         )
         .unwrap();
 }
@@ -127,7 +126,7 @@ fn fails_if_minimum_gas_price_is_not_met() {
     let test_info = TestInfo::init();
     let executor = test_info.new_executor("sender", 1, 1);
 
-    // post a data request with gas price = 0
+    // post a data request with gas price = min - 1
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
     dr.gas_price -= Uint128::one();
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
@@ -139,7 +138,7 @@ fn fails_if_minimum_gas_exec_limit_is_not_met() {
     let test_info = TestInfo::init();
     let executor = test_info.new_executor("sender", 1, 1);
 
-    // post a data request with exec gas limit = 0
+    // post a data request with exec gas limit = min - 1
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
     dr.exec_gas_limit -= 1;
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
@@ -151,7 +150,7 @@ fn fails_if_minimum_gas_tally_limit_is_not_met() {
     let test_info = TestInfo::init();
     let executor = test_info.new_executor("sender", 1, 1);
 
-    // post a data request with exec gas limit = 0
+    // post a data request with tally gas limit = min - 1
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
     dr.tally_gas_limit -= 1;
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
@@ -163,7 +162,7 @@ fn fails_if_minimum_aseda_not_attached() {
     let test_info = TestInfo::init();
     let executor = test_info.new_executor("sender", 1, 1);
 
-    // post a data request with exec gas limit = 0
+    // post a data request with attached funds = min post dr cost - 1
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     executor
         .post_data_request(dr, vec![], vec![1, 2, 3], 1, Some(min_post_dr_cost() - 1))

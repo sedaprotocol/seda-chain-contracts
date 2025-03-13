@@ -5,7 +5,7 @@ use msgs::data_requests::{
 use seda_common::msgs::staking::{Staker, StakingConfig};
 
 use super::*;
-use crate::TestInfo;
+use crate::{seda_to_aseda, TestInfo};
 
 #[test]
 fn owner_set_staking_config() {
@@ -482,8 +482,8 @@ fn cannot_frontrun_withdraw() {
     let test_info = TestInfo::init();
 
     // register a data request executor
-    let alice = test_info.new_executor("alice", 100u128, 10);
-    let fred = test_info.new_executor("fred", 100u128, 1);
+    let alice = test_info.new_executor("alice", 1, 10);
+    let fred = test_info.new_executor("fred", 1, 1);
 
     // alice unstakes 5 tokens
     alice.unstake(5).unwrap();
@@ -512,13 +512,15 @@ fn cannot_frontrun_withdraw() {
     let staker = alice.get_staker_info().unwrap();
     assert_eq!(staker.tokens_pending_withdrawal.u128(), 0);
 
-    // fred should still have 99 aseda in their balance (100 [original] - 1 [staked])
+    // fred should still have their same balance (1seda [original] - 1aseda [staked])
+    let fred_expected_balance = seda_to_aseda(1.into()) - 1;
     let balance_fred = test_info.executor_balance("fred");
-    assert_eq!(99u128, balance_fred);
+    assert_eq!(fred_expected_balance, balance_fred);
 
     // alice should have 95 aseda in their balance (100 [original] - 10 [staked] + 5 [withdraw])
+    let alice_expected_balance = seda_to_aseda(1.into()) - 10 + 5;
     let balance_alice = test_info.executor_balance("alice");
-    assert_eq!(95u128, balance_alice);
+    assert_eq!(alice_expected_balance, balance_alice);
 }
 
 #[test]
