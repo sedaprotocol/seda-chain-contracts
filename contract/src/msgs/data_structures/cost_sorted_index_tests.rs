@@ -208,15 +208,26 @@ fn remove_same_cost() {
     let key1 = [1; 32];
     let key2 = [2; 32];
     let key3 = [3; 32];
+    let key4 = [4; 32];
     let cost = 1000;
 
     info.add(cost, &key1);
     info.add(cost, &key2);
     info.add(cost, &key3);
+    info.add(cost, &key4);
+
+    // check all are there
+    assert_eq!(info.len(), 4);
+    assert_eq!(info.get_index(&key1), 0);
+    assert_eq!(info.get_index(&key2), 1);
+    assert_eq!(info.get_index(&key3), 2);
+    assert_eq!(info.get_index(&key4), 3);
+
     // remove index 1 - should be key2
     info.remove(&key2);
 
-    assert_eq!(info.len(), 2);
+    assert_eq!(info.len(), 3);
     assert_eq!(info.get_index(&key1), 0);
     assert_eq!(info.get_index(&key3), 1);
+    assert_eq!(info.get_index(&key4), 2);
 }

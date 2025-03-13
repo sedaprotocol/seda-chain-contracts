@@ -3,6 +3,7 @@ use cosmwasm_std::Storage;
 use cw_storage_plus::Bound;
 
 use super::*;
+use crate::msgs::data_structures::Entry;
 mod data_requests_map;
 use data_requests_map::{new_enumerable_status_map, DataRequestsMap};
 mod timeouts;
@@ -48,15 +49,17 @@ pub fn post_request(
     store: &mut dyn Storage,
     current_height: u64,
     dr_id: Hash,
+    cost: Uint128,
     dr: DataRequest,
 ) -> Result<(), ContractError> {
     // insert the data request
-    DATA_REQUESTS.insert(store, current_height, dr_id, dr, &DataRequestStatus::Committing)?;
+    let entry = Entry::new(cost, dr_id);
+    DATA_REQUESTS.insert(store, current_height, entry, dr, &DataRequestStatus::Committing)?;
 
     Ok(())
 }
 
-pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
+pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
     let status = if dr.reveal_started() {
         Some(DataRequestStatus::Revealing)
     } else {
@@ -76,7 +79,7 @@ pub fn requests_by_status(
     DATA_REQUESTS.get_requests_by_status(store, status, offset, limit)
 }
 
-pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {
+pub fn reveal(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {
     let status = if dr.is_tallying() {
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
@@ -89,7 +92,7 @@ pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_hei
     Ok(())
 }
 
-pub fn remove_request(store: &mut dyn Storage, dr_id: Hash) -> StdResult<()> {
+pub fn remove_request(store: &mut dyn Storage, dr_id: &Hash) -> StdResult<()> {
     // we have to remove the request from the pool
     DATA_REQUESTS.remove(store, dr_id)?;
     // no need to update status as we remove it from the requests pool

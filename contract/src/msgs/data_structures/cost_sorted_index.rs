@@ -7,9 +7,19 @@ use serde::{Deserialize, Serialize};
 use super::IndexKeyedSet;
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(test, derive(Clone, Debug, PartialEq, Eq))]
 pub struct Entry<'a> {
     pub cost: Uint128,
     pub key:  Cow<'a, Hash>,
+}
+
+impl Entry<'_> {
+    pub fn new(cost: Uint128, key: Hash) -> Self {
+        Self {
+            cost,
+            key: Cow::Owned(key),
+        }
+    }
 }
 
 pub struct CostSorted;

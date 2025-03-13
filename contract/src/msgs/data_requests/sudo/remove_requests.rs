@@ -196,7 +196,7 @@ fn remove_request_and_process_distributions(
         event = event.add_attribute("refund", dr_escrow.amount.to_string());
     }
 
-    if state::remove_request(deps.storage, dr_id).is_err() {
+    if state::remove_request(deps.storage, &dr_id).is_err() {
         event = event.add_attribute("failed_to_remove_dr", dr_id_str);
     };
     DR_ESCROW.remove(deps.storage, &dr_id);

@@ -1,3 +1,4 @@
+use cosmwasm_std::Uint128;
 use seda_common::{
     msgs::data_requests::{
         sudo::{DistributionExecutorReward, DistributionMessage},
@@ -7,7 +8,10 @@ use seda_common::{
     types::HashSelf,
 };
 
-use crate::{msgs::data_requests::test_helpers, TestInfo};
+use crate::{
+    msgs::data_requests::{consts::min_post_dr_cost, test_helpers},
+    TestInfo,
+};
 
 #[test]
 fn empty_works() {
@@ -267,4 +271,73 @@ fn works_with_many_more_drs_in_pool() {
             .data_requests
             .len()
     );
+}
+
+#[test]
+fn should_be_in_order_of_most_to_least_expensive() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_executor("alice", 62, 1);
+    test_info.new_executor("bob", 2, 1);
+    test_info.new_executor("claire", 2, 1);
+
+    // post a data request
+    // base price dr
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
+    let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
+
+    // post a second data request
+    // slightly more expensive dr
+    let mut dr2 = test_helpers::calculate_dr_id_and_args(2, 3);
+    dr2.gas_price += Uint128::one();
+    let dr_id2 = alice
+        .post_data_request(dr2, vec![], vec![], 2, Some(min_post_dr_cost() * 2))
+        .unwrap();
+
+    // post a third data request
+    // most expensive dr
+    let mut dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
+    dr3.gas_price += Uint128::new(2);
+    let dr_id3 = alice
+        .post_data_request(dr3, vec![], vec![], 3, Some(min_post_dr_cost() * 2))
+        .unwrap();
+
+    let drs = alice.get_data_requests_by_status(DataRequestStatus::Committing, 0, 3);
+    assert!(!drs.is_paused);
+    assert_eq!(3, drs.data_requests.len());
+    assert_eq!(dr_id3, drs.data_requests[0].id);
+    assert_eq!(dr_id2, drs.data_requests[1].id);
+    assert_eq!(dr_id1, drs.data_requests[2].id);
+}
+
+#[test]
+fn should_be_lilo_for_same_cost() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_executor("alice", 62, 1);
+    test_info.new_executor("bob", 2, 1);
+    test_info.new_executor("claire", 2, 1);
+
+    // post a data request
+    // base price dr
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 3);
+    let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
+
+    // post a second data request
+    // slightly more expensive dr
+    let mut dr2 = test_helpers::calculate_dr_id_and_args(2, 3);
+    dr2.gas_price += Uint128::one();
+    let dr_id2 = alice
+        .post_data_request(dr2, vec![], vec![], 2, Some(min_post_dr_cost() * 2))
+        .unwrap();
+
+    // post a third data request
+    // base price dr
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
+    let dr_id3 = alice.post_data_request(dr3, vec![], vec![], 3, None).unwrap();
+
+    let drs = alice.get_data_requests_by_status(DataRequestStatus::Committing, 0, 3);
+    assert!(!drs.is_paused);
+    assert_eq!(3, drs.data_requests.len());
+    assert_eq!(dr_id2, drs.data_requests[0].id);
+    assert_eq!(dr_id1, drs.data_requests[1].id);
+    assert_eq!(dr_id3, drs.data_requests[2].id);
 }

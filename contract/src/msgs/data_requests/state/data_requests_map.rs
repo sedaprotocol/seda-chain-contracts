@@ -1,11 +1,11 @@
 use super::*;
-use crate::msgs::data_structures::EnumerableSet;
+use crate::msgs::data_structures::{CostSortedIndex, Entry};
 
 pub struct DataRequestsMap<'a> {
     pub reqs:       Map<&'a Hash, DataRequest>,
-    pub committing: EnumerableSet<Hash>,
-    pub revealing:  EnumerableSet<Hash>,
-    pub tallying:   EnumerableSet<Hash>,
+    pub committing: CostSortedIndex<'a>,
+    pub revealing:  CostSortedIndex<'a>,
+    pub tallying:   CostSortedIndex<'a>,
     pub timeouts:   Timeouts<'a>,
 }
 
@@ -24,17 +24,33 @@ impl DataRequestsMap<'_> {
         self.reqs.has(store, key)
     }
 
-    fn add_to_status(&self, store: &mut dyn Storage, key: Hash, status: &DataRequestStatus) -> StdResult<()> {
+    fn add_to_status(&self, store: &mut dyn Storage, entry: Entry<'_>, status: &DataRequestStatus) -> StdResult<()> {
         match status {
-            DataRequestStatus::Committing => self.committing.add(store, key)?,
-            DataRequestStatus::Revealing => self.revealing.add(store, key)?,
-            DataRequestStatus::Tallying => self.tallying.add(store, key)?,
+            DataRequestStatus::Committing => self.committing.add(store, entry)?,
+            DataRequestStatus::Revealing => self.revealing.add(store, entry)?,
+            DataRequestStatus::Tallying => self.tallying.add(store, entry)?,
         }
 
         Ok(())
     }
 
-    fn remove_from_status(&self, store: &mut dyn Storage, key: Hash, status: &DataRequestStatus) -> StdResult<()> {
+    fn get_from_status(&self, store: &dyn Storage, key: &Hash) -> StdResult<Entry<'_>> {
+        if self.committing.has(store, key) {
+            return self.committing.at(store, key);
+        }
+
+        if self.revealing.has(store, key) {
+            return self.revealing.at(store, key);
+        }
+
+        if self.tallying.has(store, key) {
+            return self.tallying.at(store, key);
+        }
+
+        Err(StdError::generic_err("Key does not exist"))
+    }
+
+    fn remove_from_status(&self, store: &mut dyn Storage, key: &Hash, status: &DataRequestStatus) -> StdResult<()> {
         match status {
             DataRequestStatus::Committing => self.committing.remove(store, key)?,
             DataRequestStatus::Revealing => self.revealing.remove(store, key)?,
@@ -48,24 +64,27 @@ impl DataRequestsMap<'_> {
         &self,
         store: &mut dyn Storage,
         current_height: u64,
-        key: Hash,
+        entry: Entry<'_>,
         req: DataRequest,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
-        if self.has(store, &key) {
+        if self.has(store, &entry.key) {
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        self.reqs.save(store, &key, &req)?;
-        self.add_to_status(store, key, status)?;
+        self.reqs.save(store, &entry.key, &req)?;
         let timeout_config = TIMEOUT_CONFIG.load(store)?;
-        self.timeouts
-            .insert(store, current_height + timeout_config.commit_timeout_in_blocks, &key)?;
+        self.timeouts.insert(
+            store,
+            current_height + timeout_config.commit_timeout_in_blocks,
+            &entry.key,
+        )?;
+        self.add_to_status(store, entry, status)?;
 
         Ok(())
     }
 
-    fn find_status(&self, store: &dyn Storage, key: Hash) -> StdResult<DataRequestStatus> {
+    fn find_status(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequestStatus> {
         if self.committing.has(store, key) {
             return Ok(DataRequestStatus::Committing);
         }
@@ -84,14 +103,14 @@ impl DataRequestsMap<'_> {
     pub fn update(
         &self,
         store: &mut dyn Storage,
-        key: Hash,
+        key: &Hash,
         dr: DataRequest,
         status: Option<DataRequestStatus>,
         current_height: u64,
         timeout: bool,
     ) -> StdResult<()> {
         // Check if the key exists
-        if !self.has(store, &key) {
+        if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
@@ -118,10 +137,10 @@ impl DataRequestsMap<'_> {
                     );
 
                     // We change the timeout to the reveal timeout when commit -> reveal
-                    self.timeouts.remove_by_dr_id(store, &key)?;
+                    self.timeouts.remove_by_dr_id(store, key)?;
                     let timeout_config = TIMEOUT_CONFIG.load(store)?;
                     self.timeouts
-                        .insert(store, timeout_config.reveal_timeout_in_blocks + current_height, &key)?;
+                        .insert(store, timeout_config.reveal_timeout_in_blocks + current_height, key)?;
                 }
                 DataRequestStatus::Revealing => {
                     assert_eq!(
@@ -131,7 +150,7 @@ impl DataRequestsMap<'_> {
                     );
 
                     // We remove the timeout when reveal -> tally
-                    self.timeouts.remove_by_dr_id(store, &key)?;
+                    self.timeouts.remove_by_dr_id(store, key)?;
                 }
                 DataRequestStatus::Tallying => {
                     assert_ne!(
@@ -143,12 +162,13 @@ impl DataRequestsMap<'_> {
             }
 
             // remove from current status, then add to new one.
+            let entry = self.get_from_status(store, key)?;
             self.remove_from_status(store, key, &current_status)?;
-            self.add_to_status(store, key, &status)?;
+            self.add_to_status(store, entry, &status)?;
         }
 
         // always update the request
-        self.reqs.save(store, &key, &dr)?;
+        self.reqs.save(store, key, &dr)?;
         Ok(())
     }
 
@@ -163,8 +183,8 @@ impl DataRequestsMap<'_> {
     /// Removes an req from the map by key.
     /// Swaps the last req with the req to remove.
     /// Then pops the last req.
-    pub fn remove(&self, store: &mut dyn Storage, key: Hash) -> Result<(), StdError> {
-        if !self.has(store, &key) {
+    pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
+        if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
@@ -178,7 +198,7 @@ impl DataRequestsMap<'_> {
         );
 
         // remove the request
-        self.reqs.remove(store, &key);
+        self.reqs.remove(store, key);
         // remove from the status
         self.remove_from_status(store, key, &current_status)?;
 
@@ -201,7 +221,7 @@ impl DataRequestsMap<'_> {
         }
         .index_to_value
         .range(store, start, end, Order::Ascending)
-        .flat_map(|result| result.map(|(_, key)| self.reqs.load(store, &key)))
+        .flat_map(|result| result.map(|(_, entry)| self.reqs.load(store, &entry.key)))
         .collect::<StdResult<Vec<_>>>()?;
 
         Ok(requests)
@@ -217,7 +237,14 @@ impl DataRequestsMap<'_> {
                 // get the dr itself
                 let dr = self.get(store, &hash)?;
                 // update it to tallying
-                self.update(store, hash, dr, Some(DataRequestStatus::Tallying), current_height, true)?;
+                self.update(
+                    store,
+                    &hash,
+                    dr,
+                    Some(DataRequestStatus::Tallying),
+                    current_height,
+                    true,
+                )?;
                 Ok(hash.to_hex())
             })
             .collect::<StdResult<Vec<_>>>()
@@ -228,9 +255,9 @@ macro_rules! new_enumerable_status_map {
     ($namespace:literal) => {
         DataRequestsMap {
             reqs:       Map::new(concat!($namespace, "_reqs")),
-            committing: $crate::enumerable_set!(concat!($namespace, "_committing")),
-            revealing:  $crate::enumerable_set!(concat!($namespace, "_revealing")),
-            tallying:   $crate::enumerable_set!(concat!($namespace, "_tallying")),
+            committing: $crate::cost_sorted_index!(concat!($namespace, "_committing")),
+            revealing:  $crate::cost_sorted_index!(concat!($namespace, "_revealing")),
+            tallying:   $crate::cost_sorted_index!(concat!($namespace, "_tallying")),
             timeouts:   Timeouts {
                 timeouts:        Map::new(concat!($namespace, "_timeouts")),
                 hash_to_timeout: Map::new(concat!($namespace, "_hash_to_timeout")),

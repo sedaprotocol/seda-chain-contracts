@@ -44,11 +44,12 @@ impl ExecuteHandler for execute::post_request::Execute {
         // Take the funds from the user
         let token = TOKEN.load(deps.storage)?;
         let funds = cw_utils::must_pay(&info, &token)?;
-        let required = (Uint128::from(self.posted_dr.exec_gas_limit) + Uint128::from(self.posted_dr.tally_gas_limit))
-            .checked_mul(self.posted_dr.gas_price)?;
-        if funds < required {
+        let required_cost = (Uint128::from(self.posted_dr.exec_gas_limit)
+            + Uint128::from(self.posted_dr.tally_gas_limit))
+        .checked_mul(self.posted_dr.gas_price)?;
+        if funds < required_cost {
             return Err(ContractError::InsufficientFunds(
-                required,
+                required_cost,
                 get_attached_funds(&info.funds, &token)?,
             ));
         };
@@ -111,7 +112,7 @@ impl ExecuteHandler for execute::post_request::Execute {
 
             height: env.block.height,
         };
-        state::post_request(deps.storage, env.block.height, dr_id, dr)?;
+        state::post_request(deps.storage, env.block.height, dr_id, required_cost, dr)?;
 
         Ok(res)
     }

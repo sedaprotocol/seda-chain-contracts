@@ -38,10 +38,11 @@ where
         self.len.load(store)
     }
 
-    // /// Returns the key at the given index in O(1) time.
-    // fn at(&self, store: &dyn Storage, index: u32) -> StdResult<Option<Hash>> {
-    //     self.index_to_key.may_load(store, index)
-    // }
+    /// Returns the key at the given index in O(1) time.
+    pub fn at(&self, store: &dyn Storage, key: Key) -> StdResult<Value> {
+        let index = self.key_to_index.load(store, key)?;
+        self.index_to_value.load(store, index)
+    }
 
     /// Returns the index of the key in the set in O(1) time.
     pub fn get_index(&self, store: &dyn Storage, key: Key) -> StdResult<u32> {
