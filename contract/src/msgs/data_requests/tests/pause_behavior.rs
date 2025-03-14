@@ -14,14 +14,14 @@ pub fn returns_pause_property_dr_query_by_status() {
     let dr = crate::msgs::data_requests::test_helpers::calculate_dr_id_and_args(1, 1);
     let _dr_id = anyone.post_data_request(dr, vec![], vec![], 2, None).unwrap();
 
-    let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(!drs.is_paused);
     assert_eq!(1, drs.data_requests.len());
 
     test_info.creator().pause().unwrap();
     assert!(test_info.creator().is_paused());
 
-    let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(drs.is_paused);
     assert_eq!(1, drs.data_requests.len());
 

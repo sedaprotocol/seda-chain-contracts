@@ -50,7 +50,7 @@ fn works() {
     // alice reveals
     alice.reveal_result(alice_reveal_message).unwrap();
 
-    let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
     assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
@@ -84,7 +84,7 @@ fn works_with_proxies() {
     // alice reveals
     alice.reveal_result(alice_reveal_message).unwrap();
 
-    let tallying = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10);
+    let tallying = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 10);
     assert!(!tallying.is_paused);
     assert_eq!(1, tallying.data_requests.len());
     assert!(tallying.data_requests.iter().any(|r| r.id == dr_id));
@@ -251,7 +251,7 @@ fn fails_if_user_did_not_commit() {
     // bob reveals
     bob.reveal_result(bob_reveal_message).unwrap();
 
-    let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
     assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
@@ -346,7 +346,7 @@ fn fails_if_does_not_match_commitment() {
     let alice_reveal_message = alice.create_reveal_message(alice_reveal2);
     alice.reveal_result(alice_reveal_message).unwrap();
 
-    let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
     assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
@@ -417,7 +417,7 @@ fn works_after_unstaking() {
     alice.reveal_result(alice_reveal_message).unwrap();
 
     // verify the request moved to tallying state
-    let tallying = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10);
+    let tallying = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 10);
     assert!(!tallying.is_paused);
     assert_eq!(1, tallying.data_requests.len());
     assert!(tallying.data_requests.iter().any(|r| r.id == dr_id));

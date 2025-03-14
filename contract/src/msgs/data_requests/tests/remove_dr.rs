@@ -310,7 +310,7 @@ fn works_with_more_drs_in_the_pool() {
     assert_eq!(
         2,
         alice
-            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
+            .get_data_requests_by_status(DataRequestStatus::Committing, None, 100)
             .data_requests
             .len()
     );
@@ -320,14 +320,14 @@ fn works_with_more_drs_in_the_pool() {
     assert_eq!(
         0,
         alice
-            .get_data_requests_by_status(DataRequestStatus::Committing, 0, 100)
+            .get_data_requests_by_status(DataRequestStatus::Committing, None, 100)
             .data_requests
             .len()
     );
     assert_eq!(
         2,
         alice
-            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
+            .get_data_requests_by_status(DataRequestStatus::Revealing, None, 100)
             .data_requests
             .len()
     );
@@ -337,13 +337,13 @@ fn works_with_more_drs_in_the_pool() {
     assert_eq!(
         1,
         alice
-            .get_data_requests_by_status(DataRequestStatus::Revealing, 0, 100)
+            .get_data_requests_by_status(DataRequestStatus::Revealing, None, 100)
             .data_requests
             .len()
     );
 
     // Check drs to be tallied
-    let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
+    let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 100);
     assert!(!dr_to_be_tallied.is_paused);
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
     assert_eq!(dr_to_be_tallied.data_requests[0].id, dr_id1);
@@ -363,14 +363,14 @@ fn works_with_more_drs_in_the_pool() {
     assert_eq!(
         0,
         alice
-            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
+            .get_data_requests_by_status(DataRequestStatus::Tallying, None, 100)
             .data_requests
             .len()
     );
 
     // Reveal the other dr
     alice.reveal_result(alice_reveal2_message).unwrap();
-    let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100);
+    let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 100);
     assert!(!dr_to_be_tallied.is_paused);
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
 
@@ -390,7 +390,7 @@ fn works_with_more_drs_in_the_pool() {
     assert_eq!(
         0,
         alice
-            .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 100)
+            .get_data_requests_by_status(DataRequestStatus::Tallying, None, 100)
             .data_requests
             .len()
     );

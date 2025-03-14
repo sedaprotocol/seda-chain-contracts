@@ -149,7 +149,7 @@ fn works() {
     alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
     // check if the data request is in the committing state before meeting the replication factor
-    let commiting = alice.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    let commiting = alice.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(!commiting.is_paused);
     assert_eq!(1, commiting.data_requests.len());
     assert!(commiting.data_requests.iter().any(|r| r.id == dr_id));
@@ -176,7 +176,7 @@ fn must_meet_replication_factor() {
     anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
 
     // check if the data request is in the revealing state after meeting the replication factor
-    let revealing = anyone.get_data_requests_by_status(DataRequestStatus::Revealing, 0, 10);
+    let revealing = anyone.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
     assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));

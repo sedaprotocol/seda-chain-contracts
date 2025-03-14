@@ -97,14 +97,14 @@ fn json_get_data_requests_by_status() {
     let expected_json = json!({
       "get_data_requests_by_status": {
         "status": "committing",
-        "offset": 0,
+        "last_seen_index": null,
         "limit": 10,
       }
     });
     let msg: QueryMsg = DrQueryMsg::GetDataRequestsByStatus {
-        status: DataRequestStatus::Committing,
-        offset: 0,
-        limit:  10,
+        status:          DataRequestStatus::Committing,
+        last_seen_index: None,
+        limit:           10,
     }
     .into();
     #[cfg(not(feature = "cosmwasm"))]

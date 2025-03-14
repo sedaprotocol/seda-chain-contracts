@@ -11,8 +11,10 @@ use crate::{common_types::*, contract::CONTRACT_VERSION, error::ContractError, t
 pub mod data_requests;
 mod enumerable_set;
 pub mod owner;
+mod sorted_set;
 pub mod staking;
 pub use enumerable_set::EnumerableSet;
+pub use sorted_set::SortedSet;
 
 pub trait QueryHandler {
     fn query(self, deps: Deps, env: Env) -> Result<Binary, ContractError>;

@@ -44,7 +44,7 @@ fn works() {
     // should be able to fetch data request with id 0x69...
     let received_value = anyone.get_data_request(&dr_id);
     assert_eq!(Some(test_helpers::construct_dr(dr, vec![], 1)), received_value);
-    let await_commits = anyone.get_data_requests_by_status(DataRequestStatus::Committing, 0, 10);
+    let await_commits = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(!await_commits.is_paused);
     assert_eq!(1, await_commits.data_requests.len());
     assert!(await_commits.data_requests.iter().any(|r| r.id == dr_id));

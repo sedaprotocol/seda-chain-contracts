@@ -70,10 +70,10 @@ pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: Hash, dr: Dat
 pub fn requests_by_status(
     store: &dyn Storage,
     status: &DataRequestStatus,
-    offset: u32,
+    last_seen_index: Option<(u128, u64, Hash)>,
     limit: u32,
-) -> StdResult<Vec<DataRequest>> {
-    DATA_REQUESTS.get_requests_by_status(store, status, offset, limit)
+) -> StdResult<(Vec<DataRequest>, Option<(u128, u64, Hash)>)> {
+    DATA_REQUESTS.get_requests_by_status(store, status, last_seen_index, limit)
 }
 
 pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {

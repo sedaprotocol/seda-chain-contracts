@@ -285,11 +285,15 @@ impl TestAccount {
     pub fn get_data_requests_by_status(
         &self,
         status: DataRequestStatus,
-        offset: u32,
+        last_seen_index: Option<(Uint128, u64, Hash)>,
         limit: u32,
     ) -> GetDataRequestsByStatusResponse {
         self.test_info
-            .query(query::QueryMsg::GetDataRequestsByStatus { status, offset, limit })
+            .query(query::QueryMsg::GetDataRequestsByStatus {
+                status,
+                last_seen_index,
+                limit,
+            })
             .unwrap()
     }
 

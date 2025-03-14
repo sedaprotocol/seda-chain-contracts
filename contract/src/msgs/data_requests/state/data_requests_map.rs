@@ -1,10 +1,11 @@
 use super::*;
+use crate::msgs::sorted_set::IndexKey;
 
 pub struct DataRequestsMap<'a> {
     pub reqs:       Map<&'a Hash, DataRequest>,
-    pub committing: EnumerableSet<Hash>,
-    pub revealing:  EnumerableSet<Hash>,
-    pub tallying:   EnumerableSet<Hash>,
+    pub committing: SortedSet,
+    pub revealing:  SortedSet,
+    pub tallying:   SortedSet,
     pub timeouts:   Timeouts<'a>,
 }
 
@@ -12,10 +13,7 @@ use cosmwasm_std::{StdResult, Storage};
 use cw_storage_plus::Map;
 
 impl DataRequestsMap<'_> {
-    pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
-        self.committing.initialize(store)?;
-        self.revealing.initialize(store)?;
-        self.tallying.initialize(store)?;
+    pub fn initialize(&self, _store: &mut dyn Storage) -> StdResult<()> {
         Ok(())
     }
 
@@ -23,12 +21,40 @@ impl DataRequestsMap<'_> {
         self.reqs.has(store, key)
     }
 
-    fn add_to_status(&self, store: &mut dyn Storage, key: Hash, status: &DataRequestStatus) -> StdResult<()> {
+    fn move_to_status(
+        &self,
+        store: &mut dyn Storage,
+        key: Hash,
+        current_status: &DataRequestStatus,
+        new_status: &DataRequestStatus,
+    ) -> StdResult<()> {
+        let index = match current_status {
+            DataRequestStatus::Committing => self.committing.remove(store, key)?,
+            DataRequestStatus::Revealing => self.revealing.remove(store, key)?,
+            DataRequestStatus::Tallying => self.tallying.remove(store, key)?,
+        };
+
+        match new_status {
+            DataRequestStatus::Committing => self.committing.add_by_index(store, index)?,
+            DataRequestStatus::Revealing => self.revealing.add_by_index(store, index)?,
+            DataRequestStatus::Tallying => self.tallying.add_by_index(store, index)?,
+        };
+
+        Ok(())
+    }
+
+    fn add_to_status(
+        &self,
+        store: &mut dyn Storage,
+        key: Hash,
+        req: DataRequest,
+        status: &DataRequestStatus,
+    ) -> StdResult<()> {
         match status {
-            DataRequestStatus::Committing => self.committing.add(store, key)?,
-            DataRequestStatus::Revealing => self.revealing.add(store, key)?,
-            DataRequestStatus::Tallying => self.tallying.add(store, key)?,
-        }
+            DataRequestStatus::Committing => self.committing.add(store, key, req)?,
+            DataRequestStatus::Revealing => self.revealing.add(store, key, req)?,
+            DataRequestStatus::Tallying => self.tallying.add(store, key, req)?,
+        };
 
         Ok(())
     }
@@ -38,7 +64,7 @@ impl DataRequestsMap<'_> {
             DataRequestStatus::Committing => self.committing.remove(store, key)?,
             DataRequestStatus::Revealing => self.revealing.remove(store, key)?,
             DataRequestStatus::Tallying => self.tallying.remove(store, key)?,
-        }
+        };
 
         Ok(())
     }
@@ -56,7 +82,7 @@ impl DataRequestsMap<'_> {
         }
 
         self.reqs.save(store, &key, &req)?;
-        self.add_to_status(store, key, status)?;
+        self.add_to_status(store, key, req, status)?;
         let timeout_config = TIMEOUT_CONFIG.load(store)?;
         self.timeouts
             .insert(store, current_height + timeout_config.commit_timeout_in_blocks, &key)?;
@@ -95,7 +121,7 @@ impl DataRequestsMap<'_> {
         }
 
         // If we need to update the status, we need to remove the key from the current status
-        if let Some(status) = status {
+        if let Some(new_status) = status {
             // Grab the current status.
             let current_status = self.find_status(store, key)?;
             // world view = we should only update from committing -> revealing -> tallying,
@@ -104,14 +130,14 @@ impl DataRequestsMap<'_> {
             match &current_status {
                 _ if timeout => {
                     assert_eq!(
-                        status,
+                        new_status,
                         DataRequestStatus::Tallying,
                         "Cannot update a timed out request status to anything other than tallying"
                     );
                 }
                 DataRequestStatus::Committing => {
                     assert_eq!(
-                        status,
+                        new_status,
                         DataRequestStatus::Revealing,
                         "Cannot update a request status from committing to anything other than revealing"
                     );
@@ -124,7 +150,7 @@ impl DataRequestsMap<'_> {
                 }
                 DataRequestStatus::Revealing => {
                     assert_eq!(
-                        status,
+                        new_status,
                         DataRequestStatus::Tallying,
                         "Cannot update a request status from revealing to anything other than tallying"
                     );
@@ -142,8 +168,7 @@ impl DataRequestsMap<'_> {
             }
 
             // remove from current status, then add to new one.
-            self.remove_from_status(store, key, &current_status)?;
-            self.add_to_status(store, key, &status)?;
+            self.move_to_status(store, key, &current_status, &new_status)?;
         }
 
         // always update the request
@@ -188,22 +213,43 @@ impl DataRequestsMap<'_> {
         &self,
         store: &dyn Storage,
         status: &DataRequestStatus,
-        offset: u32,
+        last_seen_index: Option<IndexKey>,
         limit: u32,
-    ) -> StdResult<Vec<DataRequest>> {
-        let start = Some(Bound::inclusive(offset));
-        let end = Some(Bound::exclusive(offset + limit));
-        let requests = match status {
+    ) -> StdResult<(Vec<DataRequest>, Option<IndexKey>)> {
+        let start = last_seen_index.map(|index| Bound::exclusive(index));
+
+        let set = match status {
             DataRequestStatus::Committing => &self.committing,
             DataRequestStatus::Revealing => &self.revealing,
             DataRequestStatus::Tallying => &self.tallying,
-        }
-        .index_to_key
-        .range(store, start, end, Order::Ascending)
-        .flat_map(|result| result.map(|(_, key)| self.reqs.load(store, &key)))
-        .collect::<StdResult<Vec<_>>>()?;
+        };
 
-        Ok(requests)
+        let has_last_seen_index = last_seen_index.map(|index| set.has_index(store, index));
+        if has_last_seen_index.is_some_and(|has| !has) {
+            return Ok((vec![], None));
+        }
+
+        let requests = set
+            .index
+            // Start is the max argument since we're ordering descending
+            .range(store, None, start, Order::Descending)
+            .take(limit as usize)
+            .flat_map(|result| result.map(|(key, _)| self.reqs.load(store, &key.2)))
+            .collect::<StdResult<Vec<_>>>()?;
+
+        if requests.len() < limit as usize {
+            return Ok((requests, None));
+        }
+
+        let new_last_seen_index = requests.last().map(|dr| {
+            (
+                dr.gas_price.u128(),
+                u64::MAX - dr.height,
+                Hash::from_hex_str(&dr.id).unwrap(),
+            )
+        });
+
+        Ok((requests, new_last_seen_index))
     }
 
     pub fn expire_data_requests(&self, store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {
@@ -227,9 +273,9 @@ macro_rules! new_enumerable_status_map {
     ($namespace:literal) => {
         DataRequestsMap {
             reqs:       Map::new(concat!($namespace, "_reqs")),
-            committing: $crate::enumerable_set!(concat!($namespace, "_committing")),
-            revealing:  $crate::enumerable_set!(concat!($namespace, "_revealing")),
-            tallying:   $crate::enumerable_set!(concat!($namespace, "_tallying")),
+            committing: $crate::sorted_set!(concat!($namespace, "_committing")),
+            revealing:  $crate::sorted_set!(concat!($namespace, "_revealing")),
+            tallying:   $crate::sorted_set!(concat!($namespace, "_tallying")),
             timeouts:   Timeouts {
                 timeouts:        Map::new(concat!($namespace, "_timeouts")),
                 hash_to_timeout: Map::new(concat!($namespace, "_hash_to_timeout")),

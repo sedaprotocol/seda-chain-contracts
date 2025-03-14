@@ -70,7 +70,7 @@ fn timed_out_requests_move_to_tally() {
 
     // check that the request is now in the tallying state
     let tallying = alice
-        .get_data_requests_by_status(DataRequestStatus::Tallying, 0, 10)
+        .get_data_requests_by_status(DataRequestStatus::Tallying, None, 10)
         .data_requests
         .into_iter()
         .map(|r| r.id)

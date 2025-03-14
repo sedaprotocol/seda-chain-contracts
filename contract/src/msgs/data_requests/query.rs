@@ -55,10 +55,22 @@ impl QueryHandler for QueryMsg {
                 let reveals = dr.map(|dr| dr.reveals).unwrap_or_default();
                 to_json_binary(&reveals)?
             }
-            QueryMsg::GetDataRequestsByStatus { status, offset, limit } => {
+            QueryMsg::GetDataRequestsByStatus {
+                status,
+                last_seen_index,
+                limit,
+            } => {
+                let (data_requests, new_last_seen_index) = state::requests_by_status(
+                    deps.storage,
+                    &status,
+                    last_seen_index.map(|(index, height, key)| (index.into(), height, key)),
+                    limit,
+                )?;
+
                 let response = GetDataRequestsByStatusResponse {
-                    is_paused:     contract_paused,
-                    data_requests: state::requests_by_status(deps.storage, &status, offset, limit)?,
+                    is_paused: contract_paused,
+                    data_requests,
+                    last_seen_index: new_last_seen_index.map(|(index, height, key)| (index.into(), height, key)),
                 };
                 to_json_binary(&response)?
             }
