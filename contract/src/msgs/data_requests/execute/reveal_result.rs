@@ -68,7 +68,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         // add the reveal to the data request state
         dr.reveals.insert(self.public_key.clone(), self.reveal_body);
-        state::reveal(deps.storage, dr_id, dr, env.block.height)?;
+        state::reveal(deps.storage, &dr_id, dr, env.block.height)?;
 
         Ok(response.add_message(new_refund_msg(env, dr_id_str, self.public_key, true)?))
     }

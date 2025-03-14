@@ -4,7 +4,7 @@ use seda_common::{
         DataRequestStatus,
         RevealBody,
     },
-    types::{HashSelf, TryHashSelf},
+    types::HashSelf,
 };
 
 use crate::{msgs::data_requests::test_helpers, TestInfo};
@@ -77,7 +77,7 @@ fn offset_works() {
 
     let drs_one = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 1);
     assert_eq!(1, drs_one.data_requests.len());
-    assert!(drs_one.data_requests.iter().map(|dr| dr.id).contains(&posted_dr1));
+    assert!(drs_one.data_requests.iter().any(|dr| dr.id == posted_dr1));
 
     let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, drs_one.last_seen_index, 2);
     assert!(!drs.is_paused);

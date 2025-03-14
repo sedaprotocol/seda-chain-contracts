@@ -3,9 +3,9 @@ use crate::msgs::sorted_set::IndexKey;
 
 pub struct DataRequestsMap<'a> {
     pub reqs:       Map<&'a Hash, DataRequest>,
-    pub committing: SortedSet,
-    pub revealing:  SortedSet,
-    pub tallying:   SortedSet,
+    pub committing: SortedSet<'a>,
+    pub revealing:  SortedSet<'a>,
+    pub tallying:   SortedSet<'a>,
     pub timeouts:   Timeouts<'a>,
 }
 
@@ -14,6 +14,12 @@ use cw_storage_plus::Map;
 
 impl DataRequestsMap<'_> {
     pub fn initialize(&self, _store: &mut dyn Storage) -> StdResult<()> {
+        #[cfg(test)]
+        {
+            self.committing.initialize(_store)?;
+            self.revealing.initialize(_store)?;
+            self.tallying.initialize(_store)?;
+        }
         Ok(())
     }
 
@@ -24,7 +30,7 @@ impl DataRequestsMap<'_> {
     fn move_to_status(
         &self,
         store: &mut dyn Storage,
-        key: Hash,
+        key: &Hash,
         current_status: &DataRequestStatus,
         new_status: &DataRequestStatus,
     ) -> StdResult<()> {
@@ -46,7 +52,7 @@ impl DataRequestsMap<'_> {
     fn add_to_status(
         &self,
         store: &mut dyn Storage,
-        key: Hash,
+        key: &Hash,
         req: DataRequest,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
@@ -59,7 +65,7 @@ impl DataRequestsMap<'_> {
         Ok(())
     }
 
-    fn remove_from_status(&self, store: &mut dyn Storage, key: Hash, status: &DataRequestStatus) -> StdResult<()> {
+    fn remove_from_status(&self, store: &mut dyn Storage, key: &Hash, status: &DataRequestStatus) -> StdResult<()> {
         match status {
             DataRequestStatus::Committing => self.committing.remove(store, key)?,
             DataRequestStatus::Revealing => self.revealing.remove(store, key)?,
@@ -73,24 +79,24 @@ impl DataRequestsMap<'_> {
         &self,
         store: &mut dyn Storage,
         current_height: u64,
-        key: Hash,
+        key: &Hash,
         req: DataRequest,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
-        if self.has(store, &key) {
+        if self.has(store, key) {
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        self.reqs.save(store, &key, &req)?;
+        self.reqs.save(store, key, &req)?;
         self.add_to_status(store, key, req, status)?;
         let timeout_config = TIMEOUT_CONFIG.load(store)?;
         self.timeouts
-            .insert(store, current_height + timeout_config.commit_timeout_in_blocks, &key)?;
+            .insert(store, current_height + timeout_config.commit_timeout_in_blocks, key)?;
 
         Ok(())
     }
 
-    fn find_status(&self, store: &dyn Storage, key: Hash) -> StdResult<DataRequestStatus> {
+    fn find_status(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequestStatus> {
         if self.committing.has(store, key) {
             return Ok(DataRequestStatus::Committing);
         }
@@ -109,14 +115,14 @@ impl DataRequestsMap<'_> {
     pub fn update(
         &self,
         store: &mut dyn Storage,
-        key: Hash,
+        key: &Hash,
         dr: DataRequest,
         status: Option<DataRequestStatus>,
         current_height: u64,
         timeout: bool,
     ) -> StdResult<()> {
         // Check if the key exists
-        if !self.has(store, &key) {
+        if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
@@ -143,10 +149,10 @@ impl DataRequestsMap<'_> {
                     );
 
                     // We change the timeout to the reveal timeout when commit -> reveal
-                    self.timeouts.remove_by_dr_id(store, &key)?;
+                    self.timeouts.remove_by_dr_id(store, key)?;
                     let timeout_config = TIMEOUT_CONFIG.load(store)?;
                     self.timeouts
-                        .insert(store, timeout_config.reveal_timeout_in_blocks + current_height, &key)?;
+                        .insert(store, timeout_config.reveal_timeout_in_blocks + current_height, key)?;
                 }
                 DataRequestStatus::Revealing => {
                     assert_eq!(
@@ -156,7 +162,7 @@ impl DataRequestsMap<'_> {
                     );
 
                     // We remove the timeout when reveal -> tally
-                    self.timeouts.remove_by_dr_id(store, &key)?;
+                    self.timeouts.remove_by_dr_id(store, key)?;
                 }
                 DataRequestStatus::Tallying => {
                     assert_ne!(
@@ -172,7 +178,7 @@ impl DataRequestsMap<'_> {
         }
 
         // always update the request
-        self.reqs.save(store, &key, &dr)?;
+        self.reqs.save(store, key, &dr)?;
         Ok(())
     }
 
@@ -187,8 +193,8 @@ impl DataRequestsMap<'_> {
     /// Removes an req from the map by key.
     /// Swaps the last req with the req to remove.
     /// Then pops the last req.
-    pub fn remove(&self, store: &mut dyn Storage, key: Hash) -> Result<(), StdError> {
-        if !self.has(store, &key) {
+    pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
+        if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
@@ -202,7 +208,7 @@ impl DataRequestsMap<'_> {
         );
 
         // remove the request
-        self.reqs.remove(store, &key);
+        self.reqs.remove(store, key);
         // remove from the status
         self.remove_from_status(store, key, &current_status)?;
 
@@ -216,7 +222,7 @@ impl DataRequestsMap<'_> {
         last_seen_index: Option<IndexKey>,
         limit: u32,
     ) -> StdResult<(Vec<DataRequest>, Option<IndexKey>)> {
-        let start = last_seen_index.map(|index| Bound::exclusive(index));
+        let start = last_seen_index.map(Bound::exclusive);
 
         let set = match status {
             DataRequestStatus::Committing => &self.committing,
@@ -262,7 +268,14 @@ impl DataRequestsMap<'_> {
                 // get the dr itself
                 let dr = self.get(store, &hash)?;
                 // update it to tallying
-                self.update(store, hash, dr, Some(DataRequestStatus::Tallying), current_height, true)?;
+                self.update(
+                    store,
+                    &hash,
+                    dr,
+                    Some(DataRequestStatus::Tallying),
+                    current_height,
+                    true,
+                )?;
                 Ok(hash.to_hex())
             })
             .collect::<StdResult<Vec<_>>>()

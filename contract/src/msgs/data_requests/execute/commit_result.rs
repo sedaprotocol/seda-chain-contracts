@@ -25,7 +25,7 @@ impl ExecuteHandler for execute::commit_result::Execute {
                 ("version", CONTRACT_VERSION.to_string()),
             ]),
         );
-        state::commit(deps.storage, env.block.height, dr_id, dr)?;
+        state::commit(deps.storage, env.block.height, &dr_id, dr)?;
 
         Ok(resp.add_message(new_refund_msg(env, self.dr_id, self.public_key, false)?))
     }

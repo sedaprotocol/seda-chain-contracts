@@ -3,6 +3,7 @@ use cosmwasm_std::Storage;
 use cw_storage_plus::Bound;
 
 use super::*;
+use crate::msgs::sorted_set::IndexKey;
 mod data_requests_map;
 use data_requests_map::{new_enumerable_status_map, DataRequestsMap};
 mod timeouts;
@@ -47,7 +48,7 @@ pub fn get_dr_expiration_height(store: &dyn Storage, dr_id: &Hash) -> StdResult<
 pub fn post_request(
     store: &mut dyn Storage,
     current_height: u64,
-    dr_id: Hash,
+    dr_id: &Hash,
     dr: DataRequest,
 ) -> Result<(), ContractError> {
     // insert the data request
@@ -56,7 +57,7 @@ pub fn post_request(
     Ok(())
 }
 
-pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: Hash, dr: DataRequest) -> StdResult<()> {
+pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
     let status = if dr.reveal_started() {
         Some(DataRequestStatus::Revealing)
     } else {
@@ -70,13 +71,13 @@ pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: Hash, dr: Dat
 pub fn requests_by_status(
     store: &dyn Storage,
     status: &DataRequestStatus,
-    last_seen_index: Option<(u128, u64, Hash)>,
+    last_seen_index: Option<IndexKey>,
     limit: u32,
-) -> StdResult<(Vec<DataRequest>, Option<(u128, u64, Hash)>)> {
+) -> StdResult<(Vec<DataRequest>, Option<IndexKey>)> {
     DATA_REQUESTS.get_requests_by_status(store, status, last_seen_index, limit)
 }
 
-pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {
+pub fn reveal(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {
     let status = if dr.is_tallying() {
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
@@ -89,7 +90,7 @@ pub fn reveal(store: &mut dyn Storage, dr_id: Hash, dr: DataRequest, current_hei
     Ok(())
 }
 
-pub fn remove_request(store: &mut dyn Storage, dr_id: Hash) -> StdResult<()> {
+pub fn remove_request(store: &mut dyn Storage, dr_id: &Hash) -> StdResult<()> {
     // we have to remove the request from the pool
     DATA_REQUESTS.remove(store, dr_id)?;
     // no need to update status as we remove it from the requests pool
