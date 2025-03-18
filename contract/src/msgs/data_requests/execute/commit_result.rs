@@ -1,3 +1,4 @@
+use seda_proto_common::{prost::Message, wasm_storage::MsgRefundTxFee};
 use staking::state::{STAKERS, STAKING_CONFIG};
 
 use super::*;
@@ -18,15 +19,28 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         let resp = Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([
-                ("dr_id", self.dr_id),
+                ("dr_id", self.dr_id.clone()),
                 ("posted_dr_height", dr.height.to_string()),
                 ("commitment", self.commitment),
-                ("executor", self.public_key),
+                ("executor", self.public_key.clone()),
                 ("version", CONTRACT_VERSION.to_string()),
             ]),
         );
         state::commit(deps.storage, env.block.height, dr_id, dr)?;
-        Ok(resp)
+
+        let refund_msg = MsgRefundTxFee {
+            authority: env.contract.address.to_string(),
+            dr_id: self.dr_id,
+            public_key: self.public_key,
+        };
+        let mut vec = Vec::new();
+        refund_msg.encode(&mut vec).unwrap();
+        let any = CosmosMsg::Any(AnyMsg {
+            type_url: "/sedachain.wasm_storage.v1.MsgRefundTxFee".to_string(),
+            value:    Binary::new(vec),
+        });
+
+        Ok(resp.add_message(any))
     }
 }
 

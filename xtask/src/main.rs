@@ -291,6 +291,7 @@ fn proto_build(sh: &Shell) -> Result<()> {
         .arg("-exec")
         .arg("sed")
         .arg("-i")
+        .arg("\"\"")
         .arg("s/super::super::/super::/g; s/::v1::/::/g")
         .arg("{}")
         .arg("+")

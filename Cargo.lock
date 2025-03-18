@@ -1535,6 +1535,7 @@ dependencies = [
  "num-bigfloat",
  "schemars",
  "seda-common",
+ "seda-proto-common",
  "semver",
  "serde",
  "serde-big-array",

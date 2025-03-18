@@ -85,90 +85,6 @@ pub mod query_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn oracle_program(
-            &mut self,
-            request: impl tonic::IntoRequest<super::QueryOracleProgramRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::QueryOracleProgramResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Query/OracleProgram",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("sedachain.wasm_storage.v1.Query", "OracleProgram"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn oracle_programs(
-            &mut self,
-            request: impl tonic::IntoRequest<super::QueryOracleProgramsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::QueryOracleProgramsResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Query/OraclePrograms",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("sedachain.wasm_storage.v1.Query", "OraclePrograms"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn core_contract_registry(
-            &mut self,
-            request: impl tonic::IntoRequest<super::QueryCoreContractRegistryRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::QueryCoreContractRegistryResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Query/CoreContractRegistry",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "sedachain.wasm_storage.v1.Query",
-                        "CoreContractRegistry",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
         pub async fn params(
             &mut self,
             request: impl tonic::IntoRequest<super::QueryParamsRequest>,
@@ -187,11 +103,11 @@ pub mod query_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Query/Params",
+                "/sedachain.tally.v1.Query/Params",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("sedachain.wasm_storage.v1.Query", "Params"));
+                .insert(GrpcMethod::new("sedachain.tally.v1.Query", "Params"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -282,66 +198,6 @@ pub mod msg_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn store_oracle_program(
-            &mut self,
-            request: impl tonic::IntoRequest<super::MsgStoreOracleProgram>,
-        ) -> std::result::Result<
-            tonic::Response<super::MsgStoreOracleProgramResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Msg/StoreOracleProgram",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "sedachain.wasm_storage.v1.Msg",
-                        "StoreOracleProgram",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn instantiate_core_contract(
-            &mut self,
-            request: impl tonic::IntoRequest<super::MsgInstantiateCoreContract>,
-        ) -> std::result::Result<
-            tonic::Response<super::MsgInstantiateCoreContractResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Msg/InstantiateCoreContract",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "sedachain.wasm_storage.v1.Msg",
-                        "InstantiateCoreContract",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
         pub async fn update_params(
             &mut self,
             request: impl tonic::IntoRequest<super::MsgUpdateParams>,
@@ -360,38 +216,11 @@ pub mod msg_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Msg/UpdateParams",
+                "/sedachain.tally.v1.Msg/UpdateParams",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("sedachain.wasm_storage.v1.Msg", "UpdateParams"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn refund_tx_fee(
-            &mut self,
-            request: impl tonic::IntoRequest<super::MsgRefundTxFee>,
-        ) -> std::result::Result<
-            tonic::Response<super::MsgRefundTxFeeResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/sedachain.wasm_storage.v1.Msg/RefundTxFee",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("sedachain.wasm_storage.v1.Msg", "RefundTxFee"));
+                .insert(GrpcMethod::new("sedachain.tally.v1.Msg", "UpdateParams"));
             self.inner.unary(req, path, codec).await
         }
     }

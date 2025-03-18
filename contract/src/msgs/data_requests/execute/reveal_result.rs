@@ -1,5 +1,6 @@
 use super::*;
 use crate::state::CHAIN_ID;
+use seda_proto_common::{prost::Message, wasm_storage::MsgRefundTxFee};
 
 impl ExecuteHandler for execute::reveal_result::Execute {
     /// Posts a data result of a data request with an attached result.
@@ -69,6 +70,18 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         dr.reveals.insert(self.public_key.clone(), self.reveal_body);
         state::reveal(deps.storage, dr_id, dr, env.block.height)?;
 
-        Ok(response)
+        let refund_msg = MsgRefundTxFee {
+            authority: env.contract.address.to_string(),
+            dr_id: self.dr_id,
+            public_key: self.public_key,
+        };
+        let mut vec = Vec::new();
+        refund_msg.encode(&mut vec).unwrap();
+        let any = CosmosMsg::Any(AnyMsg {
+            type_url: "/sedachain.wasm_storage.v1.MsgRefundTxFee".to_string(),
+            value:    Binary::new(vec),
+        });
+
+        Ok(response.add_message(any))
     }
 }
