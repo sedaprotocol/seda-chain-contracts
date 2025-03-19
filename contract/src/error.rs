@@ -59,6 +59,8 @@ pub enum ContractError {
     NotEnoughReveals,
     #[error("DataRequestExpired: Data request expired at block height {0} during {1} stage")]
     DataRequestExpired(u64, &'static str),
+    #[error("Could not encode protobuf message: {0}")]
+    ProtoEncode(seda_proto_common::prost::EncodeError),
 
     #[error("FromHex: Invalid hexadecimal input: {0}")]
     FromHex(#[from] FromHexError),

@@ -282,7 +282,8 @@ fn proto_build(sh: &Shell) -> Result<()> {
     cmd!(sh, "echo {proto_folder}").run()?;
     cmd!(sh, "echo Generating Rust proto code").run()?;
     cmd!(sh, "buf generate --template buf.gen.rust.yaml").run()?;
-    sh.cmd("find")
+    let mut cmd = sh
+        .cmd("find")
         .arg("src/gen")
         .arg("-type")
         .arg("f")
@@ -290,12 +291,20 @@ fn proto_build(sh: &Shell) -> Result<()> {
         .arg("*.rs")
         .arg("-exec")
         .arg("sed")
-        .arg("-i")
+        .arg("-i");
+
+    #[cfg(target_os = "macos")]
+    {
+        cmd = cmd.arg("");
+    }
+
+    cmd = cmd
         .arg("\"\"")
         .arg("s/super::super::/super::/g; s/::v1::/::/g")
         .arg("{}")
-        .arg("+")
-        .run()?;
+        .arg("+");
+
+    cmd.run()?;
 
     Ok(())
 }

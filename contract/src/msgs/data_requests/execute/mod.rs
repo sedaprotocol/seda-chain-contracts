@@ -1,3 +1,5 @@
+use seda_proto_common::prost::Message;
+
 use super::{
     msgs::data_requests::execute::{self, ExecuteMsg},
     *,
@@ -26,4 +28,21 @@ impl ExecuteHandler for ExecuteMsg {
             ExecuteMsg::SetTimeoutConfig(msg) => msg.execute(deps, env, info),
         }
     }
+}
+
+fn new_refund_msg(env: Env, dr_id: String, public_key: String) -> Result<CosmosMsg, ContractError> {
+    static TYPE_URL: &str = "/sedachain.wasm_storage.v1.MsgRefundTxFee";
+
+    let refund_msg = seda_proto_common::wasm_storage::MsgRefundTxFee {
+        authority: env.contract.address.to_string(),
+        dr_id,
+        public_key,
+    };
+    let mut vec = Vec::new();
+    refund_msg.encode(&mut vec).map_err(ContractError::ProtoEncode)?;
+
+    Ok(CosmosMsg::Any(AnyMsg {
+        type_url: TYPE_URL.to_string(),
+        value:    Binary::new(vec),
+    }))
 }
