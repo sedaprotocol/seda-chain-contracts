@@ -4,8 +4,8 @@ use std::{
     rc::Rc,
 };
 
-use cosmwasm_std::{coins, from_json, testing::MockApi, to_json_binary, Addr, StdError};
-use cw_multi_test::{App, AppBuilder, ContractWrapper, Executor};
+use cosmwasm_std::{coins, from_json, testing::MockApi, to_json_binary, Addr, Empty, StdError};
+use cw_multi_test::{AppBuilder, ContractWrapper, Executor, StargateAccepting};
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::rand_core::OsRng,
@@ -24,6 +24,19 @@ pub fn new_public_key() -> (SigningKey, PublicKey) {
 
     (signing_key, PublicKey(public_key))
 }
+
+pub type App = cw_multi_test::App<
+    cw_multi_test::BankKeeper,
+    MockApi,
+    cosmwasm_std::testing::MockStorage,
+    cw_multi_test::FailingModule<Empty, Empty, Empty>,
+    cw_multi_test::WasmKeeper<Empty, Empty>,
+    cw_multi_test::StakeKeeper,
+    cw_multi_test::DistributionKeeper,
+    cw_multi_test::IbcFailingModule,
+    cw_multi_test::GovFailingModule,
+    StargateAccepting,
+>;
 
 pub struct TestInfo {
     app:           Rc<RefCell<App>>,
@@ -49,6 +62,7 @@ impl TestInfo {
         let mut creator_addr = Addr::unchecked("creator");
         let app = Rc::new(RefCell::new(
             AppBuilder::default()
+                .with_stargate(StargateAccepting)
                 .with_api(MockApi::default().with_prefix("seda"))
                 .build(|router, api, storage| {
                     creator_addr = api.addr_make("creator");
