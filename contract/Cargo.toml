@@ -12,7 +12,7 @@ library = []
 
 [dependencies]
 cosmwasm-schema.workspace = true
-cosmwasm-std = { workspace = true, features = ["cosmwasm_2_2"] }
+cosmwasm-std = { workspace = true, features = ["cosmwasm_2_1"] }
 cw-storage-plus.workspace = true
 cw-utils.workspace = true
 cw2.workspace = true
@@ -29,7 +29,7 @@ vrf-rs.workspace = true
 seda-proto-common = { workspace = true, features = ["wasm_storage"] }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true, features = ["cosmwasm_2_2", "stargate"] }
+cw-multi-test = { workspace = true, features = ["cosmwasm_2_1", "stargate"] }
 k256.workspace = true
 lazy_static.workspace = true
 seda-common = { workspace = true, features = ["cosmwasm", "test-utils"] }

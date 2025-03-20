@@ -69,6 +69,6 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         dr.reveals.insert(self.public_key.clone(), self.reveal_body);
         state::reveal(deps.storage, dr_id, dr, env.block.height)?;
 
-        Ok(response.add_message(new_refund_msg(env, self.dr_id, self.public_key)?))
+        Ok(response.add_message(new_refund_msg(env, self.dr_id, self.public_key, true)?))
     }
 }

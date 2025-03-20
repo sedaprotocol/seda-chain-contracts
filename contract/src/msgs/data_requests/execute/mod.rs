@@ -30,13 +30,14 @@ impl ExecuteHandler for ExecuteMsg {
     }
 }
 
-fn new_refund_msg(env: Env, dr_id: String, public_key: String) -> Result<CosmosMsg, ContractError> {
+fn new_refund_msg(env: Env, dr_id: String, public_key: String, is_reveal: bool) -> Result<CosmosMsg, ContractError> {
     static TYPE_URL: &str = "/sedachain.wasm_storage.v1.MsgRefundTxFee";
 
     let refund_msg = seda_proto_common::wasm_storage::MsgRefundTxFee {
         authority: env.contract.address.to_string(),
         dr_id,
         public_key,
+        is_reveal,
     };
     let mut vec = Vec::new();
     refund_msg.encode(&mut vec).map_err(ContractError::ProtoEncode)?;

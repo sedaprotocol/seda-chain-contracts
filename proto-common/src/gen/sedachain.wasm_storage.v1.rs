@@ -144,7 +144,7 @@ pub struct MsgStoreOracleProgram {
     /// Wasm is the wasm program to store as gzip-compressed bytes.
     #[prost(bytes="bytes", tag="2")]
     pub wasm: ::prost::bytes::Bytes,
-    /// StorageFee is the length of the unzipped wasm program in bytes.
+    /// StorageFee is the fee incurred for storing the unzipped wasm bytes.
     #[prost(message, repeated, tag="3")]
     pub storage_fee: ::prost::alloc::vec::Vec<::cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
 }
@@ -203,7 +203,7 @@ fn full_name() -> ::prost::alloc::string::String { "sedachain.wasm_storage.v1.Ms
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgUpdateParams {
-    /// authority is the address that controls the module (defaults to x/gov unless
+    /// Authority is the address that controls the module (defaults to x/gov unless
     /// overwritten).
     #[prost(string, tag="1")]
     pub authority: ::prost::alloc::string::String,
@@ -227,15 +227,18 @@ fn full_name() -> ::prost::alloc::string::String { "sedachain.wasm_storage.v1.Ms
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MsgRefundTxFee {
-    /// authority is the address that controls the method.
+    /// Authority is the address that controls the method.
     #[prost(string, tag="1")]
     pub authority: ::prost::alloc::string::String,
-    /// drId is the hex-encoded data request ID.
+    /// DrId is the hex-encoded data request ID.
     #[prost(string, tag="2")]
     pub dr_id: ::prost::alloc::string::String,
-    /// publicKey is the hex-encoded public key (identifier) of the executor.
+    /// PublicKey is the hex-encoded public key (identifier) of the executor.
     #[prost(string, tag="3")]
     pub public_key: ::prost::alloc::string::String,
+    /// IsReveal is true for a reveal message and false for a commit message.
+    #[prost(bool, tag="4")]
+    pub is_reveal: bool,
 }
 impl ::prost::Name for MsgRefundTxFee {
 const NAME: &'static str = "MsgRefundTxFee";

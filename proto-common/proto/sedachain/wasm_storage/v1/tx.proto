@@ -32,7 +32,7 @@ message MsgStoreOracleProgram {
   string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   // Wasm is the wasm program to store as gzip-compressed bytes.
   bytes wasm = 2;
-  // StorageFee is the length of the unzipped wasm program in bytes.
+  // StorageFee is the fee incurred for storing the unzipped wasm bytes.
   repeated cosmos.base.v1beta1.Coin storage_fee = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
@@ -73,7 +73,7 @@ message MsgInstantiateCoreContractResponse {
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
 
-  // authority is the address that controls the module (defaults to x/gov unless
+  // Authority is the address that controls the module (defaults to x/gov unless
   // overwritten).
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   Params params = 2 [ (gogoproto.nullable) = false ];
@@ -86,12 +86,14 @@ message MsgUpdateParamsResponse {}
 message MsgRefundTxFee {
   option (cosmos.msg.v1.signer) = "authority";
 
-  // authority is the address that controls the method.
+  // Authority is the address that controls the method.
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  // drId is the hex-encoded data request ID.
+  // DrId is the hex-encoded data request ID.
   string dr_id = 2;
-  // publicKey is the hex-encoded public key (identifier) of the executor.
+  // PublicKey is the hex-encoded public key (identifier) of the executor.
   string public_key = 3;
+  // IsReveal is true for a reveal message and false for a commit message.
+  bool is_reveal = 4;
 }
 
 // The response message for the MsgRefundTxFee method.
