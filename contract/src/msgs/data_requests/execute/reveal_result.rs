@@ -6,7 +6,8 @@ impl ExecuteHandler for execute::reveal_result::Execute {
     /// This removes the data request from the pool and creates a new entry in the data results.
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the committed pool (if it exists, otherwise error)
-        let dr_id = Hash::from_hex_str(&self.reveal_body.dr_id)?;
+        let dr_id_str = self.reveal_body.dr_id.clone();
+        let dr_id = Hash::from_hex_str(&dr_id_str)?;
         let mut dr = state::load_request(deps.storage, &dr_id)?;
 
         // error if reveal phase for this DR has not started (i.e. replication factor is not met)
@@ -55,7 +56,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         let response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
-                ("dr_id", self.reveal_body.dr_id.clone()),
+                ("dr_id", dr_id_str.clone()),
                 ("posted_dr_height", dr.height.to_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
                 ("stdout", to_json_string(&self.stdout)?),
@@ -69,6 +70,6 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         dr.reveals.insert(self.public_key.clone(), self.reveal_body);
         state::reveal(deps.storage, dr_id, dr, env.block.height)?;
 
-        Ok(response.add_message(new_refund_msg(env, self.dr_id, self.public_key, true)?))
+        Ok(response.add_message(new_refund_msg(env, dr_id_str, self.public_key, true)?))
     }
 }
