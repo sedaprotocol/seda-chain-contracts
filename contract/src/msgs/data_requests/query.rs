@@ -60,7 +60,7 @@ impl QueryHandler for QueryMsg {
                 last_seen_index,
                 limit,
             } => {
-                let (data_requests, new_last_seen_index) = state::requests_by_status(
+                let (data_requests, new_last_seen_index, total) = state::requests_by_status(
                     deps.storage,
                     &status,
                     last_seen_index.map(|(index, height, key)| (index.into(), height, key)),
@@ -71,6 +71,7 @@ impl QueryHandler for QueryMsg {
                     is_paused: contract_paused,
                     data_requests,
                     last_seen_index: new_last_seen_index.map(|(index, height, key)| (index.into(), height, key)),
+                    total,
                 };
                 to_json_binary(&response)?
             }

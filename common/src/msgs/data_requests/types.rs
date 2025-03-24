@@ -224,4 +224,5 @@ pub struct GetDataRequestsByStatusResponse {
     pub is_paused:       bool,
     pub data_requests:   Vec<DataRequest>,
     pub last_seen_index: Option<(U128, u64, Hash)>,
+    pub total:           u32,
 }

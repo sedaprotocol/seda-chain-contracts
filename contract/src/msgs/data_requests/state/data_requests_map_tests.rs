@@ -112,7 +112,7 @@ impl TestInfo<'_> {
         status: DataRequestStatus,
         last_seen_index: Option<IndexKey>,
         limit: u32,
-    ) -> (Vec<DataRequest>, Option<IndexKey>) {
+    ) -> (Vec<DataRequest>, Option<IndexKey>, u32) {
         self.map
             .get_requests_by_status(&self.store, &status, last_seen_index, limit)
             .unwrap()
@@ -322,13 +322,15 @@ fn get_requests_by_status() {
     test_info.insert(current_height, &key2, req2.clone());
     test_info.update(&key2, req2.clone(), Some(DataRequestStatus::Revealing), current_height);
 
-    let (committing, _) = test_info.get_requests_by_status(DataRequestStatus::Committing, None, 10);
+    let (committing, _, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert_eq!(committing.len(), 1);
     assert!(committing.contains(&req1));
+    assert_eq!(total, 1);
 
-    let (revealing, _) = test_info.get_requests_by_status(DataRequestStatus::Revealing, None, 10);
+    let (revealing, _, total) = test_info.get_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert_eq!(revealing.len(), 1);
     assert!(revealing.contains(&req2));
+    assert_eq!(total, 1);
 }
 
 #[test]
@@ -344,22 +346,25 @@ fn get_requests_by_status_pagination() {
         reqs.push(req);
     }
 
-    let (_, page_two) = test_info.get_requests_by_status(DataRequestStatus::Committing, None, 3);
+    let (_, page_two, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, None, 3);
+    assert_eq!(total, 10);
 
     // [3, 4]
-    let (three_four, page_three) = test_info.get_requests_by_status(DataRequestStatus::Committing, page_two, 2);
+    let (three_four, page_three, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, page_two, 2);
     assert_eq!(three_four.len(), 2);
     assert!(three_four.contains(&reqs[3]));
     assert!(three_four.contains(&reqs[4]));
+    assert_eq!(total, 10);
 
     // [5, 9]
-    let (five_nine, _) = test_info.get_requests_by_status(DataRequestStatus::Committing, page_three, 5);
+    let (five_nine, _, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, page_three, 5);
     assert_eq!(five_nine.len(), 5);
     assert!(five_nine.contains(&reqs[5]));
     assert!(five_nine.contains(&reqs[6]));
     assert!(five_nine.contains(&reqs[7]));
     assert!(five_nine.contains(&reqs[8]));
     assert!(five_nine.contains(&reqs[9]));
+    assert_eq!(total, 10);
 }
 
 #[test]

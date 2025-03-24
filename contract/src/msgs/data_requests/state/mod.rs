@@ -73,7 +73,7 @@ pub fn requests_by_status(
     status: &DataRequestStatus,
     last_seen_index: Option<IndexKey>,
     limit: u32,
-) -> StdResult<(Vec<DataRequest>, Option<IndexKey>)> {
+) -> StdResult<(Vec<DataRequest>, Option<IndexKey>, u32)> {
     DATA_REQUESTS.get_requests_by_status(store, status, last_seen_index, limit)
 }
 

@@ -7,7 +7,6 @@ pub type IndexKey = (u128, u64, Hash);
 
 /// A structure to store a sorted set of data requests by the `IndexKey`
 pub struct SortedSet<'a> {
-    #[cfg(test)]
     pub len:            Item<u32>,
     /// Used to store information about the data request by the `IndexKey` so it can be sorted
     pub index:          Map<IndexKey, ()>,
@@ -16,13 +15,11 @@ pub struct SortedSet<'a> {
 }
 
 impl SortedSet<'_> {
-    #[cfg(test)]
     pub fn initialize(&self, store: &mut dyn Storage) -> StdResult<()> {
         self.len.save(store, &0)?;
         Ok(())
     }
 
-    #[cfg(test)]
     pub fn len(&self, store: &dyn Storage) -> StdResult<u32> {
         self.len.load(store)
     }
@@ -48,11 +45,8 @@ impl SortedSet<'_> {
 
         self.dr_id_to_index.save(store, dr_id, &index_key)?;
 
-        #[cfg(test)]
-        {
-            let len = self.len(store)?;
-            self.len.save(store, &(len + 1))?;
-        }
+        let len = self.len(store)?;
+        self.len.save(store, &(len + 1))?;
 
         Ok(())
     }
@@ -66,11 +60,8 @@ impl SortedSet<'_> {
         self.index.save(store, index, &())?;
         self.dr_id_to_index.save(store, hash, &index)?;
 
-        #[cfg(test)]
-        {
-            let len = self.len(store)?;
-            self.len.save(store, &(len + 1))?;
-        }
+        let len = self.len(store)?;
+        self.len.save(store, &(len + 1))?;
 
         Ok(())
     }
@@ -80,11 +71,8 @@ impl SortedSet<'_> {
         self.index.remove(store, (index.0, index.1, *key));
         self.dr_id_to_index.remove(store, key);
 
-        #[cfg(test)]
-        {
-            let len = self.len(store)?;
-            self.len.save(store, &(len - 1))?;
-        }
+        let len = self.len(store)?;
+        self.len.save(store, &(len - 1))?;
 
         Ok(index)
     }
@@ -94,10 +82,9 @@ impl SortedSet<'_> {
 macro_rules! sorted_set {
     ($namespace:expr) => {
         SortedSet {
-            #[cfg(test)]
-            len:              Item::new(concat!($namespace, "_len")),
-            index:            Map::new(concat!($namespace, "_index")),
-            dr_id_to_index:   Map::new(concat!($namespace, "_dr_id_to_index")),
+            len:            Item::new(concat!($namespace, "_len")),
+            index:          Map::new(concat!($namespace, "_index")),
+            dr_id_to_index: Map::new(concat!($namespace, "_dr_id_to_index")),
         }
     };
 }

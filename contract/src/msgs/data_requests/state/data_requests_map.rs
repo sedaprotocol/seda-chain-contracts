@@ -221,7 +221,7 @@ impl DataRequestsMap<'_> {
         status: &DataRequestStatus,
         last_seen_index: Option<IndexKey>,
         limit: u32,
-    ) -> StdResult<(Vec<DataRequest>, Option<IndexKey>)> {
+    ) -> StdResult<(Vec<DataRequest>, Option<IndexKey>, u32)> {
         let start = last_seen_index.map(Bound::exclusive);
 
         let set = match status {
@@ -229,10 +229,11 @@ impl DataRequestsMap<'_> {
             DataRequestStatus::Revealing => &self.revealing,
             DataRequestStatus::Tallying => &self.tallying,
         };
+        let set_len = set.len(store)?;
 
         let has_last_seen_index = last_seen_index.map(|index| set.has_index(store, index));
         if has_last_seen_index.is_some_and(|has| !has) {
-            return Ok((vec![], None));
+            return Ok((vec![], None, set_len));
         }
 
         let requests = set
@@ -244,7 +245,7 @@ impl DataRequestsMap<'_> {
             .collect::<StdResult<Vec<_>>>()?;
 
         if requests.len() < limit as usize {
-            return Ok((requests, None));
+            return Ok((requests, None, set_len));
         }
 
         // The last seen index is the last element in the list
@@ -259,7 +260,7 @@ impl DataRequestsMap<'_> {
             )
         });
 
-        Ok((requests, new_last_seen_index))
+        Ok((requests, new_last_seen_index, set_len))
     }
 
     pub fn expire_data_requests(&self, store: &mut dyn Storage, current_height: u64) -> StdResult<Vec<String>> {
