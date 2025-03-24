@@ -247,7 +247,11 @@ impl DataRequestsMap<'_> {
             return Ok((requests, None));
         }
 
+        // The last seen index is the last element in the list
         let new_last_seen_index = requests.last().map(|dr| {
+            // The index key is a tuple of (gas_price, height, dr_id)
+            // We need to reverse the height to get the correct order.
+            // For example, if the height is 1 and 2, the reversed height is u64::MAX - 1 > u64::MAX - 2.
             (
                 dr.gas_price.u128(),
                 u64::MAX - dr.height,

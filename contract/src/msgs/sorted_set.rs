@@ -2,12 +2,16 @@ use seda_common::msgs::data_requests::DataRequest;
 
 use super::*;
 
+/// IndexKey is a tuple of (gas_price, height, dr_id)
 pub type IndexKey = (u128, u64, Hash);
 
+/// A structure to store a sorted set of data requests by the `IndexKey`
 pub struct SortedSet<'a> {
     #[cfg(test)]
     pub len:            Item<u32>,
+    /// Used to store information about the data request by the `IndexKey` so it can be sorted
     pub index:          Map<IndexKey, ()>,
+    /// Used to store the `IndexKey` by the `Hash` of the data request
     pub dr_id_to_index: Map<&'a Hash, IndexKey>,
 }
 

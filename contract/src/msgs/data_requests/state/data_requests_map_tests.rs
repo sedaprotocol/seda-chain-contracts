@@ -110,9 +110,9 @@ impl TestInfo<'_> {
     fn get_requests_by_status(
         &self,
         status: DataRequestStatus,
-        last_seen_index: Option<(u128, u64, Hash)>,
+        last_seen_index: Option<IndexKey>,
         limit: u32,
-    ) -> (Vec<DataRequest>, Option<(u128, u64, Hash)>) {
+    ) -> (Vec<DataRequest>, Option<IndexKey>) {
         self.map
             .get_requests_by_status(&self.store, &status, last_seen_index, limit)
             .unwrap()
