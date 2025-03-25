@@ -67,7 +67,7 @@ fn offset_works() {
     let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
     let posted_dr1 = anyone.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
 
-    // post a scond data request
+    // post a second data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
     anyone.post_data_request(dr2, vec![], vec![], 2, None).unwrap();
 
@@ -78,6 +78,7 @@ fn offset_works() {
     let drs_one = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 1);
     assert_eq!(1, drs_one.data_requests.len());
     assert!(drs_one.data_requests.iter().any(|dr| dr.id == posted_dr1));
+    assert_eq!(drs_one.last_seen_index.map(|(_, h, _)| h), Some(u64::MAX - 1));
 
     let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, drs_one.last_seen_index, 2);
     assert!(!drs.is_paused);

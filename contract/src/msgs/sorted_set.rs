@@ -1,9 +1,93 @@
-use seda_common::msgs::data_requests::DataRequest;
+use cw_storage_plus::{KeyDeserialize, Prefixer, PrimaryKey};
+use seda_common::msgs::data_requests::{DataRequest, LastSeenIndexKey};
+use serde::{Deserialize, Serialize};
 
 use super::*;
 
-/// IndexKey is a tuple of (gas_price, height, dr_id)
-pub type IndexKey = (u128, u64, Hash);
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct IndexKey {
+    pub gas_price: u128,
+    pub height:    u64,
+    pub dr_id:     Hash,
+}
+
+impl Prefixer<'_> for IndexKey {
+    fn prefix(&self) -> Vec<cw_storage_plus::Key> {
+        let mut res = self.gas_price.prefix();
+        res.extend(self.height.prefix());
+        res
+    }
+}
+
+impl PrimaryKey<'_> for IndexKey {
+    type Prefix = (u128, u64);
+    type SubPrefix = u128;
+    type Suffix = Hash;
+    type SuperSuffix = (u64, Hash);
+
+    fn key(&self) -> Vec<cw_storage_plus::Key> {
+        let mut key = self.gas_price.key();
+        key.extend(self.height.key());
+        key.extend(self.dr_id.key());
+        key
+        // <(u128, u64, Hash) as PrimaryKey>::key(&(self.gas_price, self.height, self.dr_id))
+    }
+}
+
+impl KeyDeserialize for IndexKey {
+    type Output = Self;
+
+    const KEY_ELEMS: u16 =
+        <u128 as KeyDeserialize>::KEY_ELEMS + <u64 as KeyDeserialize>::KEY_ELEMS + <Hash as KeyDeserialize>::KEY_ELEMS;
+
+    #[inline(always)]
+    fn from_vec(value: Vec<u8>) -> StdResult<Self::Output> {
+        let tuple = <(u128, u64, Hash) as KeyDeserialize>::from_vec(value)?;
+        Ok(Self {
+            gas_price: tuple.0,
+            height:    tuple.1,
+            dr_id:     tuple.2,
+        })
+    }
+}
+
+impl IndexKey {
+    pub fn new<P: Into<u128>>(gas_price: P, height: u64, dr_id: Hash) -> Self {
+        Self {
+            gas_price: gas_price.into(),
+            // The index key is a tuple of (gas_price, height, dr_id)
+            // We need to reverse the height to get the correct order.
+            // For example, if the height is 1 and 2, the reversed height is u64::MAX - 1 > u64::MAX - 2.
+            height: u64::MAX - height,
+            dr_id,
+        }
+    }
+}
+
+impl TryFrom<&DataRequest> for IndexKey {
+    type Error = ContractError;
+
+    fn try_from(value: &DataRequest) -> Result<Self, Self::Error> {
+        let dr_id = Hash::from_hex_str(&value.id)?;
+        Ok(Self::new(value.gas_price, value.height, dr_id))
+    }
+}
+
+impl From<LastSeenIndexKey> for IndexKey {
+    fn from(value: LastSeenIndexKey) -> Self {
+        Self {
+            gas_price: value.0.into(),
+            height:    value.1,
+            dr_id:     value.2,
+        }
+    }
+}
+
+impl From<IndexKey> for LastSeenIndexKey {
+    fn from(val: IndexKey) -> Self {
+        (val.gas_price.into(), val.height, val.dr_id)
+    }
+}
 
 /// A structure to store a sorted set of data requests by the `IndexKey`
 pub struct SortedSet<'a> {
@@ -37,13 +121,9 @@ impl SortedSet<'_> {
             return Err(StdError::generic_err("Key already exists"));
         }
 
-        let gas_price: u128 = dr.gas_price.into();
-        let height: u64 = u64::MAX - dr.height;
-
-        let index_key = (gas_price, height, *dr_id);
-        self.index.save(store, index_key, &())?;
-
+        let index_key = IndexKey::try_from(&dr)?;
         self.dr_id_to_index.save(store, dr_id, &index_key)?;
+        self.index.save(store, index_key, &())?;
 
         let len = self.len(store)?;
         self.len.save(store, &(len + 1))?;
@@ -52,7 +132,7 @@ impl SortedSet<'_> {
     }
 
     pub fn add_by_index(&self, store: &mut dyn Storage, index: IndexKey) -> StdResult<()> {
-        let hash = &index.2;
+        let hash = &index.dr_id;
         if self.has(store, hash) {
             return Err(StdError::generic_err("Key already exists"));
         }
@@ -68,7 +148,7 @@ impl SortedSet<'_> {
 
     pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> StdResult<IndexKey> {
         let index = self.dr_id_to_index.load(store, key)?;
-        self.index.remove(store, (index.0, index.1, *key));
+        self.index.remove(store, index);
         self.dr_id_to_index.remove(store, key);
 
         let len = self.len(store)?;

@@ -14,12 +14,9 @@ use cw_storage_plus::Map;
 
 impl DataRequestsMap<'_> {
     pub fn initialize(&self, _store: &mut dyn Storage) -> StdResult<()> {
-        #[cfg(test)]
-        {
-            self.committing.initialize(_store)?;
-            self.revealing.initialize(_store)?;
-            self.tallying.initialize(_store)?;
-        }
+        self.committing.initialize(_store)?;
+        self.revealing.initialize(_store)?;
+        self.tallying.initialize(_store)?;
         Ok(())
     }
 
@@ -231,8 +228,7 @@ impl DataRequestsMap<'_> {
         };
         let set_len = set.len(store)?;
 
-        let has_last_seen_index = last_seen_index.map(|index| set.has_index(store, index));
-        if has_last_seen_index.is_some_and(|has| !has) {
+        if last_seen_index.is_some_and(|index| !set.has_index(store, index)) {
             return Ok((vec![], None, set_len));
         }
 
@@ -241,7 +237,7 @@ impl DataRequestsMap<'_> {
             // Start is the max argument since we're ordering descending
             .range(store, None, start, Order::Descending)
             .take(limit as usize)
-            .flat_map(|result| result.map(|(key, _)| self.reqs.load(store, &key.2)))
+            .flat_map(|result| result.map(|(key, _)| self.reqs.load(store, &key.dr_id)))
             .collect::<StdResult<Vec<_>>>()?;
 
         if requests.len() < limit as usize {
@@ -249,16 +245,7 @@ impl DataRequestsMap<'_> {
         }
 
         // The last seen index is the last element in the list
-        let new_last_seen_index = requests.last().map(|dr| {
-            // The index key is a tuple of (gas_price, height, dr_id)
-            // We need to reverse the height to get the correct order.
-            // For example, if the height is 1 and 2, the reversed height is u64::MAX - 1 > u64::MAX - 2.
-            (
-                dr.gas_price.u128(),
-                u64::MAX - dr.height,
-                Hash::from_hex_str(&dr.id).unwrap(),
-            )
-        });
+        let new_last_seen_index = requests.last().map(IndexKey::try_from).transpose()?;
 
         Ok((requests, new_last_seen_index, set_len))
     }

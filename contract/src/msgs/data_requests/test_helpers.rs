@@ -285,7 +285,7 @@ impl TestAccount {
     pub fn get_data_requests_by_status(
         &self,
         status: DataRequestStatus,
-        last_seen_index: Option<(Uint128, u64, Hash)>,
+        last_seen_index: Option<LastSeenIndexKey>,
         limit: u32,
     ) -> GetDataRequestsByStatusResponse {
         self.test_info

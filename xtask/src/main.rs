@@ -226,7 +226,7 @@ fn test_common(sh: &Shell) -> Result<()> {
     .run()?;
     cmd!(
         sh,
-        "cargo nextest run --locked -p seda-common --failure-output final --success-output final --features cosmwasm"
+        "cargo nextest run --locked -p seda-common --failure-output immediate --success-output immediate --features cosmwasm"
     )
     .run()?;
     Ok(())
@@ -235,7 +235,7 @@ fn test_common(sh: &Shell) -> Result<()> {
 fn test_contract(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo nextest run --locked -p seda-contract --failure-output final --success-output final"
+        "cargo nextest run --locked -p seda-contract --failure-output immediate --success-output immediate"
     )
     .run()?;
     Ok(())
