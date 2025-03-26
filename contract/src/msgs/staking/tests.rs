@@ -459,7 +459,7 @@ fn cannot_frontrun_unstake() {
     // fred frontruns alice's withdraw
     test_info.execute::<()>(&fred, &msg).unwrap();
 
-    // verify alice tokens are still pending withdrawal
+    // verify alice tokens are in pending withdrawal
     let staker = alice.get_staker_info().unwrap();
     assert_eq!(staker.tokens_pending_withdrawal.u128(), 10);
 
@@ -468,7 +468,7 @@ fn cannot_frontrun_unstake() {
     let balance_fred = test_info.executor_balance("fred");
     assert_eq!(fred_expected_balance, balance_fred);
 
-    // alice should have 95 aseda in their balance (100 [original] - 10 [staked]
+    // alice's balance should (1seda [original] - 10aseda [staked]
     let alice_expected_balance = seda_to_aseda(1.into()) - 10;
     let balance_alice = test_info.executor_balance("alice");
     assert_eq!(alice_expected_balance, balance_alice);
@@ -509,7 +509,7 @@ fn cannot_frontrun_withdraw() {
     let balance_fred = test_info.executor_balance("fred");
     assert_eq!(fred_expected_balance, balance_fred);
 
-    // alice should have 95 aseda in their balance (100 [original] - 10 [staked] + 10 [withdrawn])
+    // alice's balance  should be (1seda [original] - 10aseda [staked] + 10aseda [withdrawn]) = 1seda
     let alice_expected_balance = seda_to_aseda(1.into());
     let balance_alice = test_info.executor_balance("alice");
     assert_eq!(alice_expected_balance, balance_alice);
