@@ -105,7 +105,7 @@ fn allowlist_works() {
 
     // alice unstakes, withdraws, then unregisters herself
     alice.unstake().unwrap();
-    alice.withdraw(10).unwrap();
+    alice.withdraw().unwrap();
     // test_info.unregister(&alice).unwrap();
 
     // remove alice from the allowlist

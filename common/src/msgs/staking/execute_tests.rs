@@ -1,11 +1,11 @@
 use serde_json::json;
 
 use super::execute::*;
+use crate::msgs;
 #[cfg(feature = "cosmwasm")]
 use crate::msgs::assert_json_deser;
 #[cfg(not(feature = "cosmwasm"))]
 use crate::msgs::assert_json_ser;
-use crate::{msgs, types::U128};
 
 #[test]
 fn json_stake() {
@@ -72,19 +72,16 @@ fn json_unstake() {
 
 #[test]
 fn json_withdraw() {
-    let amount: U128 = 0u128.into();
     let serialized = json!({
       "withdraw": {
         "proof": "proof",
         "public_key": "public",
-        "amount": amount.to_string(),
         "withdraw_address": "withdraw_address",
       }
     });
     let msg: msgs::ExecuteMsg = withdraw::Execute {
-        public_key: "public".to_string(),
-        proof: "proof".to_string(),
-        amount,
+        public_key:       "public".to_string(),
+        proof:            "proof".to_string(),
         withdraw_address: "withdraw_address".to_string(),
     }
     .into();

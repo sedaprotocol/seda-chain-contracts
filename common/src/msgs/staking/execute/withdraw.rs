@@ -6,21 +6,13 @@ use crate::{crypto::hash, error::Result, types::*};
 pub struct Execute {
     pub public_key:       String,
     pub proof:            String,
-    pub amount:           U128,
     pub withdraw_address: String,
 }
 
 impl Execute {
-    fn generate_hash(
-        amount: U128,
-        withdraw_address: &str,
-        chain_id: &str,
-        contract_addr: &str,
-        sequence: U128,
-    ) -> Hash {
+    fn generate_hash(withdraw_address: &str, chain_id: &str, contract_addr: &str, sequence: U128) -> Hash {
         hash([
             "withdraw".as_bytes(),
-            &amount.to_be_bytes(),
             withdraw_address.as_bytes(),
             chain_id.as_bytes(),
             contract_addr.as_bytes(),
@@ -39,7 +31,6 @@ impl VerifySelf for Execute {
     fn msg_hash(&self, chain_id: &str, contract_addr: &str, sequence: Self::Extra) -> Result<Hash> {
         Ok(hash([
             "withdraw".as_bytes(),
-            &self.amount.to_be_bytes(),
             self.withdraw_address.as_bytes(),
             chain_id.as_bytes(),
             contract_addr.as_bytes(),
@@ -50,7 +41,6 @@ impl VerifySelf for Execute {
 
 pub struct ExecuteFactory {
     public_key:       String,
-    amount:           U128,
     hash:             Hash,
     withdraw_address: String,
 }
@@ -64,7 +54,6 @@ impl ExecuteFactory {
         Execute {
             public_key:       self.public_key,
             proof:            proof.to_hex(),
-            amount:           self.amount,
             withdraw_address: self.withdraw_address,
         }
         .into()
@@ -74,17 +63,14 @@ impl ExecuteFactory {
 impl Execute {
     pub fn factory(
         public_key: String,
-        amount: u128,
         withdraw_address: String,
         chain_id: &str,
         contract_addr: &str,
         sequence: U128,
     ) -> ExecuteFactory {
-        let amount = amount.into();
-        let hash = Self::generate_hash(amount, &withdraw_address, chain_id, contract_addr, sequence);
+        let hash = Self::generate_hash(&withdraw_address, chain_id, contract_addr, sequence);
         ExecuteFactory {
             public_key,
-            amount,
             hash,
             withdraw_address,
         }

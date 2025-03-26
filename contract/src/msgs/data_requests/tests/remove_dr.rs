@@ -441,5 +441,5 @@ fn unstake_before_dr_removal_still_rewards_staker() {
     assert_eq!(5, staker.tokens_pending_withdrawal.u128());
 
     // bob can withdraw the reward
-    bob.withdraw(5).unwrap();
+    bob.withdraw().unwrap();
 }

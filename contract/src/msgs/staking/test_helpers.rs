@@ -108,12 +108,11 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn withdraw(&self, amount: u128) -> Result<(), ContractError> {
+    pub fn withdraw(&self) -> Result<(), ContractError> {
         let seq = self.get_account_sequence();
 
         let factory = execute::withdraw::Execute::factory(
             self.pub_key_hex(),
-            amount,
             self.addr().to_string(),
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),
@@ -126,12 +125,11 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn withdraw_to(&self, amount: u128, withdraw_address: String) -> Result<(), ContractError> {
+    pub fn withdraw_to(&self, withdraw_address: String) -> Result<(), ContractError> {
         let seq = self.get_account_sequence();
 
         let factory = execute::withdraw::Execute::factory(
             self.pub_key_hex(),
-            amount,
             withdraw_address,
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),

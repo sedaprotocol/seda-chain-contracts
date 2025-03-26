@@ -17,15 +17,10 @@ impl ExecuteHandler for execute::withdraw::Execute {
 
         // error if amount is greater than pending tokens
         let mut executor = state::STAKERS.get_staker(deps.storage, &public_key)?;
-        if self.amount > executor.tokens_pending_withdrawal {
-            return Err(ContractError::InsufficientFunds(
-                executor.tokens_pending_withdrawal,
-                self.amount,
-            ));
-        }
+        let amount = executor.tokens_pending_withdrawal;
 
         // update the executor (remove if balances are zero)
-        executor.tokens_pending_withdrawal -= self.amount;
+        executor.tokens_pending_withdrawal -= amount;
         if executor.tokens_pending_withdrawal.is_zero() && executor.tokens_staked.is_zero() {
             state::STAKERS.remove(deps.storage, public_key)?;
         } else {
@@ -39,7 +34,7 @@ impl ExecuteHandler for execute::withdraw::Execute {
             .map_err(|_| ContractError::InvalidAddress(self.withdraw_address))?;
         let bank_msg = BankMsg::Send {
             to_address: addr.to_string(),
-            amount:     coins(self.amount.u128(), token),
+            amount:     coins(amount.u128(), token),
         };
 
         Ok(Response::new()
@@ -50,7 +45,7 @@ impl ExecuteHandler for execute::withdraw::Execute {
                     "withdraw",
                     self.public_key.clone(),
                     info.sender.to_string(),
-                    self.amount,
+                    amount,
                     seq,
                 ),
                 create_executor_event(executor, self.public_key),

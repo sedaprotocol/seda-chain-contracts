@@ -221,7 +221,7 @@ fn get_git_version() -> Result<String> {
 fn test_common(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo nextest run --locked -p seda-common --failure-output final --success-output final"
+        "cargo nextest run --locked -p seda-common --failure-output immediate --success-output immediate"
     )
     .run()?;
     cmd!(

@@ -76,6 +76,9 @@ fn deposit_stake_withdraw() {
     let is_executor_eligible = anyone.is_staker_executor();
     assert!(!is_executor_eligible);
 
+    // can double call unstake. doesn't do anything
+    assert!(anyone.unstake().is_ok());
+
     // data request executor's stake should be 0 and pending 3
     let value: Option<Staker> = anyone.get_staker_info();
     assert_eq!(
@@ -87,24 +90,14 @@ fn deposit_stake_withdraw() {
         }),
     );
 
-    // the data request executor withdraws 1
-    let _res = anyone.withdraw(1);
+    // the data request executor withdraws their pending tokens
+    let _res = anyone.withdraw();
     let is_executor_committee_eligible = anyone.is_staker_executor();
     assert!(!is_executor_committee_eligible);
 
-    // data request executor's stake should be 0 and pending 2
+    // anyone should no longer be a staker since they had 0 stake when withdrawing
     let value: Option<Staker> = anyone.get_staker_info();
-    assert_eq!(
-        value,
-        Some(Staker {
-            memo:                      Some("address".to_string().as_bytes().into()),
-            tokens_staked:             0u8.into(),
-            tokens_pending_withdrawal: 2u8.into(),
-        }),
-    );
-
-    // can double call unstake. doesn't do anything
-    assert!(anyone.unstake().is_ok());
+    assert_eq!(value, None);
 
     // assert executor is no longer eligible for committee inclusion
     let is_executor_committee_eligible = anyone.is_staker_executor();
@@ -176,7 +169,7 @@ fn unregister_data_request_executor() {
     );
 
     // unregister the data request executor by withdrawing all funds
-    anyone.withdraw(2).unwrap();
+    anyone.withdraw().unwrap();
 
     // fetching data request executor after unregistering should return None
     let value: Option<Staker> = anyone.get_staker_info();
@@ -394,7 +387,7 @@ fn execute_messages_get_paused() {
     assert!(res.is_err_and(|x| x.to_string().contains("pause")));
 
     // try to have an existing staker withdraw rewards
-    let res = alice.withdraw(10);
+    let res = alice.withdraw();
     assert!(res.is_err_and(|x| x.to_string().contains("pause")));
 
     // can still change the staking config
@@ -426,15 +419,9 @@ fn staker_not_in_allowlist_withdrawing() {
     // remove alice from the allowlist
     test_info.creator().remove_from_allowlist(alice.pub_key()).unwrap();
 
-    // alice withdraws most her funds but should still be in stakers map
-    alice.withdraw(9).unwrap();
-    let stake_info = alice.get_staker_info().unwrap();
-    assert_eq!(stake_info.tokens_pending_withdrawal, Uint128::new(1));
-
-    // alice withdraws the rest of her funds and should be removed from stakers map
-    alice.withdraw(1).unwrap();
-    let stake_info = alice.get_staker_info();
-    assert_eq!(stake_info, None);
+    // alice withdraws all her funds removing her from the stakers map
+    alice.withdraw().unwrap();
+    assert!(alice.get_staker_info().is_none());
 }
 
 #[test]
@@ -451,26 +438,17 @@ fn minimum_stake_cannot_be_zero() {
 }
 
 #[test]
-fn cannot_frontrun_withdraw() {
+fn cannot_frontrun_unstake() {
     let test_info = TestInfo::init();
 
     // register a data request executor
     let alice = test_info.new_executor("alice", 1, 10);
     let fred = test_info.new_executor("fred", 1, 1);
 
-    // alice unstakes 10 tokens
-    alice.unstake().unwrap();
-
-    // verify alice has 10 tokens pending withdrawal
-    let staker = alice.get_staker_info().unwrap();
-    assert_eq!(staker.tokens_pending_withdrawal.u128(), 10);
-
-    // alice produces the withdraw message to withdraw 5 tokens
+    // alice produces the unstake message to unstake tokens
     let seq = alice.get_account_sequence();
-    let factory = msgs::staking::execute::withdraw::Execute::factory(
+    let factory = msgs::staking::execute::unstake::Execute::factory(
         alice.pub_key_hex(),
-        5,
-        alice.addr().to_string(),
         test_info.chain_id(),
         test_info.contract_addr_str(),
         seq,
@@ -481,17 +459,58 @@ fn cannot_frontrun_withdraw() {
     // fred frontruns alice's withdraw
     test_info.execute::<()>(&fred, &msg).unwrap();
 
-    // verify alice has 5 tokens pending withdrawal
+    // verify alice tokens are still pending withdrawal
     let staker = alice.get_staker_info().unwrap();
-    assert_eq!(staker.tokens_pending_withdrawal.u128(), 5);
+    assert_eq!(staker.tokens_pending_withdrawal.u128(), 10);
 
     // fred should still have their same balance (1seda [original] - 1aseda [staked])
     let fred_expected_balance = seda_to_aseda(1.into()) - 1;
     let balance_fred = test_info.executor_balance("fred");
     assert_eq!(fred_expected_balance, balance_fred);
 
-    // alice should have 95 aseda in their balance (100 [original] - 10 [staked] + 5 [withdraw])
-    let alice_expected_balance = seda_to_aseda(1.into()) - 10 + 5;
+    // alice should have 95 aseda in their balance (100 [original] - 10 [staked]
+    let alice_expected_balance = seda_to_aseda(1.into()) - 10;
+    let balance_alice = test_info.executor_balance("alice");
+    assert_eq!(alice_expected_balance, balance_alice);
+}
+
+#[test]
+fn cannot_frontrun_withdraw() {
+    let test_info = TestInfo::init();
+
+    // register a data request executor
+    let alice = test_info.new_executor("alice", 1, 10);
+    let fred = test_info.new_executor("fred", 1, 1);
+
+    // alice unstakes all tokens
+    alice.unstake().unwrap();
+
+    // verify alice has 10 tokens pending withdrawal
+    let staker = alice.get_staker_info().unwrap();
+    assert_eq!(staker.tokens_pending_withdrawal.u128(), 10);
+
+    // alice produces the withdraw message to withdraw their tokens
+    let seq = alice.get_account_sequence();
+    let factory = msgs::staking::execute::withdraw::Execute::factory(
+        alice.pub_key_hex(),
+        alice.addr().to_string(),
+        test_info.chain_id(),
+        test_info.contract_addr_str(),
+        seq,
+    );
+    let proof = alice.prove(factory.get_hash());
+    let msg = factory.create_message(proof);
+
+    // fred frontruns alice's withdraw - but she should get the tokens not fred
+    test_info.execute::<()>(&fred, &msg).unwrap();
+
+    // fred should still have their same balance (1seda [original] - 1aseda [staked])
+    let fred_expected_balance = seda_to_aseda(1.into()) - 1;
+    let balance_fred = test_info.executor_balance("fred");
+    assert_eq!(fred_expected_balance, balance_fred);
+
+    // alice should have 95 aseda in their balance (100 [original] - 10 [staked] + 10 [withdrawn])
+    let alice_expected_balance = seda_to_aseda(1.into());
     let balance_alice = test_info.executor_balance("alice");
     assert_eq!(alice_expected_balance, balance_alice);
 }
@@ -504,5 +523,5 @@ fn withdraw_to_invalid_address() {
     let alice = test_info.new_executor("alice", 100u128, 10);
     alice.unstake().unwrap();
 
-    alice.withdraw_to(10, "not-an-address".to_string()).unwrap();
+    alice.withdraw_to("not-an-address".to_string()).unwrap();
 }
