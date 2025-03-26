@@ -221,12 +221,12 @@ fn get_git_version() -> Result<String> {
 fn test_common(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo nextest run --locked -p seda-common --failure-output immediate --success-output immediate"
+        "cargo nextest run --locked -p seda-common --failure-output final --success-output final"
     )
     .run()?;
     cmd!(
         sh,
-        "cargo nextest run --locked -p seda-common --failure-output immediate --success-output immediate --features cosmwasm"
+        "cargo nextest run --locked -p seda-common --failure-output final --success-output final --features cosmwasm"
     )
     .run()?;
     Ok(())
@@ -235,7 +235,7 @@ fn test_common(sh: &Shell) -> Result<()> {
 fn test_contract(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
-        "cargo nextest run --locked -p seda-contract --failure-output immediate --success-output immediate"
+        "cargo nextest run --locked -p seda-contract --failure-output final --success-output final"
     )
     .run()?;
     Ok(())
