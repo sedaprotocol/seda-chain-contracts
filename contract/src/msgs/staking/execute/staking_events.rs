@@ -36,14 +36,7 @@ pub(in crate::msgs::staking::execute) fn create_executor_action_event(
 pub fn create_staking_config_event(config: StakingConfig) -> Event {
     Event::new("seda-staking-config").add_attributes([
         ("version", CONTRACT_VERSION.to_string()),
-        (
-            "minimum_stake_for_committee_eligibility",
-            config.minimum_stake_for_committee_eligibility.to_string(),
-        ),
-        (
-            "minimum_stake_to_register",
-            config.minimum_stake_to_register.to_string(),
-        ),
+        ("minimum_stake", config.minimum_stake.to_string()),
         ("allowlist_enabled", config.allowlist_enabled.to_string()),
     ])
 }

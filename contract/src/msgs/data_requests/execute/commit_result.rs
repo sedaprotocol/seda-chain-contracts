@@ -57,9 +57,7 @@ pub fn verify_commit(
 
     // Check if the staker has enough funds staked to commit
     let staker = STAKERS.get_staker(deps.storage, &public_key)?;
-    let minimum_stake = STAKING_CONFIG
-        .load(deps.storage)?
-        .minimum_stake_for_committee_eligibility;
+    let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake;
 
     if staker.tokens_staked < minimum_stake {
         return Err(ContractError::InsufficientFunds(minimum_stake, staker.tokens_staked));

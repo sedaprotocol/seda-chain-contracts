@@ -209,7 +209,7 @@ fn remove_request_and_process_distributions(
 impl SudoHandler for remove_requests::Sudo {
     fn sudo(self, mut deps: DepsMut, _: Env) -> Result<Response, ContractError> {
         let token = TOKEN.load(deps.storage)?;
-        let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake_to_register;
+        let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake;
         let mut response = Response::new();
 
         let mut all_stakers_effected = HashSet::new();

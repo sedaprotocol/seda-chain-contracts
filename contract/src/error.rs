@@ -84,8 +84,6 @@ pub enum ContractError {
     ContractNotPaused,
     #[error("ZeroMinimumStakeToRegister: Minimum stake to register cannot be zero")]
     ZeroMinimumStakeToRegister,
-    #[error("ZeroMinimumStakeForCommitteeEligibility: Minimum stake for committee eligibility cannot be zero")]
-    ZeroMinimumStakeForCommitteeEligibility,
 
     #[error("GasPriceTooLow: Gas price {0} is lower than the minimum {MIN_GAS_PRICE}")]
     GasPriceTooLow(Uint128),

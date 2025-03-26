@@ -41,13 +41,11 @@ fn json_staker() {
 fn json_staking_config() {
     let expected_json = json!({
       "minimum_stake_to_register": "100",
-      "minimum_stake_for_committee_eligibility": "100",
       "allowlist_enabled": true,
     });
     let msg = StakingConfig {
-        minimum_stake_to_register:               100u128.into(),
-        minimum_stake_for_committee_eligibility: 100u128.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     100u128.into(),
+        allowlist_enabled: true,
     };
 
     assert_json_deser(msg, expected_json);

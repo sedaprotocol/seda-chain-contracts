@@ -10,12 +10,8 @@ impl ExecuteHandler for StakingConfig {
             return Err(ContractError::NotOwner);
         }
 
-        if self.minimum_stake_to_register.is_zero() {
+        if self.minimum_stake.is_zero() {
             return Err(ContractError::ZeroMinimumStakeToRegister);
-        }
-
-        if self.minimum_stake_for_committee_eligibility.is_zero() {
-            return Err(ContractError::ZeroMinimumStakeForCommitteeEligibility);
         }
 
         STAKING_CONFIG.save(deps.storage, &self)?;

@@ -38,6 +38,12 @@ impl StakersMap<'_> {
         self.stakers.load(store, pub_key)
     }
 
+    pub fn get_staker_and_index(&self, store: &dyn Storage, pub_key: PublicKey) -> StdResult<(Staker, u32)> {
+        let staker = self.get_staker(store, &pub_key)?;
+        let index = self.public_keys.get_index(store, pub_key)?;
+        Ok((staker, index))
+    }
+
     pub fn is_staker_executor(&self, store: &dyn Storage, executor: &PublicKey) -> StdResult<bool> {
         let config = STAKING_CONFIG.load(store)?;
         if config.allowlist_enabled {
@@ -51,7 +57,7 @@ impl StakersMap<'_> {
 
         let executor = self.may_get_staker(store, executor)?;
         Ok(match executor {
-            Some(staker) => staker.tokens_staked >= config.minimum_stake_for_committee_eligibility,
+            Some(staker) => staker.tokens_staked >= config.minimum_stake,
             None => false,
         })
     }

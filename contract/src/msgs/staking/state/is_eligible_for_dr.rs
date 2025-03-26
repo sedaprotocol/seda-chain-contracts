@@ -11,7 +11,7 @@ pub fn is_eligible_for_dr(deps: Deps, dr_id: [u8; 32], public_key: PublicKey) ->
     let all_active_stakers = stakers
         .filter_map(|stakers_info| {
             if let Ok((public_key, staker)) = stakers_info {
-                if staker.tokens_staked >= config.minimum_stake_for_committee_eligibility {
+                if staker.tokens_staked >= config.minimum_stake {
                     return Some((public_key, staker));
                 }
             }

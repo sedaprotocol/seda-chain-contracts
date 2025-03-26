@@ -7,12 +7,7 @@ use seda_common::msgs::*;
 use staking::StakingConfig;
 
 use crate::{
-    consts::{
-        INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
-        INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
-        INITIAL_MINIMUM_STAKE_TO_REGISTER,
-        INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
-    },
+    consts::{INITIAL_COMMIT_TIMEOUT_IN_BLOCKS, INITIAL_MINIMUM_STAKE, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS},
     error::ContractError,
     msgs::{
         data_requests::{execute::dr_events::create_timeout_config_event, state::TIMEOUT_CONFIG},
@@ -48,17 +43,12 @@ pub fn instantiate(
     PAUSED.save(deps.storage, &false)?;
 
     let init_staking_config = msg.staking_config.unwrap_or(StakingConfig {
-        minimum_stake_to_register:               INITIAL_MINIMUM_STAKE_TO_REGISTER,
-        minimum_stake_for_committee_eligibility: INITIAL_MINIMUM_STAKE_FOR_COMMITTEE_ELIGIBILITY,
-        allowlist_enabled:                       false,
+        minimum_stake:     INITIAL_MINIMUM_STAKE,
+        allowlist_enabled: false,
     });
 
-    if init_staking_config.minimum_stake_to_register.is_zero() {
+    if init_staking_config.minimum_stake.is_zero() {
         return Err(ContractError::ZeroMinimumStakeToRegister);
-    }
-
-    if init_staking_config.minimum_stake_for_committee_eligibility.is_zero() {
-        return Err(ContractError::ZeroMinimumStakeForCommitteeEligibility);
     }
 
     STAKING_CONFIG.save(deps.storage, &init_staking_config)?;

@@ -94,9 +94,8 @@ fn fails_if_not_enough_staked() {
     let test_info = TestInfo::init();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               200u8.into(),
-        minimum_stake_for_committee_eligibility: 100u8.into(),
-        allowlist_enabled:                       false,
+        minimum_stake:     200u8.into(),
+        allowlist_enabled: false,
     };
 
     // owner sets staking config

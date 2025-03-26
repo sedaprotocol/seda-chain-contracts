@@ -12,9 +12,8 @@ fn owner_set_staking_config() {
     let test_info = TestInfo::init();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               200u8.into(),
-        minimum_stake_for_committee_eligibility: 100u8.into(),
-        allowlist_enabled:                       false,
+        minimum_stake:     200u8.into(),
+        allowlist_enabled: false,
     };
 
     // owner sets staking config
@@ -27,9 +26,8 @@ fn non_owner_cannot_set_staking_config() {
     let test_info = TestInfo::init();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               200u8.into(),
-        minimum_stake_for_committee_eligibility: 100u8.into(),
-        allowlist_enabled:                       false,
+        minimum_stake:     200u8.into(),
+        allowlist_enabled: false,
     };
 
     // non-owner sets staking config
@@ -46,9 +44,8 @@ fn deposit_stake_withdraw() {
     let anyone = test_info.new_account("anyone", 3);
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               1u8.into(),
-        minimum_stake_for_committee_eligibility: 1u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     1u8.into(),
+        allowlist_enabled: true,
     };
 
     // owner sets staking config
@@ -268,9 +265,8 @@ fn only_allow_active_stakers_to_be_eligible() {
     let test_info = TestInfo::init();
 
     let msg = msgs::ExecuteMsg::Staking(msgs::staking::execute::ExecuteMsg::SetStakingConfig(StakingConfig {
-        minimum_stake_to_register:               Uint128::from(10u32),
-        minimum_stake_for_committee_eligibility: Uint128::from(20u32),
-        allowlist_enabled:                       false,
+        minimum_stake:     Uint128::from(10u32),
+        allowlist_enabled: false,
     }));
 
     test_info.execute::<()>(&test_info.creator(), &msg).unwrap();
@@ -285,12 +281,16 @@ fn only_allow_active_stakers_to_be_eligible() {
         .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 2, None)
         .unwrap();
 
-    // perform the check
-    let is_val1_executor_eligible = val1.is_executor_eligible(dr_id.to_string());
+    // boh are staked and should be eligible
+    let is_val1_executor_eligible = val1.is_executor_eligible(dr_id.clone());
     let is_val2_executor_eligible = val2.is_executor_eligible(dr_id);
 
     assert!(is_val1_executor_eligible);
-    assert!(!is_val2_executor_eligible);
+    assert!(is_val2_executor_eligible);
+
+    // val2 unstakes
+    val2.unstake(10).unwrap();
+    assert!(!val2.is_staker_executor());
 }
 
 const VALIDATORS_AMOUNT: usize = 50;
@@ -411,9 +411,8 @@ fn execute_messages_get_paused() {
 
     // can still change the staking config
     let new_config = StakingConfig {
-        minimum_stake_to_register:               10u8.into(),
-        minimum_stake_for_committee_eligibility: 20u8.into(),
-        allowlist_enabled:                       false,
+        minimum_stake:     10u8.into(),
+        allowlist_enabled: false,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
 }
@@ -424,9 +423,8 @@ fn staker_not_in_allowlist_withdrawing() {
 
     // update the config with allowlist enabled
     let new_config = StakingConfig {
-        minimum_stake_to_register:               10u8.into(),
-        minimum_stake_for_committee_eligibility: 10u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     10u8.into(),
+        allowlist_enabled: true,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
     let alice = test_info.new_account("alice", 100);
@@ -457,26 +455,11 @@ fn minimum_stake_cannot_be_zero() {
 
     // update the config with allowlist enabled
     let new_config = StakingConfig {
-        minimum_stake_to_register:               0u8.into(),
-        minimum_stake_for_committee_eligibility: 10u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     0u8.into(),
+        allowlist_enabled: true,
     };
     let res = test_info.creator().set_staking_config(new_config);
     assert!(res.is_err_and(|x| x == ContractError::ZeroMinimumStakeToRegister));
-}
-
-#[test]
-fn minimum_stake_for_committee_eligibility_cannot_be_zero() {
-    let test_info = TestInfo::init();
-
-    // update the config with allowlist enabled
-    let new_config = StakingConfig {
-        minimum_stake_to_register:               10u8.into(),
-        minimum_stake_for_committee_eligibility: 0u8.into(),
-        allowlist_enabled:                       true,
-    };
-    let res = test_info.creator().set_staking_config(new_config);
-    assert!(res.is_err_and(|x| x == ContractError::ZeroMinimumStakeForCommitteeEligibility));
 }
 
 #[test]

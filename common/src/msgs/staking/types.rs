@@ -22,11 +22,9 @@ pub struct Staker {
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct StakingConfig {
     /// Minimum amount of SEDA tokens required to register as a data request executor
-    pub minimum_stake_to_register:               U128,
-    /// Minimum amount of SEDA tokens required to be eligible for committee inclusion
-    pub minimum_stake_for_committee_eligibility: U128,
+    pub minimum_stake:     U128,
     /// Whether the allowlist is enabled
-    pub allowlist_enabled:                       bool,
+    pub allowlist_enabled: bool,
 }
 
 impl From<StakingConfig> for crate::msgs::ExecuteMsg {

@@ -87,9 +87,8 @@ fn allowlist_works() {
 
     // update the config with allowlist enabled
     let new_config = StakingConfig {
-        minimum_stake_to_register:               10u8.into(),
-        minimum_stake_for_committee_eligibility: 20u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     10u8.into(),
+        allowlist_enabled: true,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
 
@@ -118,9 +117,8 @@ fn allowlist_works() {
 
     // update the config to disable the allowlist
     let new_config = StakingConfig {
-        minimum_stake_to_register:               10u8.into(),
-        minimum_stake_for_committee_eligibility: 20u8.into(),
-        allowlist_enabled:                       false,
+        minimum_stake:     10u8.into(),
+        allowlist_enabled: false,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
 
@@ -168,9 +166,8 @@ fn removing_from_allowlist_unstakes() {
 
     // update the config with allowlist enabled
     let new_config = StakingConfig {
-        minimum_stake_to_register:               10u8.into(),
-        minimum_stake_for_committee_eligibility: 10u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     10u8.into(),
+        allowlist_enabled: true,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
     let alice = test_info.new_account("alice", 100);
