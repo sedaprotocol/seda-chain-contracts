@@ -64,47 +64,47 @@ fn deposit_stake_withdraw() {
 
     // the data request executor stakes 2 more tokens
     anyone.stake_with_memo(2, "address").unwrap();
-    let is_executor_committee_eligible = anyone.is_staker_executor();
-    assert!(is_executor_committee_eligible);
+    let is_executor_eligible = anyone.is_staker_executor();
+    assert!(is_executor_eligible);
 
     // data request executor's stake should be 3
     let value: Option<Staker> = anyone.get_staker_info();
     assert_eq!(value.map(|x| x.tokens_staked), Some(3u8.into()),);
 
-    // the data request executor unstakes 1
-    let _res = anyone.unstake(1);
-    let is_executor_committee_eligible = anyone.is_staker_executor();
-    assert!(is_executor_committee_eligible);
+    // the data request executor unstakes
+    let _res = anyone.unstake();
+    let is_executor_eligible = anyone.is_staker_executor();
+    assert!(!is_executor_eligible);
 
-    // data request executor's stake should be 2 and pending 1
+    // data request executor's stake should be 0 and pending 3
     let value: Option<Staker> = anyone.get_staker_info();
     assert_eq!(
         value,
         Some(Staker {
             memo:                      Some("address".as_bytes().into()),
-            tokens_staked:             2u8.into(),
-            tokens_pending_withdrawal: 1u8.into(),
+            tokens_staked:             0u8.into(),
+            tokens_pending_withdrawal: 3u8.into(),
         }),
     );
 
     // the data request executor withdraws 1
     let _res = anyone.withdraw(1);
     let is_executor_committee_eligible = anyone.is_staker_executor();
-    assert!(is_executor_committee_eligible);
+    assert!(!is_executor_committee_eligible);
 
-    // data request executor's stake should be 2 and pending 0
+    // data request executor's stake should be 0 and pending 2
     let value: Option<Staker> = anyone.get_staker_info();
     assert_eq!(
         value,
         Some(Staker {
             memo:                      Some("address".to_string().as_bytes().into()),
-            tokens_staked:             2u8.into(),
-            tokens_pending_withdrawal: 0u8.into(),
+            tokens_staked:             0u8.into(),
+            tokens_pending_withdrawal: 2u8.into(),
         }),
     );
 
-    // unstake 2 more
-    anyone.unstake(2).unwrap();
+    // can double call unstake. doesn't do anything
+    assert!(anyone.unstake().is_ok());
 
     // assert executor is no longer eligible for committee inclusion
     let is_executor_committee_eligible = anyone.is_staker_executor();
@@ -118,18 +118,6 @@ fn no_funds_provided() {
 
     let anyone = test_info.new_account("anyone", 0);
     anyone.stake_with_no_funds(Some("address".to_string())).unwrap();
-}
-
-#[test]
-#[should_panic(expected = "InsufficientFunds")]
-fn insufficient_funds() {
-    let test_info = TestInfo::init();
-
-    // register a data request executor
-    let alice = test_info.new_executor("alice", 1000, 1);
-
-    // try unstaking more than staked
-    alice.unstake(2).unwrap();
 }
 
 #[test]
@@ -176,7 +164,7 @@ fn unregister_data_request_executor() {
     );
 
     // unstake and withdraw all tokens
-    anyone.unstake(2).unwrap();
+    anyone.unstake().unwrap();
     let value: Option<Staker> = anyone.get_staker_info();
     assert_eq!(
         value,
@@ -289,7 +277,7 @@ fn only_allow_active_stakers_to_be_eligible() {
     assert!(is_val2_executor_eligible);
 
     // val2 unstakes
-    val2.unstake(10).unwrap();
+    val2.unstake().unwrap();
     assert!(!val2.is_staker_executor());
 }
 
@@ -402,7 +390,7 @@ fn execute_messages_get_paused() {
     assert!(res.is_err_and(|x| x.to_string().contains("pause")));
 
     // try to have an existing staker unstake
-    let res = alice.unstake(10);
+    let res = alice.unstake();
     assert!(res.is_err_and(|x| x.to_string().contains("pause")));
 
     // try to have an existing staker withdraw rewards
@@ -470,14 +458,14 @@ fn cannot_frontrun_withdraw() {
     let alice = test_info.new_executor("alice", 1, 10);
     let fred = test_info.new_executor("fred", 1, 1);
 
-    // alice unstakes 5 tokens
-    alice.unstake(5).unwrap();
+    // alice unstakes 10 tokens
+    alice.unstake().unwrap();
 
-    // verify alice has 5 tokens pending withdrawal
+    // verify alice has 10 tokens pending withdrawal
     let staker = alice.get_staker_info().unwrap();
-    assert_eq!(staker.tokens_pending_withdrawal.u128(), 5);
+    assert_eq!(staker.tokens_pending_withdrawal.u128(), 10);
 
-    // alice produces the withdraw message
+    // alice produces the withdraw message to withdraw 5 tokens
     let seq = alice.get_account_sequence();
     let factory = msgs::staking::execute::withdraw::Execute::factory(
         alice.pub_key_hex(),
@@ -493,9 +481,9 @@ fn cannot_frontrun_withdraw() {
     // fred frontruns alice's withdraw
     test_info.execute::<()>(&fred, &msg).unwrap();
 
-    // verify alice has 0 tokens pending withdrawal
+    // verify alice has 5 tokens pending withdrawal
     let staker = alice.get_staker_info().unwrap();
-    assert_eq!(staker.tokens_pending_withdrawal.u128(), 0);
+    assert_eq!(staker.tokens_pending_withdrawal.u128(), 5);
 
     // fred should still have their same balance (1seda [original] - 1aseda [staked])
     let fred_expected_balance = seda_to_aseda(1.into()) - 1;
@@ -514,7 +502,7 @@ fn withdraw_to_invalid_address() {
     let test_info = TestInfo::init();
 
     let alice = test_info.new_executor("alice", 100u128, 10);
-    alice.unstake(10).unwrap();
+    alice.unstake().unwrap();
 
     alice.withdraw_to(10, "not-an-address".to_string()).unwrap();
 }

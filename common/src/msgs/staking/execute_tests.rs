@@ -53,18 +53,15 @@ fn json_stake() {
 
 #[test]
 fn json_unstake() {
-    let amount: U128 = 0u128.into();
     let serialized = json!({
       "unstake": {
         "proof": "proof",
         "public_key": "public",
-        "amount": amount.to_string(),
       }
     });
     let msg: msgs::ExecuteMsg = unstake::Execute {
         public_key: "public".to_string(),
-        proof: "proof".to_string(),
-        amount,
+        proof:      "proof".to_string(),
     }
     .into();
     #[cfg(not(feature = "cosmwasm"))]

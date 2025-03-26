@@ -92,12 +92,11 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn unstake(&self, amount: u128) -> Result<(), ContractError> {
+    pub fn unstake(&self) -> Result<(), ContractError> {
         let seq = self.get_account_sequence();
 
         let factory = execute::unstake::Execute::factory(
             self.pub_key_hex(),
-            amount,
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),
             seq,

@@ -104,7 +104,7 @@ fn allowlist_works() {
     alice.stake(10).unwrap();
 
     // alice unstakes, withdraws, then unregisters herself
-    alice.unstake(10).unwrap();
+    alice.unstake().unwrap();
     alice.withdraw(10).unwrap();
     // test_info.unregister(&alice).unwrap();
 

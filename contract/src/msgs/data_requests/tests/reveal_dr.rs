@@ -411,7 +411,7 @@ fn works_after_unstaking() {
     alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
     // alice unstakes after committing
-    alice.unstake(1).unwrap();
+    alice.unstake().unwrap();
 
     // alice should still be able to reveal
     alice.reveal_result(alice_reveal_message).unwrap();

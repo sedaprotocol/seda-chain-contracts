@@ -40,7 +40,7 @@ fn json_staker() {
 #[test]
 fn json_staking_config() {
     let expected_json = json!({
-      "minimum_stake_to_register": "100",
+      "minimum_stake": "100",
       "allowlist_enabled": true,
     });
     let msg = StakingConfig {

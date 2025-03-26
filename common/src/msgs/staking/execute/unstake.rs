@@ -6,14 +6,12 @@ use crate::{error::Result, types::*};
 pub struct Execute {
     pub public_key: String,
     pub proof:      String,
-    pub amount:     U128,
 }
 
 impl Execute {
-    fn generate_hash(amount: U128, chain_id: &str, contract_addr: &str, sequence: U128) -> Hash {
+    fn generate_hash(chain_id: &str, contract_addr: &str, sequence: U128) -> Hash {
         crate::crypto::hash([
             "unstake".as_bytes(),
-            &amount.to_be_bytes(),
             chain_id.as_bytes(),
             contract_addr.as_bytes(),
             &sequence.to_be_bytes(),
@@ -29,13 +27,12 @@ impl VerifySelf for Execute {
     }
 
     fn msg_hash(&self, chain_id: &str, contract_addr: &str, sequence: Self::Extra) -> Result<Hash> {
-        Ok(Self::generate_hash(self.amount, chain_id, contract_addr, sequence))
+        Ok(Self::generate_hash(chain_id, contract_addr, sequence))
     }
 }
 
 pub struct ExecuteFactory {
     public_key: String,
-    amount:     U128,
     hash:       Hash,
 }
 
@@ -48,27 +45,15 @@ impl ExecuteFactory {
         Execute {
             public_key: self.public_key,
             proof:      proof.to_hex(),
-            amount:     self.amount,
         }
         .into()
     }
 }
 
 impl Execute {
-    pub fn factory(
-        public_key: String,
-        amount: u128,
-        chain_id: &str,
-        contract_addr: &str,
-        sequence: U128,
-    ) -> ExecuteFactory {
-        let amount = amount.into();
-        let hash = Self::generate_hash(amount, chain_id, contract_addr, sequence);
-        ExecuteFactory {
-            public_key,
-            amount,
-            hash,
-        }
+    pub fn factory(public_key: String, chain_id: &str, contract_addr: &str, sequence: U128) -> ExecuteFactory {
+        let hash = Self::generate_hash(chain_id, contract_addr, sequence);
+        ExecuteFactory { public_key, hash }
     }
 
     pub fn verify(&self, public_key: &[u8], chain_id: &str, contract_addr: &str, sequence: U128) -> Result<()> {

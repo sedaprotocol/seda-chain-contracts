@@ -422,7 +422,7 @@ fn unstake_before_dr_removal_still_rewards_staker() {
     bob.reveal_result(bob_reveal_message).unwrap();
 
     // bob unstakes before the data request is removed
-    bob.unstake(1).unwrap();
+    bob.unstake().unwrap();
 
     test_info
         .creator()
