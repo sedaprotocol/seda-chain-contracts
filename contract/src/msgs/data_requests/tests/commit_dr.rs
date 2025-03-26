@@ -103,7 +103,7 @@ fn fails_if_not_enough_staked() {
 
     // post a data request
     let anyone = test_info.new_executor("anyone", 22, 1);
-    let dr = test_helpers::calculate_dr_id_and_args(1, 3);
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // commit a data result
@@ -271,4 +271,36 @@ fn wrong_signature_fails() {
     anyone
         .commit_result_wrong_height(&dr_id, anyone_reveal_message)
         .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "NotOnAllowlist")]
+fn must_be_on_allowlist_to_commit() {
+    let test_info = TestInfo::init();
+
+    // post a data request
+    let anyone = test_info.new_executor("anyone", 22, 1);
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
+
+    // then we enable the allowlist
+    let new_config = StakingConfig {
+        minimum_stake:     1u128.into(),
+        allowlist_enabled: true,
+    };
+
+    // owner sets staking config
+    test_info.creator().set_staking_config(new_config).unwrap();
+
+    // commit a data result
+    let anyone_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let anyone_reveal_message = anyone.create_reveal_message(anyone_reveal);
+    anyone.commit_result(&dr_id, &anyone_reveal_message).unwrap();
 }

@@ -1,7 +1,7 @@
 use staking::state::{STAKERS, STAKING_CONFIG};
 
 use super::*;
-use crate::state::CHAIN_ID;
+use crate::{msgs::owner::state::ALLOWLIST, state::CHAIN_ID};
 
 impl ExecuteHandler for execute::commit_result::Execute {
     /// Posts a data result of a data request with an attached hash of the answer and salt.
@@ -54,11 +54,18 @@ pub fn verify_commit(
     }
 
     let public_key = PublicKey::from_hex_str(commit.public_key.as_str())?;
+    let staker = STAKERS.get_staker(deps.storage, &public_key)?;
+
+    // Check if the staker is on the allowlist if it is enabled
+    if STAKING_CONFIG.load(deps.storage)?.allowlist_enabled {
+        let allowed = ALLOWLIST.may_load(deps.storage, &public_key)?;
+        if allowed.is_none() || !allowed.unwrap() {
+            return Err(ContractError::NotOnAllowlist);
+        }
+    }
 
     // Check if the staker has enough funds staked to commit
-    let staker = STAKERS.get_staker(deps.storage, &public_key)?;
     let minimum_stake = STAKING_CONFIG.load(deps.storage)?.minimum_stake;
-
     if staker.tokens_staked < minimum_stake {
         return Err(ContractError::InsufficientFunds(minimum_stake, staker.tokens_staked));
     }
