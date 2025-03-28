@@ -1,7 +1,7 @@
 use crate::{error::Result, msgs::data_requests::RevealBody, types::*};
 
 #[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
-#[cfg_attr(not(feature = "cosmwasm"), derive(serde::Serialize, Debug, PartialEq))]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Clone, Debug, PartialEq, serde::Serialize))]
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct Execute {
     pub reveal_body: RevealBody,
