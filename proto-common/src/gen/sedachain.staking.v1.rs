@@ -24,7 +24,7 @@ pub struct MsgCreateSedaValidator {
     #[prost(message, optional, tag="7")]
     pub value: ::core::option::Option<::cosmos_sdk_proto::cosmos::base::v1beta1::Coin>,
     #[prost(message, repeated, tag="8")]
-    pub indexed_pub_keys: ::prost::alloc::vec::Vec<super::super::pubkey::v1::IndexedPubKey>,
+    pub indexed_pub_keys: ::prost::alloc::vec::Vec<super::pubkey::IndexedPubKey>,
 }
 impl ::prost::Name for MsgCreateSedaValidator {
 const NAME: &'static str = "MsgCreateSEDAValidator";

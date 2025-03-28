@@ -14,10 +14,10 @@ pub struct Params {
     /// mode.
     #[prost(uint64, tag="3")]
     pub filter_gas_cost_multiplier_mode: u64,
-    /// FilterGasCostMultiplierStdDev is the gas cost multiplier for a filter type
-    /// stddev.
+    /// FilterGasCostMAD is the gas cost multiplier for a filter type
+    /// Median Absolute Deviation.
     #[prost(uint64, tag="4")]
-    pub filter_gas_cost_multiplier_std_dev: u64,
+    pub filter_gas_cost_multiplier_m_a_d: u64,
     /// GasCostBase is the base gas cost for a data request.
     #[prost(uint64, tag="5")]
     pub gas_cost_base: u64,

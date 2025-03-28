@@ -298,11 +298,7 @@ fn proto_build(sh: &Shell) -> Result<()> {
         cmd = cmd.arg("");
     }
 
-    cmd = cmd
-        .arg("\"\"")
-        .arg("s/super::super::/super::/g; s/::v1::/::/g")
-        .arg("{}")
-        .arg("+");
+    cmd = cmd.arg("s/super::super::/super::/g; s/::v1::/::/g").arg("{}").arg("+");
 
     cmd.run()?;
 
