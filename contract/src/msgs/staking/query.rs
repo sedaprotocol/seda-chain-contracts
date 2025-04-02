@@ -55,6 +55,6 @@ impl QueryHandler for is_executor_eligible::Query {
             return Ok(to_json_binary(&false)?);
         }
 
-        Ok(to_json_binary(&is_eligible_for_dr(deps, dr_id, executor)?)?)
+        Ok(to_json_binary(&is_eligible_for_dr(deps, env, dr_id, executor)?)?)
     }
 }
