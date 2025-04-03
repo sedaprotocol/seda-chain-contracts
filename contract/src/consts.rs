@@ -1,6 +1,6 @@
 use cosmwasm_std::Uint128;
 
-pub const INITIAL_MINIMUM_STAKE: Uint128 = Uint128::new(1);
+pub const INITIAL_MINIMUM_STAKE: Uint128 = Uint128::new(10);
 
 pub const INITIAL_COMMIT_TIMEOUT_IN_BLOCKS: u64 = 10;
-pub const INITIAL_REVEAL_TIMEOUT_IN_BLOCKS: u64 = 10;
+pub const INITIAL_REVEAL_TIMEOUT_IN_BLOCKS: u64 = 5;

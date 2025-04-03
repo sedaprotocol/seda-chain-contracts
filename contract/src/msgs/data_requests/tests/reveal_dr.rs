@@ -154,7 +154,7 @@ fn fails_if_not_in_reveal_status() {
 }
 
 #[test]
-#[should_panic(expected = "DataRequestExpired(11, \"reveal\")")]
+#[should_panic(expected = "DataRequestExpired(6, \"reveal\")")]
 fn fails_if_timed_out() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
@@ -176,7 +176,7 @@ fn fails_if_timed_out() {
     alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
     // set the block height to be later than the timeout
-    test_info.set_block_height(11);
+    test_info.set_block_height(6);
 
     // alice reveals
     alice.reveal_result(alice_reveal_message).unwrap();
@@ -205,7 +205,7 @@ fn fails_on_expired_dr() {
     alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
     // set the block height to be later than the timeout
-    test_info.set_block_height(11);
+    test_info.set_block_height(6);
 
     // expire the data request
     test_info.creator().expire_data_requests().unwrap();

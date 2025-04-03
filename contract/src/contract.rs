@@ -44,7 +44,7 @@ pub fn instantiate(
 
     let init_staking_config = msg.staking_config.unwrap_or(StakingConfig {
         minimum_stake:     INITIAL_MINIMUM_STAKE,
-        allowlist_enabled: false,
+        allowlist_enabled: true,
     });
 
     if init_staking_config.minimum_stake.is_zero() {

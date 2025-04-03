@@ -11,7 +11,10 @@ use k256::{
     elliptic_curve::rand_core::OsRng,
 };
 use num_bigfloat::BigFloat;
-use seda_common::{msgs::*, types::ToHexStr};
+use seda_common::{
+    msgs::{staking::StakingConfig, *},
+    types::ToHexStr,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use vrf_rs::Secp256k1Sha256;
 
@@ -80,7 +83,10 @@ impl TestInfo {
             token:          "aseda".to_string(),
             owner:          creator_addr.to_string(),
             chain_id:       chain_id.clone(),
-            staking_config: None,
+            staking_config: Some(StakingConfig {
+                minimum_stake:     1u128.into(),
+                allowlist_enabled: false,
+            }),
             timeout_config: None,
         };
 

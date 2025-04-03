@@ -63,7 +63,7 @@ fn timed_out_requests_move_to_tally() {
     alice.commit_result(&dr_id2, &alice_reveal_message).unwrap();
 
     // set the block height to be later than the timeout so it times out during the reveal phase
-    test_info.set_block_height(21);
+    test_info.set_block_height(16);
 
     // process the timed out requests at current height
     test_info.creator().expire_data_requests().unwrap();

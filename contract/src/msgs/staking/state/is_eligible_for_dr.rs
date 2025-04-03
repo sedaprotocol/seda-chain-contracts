@@ -3,11 +3,8 @@ use sha3::{Digest, Keccak256};
 
 use super::{staking::state::STAKERS, *};
 
-/// Fixed size hash output type
-type Hash = [u8; 32];
-
 /// Compute deterministic hash for staker selection by combining public key and dr_id
-fn compute_selection_hash(public_key: &[u8], dr_id: &[u8; 32]) -> Hash {
+fn compute_selection_hash(public_key: &[u8], dr_id: &[u8]) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(public_key);
     hasher.update(dr_id);
