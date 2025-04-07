@@ -579,7 +579,7 @@ fn query_paginated_executors_unstaking_all_funds() {
     assert_eq!(response.executors.len(), 1);
 
     // Unstaking doesn't remove them from the StakersMap
-    alice.unstake(1).unwrap();
+    alice.unstake().unwrap();
 
     let response = alice.query_executors(0, 10);
     let executors = response.executors;
@@ -593,9 +593,8 @@ fn query_paginated_executors_removed_from_allowlist() {
 
     // enable allowlist
     let new_config = StakingConfig {
-        minimum_stake_to_register:               1u8.into(),
-        minimum_stake_for_committee_eligibility: 1u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     1u8.into(),
+        allowlist_enabled: true,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
 
@@ -614,7 +613,7 @@ fn query_paginated_executors_removed_from_allowlist() {
     assert_eq!(response.executors.len(), 1);
 
     // Withdrawing all funds removes them from the StakersMap
-    alice.withdraw(1).unwrap();
+    alice.withdraw().unwrap();
     let response = alice.query_executors(0, 10);
     assert_eq!(response.executors.len(), 0);
 }
@@ -624,9 +623,8 @@ fn query_paginated_executors_swap_removal() {
     let test_info = TestInfo::init();
 
     let new_config = StakingConfig {
-        minimum_stake_to_register:               1u8.into(),
-        minimum_stake_for_committee_eligibility: 1u8.into(),
-        allowlist_enabled:                       true,
+        minimum_stake:     1u8.into(),
+        allowlist_enabled: true,
     };
     test_info.creator().set_staking_config(new_config).unwrap();
 
@@ -656,7 +654,7 @@ fn query_paginated_executors_swap_removal() {
     assert_eq!(executors[2].memo, charlie_memo_staker_value);
 
     test_info.creator().remove_from_allowlist(alice.pub_key()).unwrap();
-    alice.withdraw(1).unwrap();
+    alice.withdraw().unwrap();
 
     let response = alice.query_executors(0, 10);
     let executors = response.executors;
