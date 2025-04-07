@@ -95,7 +95,7 @@ fn remove_request_and_process_distributions(
             DistributionMessage::Burn(distribution_burn) => {
                 let amount_to_burn = distribution_burn.amount.min(dr_escrow.amount);
                 bank_messages.push(burn(amount_to_burn, token, &mut dr_escrow));
-                event = event.add_attribute("burn", json_str!("amount": amount_to_burn));
+                event = event.add_attribute("burn", amount_to_burn.to_string());
             }
             DistributionMessage::DataProxyReward(distribution_send) => {
                 let amount_to_reward = distribution_send.amount.min(dr_escrow.amount);
