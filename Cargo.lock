@@ -1522,7 +1522,7 @@ dependencies = [
 
 [[package]]
 name = "seda-contract"
-version = "0.6.0-rc.2"
+version = "1.0.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
