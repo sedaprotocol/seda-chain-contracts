@@ -49,6 +49,18 @@ pub struct StakerAndSeq {
     not(feature = "cosmwasm"),
     derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
 )]
+pub struct Executor {
+    pub public_key:                String,
+    pub memo:                      Option<Bytes>,
+    pub tokens_staked:             U128,
+    pub tokens_pending_withdrawal: U128,
+}
+
+#[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
+#[cfg_attr(
+    not(feature = "cosmwasm"),
+    derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
+)]
 pub struct GetExecutorsResponse {
-    pub executors: Vec<Staker>,
+    pub executors: Vec<Executor>,
 }

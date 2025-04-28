@@ -538,14 +538,15 @@ fn query_paginated_executors_works() {
     let executors = response.executors;
     assert_eq!(executors.len(), 1);
     assert_eq!(executors[0].memo, alice_memo_staker_value);
+    assert_eq!(executors[0].public_key, alice.pub_key_hex());
 
     // Add more executors
     let bob_memo = "bar";
     let bob_memo_staker_value = Some(bob_memo.as_bytes().into());
     let charlie_memo = "baz";
     let charlie_memo_staker_value = Some(charlie_memo.as_bytes().into());
-    test_info.new_executor_with_memo("bob", 10, 1, bob_memo);
-    test_info.new_executor_with_memo("charlie", 10, 1, charlie_memo);
+    let bob = test_info.new_executor_with_memo("bob", 10, 1, bob_memo);
+    let charlie = test_info.new_executor_with_memo("charlie", 10, 1, charlie_memo);
 
     // Check Alice is still the first executor
     // check the others in order
@@ -555,12 +556,16 @@ fn query_paginated_executors_works() {
     assert_eq!(executors[0].memo, alice_memo_staker_value);
     assert_eq!(executors[1].memo, bob_memo_staker_value);
     assert_eq!(executors[2].memo, charlie_memo_staker_value);
+    assert_eq!(executors[0].public_key, alice.pub_key_hex());
+    assert_eq!(executors[1].public_key, bob.pub_key_hex());
+    assert_eq!(executors[2].public_key, charlie.pub_key_hex());
 
     // Check limit works
     let response = alice.query_executors(0, 1);
     let executors = response.executors;
     assert_eq!(executors.len(), 1);
     assert_eq!(executors[0].memo, alice_memo_staker_value);
+    assert_eq!(executors[0].public_key, alice.pub_key_hex());
 
     // Check offset works
     let response = alice.query_executors(1, 10);
@@ -568,6 +573,8 @@ fn query_paginated_executors_works() {
     assert_eq!(executors.len(), 2);
     assert_eq!(executors[0].memo, bob_memo_staker_value);
     assert_eq!(executors[1].memo, charlie_memo_staker_value);
+    assert_eq!(executors[0].public_key, bob.pub_key_hex());
+    assert_eq!(executors[1].public_key, charlie.pub_key_hex());
 }
 
 #[test]
