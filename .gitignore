@@ -21,3 +21,6 @@ tally_data_request_fixture.json
 
 # Coverage files
 cobertura.xml
+
+# Environment variables
+.env*
