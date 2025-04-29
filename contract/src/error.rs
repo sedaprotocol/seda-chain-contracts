@@ -91,6 +91,9 @@ pub enum ContractError {
     ExecGasLimitTooLow(u64),
     #[error("TallyGasLimitTooLow: Tally gas limit {0} is lower than the minimum {MIN_TALLY_GAS_LIMIT}")]
     TallyGasLimitTooLow(u64),
+
+    #[error("SemVer: Failed to parse version: {0}")]
+    SemVer(String),
 }
 
 #[cfg(test)]
@@ -103,5 +106,11 @@ impl From<StdError> for ContractError {
 impl From<ContractError> for StdError {
     fn from(err: ContractError) -> StdError {
         StdError::generic_err(err.to_string())
+    }
+}
+
+impl From<semver::Error> for ContractError {
+    fn from(err: semver::Error) -> Self {
+        Self::SemVer(err.to_string())
     }
 }

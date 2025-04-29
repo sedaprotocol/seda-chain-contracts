@@ -1,9 +1,10 @@
-use cosmwasm_std::Event;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
-use cw2::set_contract_version;
+use cosmwasm_std::{Empty, Event};
+use cw2::{get_contract_version, set_contract_version};
 use data_requests::TimeoutConfig;
 use seda_common::msgs::*;
+use semver::Version;
 use staking::StakingConfig;
 
 use crate::{
@@ -89,4 +90,19 @@ pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> Result<Response, Contract
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     msg.query(deps, env)
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    let version: Version = CONTRACT_VERSION.parse()?;
+    let storage_version: Version = get_contract_version(deps.storage)?.version.parse()?;
+
+    if storage_version < version {
+        set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+        // If state structure changed in any contract version in the way migration is needed, it
+        // should occur here
+    }
+
+    Ok(Response::new())
 }
