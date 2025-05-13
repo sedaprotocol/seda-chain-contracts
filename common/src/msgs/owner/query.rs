@@ -9,6 +9,8 @@ pub enum QueryMsg {
     GetPendingOwner {},
     #[cfg_attr(feature = "cosmwasm", returns(bool))]
     IsPaused {},
+    #[cfg_attr(feature = "cosmwasm", returns(Vec<String>))]
+    GetAllowList {},
 }
 
 impl From<QueryMsg> for crate::msgs::QueryMsg {

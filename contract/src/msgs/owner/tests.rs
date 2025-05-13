@@ -1,5 +1,5 @@
 use cosmwasm_std::Uint128;
-use seda_common::msgs::staking::StakingConfig;
+use seda_common::{msgs::staking::StakingConfig, types::ToHexStr};
 
 use crate::{error::ContractError, TestInfo};
 
@@ -124,6 +124,30 @@ fn allowlist_works() {
 
     // now alice can register a data request executor
     alice.stake(100).unwrap();
+}
+
+#[test]
+fn allowlist_query_works() {
+    let test_info = TestInfo::init();
+
+    // add alice to the allowlist
+    let alice = test_info.new_account("alice", 100);
+    test_info.creator().add_to_allowlist(alice.pub_key()).unwrap();
+
+    // query the allowlist
+    let allowlist = test_info.creator().get_allowlist();
+    assert_eq!(allowlist.len(), 1);
+    assert_eq!(allowlist[0], alice.pub_key().to_hex());
+
+    // add bob to the allowlist
+    let bob = test_info.new_account("bob", 100);
+    test_info.creator().add_to_allowlist(bob.pub_key()).unwrap();
+
+    // query the allowlist
+    let allowlist = test_info.creator().get_allowlist();
+    assert_eq!(allowlist.len(), 2);
+    assert!(allowlist.contains(&alice.pub_key().to_hex()));
+    assert!(allowlist.contains(&bob.pub_key().to_hex()));
 }
 
 #[test]

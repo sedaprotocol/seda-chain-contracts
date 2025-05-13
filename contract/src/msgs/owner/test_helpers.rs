@@ -41,6 +41,11 @@ impl TestAccount {
     }
 
     #[track_caller]
+    pub fn get_allowlist(&self) -> Vec<String> {
+        self.test_info.query(query::QueryMsg::GetAllowList {}).unwrap()
+    }
+
+    #[track_caller]
     pub fn remove_from_allowlist(&self, public_key: PublicKey) -> Result<(), ContractError> {
         let msg = execute::remove_from_allowlist::Execute {
             public_key: public_key.to_hex(),

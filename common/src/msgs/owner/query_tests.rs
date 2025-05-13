@@ -45,3 +45,16 @@ fn json_is_paused() {
     #[cfg(feature = "cosmwasm")]
     assert_json_deser(msg, expected_json);
 }
+
+#[test]
+fn json_get_allowed() {
+    let expected_json = json!(
+    {
+        "get_allow_list": {}
+    });
+    let msg: msgs::QueryMsg = OwnerQueryMsg::GetAllowList {}.into();
+    #[cfg(not(feature = "cosmwasm"))]
+    assert_json_ser(msg, expected_json);
+    #[cfg(feature = "cosmwasm")]
+    assert_json_deser(msg, expected_json);
+}
