@@ -87,7 +87,7 @@ impl TestInfo {
                 minimum_stake:     1u128.into(),
                 allowlist_enabled: false,
             }),
-            timeout_config: None,
+            dr_config:      None,
         };
 
         let contract_addr = app

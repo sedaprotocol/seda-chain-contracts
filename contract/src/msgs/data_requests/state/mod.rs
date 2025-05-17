@@ -10,7 +10,7 @@ mod timeouts;
 use timeouts::Timeouts;
 
 /// Governance-controlled timeout configuration parameters.
-pub const TIMEOUT_CONFIG: Item<TimeoutConfig> = Item::new("timeout_config");
+pub const DR_CONFIG: Item<DrConfig> = Item::new("dr_config");
 
 /// Stores the amount, and the poster address.
 #[cw_serde]

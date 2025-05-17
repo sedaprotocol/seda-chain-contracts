@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, num::NonZero};
 
 use serde_json::json;
 
-use super::{DataRequest, PostDataRequestArgs, RevealBody, TimeoutConfig};
+use super::{DataRequest, DrConfig, PostDataRequestArgs, RevealBody};
 #[cfg(feature = "cosmwasm")]
 use crate::msgs::assert_json_deser;
 use crate::{msgs::assert_json_ser, types::*};
@@ -202,15 +202,17 @@ fn json_post_data_request_args() {
 }
 
 #[test]
-fn json_timeout_config() {
+fn json_dr_config() {
     let expected_json = json!({
         "commit_timeout_in_blocks": 5,
         "reveal_timeout_in_blocks": 10,
+        "backup_delay_in_blocks":   1,
     });
 
-    let msg = TimeoutConfig {
+    let msg = DrConfig {
         commit_timeout_in_blocks: 5,
         reveal_timeout_in_blocks: 10,
+        backup_delay_in_blocks:   NonZero::new(1).unwrap(),
     };
 
     #[cfg(not(feature = "cosmwasm"))]
