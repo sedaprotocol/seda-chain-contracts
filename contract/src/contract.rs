@@ -2,15 +2,15 @@ use cosmwasm_std::Event;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use data_requests::TimeoutConfig;
+use data_requests::DrConfig;
 use seda_common::msgs::*;
 use staking::StakingConfig;
 
 use crate::{
-    consts::{INITIAL_COMMIT_TIMEOUT_IN_BLOCKS, INITIAL_MINIMUM_STAKE, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS},
+    consts::*,
     error::ContractError,
     msgs::{
-        data_requests::{execute::dr_events::create_timeout_config_event, state::TIMEOUT_CONFIG},
+        data_requests::{execute::dr_events::create_dr_config_event, state::DR_CONFIG},
         owner::state::{OWNER, PENDING_OWNER},
         staking::{
             execute::staking_events::create_staking_config_event,
@@ -53,11 +53,12 @@ pub fn instantiate(
 
     STAKING_CONFIG.save(deps.storage, &init_staking_config)?;
 
-    let init_timeout_config = msg.timeout_config.unwrap_or(TimeoutConfig {
+    let init_dr_config = msg.dr_config.unwrap_or(DrConfig {
         commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
         reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
+        backup_delay_in_blocks:   INITIAL_BACKUP_DELAY_IN_BLOCKS,
     });
-    TIMEOUT_CONFIG.save(deps.storage, &init_timeout_config)?;
+    DR_CONFIG.save(deps.storage, &init_dr_config)?;
 
     STAKERS.initialize(deps.storage)?;
     crate::msgs::data_requests::state::init_data_requests(deps.storage)?;
@@ -72,7 +73,7 @@ pub fn instantiate(
             ("git_revision", GIT_REVISION.to_string()),
         ]),
         create_staking_config_event(init_staking_config),
-        create_timeout_config_event(init_timeout_config),
+        create_dr_config_event(init_dr_config),
     ]))
 }
 

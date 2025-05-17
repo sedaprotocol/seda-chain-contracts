@@ -10,7 +10,7 @@ pub(in crate::msgs::data_requests) mod commit_result;
 pub(crate) mod dr_events;
 pub(in crate::msgs::data_requests) mod post_request;
 pub(in crate::msgs::data_requests) mod reveal_result;
-pub(in crate::msgs::data_requests) mod set_timeout_config;
+pub(in crate::msgs::data_requests) mod set_dr_config;
 
 impl ExecuteHandler for ExecuteMsg {
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {

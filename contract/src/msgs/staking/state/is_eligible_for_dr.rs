@@ -1,7 +1,10 @@
+use std::num::NonZero;
+
 use data_requests::state::load_request;
 use sha3::{Digest, Keccak256};
 
 use super::{staking::state::STAKERS, *};
+use crate::msgs::data_requests::state::DR_CONFIG;
 
 /// Compute deterministic hash for staker selection by combining public key and dr_id
 fn compute_selection_hash(public_key: &[u8], dr_id: &[u8]) -> Hash {
@@ -36,11 +39,13 @@ pub fn is_eligible_for_dr(deps: Deps, env: Env, dr_id: [u8; 32], public_key: Pub
         .range_raw(deps.storage, None, None, Order::Ascending)
         .flatten();
     let blocks_passed = env.block.height - data_request.height;
+    let dr_config = DR_CONFIG.load(deps.storage)?;
 
     Ok(calculate_dr_eligibility(
         stakers,
         public_key.as_ref(),
         config.minimum_stake,
+        dr_config.backup_delay_in_blocks,
         dr_id,
         data_request.replication_factor,
         blocks_passed,
@@ -70,6 +75,7 @@ fn calculate_dr_eligibility<I>(
     active_stakers: I,
     target_public_key: &[u8],
     minimum_stake: Uint128,
+    backup_delay_in_blocks: NonZero<u64>,
     dr_id: [u8; 32],
     replication_factor: u16,
     blocks_passed: u64,
@@ -92,7 +98,13 @@ where
     }
 
     // Calculate total needed stakers, capped by total available
-    let total_needed = replication_factor as u64 + blocks_passed;
+    // for someone to be eligible after the first executor the number of blocks passed needs to be greater than the
+    // backup delay. After the delay a new staker is eligible every block.
+    let total_needed = if blocks_passed > backup_delay_in_blocks.get() {
+        replication_factor as u64 + (blocks_passed - backup_delay_in_blocks.get())
+    } else {
+        replication_factor as u64
+    };
     let total_needed = total_needed.min(total_stakers as u64);
 
     // Staker is eligible if their position (by hash order) is within needed range
@@ -101,6 +113,7 @@ where
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     fn create_test_stakers(count: usize) -> Vec<(Vec<u8>, Staker)> {
@@ -122,6 +135,7 @@ mod tests {
     fn test_node_selection_consistency() {
         let dr_id = [1; 32];
         let minimum_stake = Uint128::from(100u128);
+        let backup_delay_in_blocks = NonZero::new(2).unwrap();
         let replication_factor = 3;
         let blocks_passed = 2;
         let stakers = create_test_stakers(10);
@@ -130,7 +144,13 @@ mod tests {
         let mut sorted_stakers = stakers.clone();
         sorted_stakers.sort_by_cached_key(|(public_key, _)| compute_selection_hash(public_key, &dr_id));
 
-        let total_needed = (replication_factor as usize + blocks_passed as usize).min(sorted_stakers.len());
+        // let total_needed = (replication_factor as usize + blocks_passed as usize).min(sorted_stakers.len());
+        let total_needed = if blocks_passed > backup_delay_in_blocks.get() {
+            replication_factor as usize + (blocks_passed - backup_delay_in_blocks.get()) as usize
+        } else {
+            replication_factor as usize
+        }
+        .min(sorted_stakers.len());
         let selected_by_sorting: Vec<_> = sorted_stakers
             .iter()
             .take(total_needed)
@@ -145,6 +165,7 @@ mod tests {
                     stakers.clone().into_iter(),
                     public_key,
                     minimum_stake,
+                    backup_delay_in_blocks,
                     dr_id,
                     replication_factor,
                     blocks_passed,
@@ -181,6 +202,7 @@ mod tests {
                     stakers.clone().into_iter(),
                     public_key,
                     minimum_stake,
+                    backup_delay_in_blocks,
                     different_dr_id,
                     replication_factor,
                     blocks_passed,
@@ -198,6 +220,7 @@ mod tests {
     #[test]
     fn test_backup_replication_factor() {
         let minimum_stake = Uint128::from(100u128);
+        let backup_delay_in_blocks = NonZero::new(2).unwrap();
         let dr_id = [1; 32];
         let replication_factor = 2;
         let stakers = create_test_stakers(5);
@@ -210,6 +233,7 @@ mod tests {
                     stakers.clone().into_iter(),
                     public_key,
                     minimum_stake,
+                    backup_delay_in_blocks,
                     dr_id,
                     replication_factor,
                     0,
@@ -218,7 +242,8 @@ mod tests {
             .count();
         assert_eq!(eligible_count, replication_factor as usize);
 
-        // Test with 2 blocks passed (should use replication_factor + 2)
+        // Test with 4 blocks passed (should use replication_factor + 2)
+        // since delay is 2 and 4 blocks passed
         let eligible_count = stakers
             .iter()
             .filter(|(public_key, _)| {
@@ -226,9 +251,10 @@ mod tests {
                     stakers.clone().into_iter(),
                     public_key,
                     minimum_stake,
+                    backup_delay_in_blocks,
                     dr_id,
                     replication_factor,
-                    2,
+                    4,
                 )
             })
             .count();
@@ -242,6 +268,7 @@ mod tests {
                     stakers.clone().into_iter(),
                     public_key,
                     minimum_stake,
+                    backup_delay_in_blocks,
                     dr_id,
                     replication_factor,
                     10,
@@ -249,5 +276,152 @@ mod tests {
             })
             .count();
         assert_eq!(eligible_count, stakers.len());
+    }
+
+    #[test]
+    fn test_basic_backup_delay() {
+        let minimum_stake = Uint128::from(100u128);
+        let backup_delay_in_blocks = NonZero::new(1).unwrap();
+        let dr_id = [1; 32];
+        let replication_factor = 1;
+        let stakers = create_test_stakers(5);
+
+        // post on block 10
+        // a new executor should be available on block 12 and after
+        // with a backup delay of 1
+
+        // Test with 1 block passed (should not use backup delay)
+        // after block 11 and before only the asked for replication factor should be available
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    1,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, replication_factor as usize);
+
+        // Test with 2 blocks passed (should use backup delay)
+        // i.e. after block 12 and up one more executor should be available per block
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    2,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, (replication_factor + 1) as usize);
+
+        // Test with 3 blocks passed (should use backup delay)
+        // block 13 posted so another executor should be available
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    3,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, (replication_factor + 2) as usize);
+    }
+
+    #[test]
+    fn test_larger_backup_delay() {
+        let minimum_stake = Uint128::from(100u128);
+        let backup_delay_in_blocks = NonZero::new(5).unwrap();
+        let dr_id = [1; 32];
+        let replication_factor = 2;
+        let stakers = create_test_stakers(5);
+
+        // say we post on block 10
+        // Test with 4 blocks passed (should not use backup delay)
+        // i.e on block 15 and before only the asked for replication factor should be available
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    4,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, replication_factor as usize);
+
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    5,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, replication_factor as usize);
+
+        // Test with 6 blocks passed (should use backup delay)
+        // i.e. after block 16 posted and up one more executor should be available
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    6,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, (replication_factor + 1) as usize);
+
+        // Test with 7 blocks passed (should use backup delay)
+        // another block passed so another executor should be available
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    7,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, (replication_factor + 2) as usize);
     }
 }

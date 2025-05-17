@@ -1,4 +1,4 @@
-use super::TimeoutConfig;
+use super::DrConfig;
 
 pub mod commit_result;
 pub mod post_request;
@@ -11,7 +11,7 @@ pub enum ExecuteMsg {
     CommitDataResult(commit_result::Execute),
     PostDataRequest(post_request::Execute),
     RevealDataResult(reveal_result::Execute),
-    SetTimeoutConfig(TimeoutConfig),
+    SetTimeoutConfig(DrConfig),
 }
 
 impl From<ExecuteMsg> for crate::msgs::ExecuteMsg {

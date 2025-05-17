@@ -304,8 +304,8 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn set_timeout_config(&self, timeout_config: TimeoutConfig) -> Result<(), ContractError> {
-        let msg = execute::ExecuteMsg::SetTimeoutConfig(timeout_config).into();
+    pub fn set_dr_config(&self, dr_config: DrConfig) -> Result<(), ContractError> {
+        let msg = execute::ExecuteMsg::SetTimeoutConfig(dr_config).into();
         self.test_info.execute(self, &msg)
     }
 }

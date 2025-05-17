@@ -1,34 +1,38 @@
+use std::num::NonZero;
+
 use seda_common::{
-    msgs::data_requests::{DataRequestStatus, RevealBody, TimeoutConfig},
+    msgs::data_requests::{DataRequestStatus, DrConfig, RevealBody},
     types::HashSelf,
 };
 
 use crate::{msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
-fn owner_can_update_timeout_config() {
+fn owner_can_update_dr_config() {
     let test_info = TestInfo::init();
 
-    let timeout_config = TimeoutConfig {
+    let dr_config = DrConfig {
         commit_timeout_in_blocks: 1,
         reveal_timeout_in_blocks: 1,
+        backup_delay_in_blocks:   NonZero::new(1).unwrap(),
     };
 
-    test_info.creator().set_timeout_config(timeout_config).unwrap();
+    test_info.creator().set_dr_config(dr_config).unwrap();
 }
 
 #[test]
 #[should_panic(expected = "NotOwner")]
-fn only_owner_can_change_timeout_config() {
+fn only_owner_can_change_dr_config() {
     let test_info = TestInfo::init();
 
-    let timeout_config = TimeoutConfig {
+    let dr_config = DrConfig {
         commit_timeout_in_blocks: 1,
         reveal_timeout_in_blocks: 1,
+        backup_delay_in_blocks:   NonZero::new(1).unwrap(),
     };
 
     let alice = test_info.new_account("alice", 2);
-    alice.set_timeout_config(timeout_config).unwrap();
+    alice.set_dr_config(dr_config).unwrap();
 }
 
 #[test]
