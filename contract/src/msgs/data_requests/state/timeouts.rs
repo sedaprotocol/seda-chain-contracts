@@ -24,7 +24,8 @@ impl Timeouts<'_> {
 
     pub fn remove_by_timeout_height(&self, store: &mut dyn Storage, timeout_height: u64) -> StdResult<Vec<Hash>> {
         // Once the new rust borrow checker is released:
-        // It would allow us to to not allocate all the dr_ids for the timeout_height at once.
+        // It would allow us to to not allocate all the dr_ids for the timeout_height at
+        // once.
 
         // This call allocates all the dr_ids for the timeout_height at once...
         let removed = self.get_all_by_timeout_height(store, timeout_height)?;

@@ -222,7 +222,8 @@ fn invalid_status_codes_work() {
         vec![],
     );
     let removed = test_info.creator().remove_data_requests(to_remove).unwrap();
-    // test this way since tests are not in wasm so hashmap order is non deterministic
+    // test this way since tests are not in wasm so hashmap order is non
+    // deterministic
     assert_eq!(1, removed.iter().find(|r| r.0 == "does_not_exist").unwrap().1);
     assert_eq!(
         2,
@@ -348,8 +349,8 @@ fn works_with_more_drs_in_the_pool() {
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
     assert_eq!(dr_to_be_tallied.data_requests[0].id, dr_id1);
 
-    // Remove only first dr ready to be tallied (while there is another one in the pool and not ready)
-    // This checks part of the swap_remove logic
+    // Remove only first dr ready to be tallied (while there is another one in the
+    // pool and not ready) This checks part of the swap_remove logic
     let dr = dr_to_be_tallied.data_requests[0].clone();
     alice
         .remove_data_request(

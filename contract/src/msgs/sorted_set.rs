@@ -30,7 +30,8 @@ impl PrimaryKey<'_> for IndexKey {
         key.extend(self.height.key());
         key.extend(self.dr_id.key());
         key
-        // <(u128, u64, Hash) as PrimaryKey>::key(&(self.gas_price, self.height, self.dr_id))
+        // <(u128, u64, Hash) as PrimaryKey>::key(&(self.gas_price, self.height,
+        // self.dr_id))
     }
 }
 
@@ -92,7 +93,8 @@ impl From<IndexKey> for LastSeenIndexKey {
 /// A structure to store a sorted set of data requests by the `IndexKey`
 pub struct SortedSet<'a> {
     pub len:            Item<u32>,
-    /// Used to store information about the data request by the `IndexKey` so it can be sorted
+    /// Used to store information about the data request by the `IndexKey` so it
+    /// can be sorted
     pub index:          Map<IndexKey, ()>,
     /// Used to store the `IndexKey` by the `Hash` of the data request
     pub dr_id_to_index: Map<&'a Hash, IndexKey>,

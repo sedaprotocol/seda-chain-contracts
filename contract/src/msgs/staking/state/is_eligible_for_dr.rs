@@ -6,7 +6,8 @@ use sha3::{Digest, Keccak256};
 use super::{staking::state::STAKERS, *};
 use crate::msgs::data_requests::state::DR_CONFIG;
 
-/// Compute deterministic hash for staker selection by combining public key and dr_id
+/// Compute deterministic hash for staker selection by combining public key and
+/// dr_id
 fn compute_selection_hash(public_key: &[u8], dr_id: &[u8]) -> Hash {
     let mut hasher = Keccak256::new();
     hasher.update(public_key);
@@ -52,7 +53,8 @@ pub fn is_eligible_for_dr(deps: Deps, env: Env, dr_id: [u8; 32], public_key: Pub
     ))
 }
 
-/// Calculate if a staker is eligible based on their position in a deterministic ordering
+/// Calculate if a staker is eligible based on their position in a deterministic
+/// ordering
 ///
 /// # Arguments
 /// * `active_stakers` - Iterator of (public_key, staker) pairs
@@ -66,7 +68,8 @@ pub fn is_eligible_for_dr(deps: Deps, env: Env, dr_id: [u8; 32], public_key: Pub
 /// 1. Filter stakers that meet minimum stake requirement
 /// 2. Compute hash for target staker using public_key + dr_id
 /// 3. Count total eligible stakers and how many have lower hash than target
-/// 4. Calculate total needed stakers (replication_factor + blocks_passed), capped by total available
+/// 4. Calculate total needed stakers (replication_factor + blocks_passed),
+///    capped by total available
 /// 5. Target is eligible if fewer stakers have lower hash than total needed
 ///
 /// # Returns
@@ -98,8 +101,9 @@ where
     }
 
     // Calculate total needed stakers, capped by total available
-    // for someone to be eligible after the first executor the number of blocks passed needs to be greater than the
-    // backup delay. After the delay a new staker is eligible every block.
+    // for someone to be eligible after the first executor the number of blocks
+    // passed needs to be greater than the backup delay. After the delay a new
+    // staker is eligible every block.
     let total_needed = if blocks_passed > backup_delay_in_blocks.get() {
         replication_factor as u64 + (blocks_passed - backup_delay_in_blocks.get())
     } else {
@@ -144,7 +148,8 @@ mod tests {
         let mut sorted_stakers = stakers.clone();
         sorted_stakers.sort_by_cached_key(|(public_key, _)| compute_selection_hash(public_key, &dr_id));
 
-        // let total_needed = (replication_factor as usize + blocks_passed as usize).min(sorted_stakers.len());
+        // let total_needed = (replication_factor as usize + blocks_passed as
+        // usize).min(sorted_stakers.len());
         let total_needed = if blocks_passed > backup_delay_in_blocks.get() {
             replication_factor as usize + (blocks_passed - backup_delay_in_blocks.get()) as usize
         } else {
@@ -291,7 +296,8 @@ mod tests {
         // with a backup delay of 1
 
         // Test with 1 block passed (should not use backup delay)
-        // after block 11 and before only the asked for replication factor should be available
+        // after block 11 and before only the asked for replication factor should be
+        // available
         let eligible_count = stakers
             .iter()
             .filter(|(public_key, _)| {
@@ -355,7 +361,8 @@ mod tests {
 
         // say we post on block 10
         // Test with 4 blocks passed (should not use backup delay)
-        // i.e on block 15 and before only the asked for replication factor should be available
+        // i.e on block 15 and before only the asked for replication factor should be
+        // available
         let eligible_count = stakers
             .iter()
             .filter(|(public_key, _)| {

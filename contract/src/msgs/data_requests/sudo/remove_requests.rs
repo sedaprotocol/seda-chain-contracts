@@ -89,8 +89,9 @@ fn remove_request_and_process_distributions(
             break;
         }
 
-        // Regardless of the message type we first need to get the min of the escrowed amount and the message amount
-        // as this will prevent overflows and over-sending of tokens.
+        // Regardless of the message type we first need to get the min of the escrowed
+        // amount and the message amount as this will prevent overflows and
+        // over-sending of tokens.
         match &message {
             DistributionMessage::Burn(distribution_burn) => {
                 let amount_to_burn = distribution_burn.amount.min(dr_escrow.amount);

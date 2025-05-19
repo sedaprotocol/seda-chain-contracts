@@ -474,8 +474,9 @@ fn cannot_front_run_reveal() {
     let alice_reveal_message = alice.create_reveal_message(alice_reveal.clone());
     fred.commit_result(&dr_id, &alice_reveal_message).unwrap();
 
-    // fred tries to copy the reveal body from alice and create their own reveal message
-    // this should fail since fred's commitment was for alice's reveal message
+    // fred tries to copy the reveal body from alice and create their own reveal
+    // message this should fail since fred's commitment was for alice's reveal
+    // message
     let fred_reveal_message = fred.create_reveal_message(alice_reveal);
     fred.reveal_result(fred_reveal_message).unwrap();
 }

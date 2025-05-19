@@ -123,7 +123,8 @@ impl DataRequestsMap<'_> {
             return Err(StdError::generic_err("Key does not exist"));
         }
 
-        // If we need to update the status, we need to remove the key from the current status
+        // If we need to update the status, we need to remove the key from the current
+        // status
         if let Some(new_status) = status {
             // Grab the current status.
             let current_status = self.find_status(store, key)?;

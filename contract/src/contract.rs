@@ -1,9 +1,10 @@
-use cosmwasm_std::Event;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
-use cw2::set_contract_version;
+use cosmwasm_std::{Empty, Event};
+use cw2::{get_contract_version, set_contract_version};
 use data_requests::DrConfig;
 use seda_common::msgs::*;
+use semver::Version;
 use staking::StakingConfig;
 
 use crate::{
@@ -24,7 +25,7 @@ use crate::{
 };
 
 // version info for migration info
-const CONTRACT_NAME: &str = "staking";
+const CONTRACT_NAME: &str = "seda-core-contract";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_REVISION: &str = env!("GIT_REVISION");
 
@@ -35,7 +36,13 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    #[cfg(not(test))]
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    #[cfg(test)]
+    {
+        let version = std::env::var("TEST_CONTRACT_VERSION").unwrap_or_else(|_| "1.0.0".to_string());
+        set_contract_version(deps.storage, CONTRACT_NAME, &version)?;
+    }
     TOKEN.save(deps.storage, &msg.token)?;
     OWNER.save(deps.storage, &deps.api.addr_validate(&msg.owner)?)?;
     CHAIN_ID.save(deps.storage, &msg.chain_id)?;
@@ -90,4 +97,142 @@ pub fn sudo(deps: DepsMut, env: Env, sudo: SudoMsg) -> Result<Response, Contract
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     msg.query(deps, env)
+}
+
+/// Migrate the contract to a new version, emitting an event with the migration
+/// details.
+///
+/// # Errors
+///
+/// Returns [`DowngradeNotSupported`](ContractError::DowngradeNotSupported) if
+/// trying to downgrade the contract.
+///
+/// Returns [`NoMigrationNeeded`](ContractError::NoMigrationNeeded) if the
+/// contract is already at the latest version.
+///
+/// Returns [`SemVer`](ContractError::NoMigrationNeeded) if the new or old
+/// version is not semver compatible.
+///
+/// Returns [`Std`](ContractError::Std) if the migration fails. Getting/setting
+/// the contract version. Or loading the chain ID from storage.
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    let version: Version = CONTRACT_VERSION.parse()?;
+    let storage_version: Version = get_contract_version(deps.storage)?.version.parse()?;
+
+    let mut response = Response::new().add_attribute("method", "migrate");
+
+    match storage_version.cmp(&version) {
+        std::cmp::Ordering::Greater => {
+            return Err(ContractError::DowngradeNotSupported);
+        }
+        std::cmp::Ordering::Equal => {
+            return Err(ContractError::NoMigrationNeeded);
+        }
+        std::cmp::Ordering::Less => {
+            set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+            response = response.add_event(Event::new("seda-contract").add_attributes([
+                ("action", "migrate".to_string()),
+                ("current_version", storage_version.to_string()),
+                ("target_version", version.to_string()),
+                ("chain_id", CHAIN_ID.load(deps.storage)?.to_string()),
+                ("git_revision", GIT_REVISION.to_string()),
+            ]));
+        }
+    }
+
+    Ok(response)
+}
+
+#[cfg(test)]
+mod tests {
+    use cw_multi_test::{ContractWrapper, Executor};
+
+    use super::*;
+    use crate::TestInfo;
+
+    #[test]
+    fn migrate_downgrade() {
+        let test_info = TestInfo::init_with_version(Some("2.0.0"));
+
+        let contract = Box::new(
+            ContractWrapper::new(execute, instantiate, query)
+                .with_sudo(sudo)
+                .with_migrate_empty(migrate),
+        );
+
+        let new_code_id = test_info
+            .app_mut()
+            .store_code_with_creator(test_info.creator().addr(), contract);
+
+        assert!(test_info
+            .app_mut()
+            .migrate_contract(
+                test_info.creator().addr(),
+                test_info.contract_addr(),
+                &Empty {},
+                new_code_id,
+            )
+            .unwrap_err()
+            .source()
+            .unwrap()
+            .to_string()
+            .contains("Cannot downgrade contract version"));
+    }
+
+    #[test]
+    fn migrate_no_upgrade() {
+        std::env::set_var("TEST_CONTRACT_VERSION", CONTRACT_VERSION);
+        let test_info = TestInfo::init();
+
+        let contract = Box::new(
+            ContractWrapper::new(execute, instantiate, query)
+                .with_sudo(sudo)
+                .with_migrate_empty(migrate),
+        );
+
+        let new_code_id = test_info
+            .app_mut()
+            .store_code_with_creator(test_info.creator().addr(), contract);
+
+        assert!(test_info
+            .app_mut()
+            .migrate_contract(
+                test_info.creator().addr(),
+                test_info.contract_addr(),
+                &Empty {},
+                new_code_id,
+            )
+            .unwrap_err()
+            .source()
+            .unwrap()
+            .to_string()
+            .contains("No migration needed"));
+    }
+
+    #[test]
+    fn migrate_ok() {
+        let test_info = TestInfo::init();
+
+        let contract = Box::new(
+            ContractWrapper::new(execute, instantiate, query)
+                .with_sudo(sudo)
+                .with_migrate_empty(migrate),
+        );
+
+        let new_code_id = test_info
+            .app_mut()
+            .store_code_with_creator(test_info.creator().addr(), contract);
+
+        assert!(test_info
+            .app_mut()
+            .migrate_contract(
+                test_info.creator().addr(),
+                test_info.contract_addr(),
+                &Empty {},
+                new_code_id,
+            )
+            .is_ok());
+    }
 }

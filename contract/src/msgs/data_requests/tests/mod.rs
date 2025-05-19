@@ -15,10 +15,12 @@ fn check_data_request_id() {
     // Expected DR ID for following DR:
     // {
     //     "version": "0.0.1",
-    //     "exec_program_id": "044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d",
+    //     "exec_program_id":
+    // "044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d",
     //     "exec_inputs": "ZHJfaW5wdXRz",
     //     "exec_gas_limit": 10_000_000_000_000,
-    //     "tally_program_id": "3a1561a3d854e446801b339c137f87dbd2238f481449c00d3470cfcc2a4e24a1",
+    //     "tally_program_id":
+    // "3a1561a3d854e446801b339c137f87dbd2238f481449c00d3470cfcc2a4e24a1",
     //     "tally_inputs": "dGFsbHlfaW5wdXRz",
     //     "tally_gas_limit": 10_000_000_000_000,
     //     "replication_factor": 1,

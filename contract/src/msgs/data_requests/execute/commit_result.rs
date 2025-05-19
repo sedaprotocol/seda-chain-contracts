@@ -4,7 +4,8 @@ use super::*;
 use crate::{msgs::owner::state::ALLOWLIST, state::CHAIN_ID};
 
 impl ExecuteHandler for execute::commit_result::Execute {
-    /// Posts a data result of a data request with an attached hash of the answer and salt.
+    /// Posts a data result of a data request with an attached hash of the
+    /// answer and salt.
     fn execute(self, deps: DepsMut, env: Env, _info: MessageInfo) -> Result<Response, ContractError> {
         // find the data request from the pool (if it exists, otherwise error)
         let dr_id = Hash::from_hex_str(&self.dr_id)?;

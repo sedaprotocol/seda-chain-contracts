@@ -9,7 +9,7 @@ members = [
 ]
 
 [workspace.package]
-rust-version = "1.82.0"
+rust-version = "1.83.0"
 edition = "2021"
 
 [profile.release]
@@ -30,7 +30,7 @@ base64 = "0.22"
 cosmos-sdk-proto = { version = "0.26", default-features = false }
 cosmwasm-schema = "2.2"
 cosmwasm-std = "2.2"
-cw-multi-test = "2.3"
+cw-multi-test = "2.4"
 cw-storage-plus = "2.0"
 cw-utils = "2.0"
 cw2 = "2.0"

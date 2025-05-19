@@ -92,7 +92,8 @@ fn allowlist_works() {
     };
     test_info.creator().set_staking_config(new_config).unwrap();
 
-    // alice tries to register a data request executor, but she's not on the allowlist
+    // alice tries to register a data request executor, but she's not on the
+    // allowlist
     let alice = test_info.new_account("alice", 100);
     let res = alice.stake(10);
     assert!(res.is_err_and(|x| x == ContractError::NotOnAllowlist));

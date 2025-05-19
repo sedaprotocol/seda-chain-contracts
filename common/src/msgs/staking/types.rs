@@ -21,7 +21,8 @@ pub struct Staker {
 )]
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct StakingConfig {
-    /// Minimum amount of SEDA tokens required to register as a data request executor
+    /// Minimum amount of SEDA tokens required to register as a data request
+    /// executor
     pub minimum_stake:     U128,
     /// Whether the allowlist is enabled
     pub allowlist_enabled: bool,

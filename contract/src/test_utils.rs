@@ -62,6 +62,10 @@ pub fn aseda_to_seda(amount: u128) -> BigFloat {
 
 impl TestInfo {
     pub fn init() -> Rc<Self> {
+        Self::init_with_version(None)
+    }
+
+    pub fn init_with_version(version: Option<&'static str>) -> Rc<Self> {
         let mut creator_addr = Addr::unchecked("creator");
         let app = Rc::new(RefCell::new(
             AppBuilder::default()
@@ -75,6 +79,7 @@ impl TestInfo {
                         .unwrap();
                 }),
         ));
+
         let contract = Box::new(ContractWrapper::new(execute, instantiate, query).with_sudo(sudo));
         let chain_id = "seda_test".to_string();
 
@@ -90,9 +95,20 @@ impl TestInfo {
             dr_config:      None,
         };
 
+        if let Some(version) = version {
+            std::env::set_var("TEST_CONTRACT_VERSION", version);
+        }
+
         let contract_addr = app
             .borrow_mut()
-            .instantiate_contract(code_id, creator_addr.clone(), &init_msg, &[], "core", None)
+            .instantiate_contract(
+                code_id,
+                creator_addr.clone(),
+                &init_msg,
+                &[],
+                "core",
+                Some(creator_addr.to_string()),
+            )
             .unwrap();
 
         let info = Rc::new(Self {
@@ -189,7 +205,7 @@ impl TestInfo {
         self.app.borrow()
     }
 
-    pub fn app_mut(&mut self) -> RefMut<'_, App> {
+    pub fn app_mut(&self) -> RefMut<'_, App> {
         self.app.borrow_mut()
     }
 

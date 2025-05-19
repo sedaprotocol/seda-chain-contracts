@@ -206,11 +206,14 @@ impl TryHashSelf for PostDataRequestArgs {
 #[cfg_attr(not(feature = "cosmwasm"), derive(Serialize, Deserialize, Debug, PartialEq))]
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct DrConfig {
-    /// Number of blocks after which a data request is timed out while waiting for commits.
+    /// Number of blocks after which a data request is timed out while waiting
+    /// for commits.
     pub commit_timeout_in_blocks: u64,
-    /// Number of blocks after which a data request is timed out while waiting for reveals.
+    /// Number of blocks after which a data request is timed out while waiting
+    /// for reveals.
     pub reveal_timeout_in_blocks: u64,
-    /// This is the delay before the backup executors are allowed to start executing the data request.
+    /// This is the delay before the backup executors are allowed to start
+    /// executing the data request.
     pub backup_delay_in_blocks:   NonZero<u64>,
 }
 

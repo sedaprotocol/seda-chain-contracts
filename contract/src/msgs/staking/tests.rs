@@ -117,7 +117,8 @@ fn no_funds_provided() {
 fn register_data_request_executor() {
     let test_info = TestInfo::init();
 
-    // fetching data request executor for an address that doesn't exist should return None
+    // fetching data request executor for an address that doesn't exist should
+    // return None
     let anyone = test_info.new_account("anyone", 2);
     let value = anyone.get_staker_info();
     assert_eq!(value, None);
@@ -463,7 +464,8 @@ fn cannot_frontrun_unstake() {
     let staker = alice.get_staker_info().unwrap();
     assert_eq!(staker.tokens_pending_withdrawal.u128(), 10);
 
-    // fred should still have their same balance (1seda [original] - 1aseda [staked])
+    // fred should still have their same balance (1seda [original] - 1aseda
+    // [staked])
     let fred_expected_balance = seda_to_aseda(1.into()) - 1;
     let balance_fred = test_info.executor_balance("fred");
     assert_eq!(fred_expected_balance, balance_fred);
@@ -504,12 +506,14 @@ fn cannot_frontrun_withdraw() {
     // fred frontruns alice's withdraw - but she should get the tokens not fred
     test_info.execute::<()>(&fred, &msg).unwrap();
 
-    // fred should still have their same balance (1seda [original] - 1aseda [staked])
+    // fred should still have their same balance (1seda [original] - 1aseda
+    // [staked])
     let fred_expected_balance = seda_to_aseda(1.into()) - 1;
     let balance_fred = test_info.executor_balance("fred");
     assert_eq!(fred_expected_balance, balance_fred);
 
-    // alice's balance  should be (1seda [original] - 10aseda [staked] + 10aseda [withdrawn]) = 1seda
+    // alice's balance  should be (1seda [original] - 10aseda [staked] + 10aseda
+    // [withdrawn]) = 1seda
     let alice_expected_balance = seda_to_aseda(1.into());
     let balance_alice = test_info.executor_balance("alice");
     assert_eq!(alice_expected_balance, balance_alice);

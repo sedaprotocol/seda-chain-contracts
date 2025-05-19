@@ -49,7 +49,8 @@ impl StakersMap<'_> {
         if config.allowlist_enabled {
             let allowed = ALLOWLIST.may_load(store, executor)?;
             // If the executor is not in the allowlist, they are not eligible.
-            // If the executor is in the allowlist, but the value is false, they are not eligible.
+            // If the executor is in the allowlist, but the value is false, they are not
+            // eligible.
             if allowed.is_none() || !allowed.unwrap() {
                 return Ok(false);
             }

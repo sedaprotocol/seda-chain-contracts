@@ -27,7 +27,8 @@ impl ExecuteHandler for execute::post_request::Execute {
             return Err(ContractError::TallyGasLimitTooLow(self.posted_dr.tally_gas_limit));
         }
 
-        // require the data request replication factor to be bigger than amount of stakers
+        // require the data request replication factor to be bigger than amount of
+        // stakers
         let stakers_length = STAKERS.len(deps.storage)?;
         if self.posted_dr.replication_factor as u32 > stakers_length {
             return Err(ContractError::DataRequestReplicationFactorTooHigh(stakers_length));
