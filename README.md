@@ -38,7 +38,10 @@ The core contract enables some of the core features of the SEDA protocol. It all
 
 ## Dependencies
 
-Before starting, make sure you have [rustup](https://rustup.rs/) along with a recent `rustc` and `cargo` version installed. Currently, we are testing on 1.70.0+. You need to have the `wasm32-unknown-unknown` target installed as well.
+Before starting, make sure you have [rustup](https://rustup.rs/) along with a recent `rustc` and `cargo` version installed. Currently, we are testing on 1.83.0-1.86.0. You need to have the `wasm32-unknown-unknown` target installed as well.
+
+> [!NOTE]
+> Rust `1.87.0` broke the WASM compilation. It requires bulk memory, but then the wasm can't be decode by the chain.
 
 You can check that via:
 
