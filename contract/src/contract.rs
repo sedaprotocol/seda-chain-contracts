@@ -10,6 +10,7 @@ use staking::StakingConfig;
 use crate::{
     consts::*,
     error::ContractError,
+    legacy::{TimeoutConfig, TIMEOUT_CONFIG},
     msgs::{
         data_requests::{execute::dr_events::create_dr_config_event, state::DR_CONFIG},
         owner::state::{OWNER, PENDING_OWNER},
@@ -120,29 +121,38 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
     let version: Version = CONTRACT_VERSION.parse()?;
     let storage_version: Version = get_contract_version(deps.storage)?.version.parse()?;
 
-    let mut response = Response::new().add_attribute("method", "migrate");
-
-    match storage_version.cmp(&version) {
-        std::cmp::Ordering::Greater => {
-            return Err(ContractError::DowngradeNotSupported);
-        }
-        std::cmp::Ordering::Equal => {
-            return Err(ContractError::NoMigrationNeeded);
-        }
-        std::cmp::Ordering::Less => {
-            set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-            response = response.add_event(Event::new("seda-contract").add_attributes([
-                ("action", "migrate".to_string()),
-                ("current_version", storage_version.to_string()),
-                ("target_version", version.to_string()),
-                ("chain_id", CHAIN_ID.load(deps.storage)?.to_string()),
-                ("git_revision", GIT_REVISION.to_string()),
-            ]));
-        }
+    if storage_version > version {
+        return Err(ContractError::DowngradeNotSupported);
     }
 
-    Ok(response)
+    if storage_version == version {
+        return Err(ContractError::NoMigrationNeeded);
+    }
+
+    const V_1_0_4: Version = Version::new(1, 0, 4);
+    // Migrate timeout_config → dr_config when upgrading from prior to 1.0.4
+    if storage_version < V_1_0_4 {
+        let old: TimeoutConfig = TIMEOUT_CONFIG.load(deps.storage)?;
+        let new = DrConfig {
+            commit_timeout_in_blocks: old.commit_timeout_in_blocks,
+            reveal_timeout_in_blocks: old.reveal_timeout_in_blocks,
+            backup_delay_in_blocks:   INITIAL_BACKUP_DELAY_IN_BLOCKS,
+        };
+        DR_CONFIG.save(deps.storage, &new)?;
+        TIMEOUT_CONFIG.remove(deps.storage);
+    }
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    Ok(Response::new()
+        .add_attribute("method", "migrate")
+        .add_event(Event::new("seda-contract").add_attributes([
+            ("action", "migrate".to_string()),
+            ("current_version", storage_version.to_string()),
+            ("target_version", version.to_string()),
+            ("chain_id", CHAIN_ID.load(deps.storage)?.to_string()),
+            ("git_revision", GIT_REVISION.to_string()),
+        ])))
 }
 
 #[cfg(test)]
