@@ -11,7 +11,7 @@ pub enum ExecuteMsg {
     CommitDataResult(commit_result::Execute),
     PostDataRequest(post_request::Execute),
     RevealDataResult(reveal_result::Execute),
-    SetTimeoutConfig(DrConfig),
+    SetDrConfig(DrConfig),
 }
 
 impl From<ExecuteMsg> for crate::msgs::ExecuteMsg {

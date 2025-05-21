@@ -2,6 +2,7 @@ use execute::commit_result::verify_commit;
 
 use super::{
     msgs::data_requests::{execute::commit_result, query::QueryMsg},
+    state::DR_CONFIG,
     *,
 };
 use crate::{msgs::sorted_set::IndexKey, state::PAUSED};
@@ -70,6 +71,10 @@ impl QueryHandler for QueryMsg {
                     total,
                 };
                 to_json_binary(&response)?
+            }
+            QueryMsg::GetDrConfig {} => {
+                let config = DR_CONFIG.load(deps.storage)?;
+                to_json_binary(&config)?
             }
         };
 

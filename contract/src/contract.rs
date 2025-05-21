@@ -42,6 +42,7 @@ pub fn instantiate(
     #[cfg(test)]
     {
         let version = std::env::var("TEST_CONTRACT_VERSION").unwrap_or_else(|_| "1.0.0".to_string());
+
         set_contract_version(deps.storage, CONTRACT_NAME, &version)?;
     }
     TOKEN.save(deps.storage, &msg.token)?;
@@ -132,6 +133,17 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
     const V_1_0_4: Version = Version::new(1, 0, 4);
     // Migrate timeout_config → dr_config when upgrading from prior to 1.0.4
     if storage_version < V_1_0_4 {
+        #[cfg(test)]
+        TIMEOUT_CONFIG
+            .save(
+                deps.storage,
+                &TimeoutConfig {
+                    commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
+                    reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
+                },
+            )
+            .unwrap();
+
         let old: TimeoutConfig = TIMEOUT_CONFIG.load(deps.storage)?;
         let new = DrConfig {
             commit_timeout_in_blocks: old.commit_timeout_in_blocks,
@@ -223,7 +235,7 @@ mod tests {
 
     #[test]
     fn migrate_ok() {
-        let test_info = TestInfo::init();
+        let test_info = TestInfo::init_with_version(Some("1.0.3"));
 
         let contract = Box::new(
             ContractWrapper::new(execute, instantiate, query)
@@ -244,5 +256,10 @@ mod tests {
                 new_code_id,
             )
             .is_ok());
+
+        let dr_config = test_info.creator().get_dr_config();
+        assert_eq!(dr_config.commit_timeout_in_blocks, INITIAL_COMMIT_TIMEOUT_IN_BLOCKS);
+        assert_eq!(dr_config.reveal_timeout_in_blocks, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS);
+        assert_eq!(dr_config.backup_delay_in_blocks, INITIAL_BACKUP_DELAY_IN_BLOCKS);
     }
 }

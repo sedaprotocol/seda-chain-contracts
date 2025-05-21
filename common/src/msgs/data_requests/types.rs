@@ -219,7 +219,7 @@ pub struct DrConfig {
 
 impl From<DrConfig> for crate::msgs::ExecuteMsg {
     fn from(config: DrConfig) -> Self {
-        super::execute::ExecuteMsg::SetTimeoutConfig(config).into()
+        super::execute::ExecuteMsg::SetDrConfig(config).into()
     }
 }
 

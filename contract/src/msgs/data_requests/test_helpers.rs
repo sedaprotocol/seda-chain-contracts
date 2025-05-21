@@ -305,7 +305,12 @@ impl TestAccount {
 
     #[track_caller]
     pub fn set_dr_config(&self, dr_config: DrConfig) -> Result<(), ContractError> {
-        let msg = execute::ExecuteMsg::SetTimeoutConfig(dr_config).into();
+        let msg = execute::ExecuteMsg::SetDrConfig(dr_config).into();
         self.test_info.execute(self, &msg)
+    }
+
+    #[track_caller]
+    pub fn get_dr_config(&self) -> DrConfig {
+        self.test_info.query(query::QueryMsg::GetDrConfig {}).unwrap()
     }
 }

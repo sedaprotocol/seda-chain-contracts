@@ -31,6 +31,8 @@ pub enum QueryMsg {
         last_seen_index: Option<(U128, u64, Hash)>,
         limit:           u32,
     },
+    #[cfg_attr(feature = "cosmwasm", returns(DrConfig))]
+    GetDrConfig {},
 }
 
 impl From<QueryMsg> for crate::msgs::QueryMsg {
