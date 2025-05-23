@@ -75,7 +75,8 @@ impl ExecuteHandler for execute::reveal_result::Execute {
             &dr_id,
             dr,
             env.block.height,
-            (&format!("{dr_id_str}:{}", self.public_key), self.reveal_body),
+            &self.public_key,
+            self.reveal_body,
         )?;
 
         Ok(response.add_message(new_refund_msg(env, dr_id_str, self.public_key, true)?))

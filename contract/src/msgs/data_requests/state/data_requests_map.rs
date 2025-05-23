@@ -7,7 +7,7 @@ pub struct DataRequestsMap<'a> {
     pub revealing:  SortedSet<'a>,
     pub tallying:   SortedSet<'a>,
     pub timeouts:   Timeouts<'a>,
-    pub reveals:    Map<&'a str, RevealBody>,
+    pub reveals:    Map<(&'a [u8], &'a str), RevealBody>,
 }
 
 use cosmwasm_std::{StdResult, Storage};
@@ -190,9 +190,7 @@ impl DataRequestsMap<'_> {
     }
 
     /// Removes an req from the map by key.
-    /// Swaps the last req with the req to remove.
-    /// Then pops the last req.
-    pub fn remove(&self, store: &mut dyn Storage, key: &Hash, key_str: &str) -> Result<(), StdError> {
+    pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
         if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
         }
@@ -212,55 +210,34 @@ impl DataRequestsMap<'_> {
         self.remove_from_status(store, key, &current_status)?;
 
         // remove reveals associated with the request
-        self.remove_reveals(store, key_str)?;
+        self.remove_reveals(store, key);
 
         Ok(())
     }
 
-    pub fn get_reveal(&self, store: &dyn Storage, reveal_key: &str) -> StdResult<Option<RevealBody>> {
-        self.reveals.may_load(store, reveal_key)
+    pub fn get_reveal(&self, store: &dyn Storage, dr_id: &Hash, identity: &str) -> StdResult<Option<RevealBody>> {
+        self.reveals.may_load(store, (dr_id.as_slice(), identity))
     }
 
-    pub fn get_reveals(&self, store: &dyn Storage, dr_id: &str) -> StdResult<HashMap<String, RevealBody>> {
+    pub fn get_reveals(&self, store: &dyn Storage, dr_id: &Hash) -> StdResult<HashMap<String, RevealBody>> {
         self.reveals
+            .prefix(dr_id)
             .range(store, None, None, Order::Ascending)
-            .filter(|item| item.as_ref().map(|(k, _)| k.starts_with(dr_id)).unwrap_or(false))
-            .map(|item| {
-                item.map(|(k, v)| {
-                    let mut parts = k.split(':');
-                    // Should be safe to unwrap as we always insert the key in the format of
-                    // dr_id:public_key
-                    let public_key = parts.nth(1).unwrap().to_string();
-
-                    (public_key, v)
-                })
-            })
             .collect()
     }
 
-    pub fn insert_reveal(&self, store: &mut dyn Storage, reveal_key: &str, reveal_body: RevealBody) -> StdResult<()> {
-        self.reveals.save(store, reveal_key, &reveal_body)
+    pub fn insert_reveal(
+        &self,
+        store: &mut dyn Storage,
+        dr_id: &Hash,
+        identity: &str,
+        reveal_body: RevealBody,
+    ) -> StdResult<()> {
+        self.reveals.save(store, (dr_id, identity), &reveal_body)
     }
 
-    fn remove_reveals(&self, store: &mut dyn Storage, dr_id: &str) -> StdResult<()> {
-        let keys_to_remove: Vec<String> = self
-            .reveals
-            .range(store, None, None, Order::Ascending)
-            .filter_map(|item| {
-                if let Ok((k, _)) = &item {
-                    if k.starts_with(dr_id) {
-                        return Some(k.clone());
-                    }
-                }
-                None
-            })
-            .collect();
-
-        for key in keys_to_remove {
-            self.reveals.remove(store, &key);
-        }
-
-        Ok(())
+    fn remove_reveals(&self, store: &mut dyn Storage, dr_id: &Hash) {
+        self.reveals.prefix(dr_id).clear(store, None);
     }
 
     pub fn get_requests_by_status(
@@ -291,7 +268,7 @@ impl DataRequestsMap<'_> {
             .map(|result| {
                 let (key, _) = result?;
                 let dr = self.reqs.load(store, &key.dr_id)?;
-                let reveals = self.get_reveals(store, &dr.base.id)?;
+                let reveals = self.get_reveals(store, &key.dr_id)?;
                 Ok(DataRequestResponse { base: dr.base, reveals })
             })
             .collect::<StdResult<Vec<_>>>()?;

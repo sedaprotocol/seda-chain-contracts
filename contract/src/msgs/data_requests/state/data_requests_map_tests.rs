@@ -31,7 +31,7 @@ impl TestInfo<'_> {
 
     #[track_caller]
     pub fn assert_dr_reveals_len(&self, expected: usize, dr_id: &Hash) {
-        let reveals = self.map.get_reveals(&self.store, &dr_id.to_hex()).unwrap();
+        let reveals = self.map.get_reveals(&self.store, dr_id).unwrap();
         assert_eq!(expected, reveals.len());
     }
 
@@ -104,7 +104,7 @@ impl TestInfo<'_> {
 
     #[track_caller]
     fn remove(&mut self, key: &Hash) {
-        self.map.remove(&mut self.store, key, &key.to_hex()).unwrap();
+        self.map.remove(&mut self.store, key).unwrap();
     }
 
     #[track_caller]
@@ -407,7 +407,7 @@ fn reveal() {
     let (key, req) = create_test_dr(1);
     test_info.insert_removable(1, &key, req.clone());
 
-    let reveal_key = format!("{}:{}", key.to_hex(), 1);
+    let identity = "identity";
     let reveal_body = RevealBody {
         dr_id:             "dr_id".to_string(),
         dr_block_height:   1,
@@ -418,20 +418,20 @@ fn reveal() {
     };
     test_info
         .map
-        .insert_reveal(&mut test_info.store, &reveal_key, reveal_body.clone())
+        .insert_reveal(&mut test_info.store, &key, identity, reveal_body.clone())
         .unwrap();
 
     test_info.assert_dr_reveals_len(1, &key);
 
     let reveal = test_info
         .map
-        .get_reveal(&test_info.store, &reveal_key)
+        .get_reveal(&test_info.store, &key, identity)
         .unwrap()
         .unwrap();
     assert_eq!(reveal, reveal_body);
 
-    let reveals = test_info.map.get_reveals(&test_info.store, &key.to_hex()).unwrap();
+    let reveals = test_info.map.get_reveals(&test_info.store, &key).unwrap();
     assert_eq!(reveals.len(), 1);
 
-    test_info.map.remove(&mut test_info.store, &key, &reveal_key).unwrap();
+    test_info.map.remove(&mut test_info.store, &key).unwrap();
 }

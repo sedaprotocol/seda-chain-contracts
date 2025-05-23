@@ -84,7 +84,8 @@ pub fn reveal(
     dr_id: &Hash,
     dr: DataRequestContract,
     current_height: u64,
-    (reveal_key, reveal_body): (&str, RevealBody),
+    identity: &str,
+    reveal_body: RevealBody,
 ) -> StdResult<()> {
     let status = if dr.is_tallying() {
         // We update the status of the request from Revealing to Tallying
@@ -94,22 +95,22 @@ pub fn reveal(
         None
     };
     DATA_REQUESTS.update(store, dr_id, dr, status, current_height, false)?;
-    DATA_REQUESTS.insert_reveal(store, reveal_key, reveal_body)?;
+    DATA_REQUESTS.insert_reveal(store, dr_id, identity, reveal_body)?;
 
     Ok(())
 }
 
-pub fn get_reveal(store: &dyn Storage, reveal_key: &str) -> StdResult<Option<RevealBody>> {
-    DATA_REQUESTS.get_reveal(store, reveal_key)
+pub fn get_reveal(store: &dyn Storage, dr_id: &Hash, identity: &str) -> StdResult<Option<RevealBody>> {
+    DATA_REQUESTS.get_reveal(store, dr_id, identity)
 }
 
-pub fn get_reveals(store: &dyn Storage, dr_id: &str) -> StdResult<HashMap<String, RevealBody>> {
+pub fn get_reveals(store: &dyn Storage, dr_id: &Hash) -> StdResult<HashMap<String, RevealBody>> {
     DATA_REQUESTS.get_reveals(store, dr_id)
 }
 
-pub fn remove_request(store: &mut dyn Storage, dr_id: &Hash, dr_id_str: &str) -> StdResult<()> {
+pub fn remove_request(store: &mut dyn Storage, dr_id: &Hash) -> StdResult<()> {
     // we have to remove the request from the pool
-    DATA_REQUESTS.remove(store, dr_id, dr_id_str)?;
+    DATA_REQUESTS.remove(store, dr_id)?;
     // no need to update status as we remove it from the requests pool
 
     Ok(())

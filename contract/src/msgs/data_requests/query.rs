@@ -36,9 +36,10 @@ impl QueryHandler for QueryMsg {
                 to_json_binary(&can_reveal.unwrap_or(false))?
             }
             QueryMsg::GetDataRequest { dr_id } => {
-                match state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)? {
+                let dr_id = &Hash::from_hex_str(&dr_id)?;
+                match state::may_load_request(deps.storage, dr_id)? {
                     Some(dr) => to_json_binary(&DataRequestResponse {
-                        reveals: state::get_reveals(deps.storage, &dr.base.id)?,
+                        reveals: state::get_reveals(deps.storage, dr_id)?,
                         base:    dr.base,
                     })?,
                     None => to_json_binary(&None::<DataRequestResponse>)?,
@@ -54,8 +55,9 @@ impl QueryHandler for QueryMsg {
                 to_json_binary(&commitments)?
             }
             QueryMsg::GetDataRequestReveal { dr_id, public_key } => {
-                if (state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?).is_some() {
-                    if let Some(reveal) = state::get_reveal(deps.storage, &format!("{dr_id}:{public_key}"))? {
+                let dr_id = &Hash::from_hex_str(&dr_id)?;
+                if (state::may_load_request(deps.storage, dr_id)?).is_some() {
+                    if let Some(reveal) = state::get_reveal(deps.storage, dr_id, &public_key)? {
                         to_json_binary(&reveal)?;
                     }
                 }
