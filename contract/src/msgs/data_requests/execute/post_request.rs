@@ -91,26 +91,28 @@ impl ExecuteHandler for execute::post_request::Execute {
             ]));
 
         // save the data request
-        let dr = DataRequest {
-            id:                 hex_dr_id,
-            version:            self.posted_dr.version,
-            exec_program_id:    self.posted_dr.exec_program_id,
-            exec_inputs:        self.posted_dr.exec_inputs,
-            exec_gas_limit:     self.posted_dr.exec_gas_limit,
-            tally_program_id:   self.posted_dr.tally_program_id,
-            tally_inputs:       self.posted_dr.tally_inputs,
-            tally_gas_limit:    self.posted_dr.tally_gas_limit,
-            replication_factor: self.posted_dr.replication_factor,
-            consensus_filter:   self.posted_dr.consensus_filter,
-            gas_price:          self.posted_dr.gas_price,
-            memo:               self.posted_dr.memo,
+        let dr = DataRequestContract {
+            base:    DataRequestBase {
+                id:                 hex_dr_id,
+                version:            self.posted_dr.version,
+                exec_program_id:    self.posted_dr.exec_program_id,
+                exec_inputs:        self.posted_dr.exec_inputs,
+                exec_gas_limit:     self.posted_dr.exec_gas_limit,
+                tally_program_id:   self.posted_dr.tally_program_id,
+                tally_inputs:       self.posted_dr.tally_inputs,
+                tally_gas_limit:    self.posted_dr.tally_gas_limit,
+                replication_factor: self.posted_dr.replication_factor,
+                consensus_filter:   self.posted_dr.consensus_filter,
+                gas_price:          self.posted_dr.gas_price,
+                memo:               self.posted_dr.memo,
 
-            payback_address: self.payback_address,
-            seda_payload:    self.seda_payload,
-            commits:         Default::default(),
-            reveals:         Default::default(),
+                payback_address: self.payback_address,
+                seda_payload:    self.seda_payload,
+                commits:         Default::default(),
 
-            height: env.block.height,
+                height: env.block.height,
+            },
+            reveals: Default::default(),
         };
         state::post_request(deps.storage, env.block.height, &dr_id, dr)?;
 

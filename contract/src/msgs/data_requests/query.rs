@@ -32,24 +32,34 @@ impl QueryHandler for QueryMsg {
             }
             QueryMsg::CanExecutorReveal { dr_id, public_key } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
-                let can_reveal = dr.map(|dr| dr.reveal_started() && dr.get_commitment(&public_key).is_some());
+                let can_reveal = dr.map(|dr| dr.base.reveal_started() && dr.base.get_commitment(&public_key).is_some());
                 to_json_binary(&can_reveal.unwrap_or(false))?
             }
             QueryMsg::GetDataRequest { dr_id } => {
-                to_json_binary(&state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?)?
+                match state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)? {
+                    Some(dr) => to_json_binary(&DataRequestResponse {
+                        reveals: state::get_reveals(deps.storage, &dr.base.id)?,
+                        base:    dr.base,
+                    })?,
+                    None => to_json_binary(&None::<DataRequestResponse>)?,
+                }
             }
             QueryMsg::GetDataRequestCommitment { dr_id, public_key } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
-                to_json_binary(&dr.as_ref().map(|dr| dr.get_commitment(&public_key)))?
+                to_json_binary(&dr.as_ref().map(|dr| dr.base.get_commitment(&public_key)))?
             }
             QueryMsg::GetDataRequestCommitments { dr_id } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
-                let commitments = dr.map(|dr| dr.commits).unwrap_or_default();
+                let commitments = dr.map(|dr| dr.base.commits).unwrap_or_default();
                 to_json_binary(&commitments)?
             }
             QueryMsg::GetDataRequestReveal { dr_id, public_key } => {
-                let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;
-                to_json_binary(&dr.as_ref().map(|dr| dr.get_reveal(&public_key)))?
+                if (state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?).is_some() {
+                    if let Some(reveal) = state::get_reveal(deps.storage, &format!("{dr_id}:{public_key}"))? {
+                        to_json_binary(&reveal)?;
+                    }
+                }
+                to_json_binary(&None::<RevealBody>)?
             }
             QueryMsg::GetDataRequestReveals { dr_id } => {
                 let dr = state::may_load_request(deps.storage, &Hash::from_hex_str(&dr_id)?)?;

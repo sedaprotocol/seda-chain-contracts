@@ -39,7 +39,7 @@ pub fn is_eligible_for_dr(deps: Deps, env: Env, dr_id: [u8; 32], public_key: Pub
         .stakers
         .range_raw(deps.storage, None, None, Order::Ascending)
         .flatten();
-    let blocks_passed = env.block.height - data_request.height;
+    let blocks_passed = env.block.height - data_request.base.height;
     let dr_config = DR_CONFIG.load(deps.storage)?;
 
     Ok(calculate_dr_eligibility(
@@ -48,7 +48,7 @@ pub fn is_eligible_for_dr(deps: Deps, env: Env, dr_id: [u8; 32], public_key: Pub
         config.minimum_stake,
         dr_config.backup_delay_in_blocks,
         dr_id,
-        data_request.replication_factor,
+        data_request.base.replication_factor,
         blocks_passed,
     ))
 }

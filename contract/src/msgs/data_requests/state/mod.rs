@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Storage;
 use cw_storage_plus::Bound;
@@ -33,11 +35,11 @@ pub fn data_request_exists(deps: Deps, dr_id: Hash) -> bool {
     DATA_REQUESTS.has(deps.storage, &dr_id)
 }
 
-pub fn may_load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequest>> {
+pub fn may_load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<Option<DataRequestContract>> {
     DATA_REQUESTS.may_get(store, dr_id)
 }
 
-pub fn load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataRequest> {
+pub fn load_request(store: &dyn Storage, dr_id: &Hash) -> StdResult<DataRequestContract> {
     DATA_REQUESTS.get(store, dr_id)
 }
 
@@ -49,7 +51,7 @@ pub fn post_request(
     store: &mut dyn Storage,
     current_height: u64,
     dr_id: &Hash,
-    dr: DataRequest,
+    dr: DataRequestContract,
 ) -> Result<(), ContractError> {
     // insert the data request
     DATA_REQUESTS.insert(store, current_height, dr_id, dr, &DataRequestStatus::Committing)?;
@@ -57,8 +59,8 @@ pub fn post_request(
     Ok(())
 }
 
-pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
-    let status = if dr.reveal_started() {
+pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: &Hash, dr: DataRequestContract) -> StdResult<()> {
+    let status = if dr.base.reveal_started() {
         Some(DataRequestStatus::Revealing)
     } else {
         None
@@ -73,11 +75,17 @@ pub fn requests_by_status(
     status: &DataRequestStatus,
     last_seen_index: Option<IndexKey>,
     limit: u32,
-) -> StdResult<(Vec<DataRequest>, Option<IndexKey>, u32)> {
+) -> StdResult<(Vec<DataRequestResponse>, Option<IndexKey>, u32)> {
     DATA_REQUESTS.get_requests_by_status(store, status, last_seen_index, limit)
 }
 
-pub fn reveal(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest, current_height: u64) -> StdResult<()> {
+pub fn reveal(
+    store: &mut dyn Storage,
+    dr_id: &Hash,
+    dr: DataRequestContract,
+    current_height: u64,
+    (reveal_key, reveal_body): (&str, RevealBody),
+) -> StdResult<()> {
     let status = if dr.is_tallying() {
         // We update the status of the request from Revealing to Tallying
         // So the chain can grab it and start tallying
@@ -86,13 +94,22 @@ pub fn reveal(store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest, current_he
         None
     };
     DATA_REQUESTS.update(store, dr_id, dr, status, current_height, false)?;
+    DATA_REQUESTS.insert_reveal(store, reveal_key, reveal_body)?;
 
     Ok(())
 }
 
-pub fn remove_request(store: &mut dyn Storage, dr_id: &Hash) -> StdResult<()> {
+pub fn get_reveal(store: &dyn Storage, reveal_key: &str) -> StdResult<Option<RevealBody>> {
+    DATA_REQUESTS.get_reveal(store, reveal_key)
+}
+
+pub fn get_reveals(store: &dyn Storage, dr_id: &str) -> StdResult<HashMap<String, RevealBody>> {
+    DATA_REQUESTS.get_reveals(store, dr_id)
+}
+
+pub fn remove_request(store: &mut dyn Storage, dr_id: &Hash, dr_id_str: &str) -> StdResult<()> {
     // we have to remove the request from the pool
-    DATA_REQUESTS.remove(store, dr_id)?;
+    DATA_REQUESTS.remove(store, dr_id, dr_id_str)?;
     // no need to update status as we remove it from the requests pool
 
     Ok(())

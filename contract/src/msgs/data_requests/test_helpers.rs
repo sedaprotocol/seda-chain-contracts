@@ -55,7 +55,7 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     }
 }
 
-pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height: u64) -> DataRequest {
+pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height: u64) -> DataRequestContract {
     let version = Version {
         major: 0,
         minor: 0,
@@ -66,25 +66,26 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
     let dr_id = dr_args.try_hash().unwrap();
 
     let payback_address: Vec<u8> = vec![1, 2, 3];
-    DataRequest {
-        version,
-        id: dr_id.to_hex(),
-        exec_program_id: dr_args.exec_program_id,
-        exec_inputs: dr_args.exec_inputs,
-        exec_gas_limit: dr_args.exec_gas_limit,
-        tally_program_id: dr_args.tally_program_id,
-        tally_inputs: dr_args.tally_inputs,
-        tally_gas_limit: dr_args.tally_gas_limit,
-        memo: dr_args.memo,
-        replication_factor: dr_args.replication_factor,
-        consensus_filter: dr_args.consensus_filter,
-        gas_price: dr_args.gas_price,
-        seda_payload: seda_payload.into(),
-        commits: Default::default(),
+    DataRequestContract {
+        base:    DataRequestBase {
+            version,
+            id: dr_id.to_hex(),
+            exec_program_id: dr_args.exec_program_id,
+            exec_inputs: dr_args.exec_inputs,
+            exec_gas_limit: dr_args.exec_gas_limit,
+            tally_program_id: dr_args.tally_program_id,
+            tally_inputs: dr_args.tally_inputs,
+            tally_gas_limit: dr_args.tally_gas_limit,
+            memo: dr_args.memo,
+            replication_factor: dr_args.replication_factor,
+            consensus_filter: dr_args.consensus_filter,
+            gas_price: dr_args.gas_price,
+            seda_payload: seda_payload.into(),
+            commits: Default::default(),
+            payback_address: payback_address.into(),
+            height,
+        },
         reveals: Default::default(),
-        payback_address: payback_address.into(),
-
-        height,
     }
 }
 
@@ -134,7 +135,7 @@ impl TestAccount {
             self.pub_key_hex(),
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),
-            dr.height,
+            dr.base.height,
         );
         let proof = self.prove(factory.get_hash());
 
@@ -159,7 +160,7 @@ impl TestAccount {
             self.pub_key_hex(),
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),
-            dr.height,
+            dr.base.height,
         );
         let proof = self.prove(factory.get_hash());
         let msg = factory.create_message(proof);
@@ -178,7 +179,7 @@ impl TestAccount {
             self.pub_key_hex(),
             self.test_info.chain_id(),
             self.test_info.contract_addr_str(),
-            dr.height.saturating_sub(3),
+            dr.base.height.saturating_sub(3),
         );
         let proof = self.prove(factory.get_hash());
         let msg = factory.create_message(proof);
@@ -240,7 +241,7 @@ impl TestAccount {
     }
 
     #[track_caller]
-    pub fn get_data_request(&self, dr_id: &str) -> Option<DataRequest> {
+    pub fn get_data_request(&self, dr_id: &str) -> Option<DataRequestResponse> {
         self.test_info
             .query(query::QueryMsg::GetDataRequest {
                 dr_id: dr_id.to_string(),

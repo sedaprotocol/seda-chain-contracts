@@ -74,7 +74,7 @@ fn remove_request_and_process_distributions(
 
     event = event.add_attributes([
         ("dr_id", dr_id_str.clone()),
-        ("posted_dr_height", dr.height.to_string()),
+        ("posted_dr_height", dr.base.height.to_string()),
     ]);
 
     // add 1 so we can account for the refund message that may be sent
@@ -199,7 +199,7 @@ fn remove_request_and_process_distributions(
         event = event.add_attribute("refund", dr_escrow.amount.to_string());
     }
 
-    if state::remove_request(deps.storage, &dr_id).is_err() {
+    if state::remove_request(deps.storage, &dr_id, &dr_id_str).is_err() {
         event = event.add_attribute("failed_to_remove_dr", dr_id_str);
     };
     DR_ESCROW.remove(deps.storage, &dr_id);

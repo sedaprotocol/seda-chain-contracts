@@ -152,7 +152,7 @@ fn works() {
     let commiting = alice.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(!commiting.is_paused);
     assert_eq!(1, commiting.data_requests.len());
-    assert!(commiting.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(commiting.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 #[test]
 fn must_meet_replication_factor() {
@@ -180,7 +180,7 @@ fn must_meet_replication_factor() {
     let revealing = anyone.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
-    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(revealing.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]

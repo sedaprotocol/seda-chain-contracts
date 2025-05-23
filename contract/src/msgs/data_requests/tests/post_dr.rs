@@ -43,11 +43,14 @@ fn works() {
 
     // should be able to fetch data request with id 0x69...
     let received_value = anyone.get_data_request(&dr_id);
-    assert_eq!(Some(test_helpers::construct_dr(dr, vec![], 1)), received_value);
+    assert_eq!(
+        Some(test_helpers::construct_dr(dr, vec![], 1).base),
+        received_value.map(|dr| dr.base)
+    );
     let await_commits = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(!await_commits.is_paused);
     assert_eq!(1, await_commits.data_requests.len());
-    assert!(await_commits.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(await_commits.data_requests.iter().any(|r| r.base.id == dr_id));
 
     // nonexistent data request does not yet exist
     let value = anyone.get_data_request("00f0f00f0f00f0f0000000f0fff0ff0ff0ffff0fff00000f000ff000000f000f");

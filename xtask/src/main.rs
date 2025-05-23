@@ -9,7 +9,7 @@ use std::{
 use anyhow::{bail, Context, Result};
 use rand::Rng;
 use seda_common::{
-    msgs::data_requests::{DataRequest, RevealBody},
+    msgs::data_requests::{DataRequestBase, DataRequestResponse, RevealBody},
     types::{ToHexStr, TryHashSelf},
 };
 use serde_json::json;
@@ -112,35 +112,37 @@ fn create_data_request(
     replication_factor: u16,
     tally_inputs: Vec<u8>,
     reveals: HashMap<String, RevealBody>,
-) -> DataRequest {
-    DataRequest {
-        version: semver::Version {
-            major: 1,
-            minor: 0,
-            patch: 0,
-            pre:   semver::Prerelease::EMPTY,
-            build: semver::BuildMetadata::EMPTY,
+) -> DataRequestResponse {
+    DataRequestResponse {
+        base: DataRequestBase {
+            version: semver::Version {
+                major: 1,
+                minor: 0,
+                patch: 0,
+                pre:   semver::Prerelease::EMPTY,
+                build: semver::BuildMetadata::EMPTY,
+            },
+            id: id.to_hex(),
+            exec_program_id: exec_program_id.to_hex(),
+            exec_inputs: Default::default(),
+            exec_gas_limit: 10,
+            tally_program_id: tally_program_id.to_hex(),
+            tally_inputs: tally_inputs.into(),
+            tally_gas_limit: 20,
+            memo: Default::default(),
+            replication_factor,
+            consensus_filter: Default::default(),
+            gas_price: 10u128.into(),
+            seda_payload: Default::default(),
+            commits: Default::default(),
+            payback_address: Default::default(),
+            height: rand::random(),
         },
-        id: id.to_hex(),
-        exec_program_id: exec_program_id.to_hex(),
-        exec_inputs: Default::default(),
-        exec_gas_limit: 10,
-        tally_program_id: tally_program_id.to_hex(),
-        tally_inputs: tally_inputs.into(),
-        tally_gas_limit: 20,
-        memo: Default::default(),
-        replication_factor,
-        consensus_filter: Default::default(),
-        gas_price: 10u128.into(),
-        seda_payload: Default::default(),
-        commits: Default::default(),
         reveals,
-        payback_address: Default::default(),
-        height: rand::random(),
     }
 }
 
-fn tally_test_fixture(n: usize) -> Vec<DataRequest> {
+fn tally_test_fixture(n: usize) -> Vec<DataRequestResponse> {
     let exec_program_id: [u8; 32] = rand::random();
     let tally_program_id: [u8; 32] = rand::random();
 

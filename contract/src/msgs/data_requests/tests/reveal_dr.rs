@@ -53,7 +53,7 @@ fn works() {
     let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
-    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(revealing.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn works_with_proxies() {
     let tallying = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 10);
     assert!(!tallying.is_paused);
     assert_eq!(1, tallying.data_requests.len());
-    assert!(tallying.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(tallying.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]
@@ -254,7 +254,7 @@ fn fails_if_user_did_not_commit() {
     let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
-    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(revealing.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]
@@ -349,7 +349,7 @@ fn fails_if_does_not_match_commitment() {
     let revealing = alice.get_data_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert!(!revealing.is_paused);
     assert_eq!(1, revealing.data_requests.len());
-    assert!(revealing.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(revealing.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]
@@ -420,7 +420,7 @@ fn works_after_unstaking() {
     let tallying = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 10);
     assert!(!tallying.is_paused);
     assert_eq!(1, tallying.data_requests.len());
-    assert!(tallying.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(tallying.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]

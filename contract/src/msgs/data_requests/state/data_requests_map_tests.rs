@@ -30,6 +30,12 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
+    pub fn assert_dr_reveals_len(&self, expected: usize, dr_id: &Hash) {
+        let reveals = self.map.get_reveals(&self.store, &dr_id.to_hex()).unwrap();
+        assert_eq!(expected, reveals.len());
+    }
+
+    #[track_caller]
     pub fn assert_status_len(&self, expected: u32, status: &DataRequestStatus) {
         let len = match status {
             DataRequestStatus::Committing => self.map.committing.len(&self.store),
@@ -64,7 +70,7 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn insert(&mut self, current_height: u64, key: &Hash, value: DataRequest) {
+    fn insert(&mut self, current_height: u64, key: &Hash, value: DataRequestContract) {
         self.map
             .insert(
                 &mut self.store,
@@ -77,7 +83,7 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn insert_removable(&mut self, current_height: u64, key: &Hash, value: DataRequest) {
+    fn insert_removable(&mut self, current_height: u64, key: &Hash, value: DataRequestContract) {
         self.map
             .insert(
                 &mut self.store,
@@ -90,7 +96,7 @@ impl TestInfo<'_> {
     }
 
     #[track_caller]
-    fn update(&mut self, key: &Hash, dr: DataRequest, status: Option<DataRequestStatus>, current_height: u64) {
+    fn update(&mut self, key: &Hash, dr: DataRequestContract, status: Option<DataRequestStatus>, current_height: u64) {
         self.map
             .update(&mut self.store, key, dr, status, current_height, false)
             .unwrap();
@@ -98,16 +104,16 @@ impl TestInfo<'_> {
 
     #[track_caller]
     fn remove(&mut self, key: &Hash) {
-        self.map.remove(&mut self.store, key).unwrap();
+        self.map.remove(&mut self.store, key, &key.to_hex()).unwrap();
     }
 
     #[track_caller]
-    fn get(&self, key: &Hash) -> Option<DataRequest> {
+    fn get(&self, key: &Hash) -> Option<DataRequestContract> {
         self.map.may_get(&self.store, key).unwrap()
     }
 
     #[track_caller]
-    fn assert_request(&self, key: &Hash, expected: Option<DataRequest>) {
+    fn assert_request(&self, key: &Hash, expected: Option<DataRequestContract>) {
         assert_eq!(expected, self.get(key));
     }
 
@@ -117,18 +123,18 @@ impl TestInfo<'_> {
         status: DataRequestStatus,
         last_seen_index: Option<IndexKey>,
         limit: u32,
-    ) -> (Vec<DataRequest>, Option<IndexKey>, u32) {
+    ) -> (Vec<DataRequestResponse>, Option<IndexKey>, u32) {
         self.map
             .get_requests_by_status(&self.store, &status, last_seen_index, limit)
             .unwrap()
     }
 }
 
-fn create_test_dr(height: u64) -> (Hash, DataRequest) {
+fn create_test_dr(height: u64) -> (Hash, DataRequestContract) {
     let args = calculate_dr_id_and_args(height as u128, 2);
     let dr = construct_dr(args, vec![], height);
 
-    (Hash::from_hex_str(&dr.id).unwrap(), dr)
+    (Hash::from_hex_str(&dr.base.id).unwrap(), dr)
 }
 
 #[test]
@@ -146,6 +152,7 @@ fn enum_map_insert() {
 
     let (key, val) = create_test_dr(1);
     test_info.insert(1, &key, val);
+    test_info.assert_dr_reveals_len(0, &key);
     test_info.assert_status_len(1, TEST_STATUS);
     assert!(test_info.status_dr_id_exists(TEST_STATUS, &key));
     assert!(test_info.status_index_key_exists(TEST_STATUS, &key));
@@ -329,12 +336,12 @@ fn get_requests_by_status() {
 
     let (committing, _, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert_eq!(committing.len(), 1);
-    assert!(committing.contains(&req1));
+    assert!(committing.iter().any(|r| r.base.id == req1.base.id));
     assert_eq!(total, 1);
 
     let (revealing, _, total) = test_info.get_requests_by_status(DataRequestStatus::Revealing, None, 10);
     assert_eq!(revealing.len(), 1);
-    assert!(revealing.contains(&req2));
+    assert!(revealing.iter().any(|r| r.base.id == req2.base.id));
     assert_eq!(total, 1);
 }
 
@@ -357,18 +364,18 @@ fn get_requests_by_status_pagination() {
     // [3, 4]
     let (three_four, page_three, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, page_two, 2);
     assert_eq!(three_four.len(), 2);
-    assert!(three_four.contains(&reqs[3]));
-    assert!(three_four.contains(&reqs[4]));
+    assert!(three_four.iter().any(|req| req.base.id == reqs[3].base.id));
+    assert!(three_four.iter().any(|req| req.base.id == reqs[4].base.id));
     assert_eq!(total, 10);
 
     // [5, 9]
     let (five_nine, _, total) = test_info.get_requests_by_status(DataRequestStatus::Committing, page_three, 5);
     assert_eq!(five_nine.len(), 5);
-    assert!(five_nine.contains(&reqs[5]));
-    assert!(five_nine.contains(&reqs[6]));
-    assert!(five_nine.contains(&reqs[7]));
-    assert!(five_nine.contains(&reqs[8]));
-    assert!(five_nine.contains(&reqs[9]));
+    assert!(five_nine.iter().any(|req| req.base.id == reqs[5].base.id));
+    assert!(five_nine.iter().any(|req| req.base.id == reqs[6].base.id));
+    assert!(five_nine.iter().any(|req| req.base.id == reqs[7].base.id));
+    assert!(five_nine.iter().any(|req| req.base.id == reqs[8].base.id));
+    assert!(five_nine.iter().any(|req| req.base.id == reqs[9].base.id));
     assert_eq!(total, 10);
 }
 
@@ -391,4 +398,40 @@ fn remove_only_item() {
     test_info.assert_status_len(0, TEST_STATUS);
     assert!(!test_info.status_dr_id_exists(TEST_STATUS, &key));
     assert!(!test_info.status_index_key_exists(TEST_STATUS, &key));
+}
+
+#[test]
+fn reveal() {
+    let mut test_info = TestInfo::init();
+
+    let (key, req) = create_test_dr(1);
+    test_info.insert_removable(1, &key, req.clone());
+
+    let reveal_key = format!("{}:{}", key.to_hex(), 1);
+    let reveal_body = RevealBody {
+        dr_id:             "dr_id".to_string(),
+        dr_block_height:   1,
+        exit_code:         0,
+        gas_used:          1,
+        reveal:            "reveal".as_bytes().into(),
+        proxy_public_keys: Default::default(),
+    };
+    test_info
+        .map
+        .insert_reveal(&mut test_info.store, &reveal_key, reveal_body.clone())
+        .unwrap();
+
+    test_info.assert_dr_reveals_len(1, &key);
+
+    let reveal = test_info
+        .map
+        .get_reveal(&test_info.store, &reveal_key)
+        .unwrap()
+        .unwrap();
+    assert_eq!(reveal, reveal_body);
+
+    let reveals = test_info.map.get_reveals(&test_info.store, &key.to_hex()).unwrap();
+    assert_eq!(reveals.len(), 1);
+
+    test_info.map.remove(&mut test_info.store, &key, &reveal_key).unwrap();
 }

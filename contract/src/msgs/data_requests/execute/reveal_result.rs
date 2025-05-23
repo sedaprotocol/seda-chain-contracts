@@ -13,7 +13,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
 
         // error if reveal phase for this DR has not started (i.e. replication factor is
         // not met)
-        if !dr.reveal_started() {
+        if !dr.base.reveal_started() {
             return Err(ContractError::RevealNotStarted);
         }
 
@@ -27,7 +27,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let public_key = PublicKey::from_hex_str(&self.public_key)?;
 
         // error if data request executor has not submitted a commitment
-        let Some(committed_dr_result) = dr.get_commitment(&self.public_key) else {
+        let Some(committed_dr_result) = dr.base.get_commitment(&self.public_key) else {
             return Err(ContractError::NotCommitted);
         };
 
@@ -59,7 +59,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         let response = Response::new().add_attribute("action", "reveal_data_result").add_event(
             Event::new("seda-reveal").add_attributes([
                 ("dr_id", dr_id_str.clone()),
-                ("posted_dr_height", dr.height.to_string()),
+                ("posted_dr_height", dr.base.height.to_string()),
                 ("reveal", to_json_string(&self.reveal_body)?),
                 ("stdout", to_json_string(&self.stdout)?),
                 ("stderr", to_json_string(&self.stderr)?),
@@ -69,8 +69,14 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         );
 
         // add the reveal to the data request state
-        dr.reveals.insert(self.public_key.clone(), self.reveal_body);
-        state::reveal(deps.storage, &dr_id, dr, env.block.height)?;
+        dr.reveals.insert(self.public_key.clone());
+        state::reveal(
+            deps.storage,
+            &dr_id,
+            dr,
+            env.block.height,
+            (&format!("{dr_id_str}:{}", self.public_key), self.reveal_body),
+        )?;
 
         Ok(response.add_message(new_refund_msg(env, dr_id_str, self.public_key, true)?))
     }
