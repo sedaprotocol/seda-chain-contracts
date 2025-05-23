@@ -347,14 +347,14 @@ fn works_with_more_drs_in_the_pool() {
     let dr_to_be_tallied = alice.get_data_requests_by_status(DataRequestStatus::Tallying, None, 100);
     assert!(!dr_to_be_tallied.is_paused);
     assert_eq!(1, dr_to_be_tallied.data_requests.len());
-    assert_eq!(dr_to_be_tallied.data_requests[0].id, dr_id1);
+    assert_eq!(dr_to_be_tallied.data_requests[0].base.id, dr_id1);
 
     // Remove only first dr ready to be tallied (while there is another one in the
     // pool and not ready) This checks part of the swap_remove logic
     let dr = dr_to_be_tallied.data_requests[0].clone();
     alice
         .remove_data_request(
-            dr.id,
+            dr.base.id,
             vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
                 amount:   10u128.into(),
                 identity: alice.pub_key_hex(),
@@ -379,7 +379,7 @@ fn works_with_more_drs_in_the_pool() {
     let dr = dr_to_be_tallied.data_requests[0].clone();
     alice
         .remove_data_request(
-            dr.id,
+            dr.base.id,
             vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
                 amount:   10u128.into(),
                 identity: alice.pub_key_hex(),

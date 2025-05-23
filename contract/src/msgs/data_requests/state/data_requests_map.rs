@@ -2,11 +2,12 @@ use super::*;
 use crate::msgs::sorted_set::IndexKey;
 
 pub struct DataRequestsMap<'a> {
-    pub reqs:       Map<&'a Hash, DataRequest>,
+    pub reqs:       Map<&'a Hash, DataRequestContract>,
     pub committing: SortedSet<'a>,
     pub revealing:  SortedSet<'a>,
     pub tallying:   SortedSet<'a>,
     pub timeouts:   Timeouts<'a>,
+    pub reveals:    Map<(&'a [u8], &'a str), RevealBody>,
 }
 
 use cosmwasm_std::{StdResult, Storage};
@@ -50,7 +51,7 @@ impl DataRequestsMap<'_> {
         &self,
         store: &mut dyn Storage,
         key: &Hash,
-        req: DataRequest,
+        req: DataRequestContract,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
         match status {
@@ -77,7 +78,7 @@ impl DataRequestsMap<'_> {
         store: &mut dyn Storage,
         current_height: u64,
         key: &Hash,
-        req: DataRequest,
+        req: DataRequestContract,
         status: &DataRequestStatus,
     ) -> StdResult<()> {
         if self.has(store, key) {
@@ -113,7 +114,7 @@ impl DataRequestsMap<'_> {
         &self,
         store: &mut dyn Storage,
         key: &Hash,
-        dr: DataRequest,
+        dr: DataRequestContract,
         status: Option<DataRequestStatus>,
         current_height: u64,
         timeout: bool,
@@ -180,17 +181,15 @@ impl DataRequestsMap<'_> {
         Ok(())
     }
 
-    pub fn may_get(&self, store: &dyn Storage, key: &Hash) -> StdResult<Option<DataRequest>> {
+    pub fn may_get(&self, store: &dyn Storage, key: &Hash) -> StdResult<Option<DataRequestContract>> {
         self.reqs.may_load(store, key)
     }
 
-    pub fn get(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequest> {
+    pub fn get(&self, store: &dyn Storage, key: &Hash) -> StdResult<DataRequestContract> {
         self.reqs.load(store, key)
     }
 
     /// Removes an req from the map by key.
-    /// Swaps the last req with the req to remove.
-    /// Then pops the last req.
     pub fn remove(&self, store: &mut dyn Storage, key: &Hash) -> Result<(), StdError> {
         if !self.has(store, key) {
             return Err(StdError::generic_err("Key does not exist"));
@@ -210,7 +209,35 @@ impl DataRequestsMap<'_> {
         // remove from the status
         self.remove_from_status(store, key, &current_status)?;
 
+        // remove reveals associated with the request
+        self.remove_reveals(store, key);
+
         Ok(())
+    }
+
+    pub fn get_reveal(&self, store: &dyn Storage, dr_id: &Hash, identity: &str) -> StdResult<Option<RevealBody>> {
+        self.reveals.may_load(store, (dr_id.as_slice(), identity))
+    }
+
+    pub fn get_reveals(&self, store: &dyn Storage, dr_id: &Hash) -> StdResult<HashMap<String, RevealBody>> {
+        self.reveals
+            .prefix(dr_id)
+            .range(store, None, None, Order::Ascending)
+            .collect()
+    }
+
+    pub fn insert_reveal(
+        &self,
+        store: &mut dyn Storage,
+        dr_id: &Hash,
+        identity: &str,
+        reveal_body: RevealBody,
+    ) -> StdResult<()> {
+        self.reveals.save(store, (dr_id, identity), &reveal_body)
+    }
+
+    fn remove_reveals(&self, store: &mut dyn Storage, dr_id: &Hash) {
+        self.reveals.prefix(dr_id).clear(store, None);
     }
 
     pub fn get_requests_by_status(
@@ -219,7 +246,7 @@ impl DataRequestsMap<'_> {
         status: &DataRequestStatus,
         last_seen_index: Option<IndexKey>,
         limit: u32,
-    ) -> StdResult<(Vec<DataRequest>, Option<IndexKey>, u32)> {
+    ) -> StdResult<(Vec<DataRequestResponse>, Option<IndexKey>, u32)> {
         let start = last_seen_index.map(Bound::exclusive);
 
         let set = match status {
@@ -238,7 +265,12 @@ impl DataRequestsMap<'_> {
             // Start is the max argument since we're ordering descending
             .range(store, None, start, Order::Descending)
             .take(limit as usize)
-            .flat_map(|result| result.map(|(key, _)| self.reqs.load(store, &key.dr_id)))
+            .map(|result| {
+                let (key, _) = result?;
+                let dr = self.reqs.load(store, &key.dr_id)?;
+                let reveals = self.get_reveals(store, &key.dr_id)?;
+                Ok(DataRequestResponse { base: dr.base, reveals })
+            })
             .collect::<StdResult<Vec<_>>>()?;
 
         if requests.len() < limit as usize {
@@ -286,6 +318,7 @@ macro_rules! new_enumerable_status_map {
                 timeouts:        Map::new(concat!($namespace, "_timeouts")),
                 hash_to_timeout: Map::new(concat!($namespace, "_hash_to_timeout")),
             },
+            reveals:    Map::new(concat!($namespace, "_reveals")),
         }
     };
 }

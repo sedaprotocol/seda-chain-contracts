@@ -1,5 +1,5 @@
 use cw_storage_plus::{KeyDeserialize, Prefixer, PrimaryKey};
-use seda_common::msgs::data_requests::{DataRequest, LastSeenIndexKey};
+use seda_common::msgs::data_requests::{DataRequestBase, DataRequestContract, DataRequestResponse, LastSeenIndexKey};
 use serde::{Deserialize, Serialize};
 
 use super::*;
@@ -65,12 +65,28 @@ impl IndexKey {
     }
 }
 
-impl TryFrom<&DataRequest> for IndexKey {
+impl TryFrom<&DataRequestBase> for IndexKey {
     type Error = ContractError;
 
-    fn try_from(value: &DataRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: &DataRequestBase) -> Result<Self, Self::Error> {
         let dr_id = Hash::from_hex_str(&value.id)?;
         Ok(Self::new(value.gas_price, value.height, dr_id))
+    }
+}
+
+impl TryFrom<&DataRequestContract> for IndexKey {
+    type Error = ContractError;
+
+    fn try_from(value: &DataRequestContract) -> Result<Self, Self::Error> {
+        TryFrom::try_from(&value.base)
+    }
+}
+
+impl TryFrom<&DataRequestResponse> for IndexKey {
+    type Error = ContractError;
+
+    fn try_from(value: &DataRequestResponse) -> Result<Self, Self::Error> {
+        TryFrom::try_from(&value.base)
     }
 }
 
@@ -118,7 +134,7 @@ impl SortedSet<'_> {
         self.index.has(store, index)
     }
 
-    pub fn add(&self, store: &mut dyn Storage, dr_id: &Hash, dr: DataRequest) -> StdResult<()> {
+    pub fn add(&self, store: &mut dyn Storage, dr_id: &Hash, dr: DataRequestContract) -> StdResult<()> {
         if self.has(store, dr_id) {
             return Err(StdError::generic_err("Key already exists"));
         }

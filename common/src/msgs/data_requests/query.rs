@@ -15,7 +15,7 @@ pub enum QueryMsg {
     },
     #[cfg_attr(feature = "cosmwasm", returns(bool))]
     CanExecutorReveal { dr_id: String, public_key: String },
-    #[cfg_attr(feature = "cosmwasm", returns(Option<DataRequest>))]
+    #[cfg_attr(feature = "cosmwasm", returns(Option<DataRequestResponse>))]
     GetDataRequest { dr_id: String },
     #[cfg_attr(feature = "cosmwasm",  returns(Option<String>))]
     GetDataRequestCommitment { dr_id: String, public_key: String },

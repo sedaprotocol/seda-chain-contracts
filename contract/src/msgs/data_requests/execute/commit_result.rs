@@ -15,12 +15,12 @@ impl ExecuteHandler for execute::commit_result::Execute {
 
         // add the commitment to the data request
         let commitment = Hash::from_hex_str(&self.commitment)?;
-        dr.commits.insert(self.public_key.clone(), commitment);
+        dr.base.commits.insert(self.public_key.clone(), commitment);
 
         let resp = Response::new().add_attribute("action", "commit_data_result").add_event(
             Event::new("seda-commitment").add_attributes([
                 ("dr_id", self.dr_id.clone()),
-                ("posted_dr_height", dr.height.to_string()),
+                ("posted_dr_height", dr.base.height.to_string()),
                 ("commitment", self.commitment),
                 ("executor", self.public_key.clone()),
                 ("version", CONTRACT_VERSION.to_string()),
@@ -36,20 +36,20 @@ pub fn verify_commit(
     deps: Deps,
     env: &Env,
     commit: &execute::commit_result::Execute,
-    dr: &DataRequest,
+    dr: &DataRequestContract,
 ) -> Result<(), ContractError> {
     // error if the user has already committed
-    if dr.has_committer(commit.public_key.as_str()) {
+    if dr.base.has_committer(commit.public_key.as_str()) {
         return Err(ContractError::AlreadyCommitted);
     }
 
     // error if reveal stage has started (replication factor reached)
-    if dr.reveal_started() {
+    if dr.base.reveal_started() {
         return Err(ContractError::RevealStarted);
     }
 
     // error if the data request has expired
-    let expires_at = state::get_dr_expiration_height(deps.storage, &Hash::from_hex_str(&dr.id)?)?;
+    let expires_at = state::get_dr_expiration_height(deps.storage, &Hash::from_hex_str(&dr.base.id)?)?;
     if expires_at <= env.block.height {
         return Err(ContractError::DataRequestExpired(expires_at, "commit"));
     }
@@ -73,6 +73,11 @@ pub fn verify_commit(
 
     // verify the proof
     let chain_id = CHAIN_ID.load(deps.storage)?;
-    commit.verify(public_key.as_ref(), &chain_id, env.contract.address.as_str(), dr.height)?;
+    commit.verify(
+        public_key.as_ref(),
+        &chain_id,
+        env.contract.address.as_str(),
+        dr.base.height,
+    )?;
     Ok(())
 }

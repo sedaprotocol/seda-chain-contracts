@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::NonZero};
 
 use serde_json::json;
 
-use super::{DataRequest, DrConfig, PostDataRequestArgs, RevealBody};
+use super::*;
 #[cfg(feature = "cosmwasm")]
 use crate::msgs::assert_json_deser;
 use crate::{msgs::assert_json_ser, types::*};
@@ -25,7 +25,7 @@ fn data_request_id_vector() {
 }
 
 #[test]
-fn json_data_request() {
+fn json_data_request_response() {
     let id = "id".to_string();
     let version = "1.0.0".to_string();
     let exec_program_id = "exec_program_id".to_string();
@@ -82,30 +82,38 @@ fn json_data_request() {
       "height": height,
     });
 
-    let msg = DataRequest {
-        id,
-        version: version.parse().unwrap(),
-        exec_program_id,
-        exec_inputs,
-        exec_gas_limit,
-        tally_program_id,
-        tally_inputs,
-        tally_gas_limit,
-        replication_factor,
-        consensus_filter,
-        gas_price,
-        memo,
-        payback_address,
-        seda_payload,
-        commits,
+    let msg = DataRequestResponse {
+        base: DataRequestBase {
+            id,
+            version: version.parse().unwrap(),
+            exec_program_id,
+            exec_inputs,
+            exec_gas_limit,
+            tally_program_id,
+            tally_inputs,
+            tally_gas_limit,
+            replication_factor,
+            consensus_filter,
+            gas_price,
+            memo,
+            payback_address,
+            seda_payload,
+            commits,
+            height,
+        },
         reveals,
-        height,
     };
 
     #[cfg(not(feature = "cosmwasm"))]
-    assert_json_ser(msg, expected_json);
+    assert_json_ser(msg.clone(), expected_json.clone());
     #[cfg(feature = "cosmwasm")]
     assert_json_deser(msg, expected_json);
+
+    #[cfg(not(feature = "cosmwasm"))]
+    {
+        let dr_response: DataRequestResponse = serde_json::from_value(expected_json).unwrap();
+        assert_eq!(msg, dr_response);
+    }
 }
 
 #[test]

@@ -30,7 +30,7 @@ pub enum DataRequestStatus {
 #[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
 #[cfg_attr(not(feature = "cosmwasm"), derive(Serialize, Deserialize, Clone, Debug, PartialEq))]
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
-pub struct DataRequest {
+pub struct DataRequestBase {
     /// Identifier
     pub id: String,
 
@@ -65,14 +65,12 @@ pub struct DataRequest {
     pub seda_payload:    Bytes,
     /// Commitments submitted by executors
     pub commits:         HashMap<String, Hash>,
-    /// Reveals submitted by executors
-    pub reveals:         HashMap<String, RevealBody>,
 
     /// The height data request was posted. Used for commitment.
     pub height: u64,
 }
 
-impl DataRequest {
+impl DataRequestBase {
     pub fn has_committer(&self, public_key: &str) -> bool {
         self.commits.contains_key(public_key)
     }
@@ -81,16 +79,47 @@ impl DataRequest {
         self.commits.get(public_key)
     }
 
+    pub fn reveal_started(&self) -> bool {
+        self.commits.len() >= self.replication_factor as usize
+    }
+}
+
+#[cfg(feature = "cosmwasm")]
+#[cosmwasm_schema::cw_serde]
+pub struct DataRequestContract {
+    #[serde(flatten)]
+    pub base:    DataRequestBase,
+    pub reveals: std::collections::HashSet<String>,
+}
+
+#[cfg(feature = "cosmwasm")]
+impl DataRequestContract {
+    pub fn has_revealer(&self, public_key: &str) -> bool {
+        self.reveals.contains(public_key)
+    }
+
+    pub fn is_tallying(&self) -> bool {
+        self.reveals.len() >= self.base.replication_factor as usize
+    }
+}
+
+#[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Serialize, Deserialize, Clone, Debug, PartialEq))]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
+pub struct DataRequestResponse {
+    #[serde(flatten)]
+    pub base:    DataRequestBase,
+    /// Reveals submitted by executors
+    pub reveals: HashMap<String, RevealBody>,
+}
+
+impl DataRequestResponse {
     pub fn has_revealer(&self, public_key: &str) -> bool {
         self.reveals.contains_key(public_key)
     }
 
-    pub fn reveal_started(&self) -> bool {
-        self.commits.len() >= self.replication_factor as usize
-    }
-
     pub fn is_tallying(&self) -> bool {
-        self.reveals.len() >= self.replication_factor as usize
+        self.reveals.len() >= self.base.replication_factor as usize
     }
 
     pub fn get_reveal(&self, public_key: &str) -> Option<&RevealBody> {
@@ -229,7 +258,7 @@ pub type LastSeenIndexKey = (U128, u64, Hash);
 #[cfg_attr(not(feature = "cosmwasm"), derive(Serialize, Deserialize, Debug, PartialEq))]
 pub struct GetDataRequestsByStatusResponse {
     pub is_paused:       bool,
-    pub data_requests:   Vec<DataRequest>,
+    pub data_requests:   Vec<DataRequestResponse>,
     pub last_seen_index: Option<LastSeenIndexKey>,
     pub total:           u32,
 }

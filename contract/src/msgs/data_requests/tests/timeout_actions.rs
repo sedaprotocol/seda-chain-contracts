@@ -84,7 +84,7 @@ fn timed_out_requests_move_to_tally() {
         .get_data_requests_by_status(DataRequestStatus::Tallying, None, 10)
         .data_requests
         .into_iter()
-        .map(|r| r.id)
+        .map(|r| r.base.id)
         .collect::<Vec<_>>();
     assert_eq!(2, tallying.len());
     assert_eq!(tallying[0], dr_id);

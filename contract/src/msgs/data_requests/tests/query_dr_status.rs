@@ -31,7 +31,7 @@ fn one_works() {
     let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);
     assert!(!drs.is_paused);
     assert_eq!(1, drs.data_requests.len());
-    assert!(drs.data_requests.iter().any(|r| r.id == dr_id));
+    assert!(drs.data_requests.iter().any(|r| r.base.id == dr_id));
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn offset_works() {
 
     let drs_one = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 1);
     assert_eq!(1, drs_one.data_requests.len());
-    assert!(drs_one.data_requests.iter().any(|dr| dr.id == posted_dr1));
+    assert!(drs_one.data_requests.iter().any(|dr| dr.base.id == posted_dr1));
     assert_eq!(drs_one.last_seen_index.map(|(_, h, _)| h), Some(u64::MAX - 1));
 
     let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, drs_one.last_seen_index, 2);
@@ -195,7 +195,7 @@ fn works_with_many_more_drs_in_pool() {
     {
         if i % 4 == 0 {
             let alice_reveal = RevealBody {
-                dr_id:             request.id.clone(),
+                dr_id:             request.base.id.clone(),
                 dr_block_height:   1,
                 reveal:            "10".hash().into(),
                 gas_used:          0,
@@ -242,7 +242,7 @@ fn works_with_many_more_drs_in_pool() {
         if i % 8 == 0 {
             alice
                 .remove_data_request(
-                    request.id.to_string(),
+                    request.base.id.to_string(),
                     vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
                         amount:   10u128.into(),
                         identity: alice.pub_key_hex(),
