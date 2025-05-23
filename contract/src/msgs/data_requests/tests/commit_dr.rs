@@ -6,7 +6,7 @@ use seda_common::{
     types::HashSelf,
 };
 
-use crate::{msgs::data_requests::test_helpers, TestInfo};
+use crate::{consts::INITIAL_COMMIT_TIMEOUT_IN_BLOCKS, msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
 #[should_panic(expected = "not found")]
@@ -35,7 +35,7 @@ fn fails_if_not_staked() {
 }
 
 #[test]
-#[should_panic(expected = "DataRequestExpired(11, \"commit\")")]
+#[should_panic(expected = "DataRequestExpired(51, \"commit\")")]
 fn fails_if_timed_out() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 22, 1);
@@ -45,7 +45,7 @@ fn fails_if_timed_out() {
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to be equal to the timeout height
-    test_info.set_block_height(11);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1);
 
     // commit a data result
     let alice_reveal = RevealBody {
@@ -71,7 +71,7 @@ fn fails_on_expired_dr() {
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to be later than the timeout
-    test_info.set_block_height(11);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1);
     // expire the data request
     test_info.creator().expire_data_requests().unwrap();
 

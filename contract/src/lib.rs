@@ -6,8 +6,6 @@ pub mod state;
 mod types;
 mod utils;
 
-pub mod legacy;
-
 use seda_common::types as common_types;
 
 #[cfg(test)]

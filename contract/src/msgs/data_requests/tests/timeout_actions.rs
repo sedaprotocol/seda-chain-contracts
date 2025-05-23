@@ -5,7 +5,11 @@ use seda_common::{
     types::HashSelf,
 };
 
-use crate::{msgs::data_requests::test_helpers, TestInfo};
+use crate::{
+    consts::{INITIAL_COMMIT_TIMEOUT_IN_BLOCKS, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS},
+    msgs::data_requests::test_helpers,
+    TestInfo,
+};
 
 #[test]
 fn owner_can_update_dr_config() {
@@ -45,14 +49,16 @@ fn timed_out_requests_move_to_tally() {
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to the height it would timeout
-    test_info.set_block_height(11);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1);
 
     // process the timed out requests at current height
     test_info.creator().expire_data_requests().unwrap();
 
     // post another data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
-    let dr_id2 = alice.post_data_request(dr2, vec![], vec![], 11, None).unwrap();
+    let dr_id2 = alice
+        .post_data_request(dr2, vec![], vec![], INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1, None)
+        .unwrap();
 
     // alice commits a data result
     let alice_reveal = RevealBody {
@@ -68,7 +74,7 @@ fn timed_out_requests_move_to_tally() {
 
     // set the block height to be later than the timeout so it times out during the
     // reveal phase
-    test_info.set_block_height(16);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + INITIAL_REVEAL_TIMEOUT_IN_BLOCKS + 1);
 
     // process the timed out requests at current height
     test_info.creator().expire_data_requests().unwrap();

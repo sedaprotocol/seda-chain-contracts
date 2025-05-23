@@ -10,7 +10,6 @@ use staking::StakingConfig;
 use crate::{
     consts::*,
     error::ContractError,
-    legacy::{TimeoutConfig, TIMEOUT_CONFIG},
     msgs::{
         data_requests::{execute::dr_events::create_dr_config_event, state::DR_CONFIG},
         owner::state::{OWNER, PENDING_OWNER},
@@ -130,30 +129,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
         return Err(ContractError::NoMigrationNeeded);
     }
 
-    const V_1_0_4: Version = Version::new(1, 0, 4);
-    // Migrate timeout_config → dr_config when upgrading from prior to 1.0.4
-    if storage_version < V_1_0_4 {
-        #[cfg(test)]
-        TIMEOUT_CONFIG
-            .save(
-                deps.storage,
-                &TimeoutConfig {
-                    commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
-                    reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
-                },
-            )
-            .unwrap();
-
-        let old: TimeoutConfig = TIMEOUT_CONFIG.load(deps.storage)?;
-        let new = DrConfig {
-            commit_timeout_in_blocks: old.commit_timeout_in_blocks,
-            reveal_timeout_in_blocks: old.reveal_timeout_in_blocks,
-            backup_delay_in_blocks:   INITIAL_BACKUP_DELAY_IN_BLOCKS,
-        };
-        DR_CONFIG.save(deps.storage, &new)?;
-        TIMEOUT_CONFIG.remove(deps.storage);
-    }
-
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     Ok(Response::new()
@@ -169,6 +144,8 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use cw_multi_test::{ContractWrapper, Executor};
 
     use super::*;
@@ -205,8 +182,7 @@ mod tests {
 
     #[test]
     fn migrate_no_upgrade() {
-        std::env::set_var("TEST_CONTRACT_VERSION", CONTRACT_VERSION);
-        let test_info = TestInfo::init();
+        let test_info = TestInfo::init_with_version(Some(CONTRACT_VERSION));
 
         let contract = Box::new(
             ContractWrapper::new(execute, instantiate, query)
@@ -247,19 +223,34 @@ mod tests {
             .app_mut()
             .store_code_with_creator(test_info.creator().addr(), contract);
 
-        assert!(test_info
-            .app_mut()
-            .migrate_contract(
-                test_info.creator().addr(),
-                test_info.contract_addr(),
-                &Empty {},
-                new_code_id,
-            )
-            .is_ok());
+        let migrate_response = test_info.app_mut().migrate_contract(
+            test_info.creator().addr(),
+            test_info.contract_addr(),
+            &Empty {},
+            new_code_id,
+        );
 
-        let dr_config = test_info.creator().get_dr_config();
-        assert_eq!(dr_config.commit_timeout_in_blocks, INITIAL_COMMIT_TIMEOUT_IN_BLOCKS);
-        assert_eq!(dr_config.reveal_timeout_in_blocks, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS);
-        assert_eq!(dr_config.backup_delay_in_blocks, INITIAL_BACKUP_DELAY_IN_BLOCKS);
+        match migrate_response {
+            Ok(response) => {
+                let migrate_event = response.events.iter().find(|e| e.ty == "wasm-seda-contract");
+                let migrate_event = migrate_event.unwrap();
+                let migrate_event_attributes = migrate_event
+                    .attributes
+                    .iter()
+                    .map(|a| (a.key.clone(), a.value.clone()))
+                    .collect::<HashMap<String, String>>();
+
+                assert_eq!(migrate_event_attributes.get("action"), Some(&"migrate".to_string()));
+                assert_eq!(
+                    migrate_event_attributes.get("current_version"),
+                    Some(&"1.0.3".to_string())
+                );
+                assert_eq!(
+                    migrate_event_attributes.get("target_version"),
+                    Some(&CONTRACT_VERSION.to_string())
+                );
+            }
+            Err(e) => panic!("Migrate failed: {}", e),
+        }
     }
 }
