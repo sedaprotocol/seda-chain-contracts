@@ -16,10 +16,10 @@ fn owner_can_update_dr_config() {
     let test_info = TestInfo::init();
 
     let dr_config = DrConfig {
-        commit_timeout_in_blocks: 1,
-        reveal_timeout_in_blocks: 1,
-        backup_delay_in_blocks:   NonZero::new(1).unwrap(),
-        dr_reveal_size_limit:     1,
+        commit_timeout_in_blocks:      1,
+        reveal_timeout_in_blocks:      1,
+        backup_delay_in_blocks:        NonZero::new(1).unwrap(),
+        dr_reveal_size_limit_in_bytes: 1,
     };
 
     test_info.creator().set_dr_config(dr_config).unwrap();
@@ -31,10 +31,10 @@ fn only_owner_can_change_dr_config() {
     let test_info = TestInfo::init();
 
     let dr_config = DrConfig {
-        commit_timeout_in_blocks: 1,
-        reveal_timeout_in_blocks: 1,
-        backup_delay_in_blocks:   NonZero::new(1).unwrap(),
-        dr_reveal_size_limit:     1,
+        commit_timeout_in_blocks:      1,
+        reveal_timeout_in_blocks:      1,
+        backup_delay_in_blocks:        NonZero::new(1).unwrap(),
+        dr_reveal_size_limit_in_bytes: 1,
     };
 
     let alice = test_info.new_account("alice", 2);

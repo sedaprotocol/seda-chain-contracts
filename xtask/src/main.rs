@@ -53,6 +53,7 @@ fn try_main() -> Result<()> {
     }
 
     let task = env::args().nth(1);
+    let second = env::args().nth(2);
     match task.as_deref() {
         Some("cov") => cov(&sh)?,
         Some("cov-ci") => cov_ci(&sh)?,
@@ -64,10 +65,10 @@ fn try_main() -> Result<()> {
             proto_update(&sh, &git)?
         }
         Some("tally-data-req-fixture") => tally_data_req_fixture(&sh)?,
-        Some("test-all") => test_all(&sh)?,
+        Some("test-all") => test_all(&sh, matches!(second.as_deref(), Some("-c")))?,
         Some("test-ci") => test_ci(&sh)?,
-        Some("test-common") => test_common(&sh)?,
-        Some("test-contract") => test_contract(&sh)?,
+        Some("test-common") => test_common(&sh, matches!(second.as_deref(), Some("-c")))?,
+        Some("test-contract") => test_contract(&sh, matches!(second.as_deref(), Some("-c")))?,
 
         Some("wasm-opt") => wasm_opt(&sh)?,
         _ => print_help()?,
@@ -220,32 +221,46 @@ fn get_git_version() -> Result<String> {
     Ok(version)
 }
 
-fn test_common(sh: &Shell) -> Result<()> {
-    cmd!(
-        sh,
-        "cargo nextest run --locked -p seda-common --failure-output final --success-output final"
-    )
-    .run()?;
-    cmd!(
+fn test_common(sh: &Shell, capture_output: bool) -> Result<()> {
+    if capture_output {
+        cmd!(
+            sh,
+            "cargo nextest run --locked -p seda-common --failure-output final --success-output final"
+        )
+        .run()?;
+    } else {
+        cmd!(sh, "cargo nextest run --locked -p seda-common").run()?;
+    }
+
+    if capture_output {
+        cmd!(
         sh,
         "cargo nextest run --locked -p seda-common --failure-output final --success-output final --features cosmwasm"
     )
-    .run()?;
+        .run()?;
+    } else {
+        cmd!(sh, "cargo nextest run --locked -p seda-common --features cosmwasm").run()?;
+    }
     Ok(())
 }
 
-fn test_contract(sh: &Shell) -> Result<()> {
-    cmd!(
-        sh,
-        "cargo nextest run --locked -p seda-contract --failure-output final --success-output final"
-    )
-    .run()?;
+fn test_contract(sh: &Shell, capture_output: bool) -> Result<()> {
+    if capture_output {
+        cmd!(
+            sh,
+            "cargo nextest run --locked -p seda-contract --failure-output final --success-output final"
+        )
+        .run()?;
+    } else {
+        cmd!(sh, "cargo nextest run --locked -p seda-contract").run()?;
+    }
+
     Ok(())
 }
 
-fn test_all(sh: &Shell) -> Result<()> {
-    test_common(sh)?;
-    test_contract(sh)?;
+fn test_all(sh: &Shell, capture_output: bool) -> Result<()> {
+    test_common(sh, capture_output)?;
+    test_contract(sh, capture_output)?;
     Ok(())
 }
 

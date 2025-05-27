@@ -237,15 +237,15 @@ impl TryHashSelf for PostDataRequestArgs {
 pub struct DrConfig {
     /// Number of blocks after which a data request is timed out while waiting
     /// for commits.
-    pub commit_timeout_in_blocks: u64,
+    pub commit_timeout_in_blocks:      u64,
     /// Number of blocks after which a data request is timed out while waiting
     /// for reveals.
-    pub reveal_timeout_in_blocks: u64,
+    pub reveal_timeout_in_blocks:      u64,
     /// This is the delay before the backup executors are allowed to start
     /// executing the data request.
-    pub backup_delay_in_blocks:   NonZero<u64>,
+    pub backup_delay_in_blocks:        NonZero<u64>,
     /// The maximum size of all the reveals in a data request.
-    pub dr_reveal_size_limit:     usize,
+    pub dr_reveal_size_limit_in_bytes: usize,
 }
 
 impl From<DrConfig> for crate::msgs::ExecuteMsg {
