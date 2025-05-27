@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
-use cosmwasm_std::{Empty, Event};
+use cosmwasm_std::{Empty, Event, StdError};
 use cw2::{get_contract_version, set_contract_version};
 use data_requests::DrConfig;
 use seda_common::msgs::*;
@@ -101,6 +101,19 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
     msg.query(deps, env)
 }
 
+#[cosmwasm_schema::cw_serde]
+struct OldDrConfig {
+    /// Number of blocks after which a data request is timed out while waiting
+    /// for commits.
+    pub commit_timeout_in_blocks: u64,
+    /// Number of blocks after which a data request is timed out while waiting
+    /// for reveals.
+    pub reveal_timeout_in_blocks: u64,
+    /// This is the delay before the backup executors are allowed to start
+    /// executing the data request.
+    pub backup_delay_in_blocks:   std::num::NonZero<u64>,
+}
+
 /// Migrate the contract to a new version, emitting an event with the migration
 /// details.
 ///
@@ -128,6 +141,43 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 
     if storage_version == version {
         return Err(ContractError::NoMigrationNeeded);
+    }
+
+    const V_1_0_5: Version = Version::new(1, 0, 5);
+    // migrate from 1.0.4 to 1.0.5
+    if storage_version < V_1_0_5 {
+        #[cfg(test)]
+        {
+            // create the new DR config
+            let new_dr_config = OldDrConfig {
+                commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
+                reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
+                backup_delay_in_blocks:   INITIAL_BACKUP_DELAY_IN_BLOCKS,
+            };
+            // Serialize the new data
+            let new_data = cosmwasm_std::to_json_vec(&new_dr_config)?;
+            // Store the new data
+            deps.storage.set(b"dr_config", &new_data);
+        }
+
+        // load the old DR config
+        let Some(old_data) = deps.storage.get(b"dr_config") else {
+            return Err(StdError::generic_err("No DR config found").into());
+        };
+
+        let old_dr_config: OldDrConfig = cosmwasm_std::from_json(&old_data)?;
+
+        // create the new DR config
+        let new_dr_config = DrConfig {
+            commit_timeout_in_blocks:      old_dr_config.commit_timeout_in_blocks,
+            reveal_timeout_in_blocks:      old_dr_config.reveal_timeout_in_blocks,
+            backup_delay_in_blocks:        old_dr_config.backup_delay_in_blocks,
+            dr_reveal_size_limit_in_bytes: INITIAL_DR_REVEAL_SIZE_LIMIT,
+        };
+        // Serialize the new data
+        let new_data = cosmwasm_std::to_json_vec(&new_dr_config)?;
+        // Store the new data
+        deps.storage.set(b"dr_config", &new_data);
     }
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -212,7 +262,7 @@ mod tests {
 
     #[test]
     fn migrate_ok() {
-        let test_info = TestInfo::init_with_version(Some("1.0.3"));
+        let test_info = TestInfo::init_with_version(Some("1.0.4"));
 
         let contract = Box::new(
             ContractWrapper::new(execute, instantiate, query)
@@ -244,7 +294,7 @@ mod tests {
                 assert_eq!(migrate_event_attributes.get("action"), Some(&"migrate".to_string()));
                 assert_eq!(
                     migrate_event_attributes.get("current_version"),
-                    Some(&"1.0.3".to_string())
+                    Some(&"1.0.4".to_string())
                 );
                 assert_eq!(
                     migrate_event_attributes.get("target_version"),
