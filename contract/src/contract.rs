@@ -65,6 +65,7 @@ pub fn instantiate(
         commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
         reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
         backup_delay_in_blocks:   INITIAL_BACKUP_DELAY_IN_BLOCKS,
+        dr_reveal_size_limit:     INITIAL_DR_REVEAL_SIZE_LIMIT,
     });
     DR_CONFIG.save(deps.storage, &init_dr_config)?;
 

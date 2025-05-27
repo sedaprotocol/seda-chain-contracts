@@ -1,5 +1,5 @@
 use super::*;
-use crate::state::CHAIN_ID;
+use crate::{msgs::data_requests::state::DR_CONFIG, state::CHAIN_ID};
 
 impl ExecuteHandler for execute::reveal_result::Execute {
     /// Posts a data result of a data request with an attached result.
@@ -34,6 +34,12 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         // error if data request executor has already submitted a reveal
         if dr.has_revealer(&self.public_key) {
             return Err(ContractError::AlreadyRevealed);
+        }
+
+        // error if the reveal is too big for the data request
+        let dr_config = DR_CONFIG.load(deps.storage)?;
+        if self.reveal_body.reveal.len() > (dr_config.dr_reveal_size_limit / dr.base.replication_factor as usize) {
+            return Err(ContractError::RevealTooBig);
         }
 
         // error if the commitment hash does not match the reveal

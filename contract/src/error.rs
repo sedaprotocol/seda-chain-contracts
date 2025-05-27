@@ -98,6 +98,8 @@ pub enum ContractError {
     NoMigrationNeeded,
     #[error("Cannot downgrade contract version")]
     DowngradeNotSupported,
+    #[error("Cannot reveal: Reveal data is too big for the data request")]
+    RevealTooBig,
 }
 
 #[cfg(test)]

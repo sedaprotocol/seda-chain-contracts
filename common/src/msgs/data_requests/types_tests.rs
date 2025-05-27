@@ -215,12 +215,14 @@ fn json_dr_config() {
         "commit_timeout_in_blocks": 5,
         "reveal_timeout_in_blocks": 10,
         "backup_delay_in_blocks":   1,
+        "dr_reveal_size_limit":     1,
     });
 
     let msg = DrConfig {
         commit_timeout_in_blocks: 5,
         reveal_timeout_in_blocks: 10,
         backup_delay_in_blocks:   NonZero::new(1).unwrap(),
+        dr_reveal_size_limit:     1,
     };
 
     #[cfg(not(feature = "cosmwasm"))]

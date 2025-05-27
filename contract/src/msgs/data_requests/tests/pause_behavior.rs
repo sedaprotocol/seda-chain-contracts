@@ -77,6 +77,7 @@ pub fn execute_messages_get_paused() {
         commit_timeout_in_blocks: 1,
         reveal_timeout_in_blocks: 1,
         backup_delay_in_blocks:   NonZero::new(1).unwrap(),
+        dr_reveal_size_limit:     1024,
     };
     test_info.creator().set_dr_config(dr_config).unwrap();
 }

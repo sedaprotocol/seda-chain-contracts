@@ -244,6 +244,8 @@ pub struct DrConfig {
     /// This is the delay before the backup executors are allowed to start
     /// executing the data request.
     pub backup_delay_in_blocks:   NonZero<u64>,
+    /// The maximum size of all the reveals in a data request.
+    pub dr_reveal_size_limit:     usize,
 }
 
 impl From<DrConfig> for crate::msgs::ExecuteMsg {

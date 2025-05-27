@@ -3,7 +3,13 @@ use seda_common::{
     types::{HashSelf, ToHexStr},
 };
 
-use crate::{msgs::data_requests::test_helpers, new_public_key, TestInfo};
+use crate::{
+    consts::INITIAL_DR_REVEAL_SIZE_LIMIT,
+    error::ContractError,
+    msgs::data_requests::test_helpers,
+    new_public_key,
+    TestInfo,
+};
 
 #[test]
 fn works() {
@@ -479,4 +485,75 @@ fn cannot_front_run_reveal() {
     // message
     let fred_reveal_message = fred.create_reveal_message(alice_reveal);
     fred.reveal_result(fred_reveal_message).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "RevealTooBig")]
+fn reveal_too_big_rf1() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_executor("alice", 22, 1);
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
+
+    // alice commits a data result with a reveal that is too big
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            [0; INITIAL_DR_REVEAL_SIZE_LIMIT + 1].into(), // too big for the DR
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
+
+    // alice tries to reveal
+    alice.reveal_result(alice_reveal_message).unwrap();
+}
+
+#[test]
+fn reveal_too_big_rf2() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_executor("alice", 22, 1);
+    let bob = test_info.new_executor("bob", 2, 1);
+
+    // post a data request
+    let dr = test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
+
+    // alice commits a data result with a good sized reveal
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            [0; 10].into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id, &alice_reveal_message).unwrap();
+
+    // bob commits a data result with a reveal that is too big
+    let bob_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            [0; (INITIAL_DR_REVEAL_SIZE_LIMIT / 2) + 1].into(), // too big for the DR
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let bob_reveal_message = bob.create_reveal_message(bob_reveal);
+    bob.commit_result(&dr_id, &bob_reveal_message).unwrap();
+
+    // alice tries to reveal
+    alice.reveal_result(alice_reveal_message).unwrap();
+
+    // bob tries to reveal
+    let res = bob.reveal_result(bob_reveal_message);
+    assert!(
+        res.is_err_and(|x| x == ContractError::RevealTooBig),
+        "Bob should not be able to reveal with a too big reveal"
+    );
 }

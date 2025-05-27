@@ -5,6 +5,7 @@ use super::*;
 use crate::consts::{
     INITIAL_BACKUP_DELAY_IN_BLOCKS,
     INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
+    INITIAL_DR_REVEAL_SIZE_LIMIT,
     INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
 };
 
@@ -23,6 +24,7 @@ impl TestInfo<'_> {
             commit_timeout_in_blocks: INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
             reveal_timeout_in_blocks: INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
             backup_delay_in_blocks:   INITIAL_BACKUP_DELAY_IN_BLOCKS,
+            dr_reveal_size_limit:     INITIAL_DR_REVEAL_SIZE_LIMIT,
         };
         DR_CONFIG.save(&mut store, &init_dr_config).unwrap();
 
