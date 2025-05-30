@@ -61,16 +61,7 @@ pub fn instantiate(
 
     STAKING_CONFIG.save(deps.storage, &init_staking_config)?;
 
-    let init_dr_config = msg.dr_config.unwrap_or(DrConfig {
-        commit_timeout_in_blocks:        INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
-        reveal_timeout_in_blocks:        INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
-        backup_delay_in_blocks:          INITIAL_BACKUP_DELAY_IN_BLOCKS,
-        dr_reveal_size_limit_in_bytes:   INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES,
-        exec_input_limit_in_bytes:       INITIAL_EXEC_INPUT_LIMIT_IN_BYTES,
-        tally_input_limit_in_bytes:      INITIAL_TALLY_INPUT_LIMIT_IN_BYTES,
-        consensus_filter_limit_in_bytes: INITIAL_CONSENSUS_FILTER_LIMIT_IN_BYTES,
-        memo_limit_in_bytes:             INITIAL_MEMO_LIMIT_IN_BYTES,
-    });
+    let init_dr_config = msg.dr_config.unwrap_or(INITIAL_DR_CONFIG);
     DR_CONFIG.save(deps.storage, &init_dr_config)?;
 
     STAKERS.initialize(deps.storage)?;
@@ -147,11 +138,13 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
         #[cfg(test)]
         {
             let new_dr_config = OldDrConfig {
-                commit_timeout_in_blocks:      INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64,
-                reveal_timeout_in_blocks:      INITIAL_REVEAL_TIMEOUT_IN_BLOCKS.get() as u64,
-                backup_delay_in_blocks:        std::num::NonZero::new(INITIAL_BACKUP_DELAY_IN_BLOCKS.get() as u64)
-                    .unwrap(),
-                dr_reveal_size_limit_in_bytes: INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES.get() as u64,
+                commit_timeout_in_blocks:      INITIAL_DR_CONFIG.commit_timeout_in_blocks.get() as u64,
+                reveal_timeout_in_blocks:      INITIAL_DR_CONFIG.reveal_timeout_in_blocks.get() as u64,
+                backup_delay_in_blocks:        std::num::NonZero::new(
+                    INITIAL_DR_CONFIG.backup_delay_in_blocks.get() as u64
+                )
+                .unwrap(),
+                dr_reveal_size_limit_in_bytes: INITIAL_DR_CONFIG.dr_reveal_size_limit_in_bytes.get() as u64,
             };
 
             // Serialize the new data
@@ -177,11 +170,11 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
                 .unwrap(),
             backup_delay_in_blocks:          std::num::NonZero::new(old_dr_config.backup_delay_in_blocks.get() as u8)
                 .unwrap(),
-            dr_reveal_size_limit_in_bytes:   INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES,
-            exec_input_limit_in_bytes:       INITIAL_EXEC_INPUT_LIMIT_IN_BYTES,
-            tally_input_limit_in_bytes:      INITIAL_TALLY_INPUT_LIMIT_IN_BYTES,
-            consensus_filter_limit_in_bytes: INITIAL_CONSENSUS_FILTER_LIMIT_IN_BYTES,
-            memo_limit_in_bytes:             INITIAL_MEMO_LIMIT_IN_BYTES,
+            dr_reveal_size_limit_in_bytes:   INITIAL_DR_CONFIG.dr_reveal_size_limit_in_bytes,
+            exec_input_limit_in_bytes:       INITIAL_DR_CONFIG.exec_input_limit_in_bytes,
+            tally_input_limit_in_bytes:      INITIAL_DR_CONFIG.tally_input_limit_in_bytes,
+            consensus_filter_limit_in_bytes: INITIAL_DR_CONFIG.consensus_filter_limit_in_bytes,
+            memo_limit_in_bytes:             INITIAL_DR_CONFIG.memo_limit_in_bytes,
         };
 
         // Serialize the new data

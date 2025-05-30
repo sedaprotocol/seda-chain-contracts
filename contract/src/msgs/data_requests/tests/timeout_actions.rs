@@ -3,11 +3,7 @@ use seda_common::{
     types::HashSelf,
 };
 
-use crate::{
-    consts::{INITIAL_COMMIT_TIMEOUT_IN_BLOCKS, INITIAL_REVEAL_TIMEOUT_IN_BLOCKS},
-    msgs::data_requests::test_helpers,
-    TestInfo,
-};
+use crate::{consts::INITIAL_DR_CONFIG, msgs::data_requests::test_helpers, TestInfo};
 
 #[test]
 fn owner_can_update_dr_config() {
@@ -57,7 +53,7 @@ fn timed_out_requests_move_to_tally() {
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to the height it would timeout
-    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64 + 1);
+    test_info.set_block_height(INITIAL_DR_CONFIG.commit_timeout_in_blocks.get() as u64 + 1);
 
     // process the timed out requests at current height
     test_info.creator().expire_data_requests().unwrap();
@@ -69,7 +65,7 @@ fn timed_out_requests_move_to_tally() {
             dr2,
             vec![],
             vec![],
-            INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64 + 1,
+            INITIAL_DR_CONFIG.commit_timeout_in_blocks.get() as u64 + 1,
             None,
         )
         .unwrap();
@@ -89,8 +85,9 @@ fn timed_out_requests_move_to_tally() {
     // set the block height to be later than the timeout so it times out during the
     // reveal phase
     test_info.set_block_height(
-        INITIAL_COMMIT_TIMEOUT_IN_BLOCKS
-            .saturating_add(INITIAL_REVEAL_TIMEOUT_IN_BLOCKS.get())
+        INITIAL_DR_CONFIG
+            .commit_timeout_in_blocks
+            .saturating_add(INITIAL_DR_CONFIG.reveal_timeout_in_blocks.get())
             .get() as u64
             + 1,
     );

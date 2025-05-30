@@ -2,7 +2,7 @@ use cosmwasm_std::{Binary, Uint128};
 use seda_common::{msgs::data_requests::DataRequestStatus, types::Hash};
 
 use crate::{
-    consts::*,
+    consts::INITIAL_DR_CONFIG,
     error::ContractError,
     msgs::data_requests::{
         consts::{min_post_dr_cost, MIN_GAS_PRICE},
@@ -205,7 +205,7 @@ fn fails_if_exec_inputs_too_big() {
 
     // post a data request with exec inputs too big
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    dr.exec_inputs = Binary::new(vec![0; INITIAL_EXEC_INPUT_LIMIT_IN_BYTES.get() as usize + 1]);
+    dr.exec_inputs = Binary::new(vec![0; INITIAL_DR_CONFIG.exec_input_limit_in_bytes.get() as usize + 1]);
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }
 
@@ -217,7 +217,7 @@ fn fails_if_tally_inputs_too_big() {
 
     // post a data request with tally inputs too big
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    dr.tally_inputs = Binary::new(vec![0; INITIAL_TALLY_INPUT_LIMIT_IN_BYTES.get() as usize + 1]);
+    dr.tally_inputs = Binary::new(vec![0; INITIAL_DR_CONFIG.tally_input_limit_in_bytes.get() as usize + 1]);
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }
 
@@ -229,7 +229,10 @@ fn fails_if_consensus_filter_too_big() {
 
     // post a data request with consensus filter too big
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    dr.consensus_filter = Binary::new(vec![0; INITIAL_CONSENSUS_FILTER_LIMIT_IN_BYTES.get() as usize + 1]);
+    dr.consensus_filter = Binary::new(vec![
+        0;
+        INITIAL_DR_CONFIG.consensus_filter_limit_in_bytes.get() as usize + 1
+    ]);
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }
 
@@ -241,6 +244,6 @@ fn fails_if_memo_too_big() {
 
     // post a data request with memo too big
     let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
-    dr.memo = Binary::new(vec![0; INITIAL_MEMO_LIMIT_IN_BYTES.get() as usize + 1]);
+    dr.memo = Binary::new(vec![0; INITIAL_DR_CONFIG.memo_limit_in_bytes.get() as usize + 1]);
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }
