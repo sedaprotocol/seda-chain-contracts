@@ -105,6 +105,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
     msg.query(deps, env)
 }
 
+#[cosmwasm_schema::cw_serde]
+struct OldDrConfig {
+    pub commit_timeout_in_blocks:      u64,
+    pub reveal_timeout_in_blocks:      u64,
+    pub backup_delay_in_blocks:        std::num::NonZero<u64>,
+    pub dr_reveal_size_limit_in_bytes: u64,
+}
+
 /// Migrate the contract to a new version, emitting an event with the migration
 /// details.
 ///
@@ -132,6 +140,57 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 
     if storage_version == version {
         return Err(ContractError::NoMigrationNeeded);
+    }
+
+    const V_1_0_6: Version = Version::new(1, 0, 6);
+    if storage_version < V_1_0_6 {
+        #[cfg(test)]
+        {
+            let new_dr_config = OldDrConfig {
+                commit_timeout_in_blocks:      INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64,
+                reveal_timeout_in_blocks:      INITIAL_REVEAL_TIMEOUT_IN_BLOCKS.get() as u64,
+                backup_delay_in_blocks:        std::num::NonZero::new(INITIAL_BACKUP_DELAY_IN_BLOCKS.get() as u64)
+                    .unwrap(),
+                dr_reveal_size_limit_in_bytes: INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES.get() as u64,
+            };
+
+            // Serialize the new data
+            let new_data = cosmwasm_std::to_json_vec(&new_dr_config)?;
+
+            // Store the new data
+            deps.storage.set(b"dr_config", &new_data);
+        }
+
+        // load the old DR config
+        let Some(old_data) = deps.storage.get(b"dr_config") else {
+            return Err(cosmwasm_std::StdError::generic_err("No DR config found").into());
+        };
+
+        let old_dr_config: OldDrConfig = cosmwasm_std::from_json(&old_data)?;
+
+        // create the new DR config
+
+        let new_dr_config = DrConfig {
+            commit_timeout_in_blocks:        std::num::NonZero::new(old_dr_config.commit_timeout_in_blocks as u8)
+                .unwrap(),
+            reveal_timeout_in_blocks:        std::num::NonZero::new(old_dr_config.reveal_timeout_in_blocks as u8)
+                .unwrap(),
+            backup_delay_in_blocks:          std::num::NonZero::new(old_dr_config.backup_delay_in_blocks.get() as u8)
+                .unwrap(),
+            dr_reveal_size_limit_in_bytes:   INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES,
+            exec_input_limit_in_bytes:       INITIAL_EXEC_INPUT_LIMIT_IN_BYTES,
+            tally_input_limit_in_bytes:      INITIAL_TALLY_INPUT_LIMIT_IN_BYTES,
+            consensus_filter_limit_in_bytes: INITIAL_CONSENSUS_FILTER_LIMIT_IN_BYTES,
+            memo_limit_in_bytes:             INITIAL_MEMO_LIMIT_IN_BYTES,
+        };
+
+        // Serialize the new data
+
+        let new_data = cosmwasm_std::to_json_vec(&new_dr_config)?;
+
+        // Store the new data
+
+        deps.storage.set(b"dr_config", &new_data);
     }
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -216,7 +275,7 @@ mod tests {
 
     #[test]
     fn migrate_ok() {
-        let test_info = TestInfo::init_with_version(Some("1.0.4"));
+        let test_info = TestInfo::init_with_version(Some("1.0.5"));
 
         let contract = Box::new(
             ContractWrapper::new(execute, instantiate, query)
@@ -248,7 +307,7 @@ mod tests {
                 assert_eq!(migrate_event_attributes.get("action"), Some(&"migrate".to_string()));
                 assert_eq!(
                     migrate_event_attributes.get("current_version"),
-                    Some(&"1.0.4".to_string())
+                    Some(&"1.0.5".to_string())
                 );
                 assert_eq!(
                     migrate_event_attributes.get("target_version"),
