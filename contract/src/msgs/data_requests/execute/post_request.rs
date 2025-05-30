@@ -3,7 +3,10 @@ use state::{Escrow, DR_ESCROW};
 
 use super::*;
 use crate::{
-    msgs::data_requests::consts::{MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
+    msgs::data_requests::{
+        consts::{MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
+        state::DR_CONFIG,
+    },
     state::TOKEN,
     utils::get_attached_funds,
 };
@@ -25,6 +28,50 @@ impl ExecuteHandler for execute::post_request::Execute {
         }
         if self.posted_dr.tally_gas_limit < MIN_TALLY_GAS_LIMIT {
             return Err(ContractError::TallyGasLimitTooLow(self.posted_dr.tally_gas_limit));
+        }
+        // check the program ids are a valid hash length (32 bytes) in hex (64 utf-8
+        // bytes)
+        if self.posted_dr.exec_program_id.len() != 64 {
+            return Err(ContractError::ProgramIdInvalidLength(
+                "exec",
+                self.posted_dr.exec_program_id.len(),
+            ));
+        }
+        if self.posted_dr.tally_program_id.len() != 64 {
+            return Err(ContractError::ProgramIdInvalidLength(
+                "tally",
+                self.posted_dr.tally_program_id.len(),
+            ));
+        }
+        // check the size limits of the dr
+        let dr_config = DR_CONFIG.load(deps.storage)?;
+        if self.posted_dr.exec_inputs.len() > dr_config.exec_input_limit_in_bytes.get() as usize {
+            return Err(ContractError::DrFieldTooBig(
+                "exec inputs",
+                self.posted_dr.exec_inputs.len(),
+                dr_config.exec_input_limit_in_bytes,
+            ));
+        }
+        if self.posted_dr.tally_inputs.len() > dr_config.tally_input_limit_in_bytes.get() as usize {
+            return Err(ContractError::DrFieldTooBig(
+                "tally inputs",
+                self.posted_dr.tally_inputs.len(),
+                dr_config.tally_input_limit_in_bytes,
+            ));
+        }
+        if self.posted_dr.consensus_filter.len() > dr_config.consensus_filter_limit_in_bytes.get() as usize {
+            return Err(ContractError::DrFieldTooBig(
+                "consensus filter",
+                self.posted_dr.consensus_filter.len(),
+                dr_config.consensus_filter_limit_in_bytes,
+            ));
+        }
+        if self.posted_dr.memo.len() > dr_config.memo_limit_in_bytes.get() as usize {
+            return Err(ContractError::DrFieldTooBig(
+                "memo",
+                self.posted_dr.memo.len(),
+                dr_config.memo_limit_in_bytes,
+            ));
         }
 
         // require the data request replication factor to be bigger than amount of

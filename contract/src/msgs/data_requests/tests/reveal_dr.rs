@@ -4,7 +4,7 @@ use seda_common::{
 };
 
 use crate::{
-    consts::INITIAL_DR_REVEAL_SIZE_LIMIT,
+    consts::INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES,
     error::ContractError,
     msgs::data_requests::test_helpers,
     new_public_key,
@@ -501,7 +501,7 @@ fn reveal_too_big_rf1() {
     let alice_reveal = RevealBody {
         dr_id:             dr_id.clone(),
         dr_block_height:   1,
-        reveal:            [0; INITIAL_DR_REVEAL_SIZE_LIMIT + 1].into(), // too big for the DR
+        reveal:            [0; INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES.get() as usize + 1].into(), // too big for the DR
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],
@@ -539,7 +539,7 @@ fn reveal_too_big_rf2() {
     let bob_reveal = RevealBody {
         dr_id:             dr_id.clone(),
         dr_block_height:   1,
-        reveal:            [0; (INITIAL_DR_REVEAL_SIZE_LIMIT / 2) + 1].into(), // too big for the DR
+        reveal:            [0; (INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES.get() as usize / 2) + 1].into(), /* too big for the DR */
         gas_used:          0,
         exit_code:         0,
         proxy_public_keys: vec![],

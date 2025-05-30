@@ -78,7 +78,7 @@ fn calculate_dr_eligibility<I>(
     active_stakers: I,
     target_public_key: &[u8],
     minimum_stake: Uint128,
-    backup_delay_in_blocks: NonZero<u64>,
+    backup_delay_in_blocks: NonZero<u8>,
     dr_id: [u8; 32],
     replication_factor: u16,
     blocks_passed: u64,
@@ -104,8 +104,8 @@ where
     // for someone to be eligible after the first executor the number of blocks
     // passed needs to be greater than the backup delay. After the delay a new
     // staker is eligible every block.
-    let total_needed = if blocks_passed > backup_delay_in_blocks.get() {
-        replication_factor as u64 + (blocks_passed - backup_delay_in_blocks.get())
+    let total_needed = if blocks_passed > backup_delay_in_blocks.get() as u64 {
+        replication_factor as u64 + (blocks_passed - backup_delay_in_blocks.get() as u64)
     } else {
         replication_factor as u64
     };
@@ -150,8 +150,8 @@ mod tests {
 
         // let total_needed = (replication_factor as usize + blocks_passed as
         // usize).min(sorted_stakers.len());
-        let total_needed = if blocks_passed > backup_delay_in_blocks.get() {
-            replication_factor as usize + (blocks_passed - backup_delay_in_blocks.get()) as usize
+        let total_needed = if blocks_passed > backup_delay_in_blocks.get() as u64 {
+            replication_factor as usize + (blocks_passed - backup_delay_in_blocks.get() as u64) as usize
         } else {
             replication_factor as usize
         }

@@ -1,3 +1,5 @@
+use std::num::NonZero;
+
 use cosmwasm_std::{StdError, Uint128};
 use hex::FromHexError;
 use thiserror::Error;
@@ -100,6 +102,10 @@ pub enum ContractError {
     DowngradeNotSupported,
     #[error("Cannot reveal: Reveal data is too big for the data request")]
     RevealTooBig,
+    #[error("Cannot Post Data Request: invalid {0} program id length: {1}")]
+    ProgramIdInvalidLength(&'static str, usize),
+    #[error("Cannot Post Data Request: {0} field is too big ({1} bytes), max allowed is {2} bytes")]
+    DrFieldTooBig(&'static str, usize, NonZero<u16>),
 }
 
 #[cfg(test)]

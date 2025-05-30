@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::NonZero};
+use std::collections::HashMap;
 
 use serde_json::json;
 
@@ -215,14 +215,22 @@ fn json_dr_config() {
         "commit_timeout_in_blocks": 5,
         "reveal_timeout_in_blocks": 10,
         "backup_delay_in_blocks":   1,
-        "dr_reveal_size_limit_in_bytes":     1,
+        "dr_reveal_size_limit_in_bytes":     24_000,
+        "exec_input_limit_in_bytes":         2_048,
+        "tally_input_limit_in_bytes":        512,
+        "consensus_filter_limit_in_bytes":   512,
+        "memo_limit_in_bytes":               512,
     });
 
     let msg = DrConfig {
-        commit_timeout_in_blocks:      5,
-        reveal_timeout_in_blocks:      10,
-        backup_delay_in_blocks:        NonZero::new(1).unwrap(),
-        dr_reveal_size_limit_in_bytes: 1,
+        commit_timeout_in_blocks:        5.try_into().unwrap(),
+        reveal_timeout_in_blocks:        10.try_into().unwrap(),
+        backup_delay_in_blocks:          1.try_into().unwrap(),
+        dr_reveal_size_limit_in_bytes:   24_000.try_into().unwrap(),
+        exec_input_limit_in_bytes:       2_048.try_into().unwrap(),
+        tally_input_limit_in_bytes:      512.try_into().unwrap(),
+        consensus_filter_limit_in_bytes: 512.try_into().unwrap(),
+        memo_limit_in_bytes:             512.try_into().unwrap(),
     };
 
     #[cfg(not(feature = "cosmwasm"))]

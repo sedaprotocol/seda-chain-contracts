@@ -39,7 +39,7 @@ impl ExecuteHandler for execute::reveal_result::Execute {
         // error if the reveal is too big for the data request
         let dr_config = DR_CONFIG.load(deps.storage)?;
         if self.reveal_body.reveal.len()
-            > (dr_config.dr_reveal_size_limit_in_bytes / dr.base.replication_factor as usize)
+            > (dr_config.dr_reveal_size_limit_in_bytes.get() / dr.base.replication_factor) as usize
         {
             return Err(ContractError::RevealTooBig);
         }

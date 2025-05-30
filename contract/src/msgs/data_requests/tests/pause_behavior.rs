@@ -1,5 +1,3 @@
-use std::num::NonZero;
-
 use seda_common::{
     msgs::data_requests::{DataRequestStatus, DrConfig, RevealBody},
     types::HashSelf,
@@ -74,10 +72,14 @@ pub fn execute_messages_get_paused() {
 
     // can still change the timeout config
     let dr_config = DrConfig {
-        commit_timeout_in_blocks:      1,
-        reveal_timeout_in_blocks:      1,
-        backup_delay_in_blocks:        NonZero::new(1).unwrap(),
-        dr_reveal_size_limit_in_bytes: 1024,
+        commit_timeout_in_blocks:        1.try_into().unwrap(),
+        reveal_timeout_in_blocks:        1.try_into().unwrap(),
+        backup_delay_in_blocks:          1.try_into().unwrap(),
+        dr_reveal_size_limit_in_bytes:   1024.try_into().unwrap(),
+        exec_input_limit_in_bytes:       2048.try_into().unwrap(),
+        tally_input_limit_in_bytes:      512.try_into().unwrap(),
+        consensus_filter_limit_in_bytes: 512.try_into().unwrap(),
+        memo_limit_in_bytes:             512.try_into().unwrap(),
     };
     test_info.creator().set_dr_config(dr_config).unwrap();
 }

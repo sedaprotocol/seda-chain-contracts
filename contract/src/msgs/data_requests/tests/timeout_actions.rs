@@ -1,5 +1,3 @@
-use std::num::NonZero;
-
 use seda_common::{
     msgs::data_requests::{DataRequestStatus, DrConfig, RevealBody},
     types::HashSelf,
@@ -16,10 +14,14 @@ fn owner_can_update_dr_config() {
     let test_info = TestInfo::init();
 
     let dr_config = DrConfig {
-        commit_timeout_in_blocks:      1,
-        reveal_timeout_in_blocks:      1,
-        backup_delay_in_blocks:        NonZero::new(1).unwrap(),
-        dr_reveal_size_limit_in_bytes: 1,
+        commit_timeout_in_blocks:        1.try_into().unwrap(),
+        reveal_timeout_in_blocks:        1.try_into().unwrap(),
+        backup_delay_in_blocks:          1.try_into().unwrap(),
+        dr_reveal_size_limit_in_bytes:   1.try_into().unwrap(),
+        exec_input_limit_in_bytes:       1.try_into().unwrap(),
+        tally_input_limit_in_bytes:      1.try_into().unwrap(),
+        consensus_filter_limit_in_bytes: 1.try_into().unwrap(),
+        memo_limit_in_bytes:             1.try_into().unwrap(),
     };
 
     test_info.creator().set_dr_config(dr_config).unwrap();
@@ -31,10 +33,14 @@ fn only_owner_can_change_dr_config() {
     let test_info = TestInfo::init();
 
     let dr_config = DrConfig {
-        commit_timeout_in_blocks:      1,
-        reveal_timeout_in_blocks:      1,
-        backup_delay_in_blocks:        NonZero::new(1).unwrap(),
-        dr_reveal_size_limit_in_bytes: 1,
+        commit_timeout_in_blocks:        1.try_into().unwrap(),
+        reveal_timeout_in_blocks:        1.try_into().unwrap(),
+        backup_delay_in_blocks:          1.try_into().unwrap(),
+        dr_reveal_size_limit_in_bytes:   1.try_into().unwrap(),
+        exec_input_limit_in_bytes:       1.try_into().unwrap(),
+        tally_input_limit_in_bytes:      1.try_into().unwrap(),
+        consensus_filter_limit_in_bytes: 1.try_into().unwrap(),
+        memo_limit_in_bytes:             1.try_into().unwrap(),
     };
 
     let alice = test_info.new_account("alice", 2);
@@ -51,7 +57,7 @@ fn timed_out_requests_move_to_tally() {
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to the height it would timeout
-    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64 + 1);
 
     // process the timed out requests at current height
     test_info.creator().expire_data_requests().unwrap();
@@ -59,7 +65,13 @@ fn timed_out_requests_move_to_tally() {
     // post another data request
     let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
     let dr_id2 = alice
-        .post_data_request(dr2, vec![], vec![], INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1, None)
+        .post_data_request(
+            dr2,
+            vec![],
+            vec![],
+            INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64 + 1,
+            None,
+        )
         .unwrap();
 
     // alice commits a data result
@@ -76,7 +88,12 @@ fn timed_out_requests_move_to_tally() {
 
     // set the block height to be later than the timeout so it times out during the
     // reveal phase
-    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + INITIAL_REVEAL_TIMEOUT_IN_BLOCKS + 1);
+    test_info.set_block_height(
+        INITIAL_COMMIT_TIMEOUT_IN_BLOCKS
+            .saturating_add(INITIAL_REVEAL_TIMEOUT_IN_BLOCKS.get())
+            .get() as u64
+            + 1,
+    );
 
     // process the timed out requests at current height
     test_info.creator().expire_data_requests().unwrap();

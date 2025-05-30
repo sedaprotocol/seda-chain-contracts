@@ -62,10 +62,14 @@ pub fn instantiate(
     STAKING_CONFIG.save(deps.storage, &init_staking_config)?;
 
     let init_dr_config = msg.dr_config.unwrap_or(DrConfig {
-        commit_timeout_in_blocks:      INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
-        reveal_timeout_in_blocks:      INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
-        backup_delay_in_blocks:        INITIAL_BACKUP_DELAY_IN_BLOCKS,
-        dr_reveal_size_limit_in_bytes: INITIAL_DR_REVEAL_SIZE_LIMIT,
+        commit_timeout_in_blocks:        INITIAL_COMMIT_TIMEOUT_IN_BLOCKS,
+        reveal_timeout_in_blocks:        INITIAL_REVEAL_TIMEOUT_IN_BLOCKS,
+        backup_delay_in_blocks:          INITIAL_BACKUP_DELAY_IN_BLOCKS,
+        dr_reveal_size_limit_in_bytes:   INITIAL_DR_REVEAL_SIZE_LIMIT_IN_BYTES,
+        exec_input_limit_in_bytes:       INITIAL_EXEC_INPUT_LIMIT_IN_BYTES,
+        tally_input_limit_in_bytes:      INITIAL_TALLY_INPUT_LIMIT_IN_BYTES,
+        consensus_filter_limit_in_bytes: INITIAL_CONSENSUS_FILTER_LIMIT_IN_BYTES,
+        memo_limit_in_bytes:             INITIAL_MEMO_LIMIT_IN_BYTES,
     });
     DR_CONFIG.save(deps.storage, &init_dr_config)?;
 

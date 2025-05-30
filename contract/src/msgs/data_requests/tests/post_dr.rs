@@ -1,7 +1,8 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Binary, Uint128};
 use seda_common::{msgs::data_requests::DataRequestStatus, types::Hash};
 
 use crate::{
+    consts::*,
     error::ContractError,
     msgs::data_requests::{
         consts::{min_post_dr_cost, MIN_GAS_PRICE},
@@ -170,4 +171,76 @@ fn fails_if_minimum_aseda_not_attached() {
     executor
         .post_data_request(dr, vec![], vec![1, 2, 3], 1, Some(min_post_dr_cost() - 1))
         .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "ProgramIdInvalidLength")]
+fn fails_if_exec_program_id_invalid_length() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with exec program id length != 64
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.exec_program_id = "short".to_string();
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "ProgramIdInvalidLength")]
+fn fails_if_tally_program_id_invalid_length() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with tally program id length != 64
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.tally_program_id = "short".to_string();
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DrFieldTooBig")]
+fn fails_if_exec_inputs_too_big() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with exec inputs too big
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.exec_inputs = Binary::new(vec![0; INITIAL_EXEC_INPUT_LIMIT_IN_BYTES.get() as usize + 1]);
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DrFieldTooBig")]
+fn fails_if_tally_inputs_too_big() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with tally inputs too big
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.tally_inputs = Binary::new(vec![0; INITIAL_TALLY_INPUT_LIMIT_IN_BYTES.get() as usize + 1]);
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DrFieldTooBig")]
+fn fails_if_consensus_filter_too_big() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with consensus filter too big
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.consensus_filter = Binary::new(vec![0; INITIAL_CONSENSUS_FILTER_LIMIT_IN_BYTES.get() as usize + 1]);
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DrFieldTooBig")]
+fn fails_if_memo_too_big() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with memo too big
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.memo = Binary::new(vec![0; INITIAL_MEMO_LIMIT_IN_BYTES.get() as usize + 1]);
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }

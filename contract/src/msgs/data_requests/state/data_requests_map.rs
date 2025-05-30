@@ -88,8 +88,11 @@ impl DataRequestsMap<'_> {
         self.reqs.save(store, key, &req)?;
         self.add_to_status(store, key, req, status)?;
         let dr_config = DR_CONFIG.load(store)?;
-        self.timeouts
-            .insert(store, current_height + dr_config.commit_timeout_in_blocks, key)?;
+        self.timeouts.insert(
+            store,
+            current_height + dr_config.commit_timeout_in_blocks.get() as u64,
+            key,
+        )?;
 
         Ok(())
     }
@@ -150,8 +153,11 @@ impl DataRequestsMap<'_> {
                     // We change the timeout to the reveal timeout when commit -> reveal
                     self.timeouts.remove_by_dr_id(store, key)?;
                     let dr_config = DR_CONFIG.load(store)?;
-                    self.timeouts
-                        .insert(store, dr_config.reveal_timeout_in_blocks + current_height, key)?;
+                    self.timeouts.insert(
+                        store,
+                        dr_config.reveal_timeout_in_blocks.get() as u64 + current_height,
+                        key,
+                    )?;
                 }
                 DataRequestStatus::Revealing => {
                     assert_eq!(

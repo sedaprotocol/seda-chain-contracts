@@ -45,7 +45,7 @@ fn fails_if_timed_out() {
     let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to be equal to the timeout height
-    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64 + 1);
 
     // commit a data result
     let alice_reveal = RevealBody {
@@ -71,7 +71,7 @@ fn fails_on_expired_dr() {
     let dr_id = anyone.post_data_request(dr, vec![], vec![], 1, None).unwrap();
 
     // set the block height to be later than the timeout
-    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS + 1);
+    test_info.set_block_height(INITIAL_COMMIT_TIMEOUT_IN_BLOCKS.get() as u64 + 1);
     // expire the data request
     test_info.creator().expire_data_requests().unwrap();
 
