@@ -2,7 +2,6 @@
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cosmwasm_std::{Empty, Event};
 use cw2::{get_contract_version, set_contract_version};
-use data_requests::DrConfig;
 use seda_common::msgs::*;
 use semver::Version;
 use staking::StakingConfig;
@@ -96,14 +95,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
     msg.query(deps, env)
 }
 
-#[cosmwasm_schema::cw_serde]
-struct OldDrConfig {
-    pub commit_timeout_in_blocks:      u64,
-    pub reveal_timeout_in_blocks:      u64,
-    pub backup_delay_in_blocks:        std::num::NonZero<u64>,
-    pub dr_reveal_size_limit_in_bytes: u64,
-}
-
 /// Migrate the contract to a new version, emitting an event with the migration
 /// details.
 ///
@@ -131,61 +122,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 
     if storage_version == version {
         return Err(ContractError::NoMigrationNeeded);
-    }
-
-    const V_1_0_6: Version = Version::new(1, 0, 6);
-    if storage_version < V_1_0_6 {
-        #[cfg(test)]
-        {
-            let new_dr_config = OldDrConfig {
-                commit_timeout_in_blocks:      INITIAL_DR_CONFIG.commit_timeout_in_blocks.get() as u64,
-                reveal_timeout_in_blocks:      INITIAL_DR_CONFIG.reveal_timeout_in_blocks.get() as u64,
-                backup_delay_in_blocks:        std::num::NonZero::new(
-                    INITIAL_DR_CONFIG.backup_delay_in_blocks.get() as u64
-                )
-                .unwrap(),
-                dr_reveal_size_limit_in_bytes: INITIAL_DR_CONFIG.dr_reveal_size_limit_in_bytes.get() as u64,
-            };
-
-            // Serialize the new data
-            let new_data = cosmwasm_std::to_json_vec(&new_dr_config)?;
-
-            // Store the new data
-            deps.storage.set(b"dr_config", &new_data);
-        }
-
-        // load the old DR config
-        let Some(old_data) = deps.storage.get(b"dr_config") else {
-            return Err(cosmwasm_std::StdError::generic_err("No DR config found").into());
-        };
-
-        let old_dr_config: OldDrConfig = cosmwasm_std::from_json(&old_data)?;
-
-        // create the new DR config
-
-        let new_dr_config = DrConfig {
-            commit_timeout_in_blocks:        std::num::NonZero::new(old_dr_config.commit_timeout_in_blocks as u8)
-                .unwrap(),
-            reveal_timeout_in_blocks:        std::num::NonZero::new(old_dr_config.reveal_timeout_in_blocks as u8)
-                .unwrap(),
-            backup_delay_in_blocks:          std::num::NonZero::new(old_dr_config.backup_delay_in_blocks.get() as u8)
-                .unwrap(),
-            dr_reveal_size_limit_in_bytes:   INITIAL_DR_CONFIG.dr_reveal_size_limit_in_bytes,
-            exec_input_limit_in_bytes:       INITIAL_DR_CONFIG.exec_input_limit_in_bytes,
-            tally_input_limit_in_bytes:      INITIAL_DR_CONFIG.tally_input_limit_in_bytes,
-            consensus_filter_limit_in_bytes: INITIAL_DR_CONFIG.consensus_filter_limit_in_bytes,
-            memo_limit_in_bytes:             INITIAL_DR_CONFIG.memo_limit_in_bytes,
-            payback_address_limit_in_bytes:  INITIAL_DR_CONFIG.payback_address_limit_in_bytes,
-            seda_payload_limit_in_bytes:     INITIAL_DR_CONFIG.seda_payload_limit_in_bytes,
-        };
-
-        // Serialize the new data
-
-        let new_data = cosmwasm_std::to_json_vec(&new_dr_config)?;
-
-        // Store the new data
-
-        deps.storage.set(b"dr_config", &new_data);
     }
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
