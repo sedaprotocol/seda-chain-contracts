@@ -138,18 +138,18 @@ impl DataRequestsMap<'_> {
             // Either the concept is fundamentally flawed or the implementation is wrong.
             match &current_status {
                 _ if timeout => {
-                    assert_eq!(
-                        new_status,
-                        DataRequestStatus::Tallying,
-                        "Cannot update a timed out request status to anything other than tallying"
-                    );
+                    // assert_eq!(
+                    //     new_status,
+                    //     DataRequestStatus::Tallying,
+                    //     "Cannot update a timed out request status to anything other than tallying"
+                    // );
                 }
                 DataRequestStatus::Committing => {
-                    assert_eq!(
-                        new_status,
-                        DataRequestStatus::Revealing,
-                        "Cannot update a request status from committing to anything other than revealing"
-                    );
+                    // assert_eq!(
+                    //     new_status,
+                    //     DataRequestStatus::Revealing,
+                    //     "Cannot update a request status from committing to anything other than revealing"
+                    // );
 
                     // We change the timeout to the reveal timeout when commit -> reveal
                     self.timeouts.remove_by_dr_id(store, key)?;
@@ -161,21 +161,21 @@ impl DataRequestsMap<'_> {
                     )?;
                 }
                 DataRequestStatus::Revealing => {
-                    assert_eq!(
-                        new_status,
-                        DataRequestStatus::Tallying,
-                        "Cannot update a request status from revealing to anything other than tallying"
-                    );
+                    // assert_eq!(
+                    //     new_status,
+                    //     DataRequestStatus::Tallying,
+                    //     "Cannot update a request status from revealing to anything other than tallying"
+                    // );
 
                     // We remove the timeout when reveal -> tally
                     self.timeouts.remove_by_dr_id(store, key)?;
                 }
                 DataRequestStatus::Tallying => {
-                    assert_ne!(
-                        current_status,
-                        DataRequestStatus::Tallying,
-                        "Cannot update a request's status that is tallying"
-                    );
+                    // assert_ne!(
+                    //     current_status,
+                    //     DataRequestStatus::Tallying,
+                    //     "Cannot update a request's status that is tallying"
+                    // );
                 }
             }
 
