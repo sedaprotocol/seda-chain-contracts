@@ -220,6 +220,8 @@ fn json_dr_config() {
         "tally_input_limit_in_bytes":        512,
         "consensus_filter_limit_in_bytes":   512,
         "memo_limit_in_bytes":               512,
+        "payback_address_limit_in_bytes":    128,
+        "seda_payload_limit_in_bytes":       512,
     });
 
     let msg = DrConfig {
@@ -231,6 +233,8 @@ fn json_dr_config() {
         tally_input_limit_in_bytes:      512.try_into().unwrap(),
         consensus_filter_limit_in_bytes: 512.try_into().unwrap(),
         memo_limit_in_bytes:             512.try_into().unwrap(),
+        payback_address_limit_in_bytes:  128.try_into().unwrap(),
+        seda_payload_limit_in_bytes:     512.try_into().unwrap(),
     };
 
     #[cfg(not(feature = "cosmwasm"))]

@@ -80,6 +80,8 @@ pub fn execute_messages_get_paused() {
         tally_input_limit_in_bytes:      512.try_into().unwrap(),
         consensus_filter_limit_in_bytes: 512.try_into().unwrap(),
         memo_limit_in_bytes:             512.try_into().unwrap(),
+        payback_address_limit_in_bytes:  128.try_into().unwrap(),
+        seda_payload_limit_in_bytes:     512.try_into().unwrap(),
     };
     test_info.creator().set_dr_config(dr_config).unwrap();
 }

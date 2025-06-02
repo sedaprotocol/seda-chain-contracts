@@ -73,6 +73,20 @@ impl ExecuteHandler for execute::post_request::Execute {
                 dr_config.memo_limit_in_bytes,
             ));
         }
+        if self.payback_address.len() > dr_config.payback_address_limit_in_bytes.get() as usize {
+            return Err(ContractError::DrFieldTooBig(
+                "payback address",
+                self.payback_address.len(),
+                dr_config.payback_address_limit_in_bytes,
+            ));
+        }
+        if self.seda_payload.len() > dr_config.seda_payload_limit_in_bytes.get() as usize {
+            return Err(ContractError::DrFieldTooBig(
+                "seda payload",
+                self.seda_payload.len(),
+                dr_config.seda_payload_limit_in_bytes,
+            ));
+        }
 
         // require the data request replication factor to be bigger than amount of
         // stakers

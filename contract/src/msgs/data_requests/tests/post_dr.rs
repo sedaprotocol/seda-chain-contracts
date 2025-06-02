@@ -247,3 +247,41 @@ fn fails_if_memo_too_big() {
     dr.memo = Binary::new(vec![0; INITIAL_DR_CONFIG.memo_limit_in_bytes.get() as usize + 1]);
     executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }
+
+#[test]
+#[should_panic(expected = "DrFieldTooBig")]
+fn fails_if_payback_address_too_big() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with memo too big
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    executor
+        .post_data_request(
+            dr,
+            vec![],
+            vec![0; INITIAL_DR_CONFIG.payback_address_limit_in_bytes.get() as usize + 1],
+            1,
+            None,
+        )
+        .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DrFieldTooBig")]
+fn fails_if_seda_payload_too_big() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    // post a data request with memo too big
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    executor
+        .post_data_request(
+            dr,
+            vec![0; INITIAL_DR_CONFIG.seda_payload_limit_in_bytes.get() as usize + 1],
+            vec![1, 2, 3],
+            1,
+            None,
+        )
+        .unwrap();
+}

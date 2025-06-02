@@ -18,6 +18,8 @@ fn owner_can_update_dr_config() {
         tally_input_limit_in_bytes:      1.try_into().unwrap(),
         consensus_filter_limit_in_bytes: 1.try_into().unwrap(),
         memo_limit_in_bytes:             1.try_into().unwrap(),
+        payback_address_limit_in_bytes:  1.try_into().unwrap(),
+        seda_payload_limit_in_bytes:     1.try_into().unwrap(),
     };
 
     test_info.creator().set_dr_config(dr_config).unwrap();
@@ -37,6 +39,8 @@ fn only_owner_can_change_dr_config() {
         tally_input_limit_in_bytes:      1.try_into().unwrap(),
         consensus_filter_limit_in_bytes: 1.try_into().unwrap(),
         memo_limit_in_bytes:             1.try_into().unwrap(),
+        payback_address_limit_in_bytes:  1.try_into().unwrap(),
+        seda_payload_limit_in_bytes:     1.try_into().unwrap(),
     };
 
     let alice = test_info.new_account("alice", 2);

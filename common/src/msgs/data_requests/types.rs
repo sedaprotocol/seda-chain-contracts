@@ -254,6 +254,10 @@ pub struct DrConfig {
     pub consensus_filter_limit_in_bytes: NonZero<u16>,
     /// The maximum size of the memo.
     pub memo_limit_in_bytes:             NonZero<u16>,
+    /// The maximum size of the payback address.
+    pub payback_address_limit_in_bytes:  NonZero<u16>,
+    /// The maximum size of the SEDA payload.
+    pub seda_payload_limit_in_bytes:     NonZero<u16>,
 }
 
 impl From<DrConfig> for crate::msgs::ExecuteMsg {

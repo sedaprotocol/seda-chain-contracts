@@ -175,6 +175,8 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
             tally_input_limit_in_bytes:      INITIAL_DR_CONFIG.tally_input_limit_in_bytes,
             consensus_filter_limit_in_bytes: INITIAL_DR_CONFIG.consensus_filter_limit_in_bytes,
             memo_limit_in_bytes:             INITIAL_DR_CONFIG.memo_limit_in_bytes,
+            payback_address_limit_in_bytes:  INITIAL_DR_CONFIG.payback_address_limit_in_bytes,
+            seda_payload_limit_in_bytes:     INITIAL_DR_CONFIG.seda_payload_limit_in_bytes,
         };
 
         // Serialize the new data

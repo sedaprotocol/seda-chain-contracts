@@ -3,6 +3,7 @@ use std::num::NonZero;
 use cosmwasm_std::Uint128;
 use seda_common::msgs::data_requests::DrConfig;
 
+// 10_000 SEDA
 pub const INITIAL_MINIMUM_STAKE: Uint128 = Uint128::new(10_000_000_000_000_000_000_000);
 
 pub const INITIAL_DR_CONFIG: DrConfig = DrConfig {
@@ -19,4 +20,8 @@ pub const INITIAL_DR_CONFIG: DrConfig = DrConfig {
     consensus_filter_limit_in_bytes: NonZero::new(512).unwrap(),
     // 512 B
     memo_limit_in_bytes:             NonZero::new(512).unwrap(),
+    // 128 B
+    payback_address_limit_in_bytes:  NonZero::new(128).unwrap(),
+    // 512 B
+    seda_payload_limit_in_bytes:     NonZero::new(512).unwrap(),
 };
