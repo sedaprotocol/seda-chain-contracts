@@ -60,6 +60,8 @@ pub fn is_eligible_for_dr(deps: Deps, env: Env, dr_id: [u8; 32], public_key: Pub
 /// * `active_stakers` - Iterator of (public_key, staker) pairs
 /// * `target_public_key` - Public key to check eligibility for
 /// * `minimum_stake` - Minimum stake required to be considered active
+/// * `backup_delay_in_blocks` - How many blocks to wait before a new staker is
+///   eligible
 /// * `dr_id` - Data request ID used for deterministic selection
 /// * `replication_factor` - Initial number of nodes needed
 /// * `blocks_passed` - Number of blocks since DR was posted
@@ -101,11 +103,13 @@ where
     }
 
     // Calculate total needed stakers, capped by total available
-    // for someone to be eligible after the first executor the number of blocks
-    // passed needs to be greater than the backup delay. After the delay a new
-    // staker is eligible every block.
+    // For the first backup executor to be eligible the number of blocks passed
+    // needs to be greater than the backup delay. For subsequent executors the
+    // number of blocks passed needs to be the same as the backup delay.
     let total_needed = if blocks_passed > backup_delay_in_blocks.get() as u64 {
-        replication_factor as u64 + (blocks_passed - backup_delay_in_blocks.get() as u64)
+        // The blocks_passed - 1 is to account for the fact that from the outside world
+        // a DR only becomes visible at the posted_height + 1.
+        replication_factor as u64 + ((blocks_passed - 1) / backup_delay_in_blocks.get() as u64)
     } else {
         replication_factor as u64
     };
@@ -247,7 +251,7 @@ mod tests {
             .count();
         assert_eq!(eligible_count, replication_factor as usize);
 
-        // Test with 4 blocks passed (should use replication_factor + 2)
+        // Test with 4 blocks passed (should use replication_factor + 1)
         // since delay is 2 and 4 blocks passed
         let eligible_count = stakers
             .iter()
@@ -260,6 +264,24 @@ mod tests {
                     dr_id,
                     replication_factor,
                     4,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, (replication_factor + 1) as usize);
+
+        // Test with 5 blocks passed (should use replication_factor + 2)
+        // since delay is 2 and 5 blocks passed
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    5,
                 )
             })
             .count();
@@ -414,7 +436,7 @@ mod tests {
         assert_eq!(eligible_count, (replication_factor + 1) as usize);
 
         // Test with 7 blocks passed (should use backup delay)
-        // another block passed so another executor should be available
+        // another block passed so the same executors should be available
         let eligible_count = stakers
             .iter()
             .filter(|(public_key, _)| {
@@ -426,6 +448,24 @@ mod tests {
                     dr_id,
                     replication_factor,
                     7,
+                )
+            })
+            .count();
+        assert_eq!(eligible_count, (replication_factor + 1) as usize);
+
+        // Test with 11 blocks passed (should use backup delay)
+        // an additional 5 blocks passed so one more executor should be available
+        let eligible_count = stakers
+            .iter()
+            .filter(|(public_key, _)| {
+                calculate_dr_eligibility(
+                    stakers.clone().into_iter(),
+                    public_key,
+                    minimum_stake,
+                    backup_delay_in_blocks,
+                    dr_id,
+                    replication_factor,
+                    11,
                 )
             })
             .count();
