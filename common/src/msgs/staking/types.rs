@@ -65,3 +65,34 @@ pub struct Executor {
 pub struct GetExecutorsResponse {
     pub executors: Vec<Executor>,
 }
+
+/// Response for the `GetExecutorEligibility` query
+#[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
+#[cfg_attr(
+    not(feature = "cosmwasm"),
+    derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
+)]
+pub struct GetExecutorEligibilityResponse {
+    pub status:       ExecutorEligibilityStatus,
+    pub block_height: u64,
+}
+
+/// Status codes for executor eligibility
+#[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
+#[cfg_attr(
+    not(feature = "cosmwasm"),
+    derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
+)]
+#[repr(u8)]
+pub enum ExecutorEligibilityStatus {
+    /// Executor is eligible for the data request
+    Eligible            = 0,
+    /// Executor is not eligible for the data request
+    NotEligible         = 1,
+    /// Data request not found
+    DataRequestNotFound = 2,
+    /// Executor is not a staker
+    NotStaker           = 3,
+    /// Invalid signature
+    InvalidSignature    = 4,
+}

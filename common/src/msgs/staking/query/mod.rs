@@ -15,6 +15,8 @@ pub enum QueryMsg {
     IsStakerExecutor { public_key: String },
     #[cfg_attr(feature = "cosmwasm", returns(bool))]
     IsExecutorEligible(is_executor_eligible::Query),
+    #[cfg_attr(feature = "cosmwasm", returns(crate::msgs::staking::GetExecutorEligibilityResponse))]
+    GetExecutorEligibility(is_executor_eligible::Query),
     #[cfg_attr(feature = "cosmwasm", returns(crate::msgs::staking::StakingConfig))]
     GetStakingConfig {},
     #[cfg_attr(feature = "cosmwasm", returns(crate::msgs::staking::GetExecutorsResponse))]
