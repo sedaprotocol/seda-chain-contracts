@@ -2,7 +2,7 @@ use msgs::data_requests::{
     sudo::{DistributionDataProxyReward, DistributionMessage},
     RevealBody,
 };
-use seda_common::msgs::staking::{Staker, StakingConfig};
+use seda_common::msgs::staking::{ExecutorEligibilityStatus, GetExecutorEligibilityResponse, Staker, StakingConfig};
 
 use super::*;
 use crate::{new_public_key, seda_to_aseda, TestInfo};
@@ -307,16 +307,28 @@ fn large_set_executor_eligible() {
         .unwrap();
 
     let mut amount_eligible = 0;
+    let mut amount_eligible_v2 = 0;
+    let mut amount_not_eligible_v2 = 0;
+    let expected_not_eligible = validators.len() - replication_factor as usize;
 
     for validator in validators {
         let is_eligible = validator.is_executor_eligible(dr_id.to_string());
+        let get_executor_eligibility = validator.is_executor_eligible_v2(dr_id.to_string());
 
         if is_eligible {
             amount_eligible += 1;
         }
+        if get_executor_eligibility.status == ExecutorEligibilityStatus::Eligible {
+            amount_eligible_v2 += 1;
+        }
+        if get_executor_eligibility.status == ExecutorEligibilityStatus::NotEligible {
+            amount_not_eligible_v2 += 1;
+        }
     }
 
     assert_eq!(amount_eligible, replication_factor);
+    assert_eq!(amount_eligible_v2, replication_factor);
+    assert_eq!(amount_not_eligible_v2, expected_not_eligible);
 }
 
 #[test]
@@ -363,8 +375,91 @@ fn executor_not_eligible_if_dr_resolved() {
         .unwrap();
 
     // perform the check
-    let is_executor_eligible = anyone.is_executor_eligible(dr_id);
+    let is_executor_eligible = anyone.is_executor_eligible(dr_id.clone());
+    let get_executor_eligibility = anyone.is_executor_eligible_v2(dr_id);
     assert!(!is_executor_eligible);
+    assert_eq!(
+        get_executor_eligibility.status,
+        ExecutorEligibilityStatus::DataRequestNotFound
+    );
+}
+
+#[test]
+fn get_executor_eligibility_response_status() {
+    let test_info = TestInfo::init();
+
+    // Test case 1: Eligible status
+    let alice = test_info.new_executor("alice", 40, 2);
+    let dr = data_requests::test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = alice
+        .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, None)
+        .unwrap();
+
+    let response = alice.is_executor_eligible_v2(dr_id.clone());
+    assert_eq!(
+        response,
+        GetExecutorEligibilityResponse {
+            status:       ExecutorEligibilityStatus::Eligible,
+            block_height: 1,
+        }
+    );
+
+    // Test case 2: NotEligible status (executor exists but not eligible for this
+    // specific DR)
+    let bob = test_info.new_executor("bob", 20, 2);
+    let alice_response = alice.is_executor_eligible_v2(dr_id.clone());
+    let bob_response = bob.is_executor_eligible_v2(dr_id.clone());
+
+    // Bob might be NotEligible depending on the deterministic selection algorithm
+    let expected_bob_status = if alice_response.status == ExecutorEligibilityStatus::Eligible {
+        ExecutorEligibilityStatus::NotEligible
+    } else {
+        ExecutorEligibilityStatus::Eligible
+    };
+    assert_eq!(bob_response.status, expected_bob_status);
+
+    // Test case 3: DataRequestNotFound status
+    let fake_dr_id = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string();
+    test_info.set_block_height(2);
+    let response = alice.is_executor_eligible_v2(fake_dr_id);
+    assert_eq!(
+        response.status,
+        seda_common::msgs::staking::ExecutorEligibilityStatus::DataRequestNotFound
+    );
+    assert_eq!(response.block_height, 2);
+
+    // Test case 4: NotStaker status
+    let charlie = test_info.new_account("charlie", 40);
+    // Charlie is not a staker, so should get NotStaker status
+    test_info.set_block_height(5);
+    let response = charlie.is_executor_eligible_v2(dr_id.clone());
+    assert_eq!(
+        response.status,
+        seda_common::msgs::staking::ExecutorEligibilityStatus::NotStaker
+    );
+    assert_eq!(response.block_height, 5);
+
+    // Test case 5: InvalidSignature status
+    let factory = query::is_executor_eligible::Query::factory(
+        alice.pub_key_hex(),
+        dr_id.clone(),
+        test_info.chain_id(),
+        test_info.contract_addr_str(),
+    );
+    // Use wrong proof (random bytes instead of correct signature)
+    let wrong_proof = vec![0u8; 64]; // Invalid signature
+    let (_, data) = factory.create_message(wrong_proof);
+    let query_inner = query::is_executor_eligible::Query { data };
+
+    test_info.set_block_height(42);
+    let response: GetExecutorEligibilityResponse = test_info
+        .query(query::QueryMsg::GetExecutorEligibility(query_inner))
+        .unwrap();
+    assert_eq!(
+        response.status,
+        seda_common::msgs::staking::ExecutorEligibilityStatus::InvalidSignature
+    );
+    assert_eq!(response.block_height, 42);
 }
 
 #[test]

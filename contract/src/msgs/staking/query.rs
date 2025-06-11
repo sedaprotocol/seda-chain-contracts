@@ -1,6 +1,12 @@
 use cw_storage_plus::Bound;
 pub use seda_common::msgs::staking::query::{is_executor_eligible, QueryMsg};
-use seda_common::msgs::staking::{Executor, GetExecutorsResponse, StakerAndSeq};
+use seda_common::msgs::staking::{
+    Executor,
+    ExecutorEligibilityStatus,
+    GetExecutorEligibilityResponse,
+    GetExecutorsResponse,
+    StakerAndSeq,
+};
 use state::{is_eligible_for_dr::is_eligible_for_dr, STAKERS};
 
 use super::*;
@@ -50,6 +56,7 @@ impl QueryHandler for QueryMsg {
                 let response = GetExecutorsResponse { executors };
                 to_json_binary(&response)?
             }
+            QueryMsg::GetExecutorEligibility(query) => get_executor_eligibility(query, deps, env)?,
         };
 
         Ok(binary)
@@ -81,4 +88,51 @@ impl QueryHandler for is_executor_eligible::Query {
 
         Ok(to_json_binary(&is_eligible_for_dr(deps, env, dr_id, executor)?)?)
     }
+}
+
+// This function reuses the signature validation logic from
+// `is_executor_eligible::Query` but returns a more detailed response that
+// includes both the eligibility status and the current block height.
+fn get_executor_eligibility(query: is_executor_eligible::Query, deps: Deps, env: Env) -> Result<Binary, ContractError> {
+    let (executor, dr_id, _) = query.parts()?;
+    let executor = PublicKey(executor);
+    let block_height = env.block.height;
+
+    // Validate signature
+    let chain_id = crate::state::CHAIN_ID.load(deps.storage)?;
+    if query
+        .verify(&executor, &chain_id, env.contract.address.as_str())
+        .is_err()
+    {
+        return Ok(to_json_binary(&GetExecutorEligibilityResponse {
+            status: ExecutorEligibilityStatus::InvalidSignature,
+            block_height,
+        })?);
+    }
+
+    // Check DR is in data_request_pool
+    if data_requests::state::load_request(deps.storage, &dr_id).is_err() {
+        return Ok(to_json_binary(&GetExecutorEligibilityResponse {
+            status: ExecutorEligibilityStatus::DataRequestNotFound,
+            block_height,
+        })?);
+    }
+
+    if !STAKERS.is_staker_executor(deps.storage, &executor)? {
+        return Ok(to_json_binary(&GetExecutorEligibilityResponse {
+            status: ExecutorEligibilityStatus::NotStaker,
+            block_height,
+        })?);
+    }
+
+    let is_eligible = is_eligible_for_dr(deps, env, dr_id, executor)?;
+
+    Ok(to_json_binary(&GetExecutorEligibilityResponse {
+        status: if is_eligible {
+            ExecutorEligibilityStatus::Eligible
+        } else {
+            ExecutorEligibilityStatus::NotEligible
+        },
+        block_height,
+    })?)
 }

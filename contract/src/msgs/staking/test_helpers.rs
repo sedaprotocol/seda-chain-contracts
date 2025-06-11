@@ -1,4 +1,4 @@
-use seda_common::msgs::staking::GetExecutorsResponse;
+use seda_common::msgs::staking::{GetExecutorEligibilityResponse, GetExecutorsResponse};
 
 use super::{
     msgs::staking::{execute, query},
@@ -164,6 +164,23 @@ impl TestAccount {
         let (query, _) = factory.create_message(proof);
 
         self.test_info.query(query).unwrap()
+    }
+
+    #[track_caller]
+    pub fn is_executor_eligible_v2(&self, dr_id: String) -> GetExecutorEligibilityResponse {
+        let factory = query::is_executor_eligible::Query::factory(
+            self.pub_key_hex(),
+            dr_id,
+            self.test_info.chain_id(),
+            self.test_info.contract_addr_str(),
+        );
+        let proof = self.prove(factory.get_hash());
+        let (_, data) = factory.create_message(proof);
+        let query_inner = query::is_executor_eligible::Query { data };
+
+        self.test_info
+            .query(query::QueryMsg::GetExecutorEligibility(query_inner))
+            .unwrap()
     }
 
     #[track_caller]
