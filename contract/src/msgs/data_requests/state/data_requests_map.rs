@@ -7,6 +7,7 @@ pub struct DataRequestsMap<'a> {
     pub revealing:  SortedSet<'a>,
     pub tallying:   SortedSet<'a>,
     pub timeouts:   Timeouts<'a>,
+    /// Map of reveal bodies indexed by data request ID and executor identity
     pub reveals:    Map<(&'a [u8], &'a str), RevealBody>,
 }
 
@@ -276,6 +277,43 @@ impl DataRequestsMap<'_> {
                 let dr = self.reqs.load(store, &key.dr_id)?;
                 let reveals = self.get_reveals(store, &key.dr_id)?;
                 Ok(DataRequestResponse { base: dr.base, reveals })
+            })
+            .collect::<StdResult<Vec<_>>>()?;
+
+        if requests.len() < limit as usize {
+            return Ok((requests, None, set_len));
+        }
+
+        // The last seen index is the last element in the list
+        let new_last_seen_index = requests.last().map(IndexKey::try_from).transpose()?;
+
+        Ok((requests, new_last_seen_index, set_len))
+    }
+
+    pub fn get_pending_requests(
+        &self,
+        store: &dyn Storage,
+        last_seen_index: Option<IndexKey>,
+        limit: u32,
+    ) -> StdResult<(Vec<DataRequestBase>, Option<IndexKey>, u32)> {
+        let start = last_seen_index.map(Bound::exclusive);
+
+        let set = &self.committing;
+        let set_len = set.len(store)?;
+
+        if last_seen_index.is_some_and(|index| !set.has_index(store, index)) {
+            return Ok((vec![], None, set_len));
+        }
+
+        let requests = set
+            .index
+            // Start is the max argument since we're ordering descending
+            .range(store, None, start, Order::Descending)
+            .take(limit as usize)
+            .map(|result| {
+                let (key, _) = result?;
+                let dr = self.reqs.load(store, &key.dr_id)?;
+                Ok(dr.base)
             })
             .collect::<StdResult<Vec<_>>>()?;
 

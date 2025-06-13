@@ -299,6 +299,17 @@ impl TestAccount {
     }
 
     #[track_caller]
+    pub fn get_pending_data_requests(
+        &self,
+        last_seen_index: Option<LastSeenIndexKey>,
+        limit: u32,
+    ) -> GetPendingDataRequestsResponse {
+        self.test_info
+            .query(query::QueryMsg::GetPendingDataRequests { last_seen_index, limit })
+            .unwrap()
+    }
+
+    #[track_caller]
     pub fn expire_data_requests(&self) -> Result<(), ContractError> {
         let msg = expire_data_requests::Sudo {}.into();
         self.test_info.sudo(&msg)

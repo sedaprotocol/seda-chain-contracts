@@ -88,6 +88,18 @@ impl QueryHandler for QueryMsg {
                 let config = DR_CONFIG.load(deps.storage)?;
                 to_json_binary(&config)?
             }
+            QueryMsg::GetPendingDataRequests { last_seen_index, limit } => {
+                let (data_requests, new_last_seen_index, total) =
+                    state::get_pending_requests(deps.storage, last_seen_index.map(IndexKey::from), limit)?;
+
+                let response = GetPendingDataRequestsResponse {
+                    is_paused: contract_paused,
+                    data_requests,
+                    last_seen_index: new_last_seen_index.map(Into::into),
+                    total,
+                };
+                to_json_binary(&response)?
+            }
         };
 
         Ok(binary)

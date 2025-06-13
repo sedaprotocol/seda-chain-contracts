@@ -79,6 +79,14 @@ pub fn requests_by_status(
     DATA_REQUESTS.get_requests_by_status(store, status, last_seen_index, limit)
 }
 
+pub fn get_pending_requests(
+    store: &dyn Storage,
+    last_seen_index: Option<IndexKey>,
+    limit: u32,
+) -> StdResult<(Vec<DataRequestBase>, Option<IndexKey>, u32)> {
+    DATA_REQUESTS.get_pending_requests(store, last_seen_index, limit)
+}
+
 pub fn reveal(
     store: &mut dyn Storage,
     dr_id: &Hash,

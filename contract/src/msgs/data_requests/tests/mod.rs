@@ -6,6 +6,7 @@ mod commit_dr;
 mod pause_behavior;
 mod post_dr;
 mod query_dr_status;
+mod query_pending_drs;
 mod remove_dr;
 mod reveal_dr;
 mod timeout_actions;
