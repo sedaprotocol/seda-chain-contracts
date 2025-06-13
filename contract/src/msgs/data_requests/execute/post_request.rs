@@ -91,7 +91,7 @@ impl ExecuteHandler for execute::post_request::Execute {
         // require the data request replication factor to be bigger than amount of
         // stakers
         let stakers_length = STAKERS.len(deps.storage)?;
-        let max_allowed_replication_factor = std::cmp::max(stakers_length, MAX_REPLICATION_FACTOR as u32);
+        let max_allowed_replication_factor = std::cmp::min(stakers_length, MAX_REPLICATION_FACTOR as u32);
         if self.posted_dr.replication_factor as u32 > max_allowed_replication_factor {
             return Err(ContractError::DataRequestReplicationFactorTooHigh(
                 max_allowed_replication_factor,
