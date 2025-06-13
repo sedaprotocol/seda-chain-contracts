@@ -266,6 +266,9 @@ impl From<DrConfig> for crate::msgs::ExecuteMsg {
     }
 }
 
+/// The key used to store the last seen index of a data request in the database
+/// The first element is the gas price, the second element is the block height,
+/// the third element is the DR ID.
 pub type LastSeenIndexKey = (U128, u64, Hash);
 
 #[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
@@ -275,4 +278,13 @@ pub struct GetDataRequestsByStatusResponse {
     pub data_requests:   Vec<DataRequestResponse>,
     pub last_seen_index: Option<LastSeenIndexKey>,
     pub total:           u32,
+}
+
+#[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Serialize, Deserialize, Debug, PartialEq))]
+pub struct GetPendingDataRequestsResponse {
+    pub data_requests:   Vec<DataRequestBase>,
+    pub last_seen_index: Option<LastSeenIndexKey>,
+    pub total:           u32,
+    pub is_paused:       bool,
 }
