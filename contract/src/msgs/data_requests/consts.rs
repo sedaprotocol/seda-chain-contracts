@@ -6,6 +6,8 @@ pub const MIN_GAS_PRICE: Uint128 = Uint128::new(1_000);
 pub const MIN_EXEC_GAS_LIMIT: u64 = 10 * TERA_GAS;
 pub const MIN_TALLY_GAS_LIMIT: u64 = 10 * TERA_GAS;
 
+pub const MAX_REPLICATION_FACTOR: u16 = 100;
+
 #[cfg(test)]
 pub fn min_post_dr_cost() -> u128 {
     let exec_gas_limit = Uint128::new(MIN_EXEC_GAS_LIMIT as u128);

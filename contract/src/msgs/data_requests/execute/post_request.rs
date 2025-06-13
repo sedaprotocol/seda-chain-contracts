@@ -4,7 +4,7 @@ use state::{Escrow, DR_ESCROW};
 use super::*;
 use crate::{
     msgs::data_requests::{
-        consts::{MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
+        consts::{MAX_REPLICATION_FACTOR, MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
         state::DR_CONFIG,
     },
     state::TOKEN,
@@ -91,8 +91,11 @@ impl ExecuteHandler for execute::post_request::Execute {
         // require the data request replication factor to be bigger than amount of
         // stakers
         let stakers_length = STAKERS.len(deps.storage)?;
-        if self.posted_dr.replication_factor as u32 > stakers_length {
-            return Err(ContractError::DataRequestReplicationFactorTooHigh(stakers_length));
+        let max_allowed_replication_factor = std::cmp::max(stakers_length, MAX_REPLICATION_FACTOR as u32);
+        if self.posted_dr.replication_factor as u32 > max_allowed_replication_factor {
+            return Err(ContractError::DataRequestReplicationFactorTooHigh(
+                max_allowed_replication_factor,
+            ));
         }
 
         // hash the inputs to get the data request id
