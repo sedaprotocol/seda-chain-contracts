@@ -1,6 +1,6 @@
 [package]
 name = "seda-common"
-version = "1.0.7"
+version = "1.0.8"
 edition = "2021"
 
 [features]
