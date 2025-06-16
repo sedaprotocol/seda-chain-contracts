@@ -76,6 +76,8 @@ pub enum ContractError {
     #[error(transparent)]
     Overflow(#[from] cosmwasm_std::OverflowError),
 
+    #[error("InvalidDrHeight: Invalid data request height expected a u64")]
+    InvalidDrHeight,
     #[error("Invalid hash length `{0}` expected 32 bytes")]
     InvalidHashLength(usize),
     #[error("Invalid public key length `{0}` expected 33 bytes")]

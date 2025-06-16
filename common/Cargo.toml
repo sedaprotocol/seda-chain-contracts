@@ -1,7 +1,8 @@
 [package]
 name = "seda-common"
-version = "1.0.8"
+version = "1.0.11"
 edition = "2021"
+rust-version.workspace = true
 
 [features]
 default = ["dep:serde", "dep:base64"]

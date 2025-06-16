@@ -1,7 +1,10 @@
 use serde_json::json;
 
 use super::{query::QueryMsg as DrQueryMsg, DataRequestStatus};
-use crate::msgs::*;
+use crate::{
+    msgs::*,
+    types::{ToHexStr, U128},
+};
 
 #[test]
 fn json_get_data_request() {
@@ -93,7 +96,7 @@ fn json_get_data_request_reveals() {
 }
 
 #[test]
-fn json_get_data_requests_by_status() {
+fn json_get_data_requests_by_status_no_last_seen() {
     let expected_json = json!({
       "get_data_requests_by_status": {
         "status": "committing",
@@ -105,6 +108,28 @@ fn json_get_data_requests_by_status() {
         status:          DataRequestStatus::Committing,
         last_seen_index: None,
         limit:           10,
+    }
+    .into();
+    #[cfg(not(feature = "cosmwasm"))]
+    assert_json_ser(msg, expected_json);
+    #[cfg(feature = "cosmwasm")]
+    assert_json_deser(msg, expected_json);
+}
+
+#[test]
+fn json_get_data_requests_by_status_with_last_seen() {
+    let u128_max: U128 = u128::MAX.into();
+    let expected_json = json!({
+      "get_data_requests_by_status": {
+        "status": "committing",
+        "last_seen_index": Some((u128_max, u64::MAX.to_string(), [0; 32].to_hex())),
+        "limit": u32::MAX,
+      }
+    });
+    let msg: QueryMsg = DrQueryMsg::GetDataRequestsByStatus {
+        status:          DataRequestStatus::Committing,
+        last_seen_index: Some((u128_max, u64::MAX.to_string(), [0; 32].to_hex())),
+        limit:           u32::MAX,
     }
     .into();
     #[cfg(not(feature = "cosmwasm"))]

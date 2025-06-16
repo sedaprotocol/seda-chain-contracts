@@ -90,19 +90,25 @@ impl TryFrom<&DataRequestResponse> for IndexKey {
     }
 }
 
-impl From<LastSeenIndexKey> for IndexKey {
-    fn from(value: LastSeenIndexKey) -> Self {
-        Self {
+impl TryFrom<LastSeenIndexKey> for IndexKey {
+    type Error = ContractError;
+
+    fn try_from(value: LastSeenIndexKey) -> Result<Self, Self::Error> {
+        Ok(Self {
             gas_price: value.0.into(),
-            height:    value.1,
-            dr_id:     value.2,
-        }
+            height:    u64::MAX - value.1.parse::<u64>().map_err(|_| ContractError::InvalidDrHeight)?,
+            dr_id:     Hash::from_hex_str(&value.2)?,
+        })
     }
 }
 
 impl From<IndexKey> for LastSeenIndexKey {
     fn from(val: IndexKey) -> Self {
-        (val.gas_price.into(), val.height, val.dr_id)
+        (
+            val.gas_price.into(),
+            (u64::MAX - val.height).to_string(),
+            val.dr_id.to_hex(),
+        )
     }
 }
 

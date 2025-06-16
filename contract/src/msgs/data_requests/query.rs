@@ -73,8 +73,12 @@ impl QueryHandler for QueryMsg {
                 last_seen_index,
                 limit,
             } => {
-                let (data_requests, new_last_seen_index, total) =
-                    state::requests_by_status(deps.storage, &status, last_seen_index.map(IndexKey::from), limit)?;
+                let (data_requests, new_last_seen_index, total) = state::requests_by_status(
+                    deps.storage,
+                    &status,
+                    last_seen_index.map(IndexKey::try_from).transpose()?,
+                    limit,
+                )?;
 
                 let response = GetDataRequestsByStatusResponse {
                     is_paused: contract_paused,

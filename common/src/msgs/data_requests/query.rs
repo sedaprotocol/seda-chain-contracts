@@ -1,5 +1,4 @@
 use super::types::*;
-use crate::types::{Hash, U128};
 
 #[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
 #[cfg_attr(feature = "cosmwasm", derive(cosmwasm_schema::QueryResponses))]
@@ -28,7 +27,7 @@ pub enum QueryMsg {
     #[cfg_attr(feature = "cosmwasm", returns(GetDataRequestsByStatusResponse))]
     GetDataRequestsByStatus {
         status:          DataRequestStatus,
-        last_seen_index: Option<(U128, u64, Hash)>,
+        last_seen_index: Option<LastSeenIndexKey>,
         limit:           u32,
     },
     #[cfg_attr(feature = "cosmwasm", returns(DrConfig))]

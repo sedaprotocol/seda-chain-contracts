@@ -78,7 +78,7 @@ fn offset_works() {
     let drs_one = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 1);
     assert_eq!(1, drs_one.data_requests.len());
     assert!(drs_one.data_requests.iter().any(|dr| dr.base.id == posted_dr1));
-    assert_eq!(drs_one.last_seen_index.map(|(_, h, _)| h), Some(u64::MAX - 1));
+    assert_eq!(drs_one.last_seen_index.as_ref().map(|(_, h, _)| h.as_str()), Some("1"));
 
     let drs = anyone.get_data_requests_by_status(DataRequestStatus::Committing, drs_one.last_seen_index, 2);
     assert!(!drs.is_paused);

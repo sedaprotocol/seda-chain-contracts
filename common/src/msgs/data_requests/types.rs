@@ -266,7 +266,7 @@ impl From<DrConfig> for crate::msgs::ExecuteMsg {
     }
 }
 
-pub type LastSeenIndexKey = (U128, u64, Hash);
+pub type LastSeenIndexKey = (U128, String, String);
 
 #[cfg_attr(feature = "cosmwasm", cosmwasm_schema::cw_serde)]
 #[cfg_attr(not(feature = "cosmwasm"), derive(Serialize, Deserialize, Debug, PartialEq))]
