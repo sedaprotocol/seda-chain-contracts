@@ -167,3 +167,43 @@ fn json_query_executors() {
     #[cfg(feature = "cosmwasm")]
     assert_json_deser(msg, expected_json);
 }
+
+#[test]
+fn json_get_executor_eligibility() {
+    let (sk, pk) = new_public_key();
+    let pk_hex = hex::encode(pk);
+
+    let dr_id = "dr_id".hash();
+    let dr_id_hex = dr_id.to_hex();
+
+    let factory = is_executor_eligible::Query::factory(pk_hex, dr_id_hex, "foo", "bar");
+    let proof = prove(sk.to_bytes().as_slice(), factory.get_hash());
+    let query = factory.create_query(proof.clone());
+
+    let expected_json = json!({
+      "get_executor_eligibility": {
+        "data": query.data,
+      }
+    });
+    let msg: msgs::QueryMsg = StakingQueryMsg::GetExecutorEligibility(query).into();
+    #[cfg(not(feature = "cosmwasm"))]
+    assert_json_ser(msg, expected_json);
+    #[cfg(feature = "cosmwasm")]
+    assert_json_deser(msg, expected_json);
+}
+
+#[test]
+fn json_get_executor_eligibility_response() {
+    let expected_json = json!({
+      "status": "eligible",
+      "block_height": 12345
+    });
+    let response = msgs::staking::GetExecutorEligibilityResponse {
+        status:       msgs::staking::ExecutorEligibilityStatus::Eligible,
+        block_height: 12345,
+    };
+    #[cfg(not(feature = "cosmwasm"))]
+    assert_json_ser(response, expected_json);
+    #[cfg(feature = "cosmwasm")]
+    assert_json_deser(response, expected_json);
+}
