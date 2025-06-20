@@ -50,6 +50,7 @@ pub struct StakerAndSeq {
     not(feature = "cosmwasm"),
     derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
 )]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct Executor {
     pub public_key:                String,
     pub memo:                      Option<Bytes>,
@@ -62,6 +63,7 @@ pub struct Executor {
     not(feature = "cosmwasm"),
     derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
 )]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct GetExecutorsResponse {
     pub executors: Vec<Executor>,
 }
@@ -72,6 +74,7 @@ pub struct GetExecutorsResponse {
     not(feature = "cosmwasm"),
     derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
 )]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct GetExecutorEligibilityResponse {
     pub status:       ExecutorEligibilityStatus,
     pub block_height: u64,
@@ -83,6 +86,7 @@ pub struct GetExecutorEligibilityResponse {
     not(feature = "cosmwasm"),
     derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)
 )]
+#[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 #[repr(u8)]
 pub enum ExecutorEligibilityStatus {
     /// Executor is eligible for the data request
