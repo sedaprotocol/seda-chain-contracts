@@ -1502,7 +1502,7 @@ dependencies = [
 
 [[package]]
 name = "seda-common"
-version = "1.0.11"
+version = "1.0.12"
 dependencies = [
  "base64",
  "cosmwasm-schema",
@@ -1521,7 +1521,7 @@ dependencies = [
 
 [[package]]
 name = "seda-contract"
-version = "1.0.11"
+version = "1.0.12"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",

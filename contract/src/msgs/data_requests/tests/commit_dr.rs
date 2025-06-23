@@ -89,7 +89,7 @@ fn fails_on_expired_dr() {
 }
 
 #[test]
-#[should_panic(expected = "InsufficientFunds")]
+#[should_panic(expected = "InsufficientStake")]
 fn fails_if_not_enough_staked() {
     let test_info = TestInfo::init();
 

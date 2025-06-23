@@ -37,6 +37,8 @@ pub enum ContractError {
     InvalidAddress(String),
     #[error("InsufficientFunds: Insufficient funds. Required: {0}, available: {1}")]
     InsufficientFunds(Uint128, Uint128),
+    #[error("InsufficientStake: Stake amount is insufficient. Required: {0}, got: {1}")]
+    InsufficientStake(Uint128, Uint128),
     #[error("DataRequestAlreadyExists: Data request already exists")]
     DataRequestAlreadyExists,
     #[error("DataRequestReplicationFactorZero: Data request replication factor cannot be zero")]

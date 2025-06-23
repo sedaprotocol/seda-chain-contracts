@@ -1,6 +1,6 @@
 [package]
 name = "seda-common"
-version = "1.0.11"
+version = "1.0.12"
 edition = "2021"
 rust-version.workspace = true
 

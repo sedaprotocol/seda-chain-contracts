@@ -26,7 +26,7 @@ impl ExecuteHandler for execute::stake::Execute {
             None => {
                 let minimum_stake_to_register = state::STAKING_CONFIG.load(deps.storage)?.minimum_stake;
                 if amount < minimum_stake_to_register {
-                    return Err(ContractError::InsufficientFunds(minimum_stake_to_register, amount));
+                    return Err(ContractError::InsufficientStake(minimum_stake_to_register, amount));
                 }
 
                 let executor = Staker {
@@ -41,7 +41,7 @@ impl ExecuteHandler for execute::stake::Execute {
             Some(mut executor) => {
                 let minimum_stake_to_register = state::STAKING_CONFIG.load(deps.storage)?.minimum_stake;
                 if amount + executor.tokens_staked < minimum_stake_to_register {
-                    return Err(ContractError::InsufficientFunds(minimum_stake_to_register, amount));
+                    return Err(ContractError::InsufficientStake(minimum_stake_to_register, amount));
                 }
                 executor.tokens_staked += amount;
 
