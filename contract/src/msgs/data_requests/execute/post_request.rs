@@ -43,6 +43,10 @@ impl ExecuteHandler for execute::post_request::Execute {
                 self.posted_dr.tally_program_id.len(),
             ));
         }
+        // Ensure the version only consists of Major.Minor.Patch
+        if !self.posted_dr.version.pre.is_empty() || !self.posted_dr.version.build.is_empty() {
+            return Err(ContractError::DataRequestVersionInvalid);
+        }
         // check the size limits of the dr
         let dr_config = DR_CONFIG.load(deps.storage)?;
         if self.posted_dr.exec_inputs.len() > dr_config.exec_input_limit_in_bytes.get() as usize {

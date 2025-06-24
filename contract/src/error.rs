@@ -110,6 +110,8 @@ pub enum ContractError {
     ProgramIdInvalidLength(&'static str, usize),
     #[error("Cannot Post Data Request: {0} field is too big ({1} bytes), max allowed is {2} bytes")]
     DrFieldTooBig(&'static str, usize, NonZero<u16>),
+    #[error("Cannot Post Data Request: data request version is invalid, it should only consist of Major.Minor.Patch")]
+    DataRequestVersionInvalid,
 }
 
 #[cfg(test)]

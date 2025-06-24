@@ -1,5 +1,6 @@
 use cosmwasm_std::{Binary, Uint128};
 use seda_common::{msgs::data_requests::DataRequestStatus, types::Hash};
+use semver::{BuildMetadata, Prerelease};
 
 use crate::{
     consts::INITIAL_DR_CONFIG,
@@ -284,4 +285,38 @@ fn fails_if_seda_payload_too_big() {
             None,
         )
         .unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DataRequestVersionInvalid")]
+fn fails_if_version_has_pre() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.version.pre = Prerelease::new("dev.1").unwrap();
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DataRequestVersionInvalid")]
+fn fails_if_version_has_build() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.version.build = BuildMetadata::new("build.1").unwrap();
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "DataRequestVersionInvalid")]
+fn fails_if_version_has_both_pre_and_build() {
+    let test_info = TestInfo::init();
+    let executor = test_info.new_executor("sender", 1, 1);
+
+    let mut dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    dr.version.pre = Prerelease::new("dev.1").unwrap();
+    dr.version.build = BuildMetadata::new("build.1").unwrap();
+    executor.post_data_request(dr, vec![], vec![1, 2, 3], 1, None).unwrap();
 }
