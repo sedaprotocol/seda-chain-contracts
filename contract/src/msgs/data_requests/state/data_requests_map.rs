@@ -113,6 +113,20 @@ impl DataRequestsMap<'_> {
         Err(StdError::generic_err("Key does not exist"))
     }
 
+    pub fn get_requests_statuses(
+        &self,
+        store: &dyn Storage,
+        dr_ids: Vec<String>,
+    ) -> StdResult<HashMap<String, Option<DataRequestStatus>>> {
+        let mut statuses = HashMap::with_capacity(dr_ids.len());
+        for dr_id in dr_ids {
+            let dr_id_bytes = Hash::from_hex_str(&dr_id)?;
+            let status = self.find_status(store, &dr_id_bytes).ok();
+            statuses.insert(dr_id, status);
+        }
+        Ok(statuses)
+    }
+
     pub fn update(
         &self,
         store: &mut dyn Storage,

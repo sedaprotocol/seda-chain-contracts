@@ -24,6 +24,8 @@ pub enum QueryMsg {
     GetDataRequestReveal { dr_id: String, public_key: String },
     #[cfg_attr(feature = "cosmwasm",  returns(std::collections::HashMap<String, RevealBody>))]
     GetDataRequestReveals { dr_id: String },
+    #[cfg_attr(feature = "cosmwasm", returns(std::collections::HashMap<String, Option<DataRequestStatus>>))]
+    GetDataRequestsStatuses { dr_ids: Vec<String> },
     #[cfg_attr(feature = "cosmwasm", returns(GetDataRequestsByStatusResponse))]
     GetDataRequestsByStatus {
         status:          DataRequestStatus,

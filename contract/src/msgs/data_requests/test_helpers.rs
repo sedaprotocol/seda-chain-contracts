@@ -314,4 +314,11 @@ impl TestAccount {
     pub fn get_dr_config(&self) -> DrConfig {
         self.test_info.query(query::QueryMsg::GetDrConfig {}).unwrap()
     }
+
+    #[track_caller]
+    pub fn get_data_requests_statuses(&self, dr_ids: Vec<String>) -> HashMap<String, Option<DataRequestStatus>> {
+        self.test_info
+            .query(query::QueryMsg::GetDataRequestsStatuses { dr_ids })
+            .unwrap()
+    }
 }

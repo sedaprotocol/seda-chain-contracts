@@ -137,3 +137,21 @@ fn json_get_data_requests_by_status_with_last_seen() {
     #[cfg(feature = "cosmwasm")]
     assert_json_deser(msg, expected_json);
 }
+
+#[test]
+fn json_get_data_requests_statuses() {
+    let expected_json = json!({
+      "get_data_requests_statuses": {
+        "dr_ids": ["dr_id1", "dr_id2"],
+      }
+    });
+    let msg: QueryMsg = DrQueryMsg::GetDataRequestsStatuses {
+        dr_ids: vec!["dr_id1".to_string(), "dr_id2".to_string()],
+    }
+    .into();
+
+    #[cfg(not(feature = "cosmwasm"))]
+    assert_json_ser(msg, expected_json);
+    #[cfg(feature = "cosmwasm")]
+    assert_json_deser(msg, expected_json);
+}

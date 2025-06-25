@@ -35,6 +35,97 @@ fn one_works() {
 }
 
 #[test]
+fn query_drs_statuses_work() {
+    let test_info = TestInfo::init();
+    // create an executor
+    let alice = test_info.new_executor("alice", 62, 1);
+    // create another executor
+    let bob = test_info.new_executor("bob", 2, 1);
+
+    // post several data requests
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 2);
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 1);
+
+    let dr_id1 = alice.post_data_request(dr1, vec![], vec![], 1, None).unwrap();
+    let dr_id2 = alice.post_data_request(dr2, vec![], vec![], 2, None).unwrap();
+    let dr_id3 = alice.post_data_request(dr3, vec![], vec![], 3, None).unwrap();
+
+    // query the statuses of the data requests and assert all are in committing
+    // status
+    let dr_ids = vec![dr_id1.to_string(), dr_id2.to_string(), dr_id3.to_string()];
+    let statuses = alice.get_data_requests_statuses(dr_ids.clone());
+    assert_eq!(3, statuses.len());
+    for dr in statuses {
+        assert_eq!(Some(DataRequestStatus::Committing), dr.1);
+    }
+
+    // upgrade one dr to revealing
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id1.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id1, &alice_reveal_message).unwrap();
+
+    let bob_reveal = RevealBody {
+        dr_id:             dr_id1.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let bob_reveal_message = bob.create_reveal_message(bob_reveal);
+    bob.commit_result(&dr_id1, &bob_reveal_message).unwrap();
+
+    // upgrade the second dr to tallying
+    let alice_reveal = RevealBody {
+        dr_id:             dr_id2.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let alice_reveal_message = alice.create_reveal_message(alice_reveal);
+    alice.commit_result(&dr_id2, &alice_reveal_message).unwrap();
+    alice.reveal_result(alice_reveal_message).unwrap();
+
+    // query the statuses of the data requests again and assert that one is in each
+    // status
+    let statuses = alice.get_data_requests_statuses(dr_ids.clone());
+    assert_eq!(3, statuses.len());
+    assert_eq!(Some(DataRequestStatus::Revealing), statuses[&dr_id1]);
+    assert_eq!(Some(DataRequestStatus::Tallying), statuses[&dr_id2]);
+    assert_eq!(Some(DataRequestStatus::Committing), statuses[&dr_id3]);
+
+    // sudo resolve the tally dr
+    test_info
+        .creator()
+        .remove_data_request(
+            dr_id2.clone(),
+            vec![DistributionMessage::ExecutorReward(DistributionExecutorReward {
+                amount:   10u128.into(),
+                identity: alice.pub_key_hex(),
+            })],
+        )
+        .unwrap();
+
+    // query the statuses of the data requests again and assert that the second dr
+    // is now none
+    let statuses = alice.get_data_requests_statuses(dr_ids);
+    assert_eq!(3, statuses.len());
+    assert_eq!(Some(DataRequestStatus::Revealing), statuses[&dr_id1]);
+    assert_eq!(None, statuses[&dr_id2]);
+    assert_eq!(Some(DataRequestStatus::Committing), statuses[&dr_id3]);
+}
+
+#[test]
 fn limit_works() {
     let test_info = TestInfo::init();
     let alice = test_info.new_executor("alice", 62, 1);

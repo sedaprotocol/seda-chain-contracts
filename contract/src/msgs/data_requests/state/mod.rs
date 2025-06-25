@@ -70,6 +70,13 @@ pub fn commit(store: &mut dyn Storage, current_height: u64, dr_id: &Hash, dr: Da
     Ok(())
 }
 
+pub fn requests_statuses(
+    store: &dyn Storage,
+    dr_ids: Vec<String>,
+) -> StdResult<HashMap<String, Option<DataRequestStatus>>> {
+    DATA_REQUESTS.get_requests_statuses(store, dr_ids)
+}
+
 pub fn requests_by_status(
     store: &dyn Storage,
     status: &DataRequestStatus,

@@ -68,6 +68,10 @@ impl QueryHandler for QueryMsg {
                 let reveals = dr.map(|dr| dr.reveals).unwrap_or_default();
                 to_json_binary(&reveals)?
             }
+            QueryMsg::GetDataRequestsStatuses { dr_ids } => {
+                let statuses = state::requests_statuses(deps.storage, dr_ids)?;
+                to_json_binary(&statuses)?
+            }
             QueryMsg::GetDataRequestsByStatus {
                 status,
                 last_seen_index,
