@@ -9,7 +9,7 @@ pub const INITIAL_MINIMUM_STAKE: Uint128 = Uint128::new(10_000_000_000_000_000_0
 pub const INITIAL_DR_CONFIG: DrConfig = DrConfig {
     commit_timeout_in_blocks:        NonZero::new(50).unwrap(),
     reveal_timeout_in_blocks:        NonZero::new(5).unwrap(),
-    backup_delay_in_blocks:          NonZero::new(2).unwrap(),
+    backup_delay_in_blocks:          NonZero::new(5).unwrap(),
     // 24 KB
     dr_reveal_size_limit_in_bytes:   NonZero::new(24_000).unwrap(),
     // 2 KB,
