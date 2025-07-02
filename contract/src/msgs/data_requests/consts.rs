@@ -2,7 +2,7 @@ use cosmwasm_std::Uint128;
 
 const TERA_GAS: u64 = 1_000_000_000_000;
 
-pub const MIN_GAS_PRICE: Uint128 = Uint128::new(1_000);
+pub const MIN_GAS_PRICE: Uint128 = Uint128::new(2_000);
 pub const MIN_EXEC_GAS_LIMIT: u64 = 10 * TERA_GAS;
 pub const MIN_TALLY_GAS_LIMIT: u64 = 10 * TERA_GAS;
 

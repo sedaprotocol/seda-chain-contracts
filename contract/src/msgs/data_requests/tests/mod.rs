@@ -20,15 +20,15 @@ fn check_data_request_id() {
     //     "exec_inputs": "ZHJfaW5wdXRz",
     //     "exec_gas_limit": 10_000_000_000_000,
     //     "tally_program_id":
-    // "3a1561a3d854e446801b339c137f87dbd2238f481449c00d3470cfcc2a4e24a1",
+    // "e36e73257ac61c4e7126922411591d8558f4e2f6213aca27ef0b1e2ebf05fe35",
     //     "tally_inputs": "dGFsbHlfaW5wdXRz",
     //     "tally_gas_limit": 10_000_000_000_000,
     //     "replication_factor": 1,
     //     "consensus_filter": "AA==",
-    //     "gas_price": 1000,
+    //     "gas_price": 2000,
     //     "memo": "XTtTqpLgvyGr54/+ov83JyG852lp7VqzBrC10UpsIjg="
     //   }
-    let expected_dr_id = "9b7a442ca023779b09ee122d56048fb2f130dd405cfb4e300668840d8dfdf1cc";
+    let expected_dr_id = "b5722604a49dc8b83751890f2e85dae02f5c38c5e86a88e262e62f7e9b292de1";
 
     // compute and check if dr id matches expected value
     let dr = test_helpers::calculate_dr_id_and_args(0, 1);
