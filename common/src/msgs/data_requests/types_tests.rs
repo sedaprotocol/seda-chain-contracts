@@ -61,6 +61,7 @@ fn json_data_request_response() {
     let commits = HashMap::from([("key".to_string(), "value".hash())]);
     let reveals = HashMap::new();
     let height = 1;
+    let posted_gas_price = gas_price;
 
     let expected_json = json!({
       "id": id,
@@ -80,6 +81,7 @@ fn json_data_request_response() {
       "commits": commits,
       "reveals": {},
       "height": height,
+      "posted_gas_price": posted_gas_price,
     });
 
     let msg = DataRequestResponse {
@@ -100,6 +102,7 @@ fn json_data_request_response() {
             seda_payload,
             commits,
             height,
+            posted_gas_price,
         },
         reveals,
     };

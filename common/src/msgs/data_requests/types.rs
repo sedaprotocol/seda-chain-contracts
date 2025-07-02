@@ -68,6 +68,10 @@ pub struct DataRequestBase {
 
     /// The height data request was posted. Used for commitment.
     pub height: u64,
+
+    /// The actual gas price derived from the funds sent (funds /
+    /// total_gas_limit). This may be higher than the minimum gas_price.
+    pub posted_gas_price: U128,
 }
 
 impl DataRequestBase {
