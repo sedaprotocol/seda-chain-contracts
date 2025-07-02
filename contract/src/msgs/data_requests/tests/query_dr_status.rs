@@ -141,12 +141,55 @@ fn limit_works() {
     alice.post_data_request(dr2, vec![], vec![], 2, None).unwrap();
 
     // post a third data request
-    let dr3 = test_helpers::calculate_dr_id_and_args(3, 3);
+    let dr3: seda_common::msgs::data_requests::PostDataRequestArgs = test_helpers::calculate_dr_id_and_args(3, 3);
     alice.post_data_request(dr3, vec![], vec![], 3, None).unwrap();
 
     let drs = alice.get_data_requests_by_status(DataRequestStatus::Committing, None, 2);
     assert!(!drs.is_paused);
     assert_eq!(2, drs.data_requests.len());
+}
+
+#[test]
+fn sort_by_posted_gas_price_works() {
+    let test_info = TestInfo::init();
+    let alice = test_info.new_executor("alice", 62, 1);
+
+    // post a data request
+    let dr1 = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr1_gas_price = 2001;
+    let dr1_funds: u128 = dr1_gas_price * (dr1.exec_gas_limit + dr1.tally_gas_limit) as u128;
+    alice
+        .post_data_request(dr1, vec![], vec![], 1, Some(dr1_funds))
+        .unwrap();
+
+    // post a second data request
+    let dr2 = test_helpers::calculate_dr_id_and_args(2, 1);
+    let dr2_gas_price = 2003;
+    let dr2_funds: u128 = dr2_gas_price * (dr2.exec_gas_limit + dr2.tally_gas_limit) as u128;
+    alice
+        .post_data_request(dr2, vec![], vec![], 2, Some(dr2_funds))
+        .unwrap();
+
+    // post a third data request
+    let dr3 = test_helpers::calculate_dr_id_and_args(3, 1);
+    let dr3_gas_price = 2002;
+    let dr3_funds: u128 = dr3_gas_price * (dr3.exec_gas_limit + dr3.tally_gas_limit) as u128;
+    alice
+        .post_data_request(dr3, vec![], vec![], 3, Some(dr3_funds))
+        .unwrap();
+
+    let drs = alice.get_data_requests_by_status(DataRequestStatus::Committing, None, 3);
+    println!(
+        "drs: {:?}",
+        drs.data_requests
+            .iter()
+            .map(|dr| dr.base.posted_gas_price.u128())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(3, drs.data_requests.len());
+    assert_eq!(dr2_gas_price, drs.data_requests[0].base.posted_gas_price.u128());
+    assert_eq!(dr3_gas_price, drs.data_requests[1].base.posted_gas_price.u128());
+    assert_eq!(dr1_gas_price, drs.data_requests[2].base.posted_gas_price.u128());
 }
 
 #[test]
