@@ -70,7 +70,7 @@ impl TryFrom<&DataRequestBase> for IndexKey {
 
     fn try_from(value: &DataRequestBase) -> Result<Self, Self::Error> {
         let dr_id = Hash::from_hex_str(&value.id)?;
-        Ok(Self::new(value.gas_price, value.height, dr_id))
+        Ok(Self::new(value.posted_gas_price, value.height, dr_id))
     }
 }
 
