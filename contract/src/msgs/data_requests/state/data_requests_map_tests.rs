@@ -123,7 +123,11 @@ impl TestInfo<'_> {
 
 fn create_test_dr(height: u64) -> (Hash, DataRequestContract) {
     let args = calculate_dr_id_and_args(height as u128, 2);
-    let dr = construct_dr(args, vec![], height);
+    let min_amount = args
+        .gas_price
+        .checked_mul(Uint128::from(args.exec_gas_limit + args.tally_gas_limit))
+        .unwrap();
+    let dr = construct_dr(args, vec![], height, min_amount.into());
 
     (Hash::from_hex_str(&dr.base.id).unwrap(), dr)
 }

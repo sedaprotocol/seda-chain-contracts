@@ -55,7 +55,12 @@ pub fn calculate_dr_id_and_args(nonce: u128, replication_factor: u16) -> PostDat
     }
 }
 
-pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height: u64) -> DataRequestContract {
+pub fn construct_dr(
+    dr_args: PostDataRequestArgs,
+    seda_payload: Vec<u8>,
+    height: u64,
+    amount: u128,
+) -> DataRequestContract {
     let version = Version {
         major: 0,
         minor: 0,
@@ -84,6 +89,8 @@ pub fn construct_dr(dr_args: PostDataRequestArgs, seda_payload: Vec<u8>, height:
             commits: Default::default(),
             payback_address: payback_address.into(),
             height,
+            posted_gas_price: Uint128::from(amount)
+                / (Uint128::from(dr_args.exec_gas_limit) + Uint128::from(dr_args.tally_gas_limit)),
         },
         reveals: Default::default(),
     }

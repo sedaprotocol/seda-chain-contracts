@@ -1,6 +1,6 @@
 [package]
 name = "seda-contract"
-version = "1.0.14"
+version = "1.0.15"
 edition.workspace = true
 rust-version.workspace = true
 

@@ -138,6 +138,7 @@ fn create_data_request(
             commits: Default::default(),
             payback_address: Default::default(),
             height: rand::random(),
+            posted_gas_price: 10u128.into(),
         },
         reveals,
     }

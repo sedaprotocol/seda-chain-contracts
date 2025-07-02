@@ -25,8 +25,12 @@ fn works() {
 
     // post a data request
     let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let amount = dr
+        .gas_price
+        .checked_mul(Uint128::from(dr.exec_gas_limit + dr.tally_gas_limit))
+        .unwrap();
     let dr_id = anyone
-        .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, None)
+        .post_data_request(dr.clone(), vec![], vec![1, 2, 3], 1, Some(amount.into()))
         .unwrap();
 
     // Expect the dr staked to exist and be correct
@@ -46,7 +50,7 @@ fn works() {
     // should be able to fetch data request with id 0x69...
     let received_value = anyone.get_data_request(&dr_id);
     assert_eq!(
-        Some(test_helpers::construct_dr(dr, vec![], 1).base),
+        Some(test_helpers::construct_dr(dr, vec![], 1, amount.into()).base),
         received_value.map(|dr| dr.base)
     );
     let await_commits = anyone.get_data_requests_by_status(DataRequestStatus::Committing, None, 10);

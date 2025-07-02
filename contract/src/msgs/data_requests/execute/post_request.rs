@@ -113,14 +113,18 @@ impl ExecuteHandler for execute::post_request::Execute {
         // Take the funds from the user
         let token = TOKEN.load(deps.storage)?;
         let funds = cw_utils::must_pay(&info, &token)?;
-        let required = (Uint128::from(self.posted_dr.exec_gas_limit) + Uint128::from(self.posted_dr.tally_gas_limit))
-            .checked_mul(self.posted_dr.gas_price)?;
-        if funds < required {
+        let total_gas_limit =
+            Uint128::from(self.posted_dr.exec_gas_limit) + Uint128::from(self.posted_dr.tally_gas_limit);
+        let posted_gas_price = funds / total_gas_limit;
+
+        // Validate the derived gas price meets minimum requirements
+        if posted_gas_price < self.posted_dr.gas_price {
+            let required = total_gas_limit.checked_mul(self.posted_dr.gas_price)?;
             return Err(ContractError::InsufficientFunds(
                 required,
                 get_attached_funds(&info.funds, &token)?,
             ));
-        };
+        }
 
         let dr_poster = info.sender.to_string();
         DR_ESCROW.save(
@@ -156,29 +160,31 @@ impl ExecuteHandler for execute::post_request::Execute {
                 ("seda_payload", self.seda_payload.to_base64()),
                 ("payback_address", self.payback_address.to_base64()),
                 ("version", self.posted_dr.version.to_string()),
+                ("posted_gas_price", posted_gas_price.to_string()),
             ]));
 
         // save the data request
         let dr = DataRequestContract {
             base:    DataRequestBase {
-                id:                 hex_dr_id,
-                version:            self.posted_dr.version,
-                exec_program_id:    self.posted_dr.exec_program_id,
-                exec_inputs:        self.posted_dr.exec_inputs,
-                exec_gas_limit:     self.posted_dr.exec_gas_limit,
-                tally_program_id:   self.posted_dr.tally_program_id,
-                tally_inputs:       self.posted_dr.tally_inputs,
-                tally_gas_limit:    self.posted_dr.tally_gas_limit,
+                id: hex_dr_id,
+                version: self.posted_dr.version,
+                exec_program_id: self.posted_dr.exec_program_id,
+                exec_inputs: self.posted_dr.exec_inputs,
+                exec_gas_limit: self.posted_dr.exec_gas_limit,
+                tally_program_id: self.posted_dr.tally_program_id,
+                tally_inputs: self.posted_dr.tally_inputs,
+                tally_gas_limit: self.posted_dr.tally_gas_limit,
                 replication_factor: self.posted_dr.replication_factor,
-                consensus_filter:   self.posted_dr.consensus_filter,
-                gas_price:          self.posted_dr.gas_price,
-                memo:               self.posted_dr.memo,
+                consensus_filter: self.posted_dr.consensus_filter,
+                gas_price: self.posted_dr.gas_price,
+                memo: self.posted_dr.memo,
 
                 payback_address: self.payback_address,
-                seda_payload:    self.seda_payload,
-                commits:         Default::default(),
+                seda_payload: self.seda_payload,
+                commits: Default::default(),
 
                 height: env.block.height,
+                posted_gas_price,
             },
             reveals: Default::default(),
         };
