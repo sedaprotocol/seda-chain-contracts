@@ -13,7 +13,7 @@ rust-version = "1.83.0"
 edition = "2021"
 
 [profile.release]
-opt-level = 3
+opt-level = "z"
 debug = false
 rpath = false
 lto = true
@@ -21,7 +21,11 @@ debug-assertions = false
 codegen-units = 1
 panic = 'abort'
 incremental = false
-overflow-checks = true
+strip = true
+
+[profile.debug-size]
+inherits = "release"
+debug = true
 
 [workspace.dependencies]
 anyhow = "1.0"
