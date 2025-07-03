@@ -100,7 +100,7 @@ fn wasm_opt(sh: &Shell) -> Result<()> {
     wasm(sh)?;
     cmd!(
 			sh,
-			"wasm-opt -Os --signext-lowering target/wasm32-unknown-unknown/release/seda_contract.wasm -o target/seda_contract.wasm"
+			"wasm-opt -Oz --monomorphize -O3 --enable-bulk-memory --signext-lowering target/wasm32-unknown-unknown/release/seda_contract.wasm -o target/seda_contract.wasm"
 		)
     .run()?;
     Ok(())
