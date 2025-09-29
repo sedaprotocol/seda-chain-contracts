@@ -444,3 +444,103 @@ fn unstake_before_dr_removal_still_rewards_staker() {
     // bob can withdraw the reward
     bob.withdraw().unwrap();
 }
+
+#[test]
+fn works_with_data_proxy_fee_of_0() {
+    let test_info = TestInfo::init();
+
+    // post a data request
+    let alice = test_info.new_account("alice", 22);
+    let executor = test_info.new_executor("exec", 51, 1);
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
+
+    // alice commits a data result
+    let executor_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let executor_reveal_message = executor.create_reveal_message(executor_reveal);
+    executor.commit_result(&dr_id, &executor_reveal_message).unwrap();
+    executor.reveal_result(executor_reveal_message).unwrap();
+
+    // owner removes a data result
+    // data proxy reward goes to executors SEDA address
+    // reward goes to executors identity
+    // invalid identities and address are burned
+    // non staked executor is not rewarded
+    // remainder refunds to alice
+    let (_, proxy) = new_public_key();
+    test_info
+        .creator()
+        .remove_data_request(
+            dr_id,
+            vec![
+                DistributionMessage::Burn(DistributionBurn { amount: 1u128.into() }),
+                // valid data proxy reward
+                DistributionMessage::DataProxyReward(DistributionDataProxyReward {
+                    payout_address: executor.addr().to_string(),
+                    amount:         0u128.into(),
+                    public_key:     proxy.to_hex(),
+                }),
+            ],
+        )
+        .unwrap();
+    // Alice seda - stake amount minus the rewards
+    let alice_expected_balance = seda_to_aseda(22.into()) - 1;
+    assert_eq!(alice_expected_balance, test_info.executor_balance("alice"));
+}
+
+#[test]
+fn works_with_burn_amount_of_0() {
+    let test_info = TestInfo::init();
+
+    // post a data request
+    let alice = test_info.new_account("alice", 22);
+    let executor = test_info.new_executor("exec", 51, 1);
+    let dr = test_helpers::calculate_dr_id_and_args(1, 1);
+    let dr_id = alice.post_data_request(dr, vec![], vec![], 1, None).unwrap();
+
+    // alice commits a data result
+    let executor_reveal = RevealBody {
+        dr_id:             dr_id.clone(),
+        dr_block_height:   1,
+        reveal:            "10".hash().into(),
+        gas_used:          0,
+        exit_code:         0,
+        proxy_public_keys: vec![],
+    };
+    let executor_reveal_message = executor.create_reveal_message(executor_reveal);
+    executor.commit_result(&dr_id, &executor_reveal_message).unwrap();
+    executor.reveal_result(executor_reveal_message).unwrap();
+
+    // owner removes a data result
+    // data proxy reward goes to executors SEDA address
+    // reward goes to executors identity
+    // invalid identities and address are burned
+    // non staked executor is not rewarded
+    // remainder refunds to alice
+    let (_, proxy) = new_public_key();
+    test_info
+        .creator()
+        .remove_data_request(
+            dr_id,
+            vec![
+                DistributionMessage::Burn(DistributionBurn { amount: 0u128.into() }),
+                // valid data proxy reward
+                DistributionMessage::DataProxyReward(DistributionDataProxyReward {
+                    payout_address: executor.addr().to_string(),
+                    amount:         1u128.into(),
+                    public_key:     proxy.to_hex(),
+                }),
+            ],
+        )
+        .unwrap();
+    // Alice seda - stake amount minus the rewards
+    let alice_expected_balance = seda_to_aseda(22.into()) - 1;
+    assert_eq!(alice_expected_balance, test_info.executor_balance("alice"));
+}

@@ -95,11 +95,28 @@ fn remove_request_and_process_distributions(
         match &message {
             DistributionMessage::Burn(distribution_burn) => {
                 let amount_to_burn = distribution_burn.amount.min(dr_escrow.amount);
+
+                if amount_to_burn.is_zero() {
+                    event = event.add_attribute("burn", amount_to_burn.to_string());
+                    continue 'process_message;
+                }
+
                 bank_messages.push(burn(amount_to_burn, token, &mut dr_escrow));
                 event = event.add_attribute("burn", amount_to_burn.to_string());
             }
             DistributionMessage::DataProxyReward(distribution_send) => {
                 let amount_to_reward = distribution_send.amount.min(dr_escrow.amount);
+                if amount_to_reward.is_zero() {
+                    event = event.add_attribute(
+                        "data_proxy_reward",
+                        json_str!(
+                            "amount": amount_to_reward,
+                            "payout_address": distribution_send.payout_address,
+                            "public_key": distribution_send.public_key,
+                        ),
+                    );
+                    continue 'process_message;
+                }
 
                 if let Ok(addr) = deps.api.addr_validate(&distribution_send.payout_address) {
                     bank_messages.push(BankMsg::Send {
