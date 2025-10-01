@@ -7,13 +7,25 @@ use crate::{
         consts::{MAX_REPLICATION_FACTOR, MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
         state::DR_CONFIG,
     },
-    state::TOKEN,
+    state::{DR_POOL_DRAIN_TARGET, TOKEN},
     utils::get_attached_funds,
 };
 
 impl ExecuteHandler for execute::post_request::Execute {
     /// Posts a data request to the pool
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        let dr_config = DR_CONFIG.load(deps.storage)?;
+
+        let target = DR_POOL_DRAIN_TARGET.load(deps.storage)?;
+        if target > 0 {
+            // We add 5 blocks as a buffer.
+            let max_blocks_until_expiration: u64 =
+                dr_config.commit_timeout_in_blocks.get() as u64 + dr_config.reveal_timeout_in_blocks.get() as u64 + 5;
+            if target <= env.block.height + max_blocks_until_expiration {
+                return Err(ContractError::DataRequestPoolDraining);
+            }
+        }
+
         // require the replication to be non-zero
         if self.posted_dr.replication_factor == 0 {
             return Err(ContractError::DataRequestReplicationFactorZero);
@@ -48,7 +60,6 @@ impl ExecuteHandler for execute::post_request::Execute {
             return Err(ContractError::DataRequestVersionInvalid);
         }
         // check the size limits of the dr
-        let dr_config = DR_CONFIG.load(deps.storage)?;
         if self.posted_dr.exec_inputs.len() > dr_config.exec_input_limit_in_bytes.get() as usize {
             return Err(ContractError::DrFieldTooBig(
                 "exec inputs",

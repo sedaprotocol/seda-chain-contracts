@@ -7,6 +7,7 @@ use super::{
 
 pub(in crate::msgs::owner) mod accept_ownership;
 pub(in crate::msgs::owner) mod add_to_allowlist;
+pub mod drain_data_request_pool;
 pub mod pause;
 pub(in crate::msgs::owner) mod remove_from_allowlist;
 pub(in crate::msgs::owner) mod transfer_ownership;
@@ -21,6 +22,7 @@ impl ExecuteHandler for ExecuteMsg {
             ExecuteMsg::RemoveFromAllowlist(msg) => msg.execute(deps, env, info),
             ExecuteMsg::Pause(msg) => msg.execute(deps, env, info),
             ExecuteMsg::Unpause(msg) => msg.execute(deps, env, info),
+            ExecuteMsg::DrainDataRequestPool(msg) => msg.execute(deps, env, info),
         }
     }
 }

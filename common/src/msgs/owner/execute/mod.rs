@@ -1,5 +1,6 @@
 pub mod accept_ownership;
 pub mod add_to_allowlist;
+pub mod drain_data_request_pool;
 pub mod pause;
 pub mod remove_from_allowlist;
 pub mod transfer_ownership;
@@ -17,6 +18,7 @@ pub enum ExecuteMsg {
     RemoveFromAllowlist(remove_from_allowlist::Execute),
     Pause(pause::Execute),
     Unpause(unpause::Execute),
+    DrainDataRequestPool(drain_data_request_pool::Execute),
 }
 
 impl From<ExecuteMsg> for crate::msgs::ExecuteMsg {

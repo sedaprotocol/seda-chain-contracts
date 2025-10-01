@@ -86,6 +86,8 @@ pub enum ContractError {
     InvalidPublicKeyLength(usize),
     #[error("Contract paused: cannot perform operation `{0}`")]
     ContractPaused(String),
+    #[error("Cannot post request: Data request pool is draining")]
+    DataRequestPoolDraining,
     #[error("Contract not paused: cannot unpause")]
     ContractNotPaused,
     #[error("ZeroMinimumStakeToRegister: Minimum stake to register cannot be zero")]

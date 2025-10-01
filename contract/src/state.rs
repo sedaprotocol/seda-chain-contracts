@@ -6,6 +6,11 @@ use crate::types::PublicKey;
 /// Flag to indicate if the contract is paused.
 pub const PAUSED: Item<bool> = Item::new("paused");
 
+/// Set to 0 by default. If set to a positive value, it is interpreted as the
+/// target block height by which the data request pool should be emptied.
+/// PostDataRequest messages are blocked accordingly.
+pub const DR_POOL_DRAIN_TARGET: Item<u64> = Item::new("dr_pool_drain_target");
+
 /// Token denom used for staking (e.g., `aseda`).
 pub const TOKEN: Item<String> = Item::new("token");
 

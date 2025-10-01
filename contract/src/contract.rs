@@ -20,7 +20,7 @@ use crate::{
         QueryHandler,
         SudoHandler,
     },
-    state::{CHAIN_ID, PAUSED, TOKEN},
+    state::{CHAIN_ID, DR_POOL_DRAIN_TARGET, PAUSED, TOKEN},
 };
 
 // version info for migration info
@@ -48,6 +48,7 @@ pub fn instantiate(
     CHAIN_ID.save(deps.storage, &msg.chain_id)?;
     PENDING_OWNER.save(deps.storage, &None)?;
     PAUSED.save(deps.storage, &false)?;
+    DR_POOL_DRAIN_TARGET.save(deps.storage, &0)?;
 
     let init_staking_config = msg.staking_config.unwrap_or(StakingConfig {
         minimum_stake:     INITIAL_MINIMUM_STAKE,
@@ -125,6 +126,10 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
     }
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    if DR_POOL_DRAIN_TARGET.may_load(deps.storage)?.is_none() {
+        DR_POOL_DRAIN_TARGET.save(deps.storage, &0)?;
+    }
 
     Ok(Response::new()
         .add_attribute("method", "migrate")
