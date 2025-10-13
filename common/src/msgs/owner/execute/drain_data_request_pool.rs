@@ -3,6 +3,7 @@
 #[cfg_attr(not(feature = "cosmwasm"), serde(rename_all = "snake_case"))]
 pub struct Execute {
     pub target_height: u64,
+    pub buffer:        u64,
 }
 
 impl From<Execute> for crate::msgs::ExecuteMsg {

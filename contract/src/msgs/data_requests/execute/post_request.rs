@@ -7,7 +7,7 @@ use crate::{
         consts::{MAX_REPLICATION_FACTOR, MIN_EXEC_GAS_LIMIT, MIN_GAS_PRICE, MIN_TALLY_GAS_LIMIT},
         state::DR_CONFIG,
     },
-    state::{DR_POOL_DRAIN_TARGET, TOKEN},
+    state::{DR_POOL_DRAIN_BUFFER, DR_POOL_DRAIN_TARGET, TOKEN},
     utils::get_attached_funds,
 };
 
@@ -16,11 +16,13 @@ impl ExecuteHandler for execute::post_request::Execute {
     fn execute(self, deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let dr_config = DR_CONFIG.load(deps.storage)?;
 
+        // Check if the data request pool is draining.
         let target = DR_POOL_DRAIN_TARGET.load(deps.storage)?;
         if target > 0 {
-            // We add 5 blocks as a buffer.
-            let max_blocks_until_expiration: u64 =
-                dr_config.commit_timeout_in_blocks.get() as u64 + dr_config.reveal_timeout_in_blocks.get() as u64 + 5;
+            let buffer = DR_POOL_DRAIN_BUFFER.load(deps.storage)?;
+            let max_blocks_until_expiration: u64 = dr_config.commit_timeout_in_blocks.get() as u64
+                + dr_config.reveal_timeout_in_blocks.get() as u64
+                + buffer;
             if target <= env.block.height + max_blocks_until_expiration {
                 return Err(ContractError::DataRequestPoolDraining);
             }

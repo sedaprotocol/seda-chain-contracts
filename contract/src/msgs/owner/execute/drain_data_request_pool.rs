@@ -5,7 +5,7 @@ use crate::{
     contract::CONTRACT_VERSION,
     error::ContractError,
     msgs::{owner::state::OWNER, ExecuteHandler},
-    state::{DR_POOL_DRAIN_TARGET, PAUSED},
+    state::{DR_POOL_DRAIN_BUFFER, DR_POOL_DRAIN_TARGET, PAUSED},
 };
 
 impl ExecuteHandler for execute::drain_data_request_pool::Execute {
@@ -21,6 +21,13 @@ impl ExecuteHandler for execute::drain_data_request_pool::Execute {
         }
 
         DR_POOL_DRAIN_TARGET.save(deps.storage, &self.target_height)?;
+
+        if self.buffer != 0 {
+            if self.buffer < 5 {
+                return Err(ContractError::DrainBufferTooLow(self.buffer));
+            }
+            DR_POOL_DRAIN_BUFFER.save(deps.storage, &self.buffer)?;
+        }
 
         Ok(Response::new()
             .add_attribute("action", "drain_data_request_pool")

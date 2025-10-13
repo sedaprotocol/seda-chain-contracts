@@ -92,6 +92,8 @@ pub enum ContractError {
     ContractNotPaused,
     #[error("ZeroMinimumStakeToRegister: Minimum stake to register cannot be zero")]
     ZeroMinimumStakeToRegister,
+    #[error("DrainBufferTooLow: Drain buffer {0} is lower than the minimum 5")]
+    DrainBufferTooLow(u64),
 
     #[error("GasPriceTooLow: Gas price {0} is lower than the minimum {MIN_GAS_PRICE}")]
     GasPriceTooLow(Uint128),

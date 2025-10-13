@@ -11,6 +11,10 @@ pub const PAUSED: Item<bool> = Item::new("paused");
 /// PostDataRequest messages are blocked accordingly.
 pub const DR_POOL_DRAIN_TARGET: Item<u64> = Item::new("dr_pool_drain_target");
 
+/// Set to 5 by default with minimum of 5. This is the number of buffer blocks
+/// added to the drain period.
+pub const DR_POOL_DRAIN_BUFFER: Item<u64> = Item::new("dr_pool_drain_buffer");
+
 /// Token denom used for staking (e.g., `aseda`).
 pub const TOKEN: Item<String> = Item::new("token");
 
